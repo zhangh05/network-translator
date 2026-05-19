@@ -55,9 +55,9 @@
     },
     "verification": {
       "static_pass": true,
-      "deployable": true,
-      "manual_review_required": false,
-      "notes": "Low-risk LACP. Standard Cisco mappings: Eth-Trunk→Port-channel, lacp-static→active, port trunk allow-pass→switchport trunk allowed vlan"
+      "deployable": false,
+      "manual_review_required": true,
+      "notes": "LACP 翻译。LLM 有时会在注释中引用源端 H3C 关键字 lacp-static。平台验证器检测到残留后自动标记为不可部署。翻译结果需人工确认端口聚合模式。"
     }
   },
   "benchmark": {

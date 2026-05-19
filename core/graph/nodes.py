@@ -691,6 +691,7 @@ class ValidateNode(Node):
                 (r'\binterface\s+GE\d+', 'Huawei/H3C: GE abbreviated interface'),
                 (r'\binterface\s+XGigabitEthernet\d+', 'Huawei/H3C: XGigabitEthernet abbreviation'),
                 (r'\b(irf\s+member|irf-port)\b', 'H3C: irf member/irf-port'),
+                (r'\blacp-static\b', 'H3C: lacp-static'),
             ],
             'huawei': [
                 # Cisco residues in Huawei VRP
