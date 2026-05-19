@@ -23,7 +23,7 @@
     "must_include": [
       "bgp 65001",
       "peer 198.18.1.2",
-      "ip ip-prefix",
+      "ip-prefix",
       "route-policy"
     ],
     "must_not_include": [

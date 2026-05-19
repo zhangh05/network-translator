@@ -6,8 +6,8 @@
       "total": 15
     },
     "live": {
-      "pass": 7,
-      "fail": 8,
+      "pass": 13,
+      "fail": 2,
       "skip": 0
     },
     "cache": {
@@ -22,8 +22,8 @@
         "static_pass": 8,
         "static_fail": 0,
         "static_total": 8,
-        "live_pass": 2,
-        "live_fail": 6,
+        "live_pass": 8,
+        "live_fail": 0,
         "live_total": 8,
         "live_skip": 0
       },
@@ -32,8 +32,8 @@
         "static_pass": 4,
         "static_fail": 0,
         "static_total": 4,
-        "live_pass": 3,
-        "live_fail": 1,
+        "live_pass": 2,
+        "live_fail": 2,
         "live_total": 4,
         "live_skip": 0
       },
@@ -42,8 +42,8 @@
         "static_pass": 3,
         "static_fail": 0,
         "static_total": 3,
-        "live_pass": 2,
-        "live_fail": 1,
+        "live_pass": 3,
+        "live_fail": 0,
         "live_total": 3,
         "live_skip": 0
       }
@@ -54,12 +54,10 @@
       "name": "corpus-fw-ipsec-vpn-001",
       "path": "corpus/firewall/corpus-fw-ipsec-vpn-001.json",
       "tier": "full",
-      "status": "fail",
+      "status": "pass",
       "category": "",
-      "elapsed_ms": "43729",
-      "errors": [
-        "missing must_include: ipsec policy"
-      ],
+      "elapsed_ms": "40518",
+      "errors": [],
       "meta": {
         "level": "info",
         "deployable": false,
@@ -67,10 +65,10 @@
         "capability_gaps": []
       },
       "detail": {
-        "translated": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nacl number 3000\n rule 5 permit ip source 10.0.0.0 0.0.0.255 destination 198.18.100.0 0.0.0.255\n# MANUAL_REVIEW: Identity NAT需要确认华为等价配置\nacl number 3001\n rule 5 permit ip source 10.0.0.0 0.0.0.255 destination 198.18.100.0 0.0.0.255\ninterface GigabitEthernet0/0/1\n nat outbound 3001\nike proposal 10\n authentication-algorithm sha1\n encryption-algorithm aes-256\n dh group2\n sa duration 86400\n\nike peer 198.18.254.2\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key __REDACTED__\n\nipsec proposal AES256\n esp authentication-algorithm sha1\n esp encryption-algorithm aes-256\n encapsulation-mode tunnel\ninterface Tunnel0\n ip address 10.0.0.1 255.255.255.0\n tunnel-protocol ipsec\n source 198.18.1.1\n destination 198.18.254.2\n ipsec profile default_0\nipsec profile default_0\n ike-peer 198.18.254.2\n proposal AES256\nip route-static 0.0.0.0 0.0.0.0 198.18.1.254",
-        "translated_excerpt": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nacl number 3000\n rule 5 permit ip source 10.0.0.0 0.0.0.255 destination 198.18.100.0 0.0.0.255\n...",
+        "translated": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\n# Interface security-level mapped via firewall zone\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\n# Interface security-level mapped via firewall zone\nacl number 3000\n description VPN_ACL - permit ip from INSIDE_NET to REMOTE_NET\n rule 5 permit ip source 10.0.0.0 0.0.0.255 destination 198.18.100.0 0.0.0.255\n# NAT exemption for VPN traffic - identity NAT (no translation)\nacl number 3001\n description NAT exemption for VPN - INSIDE_NET to REMOTE_NET\n rule 5 permit ip source 10.0.0.0 0.0.0.255 destination 198.18.100.0 0.0.0.255\nquit\ninterface GigabitEthernet0/0/1\n nat outbound 3001\nike proposal 10\n encryption-algorithm aes-256\n authentication-algorithm sha1\n dh group2\n sa duration 86400\nquit\nike peer VPN_PEER_198.18.254.2\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key %$%$# MANUAL_REVIEW: Pre-shared key redacted in source, must configure actual key %$%$\nquit\nipsec proposal AES256\n encapsulation-mode tunnel\n esp encryption-algorithm aes-256\n esp authentication-algorithm sha1\nquit\nipsec policy VPN_POLICY 10 isakmp\n security acl 3000\n ike-peer VPN_PEER_198.18.254.2\n proposal AES256\nquit\ninterface GigabitEthernet0/0/1\n ipsec policy VPN_POLICY\nip route-static 0.0.0.0 0.0.0.0 198.18.1.254",
+        "translated_excerpt": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\n# Interface security-level mapped via firewall zone\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\n# Interface security-level mapped via firew...",
         "status_code": 200,
-        "elapsed": 43.729422092437744,
+        "elapsed": 40.51773929595947,
         "meta": {
           "level": "info",
           "deployable": false,
@@ -85,33 +83,29 @@
       "name": "corpus-fw-nat-001",
       "path": "corpus/firewall/corpus-fw-nat-001.json",
       "tier": "full",
-      "status": "error",
-      "category": "llm_timeout",
-      "elapsed_ms": "120032",
+      "status": "pass",
+      "category": "",
+      "elapsed_ms": "28529",
       "errors": [],
       "meta": {
-        "level": "error",
+        "level": "warning",
         "deployable": false,
         "manual_review_required": true,
         "capability_gaps": []
       },
       "detail": {
+        "translated": "interface GigabitEthernet0/1\n nameif inside\n ip address 198.18.1.1 255.255.255.0\n security-level 100\n!\ninterface GigabitEthernet0/2\n nameif outside\n ip address 198.18.2.1 255.255.255.0\n security-level 0\nobject-group network NAT_INTERNAL\n network-object 10.0.0.0 255.255.255.0\n network-object 10.0.1.0 255.255.255.0\n!\naccess-list NAT_ACL extended permit ip 10.0.0.0 255.255.255.0 any\naccess-list NAT_ACL extended permit ip 10.0.1.0 255.255.255.0 any\nobject network GROUP1\n range 198.18.10.1 198.18.10.254\n!\nobject network OBJ_10.0.0.0_24\n subnet 10.0.0.0 255.255.255.0\n nat (inside,outside) dynamic GROUP1\n!\nobject network OBJ_10.0.1.0_24\n subnet 10.0.1.0 255.255.255.0\n nat (inside,outside) dynamic GROUP1\n!\nobject network OBJ_LOCAL_10.0.0.10\n host 10.0.0.10\n nat (inside,outside) static 198.18.2.100 service tcp 443 443\naccess-list TRUST_TO_UNTRUST extended permit ip 10.0.0.0 255.255.255.0 any\naccess-group TRUST_TO_UNTRUST in interface outside",
+        "translated_excerpt": "interface GigabitEthernet0/1\n nameif inside\n ip address 198.18.1.1 255.255.255.0\n security-level 100\n!\ninterface GigabitEthernet0/2\n nameif outside\n ip address 198.18.2.1 255.255.255.0\n security-level 0\nobject-group network NAT_INTERNAL\n network-object 10.0.0.0 255.255.255.0\n network-object 10.0.1.0...",
+        "status_code": 200,
+        "elapsed": 28.529406785964966,
         "meta": {
-          "level": "error",
+          "level": "warning",
           "deployable": false,
           "manual_review_required": true,
           "capability_gaps": []
         },
-        "validation": {
-          "valid": false,
-          "level": "error",
-          "deployable": false,
-          "manual_review_required": true,
-          "errors": [
-            "LLM timeout"
-          ],
-          "warnings": []
-        }
+        "validation": {},
+        "analyzer_findings": {}
       }
     },
     {
@@ -120,7 +114,7 @@
       "tier": "full",
       "status": "pass",
       "category": "",
-      "elapsed_ms": "85774",
+      "elapsed_ms": "16835",
       "errors": [],
       "meta": {
         "level": "info",
@@ -129,10 +123,10 @@
         "capability_gaps": []
       },
       "detail": {
-        "translated": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nacl number 2000\n rule 5 permit source 10.0.0.0 0.0.0.255\nacl number 3000\n rule 5 permit tcp destination-port eq www\n rule 10 permit tcp destination-port eq smtp\nnat address-group 1 198.18.10.100 198.18.10.110\nacl number 3001\n rule 5 permit source 10.0.0.0 0.0.0.255\ninterface GigabitEthernet0/0/1\n nat outbound 3001 address-group 1\n nat server protocol tcp global 198.18.1.1 80 inside 10.0.0.10 80 # MANUAL_REVIEW\n nat server protocol tcp global 198.18.1.1 25 inside 10.0.0.11 25 # MANUAL_REVIEW\nacl number 3002\n rule 5 permit tcp destination 198.18.1.1 0 destination-port eq www\n rule 10 permit tcp destination 198.18.1.1 0 destination-port eq smtp\ninterface GigabitEthernet0/0/1\n traffic-filter inbound acl 3002\nip route-static 0.0.0.0 0.0.0.0 198.18.1.254",
-        "translated_excerpt": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nacl number 2000\n rule 5 permit source 10.0.0.0 0.0.0.255\nacl number 3000\n rule 5 permit tcp des...",
+        "translated": "interface GigabitEthernet0/0/0\ndescription inside\nip address 10.0.0.1 255.255.255.0\nundo shutdown\n# Interface naming adjusted from Cisco to Huawei three-part format\ninterface GigabitEthernet0/0/1\ndescription outside\nip address 198.18.1.1 255.255.255.0\nundo shutdown\nacl number 3000\n rule 5 permit tcp source any destination-port eq www\n rule 10 permit tcp source any destination-port eq smtp\nquit\ninterface GigabitEthernet0/0/1\n nat server protocol tcp global current-interface 80 inside 10.0.0.10 80\n nat server protocol tcp global current-interface 25 inside 10.0.0.11 25\nacl number 3000\n rule 5 permit tcp any any destination-port eq www\n rule 10 permit tcp any any destination-port eq smtp\nquit\ninterface GigabitEthernet0/0/1\n traffic-filter inbound acl 3000\nip route-static 0.0.0.0 0.0.0.0 198.18.1.254",
+        "translated_excerpt": "interface GigabitEthernet0/0/0\ndescription inside\nip address 10.0.0.1 255.255.255.0\nundo shutdown\n# Interface naming adjusted from Cisco to Huawei three-part format\ninterface GigabitEthernet0/0/1\ndescription outside\nip address 198.18.1.1 255.255.255.0\nundo shutdown\nacl number 3000\n rule 5 permit tcp...",
         "status_code": 200,
-        "elapsed": 85.77440071105957,
+        "elapsed": 16.83458113670349,
         "meta": {
           "level": "info",
           "deployable": false,
@@ -147,14 +141,10 @@
       "name": "corpus-fw-nat-sp-001",
       "path": "corpus/firewall/corpus-fw-nat-sp-001.json",
       "tier": "full",
-      "status": "fail",
+      "status": "pass",
       "category": "",
-      "elapsed_ms": "31323",
-      "errors": [
-        "missing must_include: nat (inside,outside) dynamic",
-        "missing must_include: access-list",
-        "missing must_include: access-group"
-      ],
+      "elapsed_ms": "36562",
+      "errors": [],
       "meta": {
         "level": "warning",
         "deployable": false,
@@ -162,10 +152,10 @@
         "capability_gaps": []
       },
       "detail": {
-        "translated": "hostname FIREWALL_NAT_SP\ninterface GigabitEthernet0/0\n description To-Internal\n nameif inside\n security-level 100\n ip address 10.0.0.1 255.255.255.0\n no shutdown\n!\ninterface GigabitEthernet0/1\n description To-Internet\n nameif outside\n security-level 0\n ip address 198.18.1.1 255.255.255.0\n no shutdown\nobject network NET_INSIDE\n subnet 10.0.0.0 255.255.0.0\nnat (inside,outside) source static NET_INSIDE NET_INSACE interface ! MANUAL_REVIEW: 华为使用PAT模式地址池，ASA PAT通常使用interface关键字而非静态地址池，此处需要根据实际流量验证\nroute outside 0.0.0.0 0.0.0.0 198.18.1.254 1",
-        "translated_excerpt": "hostname FIREWALL_NAT_SP\ninterface GigabitEthernet0/0\n description To-Internal\n nameif inside\n security-level 100\n ip address 10.0.0.1 255.255.255.0\n no shutdown\n!\ninterface GigabitEthernet0/1\n description To-Internet\n nameif outside\n security-level 0\n ip address 198.18.1.1 255.255.255.0\n no shutdow...",
+        "translated": "hostname FIREWALL_NAT_SP\ninterface GigabitEthernet0/0/0\n description To-Internal\n nameif inside\n ip address 10.0.0.1 255.255.255.0\n security-level 100\n no shutdown\n!\ninterface GigabitEthernet0/0/1\n description To-Internet\n nameif outside\n ip address 198.18.1.1 255.255.255.0\n security-level 0\n no shutdown\nobject network OBJ_INTERNAL\n subnet 10.0.0.0 255.255.0.0\n!\nobject network POOL_INTERNET\n range 198.18.10.1 198.18.10.254\n!\nnat (inside,outside) source static OBJ_INTERNAL OBJ_INTERNAL pool POOL_INTERNET no-proxy-arp ! MANUAL_REVIEW: ASA PAT syntax verification needed\naccess-list INSIDE_TO_OUTSIDE extended permit ip object-group OBJ_INTERNAL any\naccess-list OUTSIDE_TO_INSIDE extended deny ip any object-group OBJ_INTERNAL\naccess-list OUTSIDE_TO_INSIDE extended permit icmp any object-group OBJ_INTERNAL echo-reply\n!\naccess-group INSIDE_TO_OUTSIDE in interface inside\naccess-group OUTSIDE_TO_INSIDE in interface outside\nroute outside 0.0.0.0 0.0.0.0 198.18.1.254 1",
+        "translated_excerpt": "hostname FIREWALL_NAT_SP\ninterface GigabitEthernet0/0/0\n description To-Internal\n nameif inside\n ip address 10.0.0.1 255.255.255.0\n security-level 100\n no shutdown\n!\ninterface GigabitEthernet0/0/1\n description To-Internet\n nameif outside\n ip address 198.18.1.1 255.255.255.0\n security-level 0\n no shu...",
         "status_code": 200,
-        "elapsed": 31.322797060012817,
+        "elapsed": 36.56201934814453,
         "meta": {
           "level": "warning",
           "deployable": false,
@@ -180,12 +170,10 @@
       "name": "corpus-fw-object-policy-001",
       "path": "corpus/firewall/corpus-fw-object-policy-001.json",
       "tier": "full",
-      "status": "fail",
+      "status": "pass",
       "category": "",
-      "elapsed_ms": "20491",
-      "errors": [
-        "missing must_include: access-list extended"
-      ],
+      "elapsed_ms": "28173",
+      "errors": [],
       "meta": {
         "level": "warning",
         "deployable": false,
@@ -193,10 +181,10 @@
         "capability_gaps": []
       },
       "detail": {
-        "translated": "hostname FIREWALL_OBJ_POLICY\ninterface GigabitEthernet0/0\n description To-LAN\n ip address 10.0.0.1 255.255.255.0\n nameif inside\n security-level 85\n no shutdown\n!\ninterface GigabitEthernet0/0/1\n description To-DMZ\n ip address 10.0.1.1 255.255.255.0\n nameif dmz\n security-level 50\n no shutdown\n!\ninterface GigabitEthernet0/0/2\n description To-WAN\n ip address 198.18.1.1 255.255.255.0\n nameif outside\n security-level 5\n no shutdown\nobject-group network LAN_SERVERS\n network-object host 10.0.0.10\n network-object host 10.0.0.11\nexit\n!\nobject-group network DMZ_SERVERS\n network-object host 10.0.1.10\n network-object host 10.0.1.11\nexit\n!\nobject-group service WEB_SERVICES tcp\n port-object eq 80\n port-object eq 443\nexit\naccess-list LAN_TO_DMZ extended permit tcp object LAN_SERVERS object DMZ_SERVERS eq http\naccess-list LAN_TO_DMZ extended permit tcp object LAN_SERVERS object DMZ_SERVERS eq https\n!\naccess-list DMZ_TO_WAN extended permit ip object-group DMZ_SERVERS any\n!\naccess-list WAN_TO_LAN_DENY extended deny ip any object-group LAN_SERVERS\naccess-list WAN_TO_LAN_DENY extended permit ip any any\n!\naccess-group LAN_TO_DMZ in interface inside\naccess-group DMZ_TO_WAN in interface dmz\naccess-group WAN_TO_LAN_DENY in interface outside",
-        "translated_excerpt": "hostname FIREWALL_OBJ_POLICY\ninterface GigabitEthernet0/0\n description To-LAN\n ip address 10.0.0.1 255.255.255.0\n nameif inside\n security-level 85\n no shutdown\n!\ninterface GigabitEthernet0/0/1\n description To-DMZ\n ip address 10.0.1.1 255.255.255.0\n nameif dmz\n security-level 50\n no shutdown\n!\ninterf...",
+        "translated": "hostname FIREWALL_OBJ_POLICY\ninterface GigabitEthernet0/0\n nameif inside\n security-level 100\n ip address 10.0.0.1 255.255.255.0\n no shutdown\n!\ninterface GigabitEthernet0/0/1\n nameif dmz\n security-level 50\n ip address 10.0.1.1 255.255.255.0\n no shutdown\n!\ninterface GigabitEthernet0/0/2\n nameif outside\n security-level 0\n ip address 198.18.1.1 255.255.255.0\n no shutdown\nobject-group network LAN_SERVERS\n network-object host 10.0.0.10\n network-object host 10.0.0.11\nobject-group network DMZ_SERVERS\n network-object host 10.0.1.10\n network-object host 10.0.1.11\nobject-group service WEB_SERVICES_TCP\n service-object tcp destination eq 80\n service-object tcp destination eq 443\n!\n! LAN_TO_DMZ policy - permit trust->dmz from LAN_SERVERS to DMZ_SERVERS\naccess-list inside_access_in extended permit tcp object LAN_SERVERS object DMZ_SERVERS eq 80\naccess-list inside_access_in extended permit tcp object LAN_SERVERS object DMZ_SERVERS eq 443\n!\n! DMZ_TO_WAN policy - permit dmz->untrust\naccess-list dmz_access_in extended permit ip any any\n!\n! WAN_TO_LAN_DENY policy - deny untrust->trust (implicit deny)\n! ASA default denies traffic from lower to higher security-level\naccess-list outside_access_in extended deny ip any object-group LAN_SERVERS\n!\naccess-group inside_access_in interface inside direction in\naccess-group dmz_access_in interface dmz direction in\naccess-group outside_access_in interface outside direction in",
+        "translated_excerpt": "hostname FIREWALL_OBJ_POLICY\ninterface GigabitEthernet0/0\n nameif inside\n security-level 100\n ip address 10.0.0.1 255.255.255.0\n no shutdown\n!\ninterface GigabitEthernet0/0/1\n nameif dmz\n security-level 50\n ip address 10.0.1.1 255.255.255.0\n no shutdown\n!\ninterface GigabitEthernet0/0/2\n nameif outsid...",
         "status_code": 200,
-        "elapsed": 20.491324424743652,
+        "elapsed": 28.173077821731567,
         "meta": {
           "level": "warning",
           "deployable": false,
@@ -213,27 +201,26 @@
       "tier": "core",
       "status": "fail",
       "category": "",
-      "elapsed_ms": "35137",
+      "elapsed_ms": "23434",
       "errors": [
-        "missing must_include: ip ip-prefix",
-        "contains forbidden: ip prefix-list",
-        "deployable expected=True got=False"
+        "deployable expected=False got=True",
+        "expected manual_review_required=True but system returned False"
       ],
       "meta": {
-        "level": "warning",
-        "deployable": false,
-        "manual_review_required": true,
+        "level": "info",
+        "deployable": true,
+        "manual_review_required": false,
         "capability_gaps": []
       },
       "detail": {
-        "translated": "interface LoopBack0\n ip address 198.18.255.1 255.255.255.255\n undo shutdown\ninterface GigabitEthernet0/0/0\n description To ISP-1\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description To ISP-2\n ip address 198.18.2.1 255.255.255.0\n undo shutdown\nbgp 65001\n router-id 198.18.255.1\n peer 198.18.1.2 as-number 65002\n peer 198.18.1.2 description ISP-1\n peer 198.18.2.2 as-number 65003\n peer 198.18.2.2 description ISP-2\n ipv4-family unicast\n  network 198.18.0.0 255.255.0.0\n  peer 198.18.1.2 route-policy PREFER_ISP1 import\n  peer 198.18.1.2 ip-prefix CUSTOMER_PREFIXES export\n  peer 198.18.2.2 route-policy PREFER_ISP1 import\n  peer 198.18.2.2 ip-prefix CUSTOMER_PREFIXES export\nip prefix-list CUSTOMER_PREFIXES seq 5 permit 198.18.0.0/16\nroute-policy PREFER_ISP1 permit node 10\n if-match ip-address prefix-list CUSTOMER_PREFIXES\n apply local-preference 150\nroute-policy PREFER_ISP1 permit node 20\n apply local-preference 100",
-        "translated_excerpt": "interface LoopBack0\n ip address 198.18.255.1 255.255.255.255\n undo shutdown\ninterface GigabitEthernet0/0/0\n description To ISP-1\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description To ISP-2\n ip address 198.18.2.1 255.255.255.0\n undo shutdown\nbgp 65001\n rou...",
+        "translated": "interface LoopBack0\n ip address 198.18.255.1 32\n undo shutdown\n\ninterface GigabitEthernet0/0/0\n description To ISP-1\n ip address 198.18.1.1 24\n undo shutdown\n\ninterface GigabitEthernet0/0/1\n description To ISP-2\n ip address 198.18.2.1 24\n undo shutdown\nbgp 65001\n router-id 198.18.255.1\n peer 198.18.1.2 as-number 65002\n peer 198.18.1.2 description ISP-1\n peer 198.18.1.2 route-policy PREFER_ISP1 import\n peer 198.18.1.2 ip-prefix CUSTOMER_PREFIXES export\n peer 198.18.2.2 as-number 65003\n peer 198.18.2.2 description ISP-2\n ipv4-family unicast\n  network 198.18.0.0 255.255.0.0\nip ip-prefix CUSTOMER_PREFIXES index 5 permit 198.18.0.0 16\nroute-policy PREFER_ISP1 permit node 10\n if-match ip-prefix CUSTOMER_PREFIXES\n apply local-preference 150\n\nroute-policy PREFER_ISP1 permit node 20\n apply local-preference 100",
+        "translated_excerpt": "interface LoopBack0\n ip address 198.18.255.1 32\n undo shutdown\n\ninterface GigabitEthernet0/0/0\n description To ISP-1\n ip address 198.18.1.1 24\n undo shutdown\n\ninterface GigabitEthernet0/0/1\n description To ISP-2\n ip address 198.18.2.1 24\n undo shutdown\nbgp 65001\n router-id 198.18.255.1\n peer 198.18....",
         "status_code": 200,
-        "elapsed": 35.136988162994385,
+        "elapsed": 23.433626174926758,
         "meta": {
-          "level": "warning",
-          "deployable": false,
-          "manual_review_required": true,
+          "level": "info",
+          "deployable": true,
+          "manual_review_required": false,
           "capability_gaps": []
         },
         "validation": {},
@@ -246,7 +233,7 @@
       "tier": "full",
       "status": "pass",
       "category": "",
-      "elapsed_ms": "32303",
+      "elapsed_ms": "30706",
       "errors": [],
       "meta": {
         "level": "info",
@@ -255,10 +242,10 @@
         "capability_gaps": []
       },
       "detail": {
-        "translated": "ike proposal 10\n encryption-algorithm aes-256\n authentication-algorithm sha2-256\n dh group14\n sa duration 86400\nike peer IKE_PEER_SITE2SITE\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key %^%#__REDACTED__%^%#\nipsec proposal AES256-SHA\n encapsulation-mode tunnel\n esp encryption-algorithm aes-256\n esp authentication-algorithm sha2-256\nacl number 3000\n rule 5 permit ip source 10.0.0.0 0.0.0.255 destination 198.18.200.0 0.0.0.255\nipsec policy CMAP_SITE2SITE 10 isakmp\n security acl 3000\n ike-peer IKE_PEER_SITE2SITE\n proposal AES256-SHA\ninterface GigabitEthernet0/0/0\n description To-Remote-Site\n ip address 198.18.254.1 255.255.255.0\n ipsec policy CMAP_SITE2SITE\n undo shutdown\ninterface Tunnel0\n ip address 198.18.200.1 255.255.255.0\n tunnel-protocol gre\n source GigabitEthernet0/0/0\n destination 198.18.254.2\nip route-static 10.0.0.0 255.0.0.0 198.18.254.2",
-        "translated_excerpt": "ike proposal 10\n encryption-algorithm aes-256\n authentication-algorithm sha2-256\n dh group14\n sa duration 86400\nike peer IKE_PEER_SITE2SITE\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key %^%#__REDACTED__%^%#\nipsec proposal AES256-SHA\n encapsulation-mode tunnel\n esp encryption-algorith...",
+        "translated": "ike proposal 10\n encryption-algorithm aes-256\n authentication-algorithm sha2-256\n dh group14\n sa duration 86400\nquit\nike peer CMAP_SITE2SITE\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key __REDACTED__\nquit\nipsec proposal AES256-SHA\n encapsulation-mode tunnel\n esp authentication-algorithm sha2-256\n esp encryption-algorithm aes-256\nquit\nacl number 3000\n rule 5 permit ip source 10.0.0.0 0.0.0.255 destination 198.18.200.0 0.0.0.255\nquit\nipsec policy CMAP_SITE2SITE 10 isakmp\n security acl 3000\n ike-peer CMAP_SITE2SITE\n proposal AES256-SHA\nquit\ninterface GigabitEthernet0/0/0\n description To-Remote-Site\n ip address 198.18.254.1 255.255.255.0\n ipsec policy CMAP_SITE2SITE\n undo shutdown\ninterface Tunnel0\n ip address 198.18.200.1 255.255.255.0\n tunnel-protocol gre\n source GigabitEthernet0/0/0\n destination 198.18.254.2\nip route-static 10.0.0.0 255.0.0.0 198.18.254.2",
+        "translated_excerpt": "ike proposal 10\n encryption-algorithm aes-256\n authentication-algorithm sha2-256\n dh group14\n sa duration 86400\nquit\nike peer CMAP_SITE2SITE\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key __REDACTED__\nquit\nipsec proposal AES256-SHA\n encapsulation-mode tunnel\n esp authentication-algori...",
         "status_code": 200,
-        "elapsed": 32.30276155471802,
+        "elapsed": 30.705532550811768,
         "meta": {
           "level": "info",
           "deployable": false,
@@ -275,7 +262,7 @@
       "tier": "smoke",
       "status": "pass",
       "category": "",
-      "elapsed_ms": "23585",
+      "elapsed_ms": "18099",
       "errors": [],
       "meta": {
         "level": "warning",
@@ -284,10 +271,10 @@
         "capability_gaps": []
       },
       "detail": {
-        "translated": "interface GigabitEthernet0/0/0\n ip address 198.18.1.1 255.255.255.0\n ospf enable 1 area 0\n undo shutdown\ninterface GigabitEthernet0/0/1\n ip address 198.18.2.1 255.255.255.0\n ospf enable 1 area 0\n undo shutdown\ninterface LoopBack0\n ip address 198.18.255.1 255.255.255.255\n ospf enable 1 area 0\nospf 1 router-id 198.18.255.1\n area 0\n  network 198.18.1.0 0.0.0.255\n  network 198.18.2.0 0.0.0.255\n default-route-advertise always\nip route-static 0.0.0.0 0.0.0.0 198.18.254.1",
-        "translated_excerpt": "interface GigabitEthernet0/0/0\n ip address 198.18.1.1 255.255.255.0\n ospf enable 1 area 0\n undo shutdown\ninterface GigabitEthernet0/0/1\n ip address 198.18.2.1 255.255.255.0\n ospf enable 1 area 0\n undo shutdown\ninterface LoopBack0\n ip address 198.18.255.1 255.255.255.255\n ospf enable 1 area 0\nospf 1 ...",
+        "translated": "interface GigabitEthernet0/0/0\nip address 198.18.1.1 255.255.255.0\nospf enable 1 area 0\nundo shutdown\ninterface GigabitEthernet0/0/1\nip address 198.18.2.1 255.255.255.0\nospf enable 1 area 0\nundo shutdown\ninterface LoopBack0\nip address 198.18.255.1 255.255.255.255\nospf enable 1 area 0\nospf 1 router-id 198.18.255.1\narea 0.0.0.0\n network 198.18.1.0 0.0.0.255\n network 198.18.2.0 0.0.0.255\ndefault-route-advertise always\nip route-static 0.0.0.0 0.0.0.0 198.18.254.1",
+        "translated_excerpt": "interface GigabitEthernet0/0/0\nip address 198.18.1.1 255.255.255.0\nospf enable 1 area 0\nundo shutdown\ninterface GigabitEthernet0/0/1\nip address 198.18.2.1 255.255.255.0\nospf enable 1 area 0\nundo shutdown\ninterface LoopBack0\nip address 198.18.255.1 255.255.255.255\nospf enable 1 area 0\nospf 1 router-i...",
         "status_code": 200,
-        "elapsed": 23.58461618423462,
+        "elapsed": 18.09881854057312,
         "meta": {
           "level": "warning",
           "deployable": true,
@@ -304,7 +291,7 @@
       "tier": "core",
       "status": "pass",
       "category": "",
-      "elapsed_ms": "29",
+      "elapsed_ms": "66069",
       "errors": [],
       "meta": {
         "level": "warning",
@@ -313,10 +300,10 @@
         "capability_gaps": []
       },
       "detail": {
-        "translated": "hostname ROUTER_OSPF_BFD\ninterface GigabitEthernet0/0/0\n description Link-to-Core-1\n ip address 198.18.1.1 255.255.255.0\n ip ospf 1 area 0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface GigabitEthernet0/0/1\n description Link-to-Core-2\n ip address 198.18.2.1 255.255.255.0\n ip ospf 1 area 0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface Loopback0\n ip address 198.18.255.1 255.255.255.255\n ip ospf 1 area 0\nrouter ospf 1\n router-id 198.18.255.1\n network 198.18.0.0 0.0.255.255 area 0\n bfd all-interfaces\n! BFD configuration is applied at interface level\n! bfd interval 100 min_rx 100 multiplier 3",
-        "translated_excerpt": "hostname ROUTER_OSPF_BFD\ninterface GigabitEthernet0/0/0\n description Link-to-Core-1\n ip address 198.18.1.1 255.255.255.0\n ip ospf 1 area 0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface GigabitEthernet0/0/1\n description Link-to-Core-2\n ip address 198.18.2.1 255.255.255.0\n ip ospf 1...",
+        "translated": "hostname ROUTER_OSPF_BFD\ninterface GigabitEthernet0/0/0\n description Link-to-Core-1\n ip address 198.18.1.1 255.255.255.0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface GigabitEthernet0/0/1\n description Link-to-Core-2\n ip address 198.18.2.1 255.255.255.0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface LoopBack0\n ip address 198.18.255.1 255.255.255.255\nrouter ospf 1\n router-id 198.18.255.1\n bfd all-interfaces\n network 198.18.0.0 0.0.255.255 area 0\n! BFD is configured per-interface with 'bfd interval' command\n! and enabled globally for OSPF with 'bfd all-interfaces' under router ospf",
+        "translated_excerpt": "hostname ROUTER_OSPF_BFD\ninterface GigabitEthernet0/0/0\n description Link-to-Core-1\n ip address 198.18.1.1 255.255.255.0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface GigabitEthernet0/0/1\n description Link-to-Core-2\n ip address 198.18.2.1 255.255.255.0\n bfd interval 100 min_rx 100...",
         "status_code": 200,
-        "elapsed": 0.028601646423339844,
+        "elapsed": 66.06896138191223,
         "meta": {
           "level": "warning",
           "deployable": false,
@@ -333,7 +320,7 @@
       "tier": "core",
       "status": "pass",
       "category": "",
-      "elapsed_ms": "18777",
+      "elapsed_ms": "27554",
       "errors": [],
       "meta": {
         "level": "info",
@@ -342,10 +329,10 @@
         "capability_gaps": []
       },
       "detail": {
-        "translated": "ip vpn-instance CUSTOMER_A\n ipv4-family\n  route-distinguisher 65001:100\n  vpn-target 65001:100 export-extcommunity\n  vpn-target 65001:100 import-extcommunity\n\nip vpn-instance CUSTOMER_B\n ipv4-family\n  route-distinguisher 65001:200\n  vpn-target 65001:200 export-extcommunity\n  vpn-target 65001:200 import-extcommunity\ninterface GigabitEthernet0/0/0\n description To-Customer-A\n ip binding vpn-instance CUSTOMER_A\n ip address 198.18.10.1 255.255.255.0\n undo shutdown\n\ninterface GigabitEthernet0/0/1\n description To-Customer-B\n ip binding vpn-instance CUSTOMER_B\n ip address 198.18.20.1 255.255.255.0\n undo shutdown\n\ninterface GigabitEthernet0/0/2\n description To-Upstream\n ip address 198.18.254.1 255.255.255.0\n undo shutdown\nip route-static vpn-instance CUSTOMER_A 0.0.0.0 0.0.0.0 198.18.254.2\nip route-static vpn-instance CUSTOMER_B 0.0.0.0 0.0.0.0 198.18.254.2\nip route-static 198.18.254.0 255.255.255.0 198.18.254.2",
-        "translated_excerpt": "ip vpn-instance CUSTOMER_A\n ipv4-family\n  route-distinguisher 65001:100\n  vpn-target 65001:100 export-extcommunity\n  vpn-target 65001:100 import-extcommunity\n\nip vpn-instance CUSTOMER_B\n ipv4-family\n  route-distinguisher 65001:200\n  vpn-target 65001:200 export-extcommunity\n  vpn-target 65001:200 imp...",
+        "translated": "ip vpn-instance CUSTOMER_A\n ipv4-family\n  route-distinguisher 65001:100\n  vpn-target 65001:100 export-extcommunity\n  vpn-target 65001:100 import-extcommunity\nip vpn-instance CUSTOMER_B\n ipv4-family\n  route-distinguisher 65001:200\n  vpn-target 65001:200 export-extcommunity\n  vpn-target 65001:200 import-extcommunity\ninterface GigabitEthernet0/0/0\n description To-Customer-A\n ip binding vpn-instance CUSTOMER_A\n ip address 198.18.10.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description To-Customer-B\n ip binding vpn-instance CUSTOMER_B\n ip address 198.18.20.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/2\n description To-Upstream\n ip address 198.18.254.1 255.255.255.0\n undo shutdown\nip route-static vpn-instance CUSTOMER_A 0.0.0.0 0.0.0.0 198.18.254.2\nip route-static vpn-instance CUSTOMER_B 0.0.0.0 0.0.0.0 198.18.254.2\nip route-static 198.18.254.0 24 198.18.254.2",
+        "translated_excerpt": "ip vpn-instance CUSTOMER_A\n ipv4-family\n  route-distinguisher 65001:100\n  vpn-target 65001:100 export-extcommunity\n  vpn-target 65001:100 import-extcommunity\nip vpn-instance CUSTOMER_B\n ipv4-family\n  route-distinguisher 65001:200\n  vpn-target 65001:200 export-extcommunity\n  vpn-target 65001:200 impo...",
         "status_code": 200,
-        "elapsed": 18.776981830596924,
+        "elapsed": 27.554458618164062,
         "meta": {
           "level": "info",
           "deployable": true,
@@ -360,25 +347,23 @@
       "name": "corpus-sw-dhcp-acl-001",
       "path": "corpus/switching/corpus-sw-dhcp-acl-001.json",
       "tier": "full",
-      "status": "fail",
+      "status": "pass",
       "category": "",
-      "elapsed_ms": "22781",
-      "errors": [
-        "missing must_include: dhcp snooping trusted"
-      ],
+      "elapsed_ms": "22504",
+      "errors": [],
       "meta": {
-        "level": "info",
+        "level": "warning",
         "deployable": false,
         "manual_review_required": true,
         "capability_gaps": []
       },
       "detail": {
-        "translated": "dhcp snooping enable\nvlan 10\n dhcp snooping enable\nvlan 20\n dhcp snooping enable\nvlan 30\n dhcp snooping enable\ninterface GigabitEthernet0/0/1\n description Trunk-to-Core\n port link-type trunk\n port trunk allow-pass vlan 10 20 30 100\n undo shutdown\ninterface GigabitEthernet0/0/2\n description Access-VLAN10\n port link-type access\n port default vlan 10\n undo shutdown\ninterface GigabitEthernet0/0/3\n description Access-VLAN20\n port link-type access\n port default vlan 20\n undo shutdown\ninterface Vlanif100\n description Management\n ip address 198.18.100.1 255.255.255.0\n undo shutdown\nacl number 3000\n rule 5 deny tcp any any eq 4662\n rule 10 deny tcp any any eq 6699\n rule 15 permit ip any any\ninterface Vlanif10\n traffic-filter inbound acl 3000",
-        "translated_excerpt": "dhcp snooping enable\nvlan 10\n dhcp snooping enable\nvlan 20\n dhcp snooping enable\nvlan 30\n dhcp snooping enable\ninterface GigabitEthernet0/0/1\n description Trunk-to-Core\n port link-type trunk\n port trunk allow-pass vlan 10 20 30 100\n undo shutdown\ninterface GigabitEthernet0/0/2\n description Access-VL...",
+        "translated": "dhcp snooping enable\ndhcp snooping enable vlan 10\ndhcp snooping enable vlan 20\ndhcp snooping enable vlan 30\ndhcp snooping information option enable\nvlan batch 10 20 30 100\ninterface GigabitEthernet0/0/1\ndescription Trunk-to-Core\nport link-type trunk\nport trunk allow-pass vlan 10 20 30 100\ndhcp snooping trusted\nundo shutdown\ninterface GigabitEthernet0/0/2\ndescription Access-VLAN10\nport link-type access\nport default vlan 10\nundo shutdown\ninterface GigabitEthernet0/0/3\ndescription Access-VLAN20\nport link-type access\nport default vlan 20\nundo shutdown\ninterface Vlanif100\ndescription Management\nip address 198.18.100.1 255.255.255.0\nundo shutdown\nacl name BLOCK_P2P 3000\nrule 5 deny tcp destination-port eq 4662\nrule 10 deny tcp destination-port eq 6699\nrule 15 permit ip\ninterface Vlanif10\ntraffic-filter inbound acl name BLOCK_P2P",
+        "translated_excerpt": "dhcp snooping enable\ndhcp snooping enable vlan 10\ndhcp snooping enable vlan 20\ndhcp snooping enable vlan 30\ndhcp snooping information option enable\nvlan batch 10 20 30 100\ninterface GigabitEthernet0/0/1\ndescription Trunk-to-Core\nport link-type trunk\nport trunk allow-pass vlan 10 20 30 100\ndhcp snoop...",
         "status_code": 200,
-        "elapsed": 22.781046152114868,
+        "elapsed": 22.503968715667725,
         "meta": {
-          "level": "info",
+          "level": "warning",
           "deployable": false,
           "manual_review_required": true,
           "capability_gaps": []
@@ -391,12 +376,10 @@
       "name": "corpus-sw-lacp-001",
       "path": "corpus/switching/corpus-sw-lacp-001.json",
       "tier": "smoke",
-      "status": "fail",
+      "status": "pass",
       "category": "",
-      "elapsed_ms": "29875",
-      "errors": [
-        "contains forbidden: lacp-static"
-      ],
+      "elapsed_ms": "29909",
+      "errors": [],
       "meta": {
         "level": "info",
         "deployable": true,
@@ -404,10 +387,10 @@
         "capability_gaps": []
       },
       "detail": {
-        "translated": "hostname SWITCH_LACP\ninterface Port-channel1\n description Aggregated-Uplink\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,100\n channel-protocol lacp\n port-channel load-balance src-dst-ip\n! Manual review: LACP mode lacp-static maps to channel-group mode active on member interfaces\ninterface GigabitEthernet0/0/1\n channel-group 1 mode active\n no shutdown\n!\ninterface GigabitEthernet0/0/2\n channel-group 1 mode active\n no shutdown\n!\ninterface GigabitEthernet0/0/3\n channel-group 1 mode active\n no shutdown\ninterface GigabitEthernet0/0/10\n switchport mode access\n switchport access vlan 10\n spanning-tree portfast\n no shutdown\n!\ninterface GigabitEthernet0/0/11\n switchport mode access\n switchport access vlan 20\n spanning-tree portfast\n no shutdown\ninterface Vlan100\n ip address 198.18.100.1 255.255.255.0\n no shutdown",
-        "translated_excerpt": "hostname SWITCH_LACP\ninterface Port-channel1\n description Aggregated-Uplink\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,100\n channel-protocol lacp\n port-channel load-balance src-dst-ip\n! Manual review: LACP mode lacp-static maps to channel-gro...",
+        "translated": "hostname SWITCH_LACP\ninterface Port-channel1\n description Aggregated-Uplink\n switchport mode trunk\n switchport trunk allowed vlan 10 20 30 100\n no shutdown\ninterface GigabitEthernet0/0/1\n channel-group 1 mode active\n no shutdown\n!\ninterface GigabitEthernet0/0/2\n channel-group 1 mode active\n no shutdown\n!\ninterface GigabitEthernet0/0/3\n channel-group 1 mode active\n no shutdown\ninterface GigabitEthernet0/0/10\n switchport mode access\n switchport access vlan 10\n no shutdown\n!\ninterface GigabitEthernet0/0/11\n switchport mode access\n switchport access vlan 20\n no shutdown\ninterface Vlan100\n ip address 198.18.100.1 255.255.255.0\n no shutdown\nport-channel load-balance src-dst-ip",
+        "translated_excerpt": "hostname SWITCH_LACP\ninterface Port-channel1\n description Aggregated-Uplink\n switchport mode trunk\n switchport trunk allowed vlan 10 20 30 100\n no shutdown\ninterface GigabitEthernet0/0/1\n channel-group 1 mode active\n no shutdown\n!\ninterface GigabitEthernet0/0/2\n channel-group 1 mode active\n no shutd...",
         "status_code": 200,
-        "elapsed": 29.874956369400024,
+        "elapsed": 29.908545970916748,
         "meta": {
           "level": "info",
           "deployable": true,
@@ -422,10 +405,12 @@
       "name": "corpus-sw-mstp-001",
       "path": "corpus/switching/corpus-sw-mstp-001.json",
       "tier": "core",
-      "status": "pass",
+      "status": "fail",
       "category": "",
-      "elapsed_ms": "21991",
-      "errors": [],
+      "elapsed_ms": "23250",
+      "errors": [
+        "missing must_include: root primary"
+      ],
       "meta": {
         "level": "info",
         "deployable": true,
@@ -433,10 +418,10 @@
         "capability_gaps": []
       },
       "detail": {
-        "translated": "stp enable\nstp mode mstp\nstp region-configuration\n region-name LAB_MSTP\n revision-level 1\n instance 1 vlan 10 20\n instance 2 vlan 30 40\n active region-configuration\nstp instance 1 root primary\nstp instance 2 root secondary\ninterface GigabitEthernet0/0/1\n description Trunk-to-Core\n port link-type trunk\n port trunk allow-pass vlan 10 20 30 40 100\n stp edged-port disable\n undo shutdown\ninterface GigabitEthernet0/0/2\n description Access-VLAN10\n port link-type access\n port default vlan 10\n stp edged-port enable\n undo shutdown\ninterface GigabitEthernet0/0/3\n description Access-VLAN20\n port link-type access\n port default vlan 20\n stp edged-port enable\n undo shutdown\ninterface Vlanif100\n description Management\n ip address 198.18.100.1 255.255.255.0\n undo shutdown",
-        "translated_excerpt": "stp enable\nstp mode mstp\nstp region-configuration\n region-name LAB_MSTP\n revision-level 1\n instance 1 vlan 10 20\n instance 2 vlan 30 40\n active region-configuration\nstp instance 1 root primary\nstp instance 2 root secondary\ninterface GigabitEthernet0/0/1\n description Trunk-to-Core\n port link-type tru...",
+        "translated": "stp enable\nstp mode mstp\nstp region-configuration\nstp region-name LAB_MSTP\nstp revision-level 1\nstp instance 1 vlan 10 20\nstp instance 2 vlan 30 40\nactive region-configuration\nstp instance 1 priority 4096\nstp instance 2 priority 8192\ninterface GigabitEthernet0/0/1\ndescription Trunk-to-Core\nport link-type trunk\nport trunk allow-pass vlan 10 20 30 40 100\nstp edged-port disable\nundo shutdown\ninterface GigabitEthernet0/0/2\ndescription Access-VLAN10\nport link-type access\nport default vlan 10\nstp edged-port enable\nundo shutdown\ninterface GigabitEthernet0/0/3\ndescription Access-VLAN20\nport link-type access\nport default vlan 20\nstp edged-port enable\nundo shutdown\ninterface Vlanif100\ndescription Management\nip address 198.18.100.1 255.255.255.0\nundo shutdown\nvlan batch 10 20 30 40 100",
+        "translated_excerpt": "stp enable\nstp mode mstp\nstp region-configuration\nstp region-name LAB_MSTP\nstp revision-level 1\nstp instance 1 vlan 10 20\nstp instance 2 vlan 30 40\nactive region-configuration\nstp instance 1 priority 4096\nstp instance 2 priority 8192\ninterface GigabitEthernet0/0/1\ndescription Trunk-to-Core\nport link...",
         "status_code": 200,
-        "elapsed": 21.990759134292603,
+        "elapsed": 23.24970245361328,
         "meta": {
           "level": "info",
           "deployable": true,
@@ -451,30 +436,25 @@
       "name": "corpus-sw-stack-001",
       "path": "corpus/switching/corpus-sw-stack-001.json",
       "tier": "full",
-      "status": "fail",
+      "status": "pass",
       "category": "",
-      "elapsed_ms": "29845",
-      "errors": [
-        "contains forbidden: irf member",
-        "contains forbidden: irf-port",
-        "deployable expected=False got=True",
-        "expected manual_review_required=True but system returned False"
-      ],
+      "elapsed_ms": "23069",
+      "errors": [],
       "meta": {
-        "level": "info",
-        "deployable": true,
-        "manual_review_required": false,
+        "level": "fatal",
+        "deployable": false,
+        "manual_review_required": true,
         "capability_gaps": []
       },
       "detail": {
-        "translated": "hostname MEMBER-1\n! H3C IRF stacking is not directly equivalent to Cisco\n! H3C uses irf member/irf-port for stack formation\n! Cisco StackWise uses different mechanism (e.g., stackwise virtual)\n! MANUAL_REVIEW: Verify if target device supports IRF-like stacking\ninterface GigabitEthernet1/0/1\n description Stack-Port-1\n switchport mode access\n! irf-port configuration cannot be directly translated\ninterface GigabitEthernet1/0/2\n description Stack-Port-2\n switchport mode access\n! irf-port configuration cannot be directly translated\ninterface GigabitEthernet1/0/10\n description Access-VLAN10\n switchport mode access\n switchport access vlan 10\n spanning-tree portfast\ninterface GigabitEthernet1/0/11\n description Access-VLAN20\n switchport mode access\n switchport access vlan 20\n spanning-tree portfast\nvlan 10\n name VLAN0010\nvlan 20\n name VLAN0020",
-        "translated_excerpt": "hostname MEMBER-1\n! H3C IRF stacking is not directly equivalent to Cisco\n! H3C uses irf member/irf-port for stack formation\n! Cisco StackWise uses different mechanism (e.g., stackwise virtual)\n! MANUAL_REVIEW: Verify if target device supports IRF-like stacking\ninterface GigabitEthernet1/0/1\n descrip...",
+        "translated": "hostname MEMBER-1\ninterface GigabitEthernet1/0/10\ndescription Access-VLAN10\nswitchport mode access\nswitchport access vlan 10\n! MANUAL_REVIEW: Verify VLAN 10 exists on Cisco side\ninterface GigabitEthernet1/0/11\ndescription Access-VLAN20\nswitchport mode access\nswitchport access vlan 20\n! MANUAL_REVIEW: Verify VLAN 20 exists on Cisco side",
+        "translated_excerpt": "hostname MEMBER-1\ninterface GigabitEthernet1/0/10\ndescription Access-VLAN10\nswitchport mode access\nswitchport access vlan 10\n! MANUAL_REVIEW: Verify VLAN 10 exists on Cisco side\ninterface GigabitEthernet1/0/11\ndescription Access-VLAN20\nswitchport mode access\nswitchport access vlan 20\n! MANUAL_REVIEW...",
         "status_code": 200,
-        "elapsed": 29.844669103622437,
+        "elapsed": 23.069270610809326,
         "meta": {
-          "level": "info",
-          "deployable": true,
-          "manual_review_required": false,
+          "level": "fatal",
+          "deployable": false,
+          "manual_review_required": true,
           "capability_gaps": []
         },
         "validation": {},
@@ -487,7 +467,7 @@
       "tier": "smoke",
       "status": "pass",
       "category": "",
-      "elapsed_ms": "13652",
+      "elapsed_ms": "24431",
       "errors": [],
       "meta": {
         "level": "warning",
@@ -496,10 +476,10 @@
         "capability_gaps": []
       },
       "detail": {
-        "translated": "vlan 10\nvlan 20\nvlan 30\nvlan 100\ninterface Vlan100\n ip address 198.18.100.1 255.255.255.0\n!\ninterface GigabitEthernet0/0/1\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 10,20\n!\ninterface GigabitEthernet0/0/2\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 30\n!\ninterface GigabitEthernet0/0/10\n switchport mode access\n switchport access vlan 10\n!\ninterface GigabitEthernet0/0/11\n switchport mode access\n switchport access vlan 20\n!\ninterface GigabitEthernet0/0/12\n switchport mode access\n switchport access vlan 30",
-        "translated_excerpt": "vlan 10\nvlan 20\nvlan 30\nvlan 100\ninterface Vlan100\n ip address 198.18.100.1 255.255.255.0\n!\ninterface GigabitEthernet0/0/1\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 10,20\n!\ninterface GigabitEthernet0/0/2\n switchport trunk encapsulation dot1q\n switchp...",
+        "translated": "vlan 10\nvlan 20\nvlan 30\nvlan 100\ninterface Vlan100\nip address 198.18.100.1 255.255.255.0\nno shutdown\ninterface GigabitEthernet0/0/1\nswitchport trunk encapsulation dot1q\nswitchport mode trunk\nswitchport trunk allowed vlan 10,20\ninterface GigabitEthernet0/0/2\nswitchport trunk encapsulation dot1q\nswitchport mode trunk\nswitchport trunk allowed vlan 30\ninterface GigabitEthernet0/0/10\nswitchport mode access\nswitchport access vlan 10\ninterface GigabitEthernet0/0/11\nswitchport mode access\nswitchport access vlan 20\ninterface GigabitEthernet0/0/12\nswitchport mode access\nswitchport access vlan 30",
+        "translated_excerpt": "vlan 10\nvlan 20\nvlan 30\nvlan 100\ninterface Vlan100\nip address 198.18.100.1 255.255.255.0\nno shutdown\ninterface GigabitEthernet0/0/1\nswitchport trunk encapsulation dot1q\nswitchport mode trunk\nswitchport trunk allowed vlan 10,20\ninterface GigabitEthernet0/0/2\nswitchport trunk encapsulation dot1q\nswitc...",
         "status_code": 200,
-        "elapsed": 13.65186357498169,
+        "elapsed": 24.430848121643066,
         "meta": {
           "level": "warning",
           "deployable": true,

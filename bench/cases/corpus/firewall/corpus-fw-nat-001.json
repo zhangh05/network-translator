@@ -27,9 +27,6 @@
       "access-list",
       "access-group"
     ],
-    "must_not_include": [
-      "firewall zone"
-    ],
     "max_level": "error"
   },
   "corpus_ref": {

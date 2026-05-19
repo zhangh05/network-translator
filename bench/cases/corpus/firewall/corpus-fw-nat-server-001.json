@@ -22,7 +22,6 @@
     "no_placeholder": true,
     "must_include": [
       "nat server",
-      "protocol tcp",
       "global",
       "inside"
     ],

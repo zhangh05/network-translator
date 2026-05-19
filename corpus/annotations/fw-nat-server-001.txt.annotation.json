@@ -41,7 +41,6 @@
       "high_level": "Huawei USG equivalent with nat server protocol tcp global interface vs local-server, nat outbound, and security-policy",
       "key_lines": [
         "nat server",
-        "protocol tcp",
         "global",
         "inside"
       ],

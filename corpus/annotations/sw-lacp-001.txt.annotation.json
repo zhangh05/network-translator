@@ -55,9 +55,9 @@
     },
     "verification": {
       "static_pass": true,
-      "deployable": false,
-      "manual_review_required": true,
-      "notes": "LACP 翻译。LLM 有时会在注释中引用源端 H3C 关键字 lacp-static。平台验证器检测到残留后自动标记为不可部署。翻译结果需人工确认端口聚合模式。"
+      "deployable": true,
+      "manual_review_required": false,
+      "notes": "LACP 翻译。端口聚合模式映射（Huawei Eth-Trunk + lacp-static → Cisco Port-channel + channel-group mode active）。翻译结果干净无残留。"
     }
   },
   "benchmark": {

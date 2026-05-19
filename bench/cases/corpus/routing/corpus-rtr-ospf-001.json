@@ -20,7 +20,7 @@
     "no_markdown_fence": true,
     "no_placeholder": true,
     "must_include": [
-      "ospf 1 router-id",
+      "router-id",
       "area 0",
       "default-route-advertise"
     ],

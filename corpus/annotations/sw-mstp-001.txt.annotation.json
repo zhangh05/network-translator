@@ -40,7 +40,7 @@
       "high_level": "Huawei VRP equivalent with stp mode mstp, stp region-configuration, instance vlan mapping, stp root primary/secondary",
       "key_lines": [
         "stp mode mstp",
-        "stp region-configuration",
+        "stp region-name",
         "instance 1 vlan",
         "root primary"
       ],

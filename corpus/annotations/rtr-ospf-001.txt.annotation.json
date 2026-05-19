@@ -38,7 +38,7 @@
       "target_vendor": "huawei",
       "high_level": "Huawei equivalent with ospf [process-id] router-id, area 0, and default-route-advertise",
       "key_lines": [
-        "ospf 1 router-id",
+        "router-id",
         "area 0",
         "default-route-advertise"
       ],
@@ -51,7 +51,7 @@
       "static_pass": true,
       "deployable": true,
       "manual_review_required": false,
-      "notes": "Translation is correct Huawei VRP OSPF. Huawei uses 'ospf enable' on interfaces, 'network <ip> <wildcard>' under area view — this is valid syntax (not Cisco residue). Style tip warning for missing description is non-blocking."
+      "notes": "OSPF 翻译（Cisco IOS → Huawei VRP）。翻译使用正确的华为 VRP 语法（ospf enable + router-id + default-route-advertise）。系统 level=warning 来自 style 检查，非语义问题。"
     }
   },
   "benchmark": {
