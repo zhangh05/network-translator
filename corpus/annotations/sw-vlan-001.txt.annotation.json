@@ -1,0 +1,66 @@
+{
+  "id": "sw-vlan-001",
+  "title": "Huawei S5720 — VLAN trunk, access ports, and SVI",
+  "status": "annotated",
+
+  "source": {
+    "origin": "internal_lab",
+    "description": "Access switch with three user VLANs, two trunk uplinks, and a management SVI",
+    "collected_at": "2026-05-10",
+    "original_hash": "sha256:placeholder-for-original-hash"
+  },
+
+  "classification": {
+    "domain": "enterprise",
+    "vendor": "huawei",
+    "platform": "S5720",
+    "features": ["vlan", "interface"],
+    "risk": "low",
+    "tags": ["switching", "trunk", "access-port", "svi"]
+  },
+
+  "config": {
+    "sanitized_path": "sw-vlan-001.txt",
+    "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
+    "line_count": 29,
+    "description": "Basic VLAN configuration with two trunk uplinks (carrying different VLAN sets), three access ports, and an SVI for management.",
+    "known_issues": []
+  },
+
+  "annotation": {
+    "reviewed_by": "automated",
+    "reviewed_at": "2026-05-19",
+    "expected_translation": {
+      "target_vendor": "cisco",
+      "high_level": "Cisco IOS equivalent with interface range, switchport mode trunk/access, and interface vlan",
+      "key_lines": [
+        "interface Vlan100",
+        "switchport mode trunk",
+        "switchport trunk allowed vlan 10,20",
+        "switchport access vlan 10"
+      ],
+      "must_not_contain": [
+        "vlan batch",
+        "port link-type",
+        "port trunk allow-pass",
+        "port default vlan",
+        "interface Vlanif"
+      ]
+    },
+    "verification": {
+      "static_pass": true,
+      "deployable": true,
+      "manual_review_required": false,
+      "notes": ""
+    }
+  },
+
+  "benchmark": {
+    "case_generated": false,
+    "case_path": "",
+    "tier": "smoke",
+    "last_run": "",
+    "static_pass": false,
+    "live_pass": false
+  }
+}

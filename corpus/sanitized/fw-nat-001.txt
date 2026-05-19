@@ -1,0 +1,36 @@
+!
+! Huawei USG6600 — NAT source + NAT server
+! Source: internal-lab
+! Domain: firewall, Features: nat, security_policy
+!
+interface GigabitEthernet1/0/1
+ ip address 198.18.1.1 255.255.255.0
+ nat static enable
+!
+interface GigabitEthernet2/0/1
+ ip address 198.18.2.1 255.255.255.0
+!
+nat address-group GROUP1 198.18.10.1 198.18.10.254
+!
+nat source acl 2000 address-group GROUP1
+!
+nat server protocol tcp global 198.18.2.100 443 inside 10.0.0.10 443
+!
+acl number 2000
+ rule 10 permit source 10.0.0.0 0.0.0.255
+ rule 20 permit source 10.0.1.0 0.0.0.255
+!
+firewall zone trust
+ set priority 85
+ add interface GigabitEthernet1/0/1
+!
+firewall zone untrust
+ set priority 5
+ add interface GigabitEthernet2/0/1
+!
+security-policy
+ rule name trust-to-untrust
+  source-zone trust
+  destination-zone untrust
+  source-address 10.0.0.0 255.255.255.0
+  action permit

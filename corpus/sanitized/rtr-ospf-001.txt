@@ -1,0 +1,26 @@
+!
+! Cisco IOS-XE — OSPF with interface config
+! Source: public_doc
+! Domain: routing, Features: ospf, interface
+!
+interface GigabitEthernet0/0
+ ip address 198.18.1.1 255.255.255.0
+ ip ospf 1 area 0
+ no shutdown
+!
+interface GigabitEthernet0/1
+ ip address 198.18.2.1 255.255.255.0
+ ip ospf 1 area 0
+ no shutdown
+!
+interface Loopback0
+ ip address 198.18.255.1 255.255.255.255
+ ip ospf 1 area 0
+!
+router ospf 1
+ router-id 198.18.255.1
+ network 198.18.1.0 0.0.0.255 area 0
+ network 198.18.2.0 0.0.0.255 area 0
+ default-information originate
+!
+ip route 0.0.0.0 0.0.0.0 198.18.254.1

@@ -1,0 +1,69 @@
+{
+  "id": "fw-nat-001",
+  "title": "Huawei USG6600 — NAT source + NAT server with security policy",
+  "status": "annotated",
+
+  "source": {
+    "origin": "internal_lab",
+    "description": "Lab topology: trust zone (10.0.0.0/24, 10.0.1.0/24) to untrust with NAT source and NAT server for HTTPS",
+    "collected_at": "2026-05-01",
+    "original_hash": "sha256:placeholder-for-original-hash"
+  },
+
+  "classification": {
+    "domain": "enterprise",
+    "vendor": "huawei",
+    "platform": "USG6600",
+    "features": ["nat", "nat_source", "nat_server", "acl", "security_policy", "zone"],
+    "risk": "high",
+    "tags": ["firewall", "napt", "destination-nat"]
+  },
+
+  "config": {
+    "sanitized_path": "fw-nat-001.txt",
+    "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
+    "line_count": 36,
+    "description": "Huawei USG with source NAT (PAT via address-group) and destination NAT (static server mapping). Applies zone-based security policy to permit traffic. Source addresses are RFC 1918, public IPs are 198.18.0.0/15 (documentation range).",
+    "known_issues": [
+      "NAT server with protocol tcp must be translated to 'nat static' on Cisco ASA",
+      "zone-based security policy maps to Cisco ASA access-group per interface"
+    ]
+  },
+
+  "annotation": {
+    "reviewed_by": "automated",
+    "reviewed_at": "2026-05-19",
+    "expected_translation": {
+      "target_vendor": "cisco",
+      "high_level": "Cisco ASA equivalent with object/object-group NAT and access-list",
+      "key_lines": [
+        "nat (trust,untrust) source dynamic obj-10.0.0.0 obj-GROUP1",
+        "static (trust,untrust) tcp 198.18.2.100 443 obj-10.0.0.10 443",
+        "access-list trust-to-untrust extended permit ip 10.0.0.0 255.255.255.0 any"
+      ],
+      "must_not_contain": [
+        "nat static enable",
+        "nat address-group",
+        "nat source",
+        "nat server",
+        "firewall zone",
+        "security-policy"
+      ]
+    },
+    "verification": {
+      "static_pass": true,
+      "deployable": true,
+      "manual_review_required": false,
+      "notes": "High-risk features (nat, security_policy, acl) all present in output"
+    }
+  },
+
+  "benchmark": {
+    "case_generated": false,
+    "case_path": "",
+    "tier": "full",
+    "last_run": "",
+    "static_pass": false,
+    "live_pass": false
+  }
+}

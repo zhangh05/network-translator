@@ -1,0 +1,63 @@
+{
+  "id": "rtr-ospf-001",
+  "title": "Cisco IOS-XE — OSPF single-area with default route",
+  "status": "annotated",
+
+  "source": {
+    "origin": "public_doc",
+    "description": "Standard OSPF single-area configuration with two upstream interfaces, loopback router-id, and default-information originate",
+    "collected_at": "2026-04-15",
+    "original_hash": "sha256:placeholder-for-original-hash"
+  },
+
+  "classification": {
+    "domain": "enterprise",
+    "vendor": "cisco",
+    "platform": "IOS-XE",
+    "features": ["ospf", "interface", "static_route"],
+    "risk": "medium",
+    "tags": ["routing", "single-area", "default-route"]
+  },
+
+  "config": {
+    "sanitized_path": "rtr-ospf-001.txt",
+    "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
+    "line_count": 26,
+    "description": "Single-area OSPF with two interfaces in area 0, loopback router-id, default route via upstream, and default-information originate. Clean, well-structured config suitable for basic OSPF interoperability testing.",
+    "known_issues": []
+  },
+
+  "annotation": {
+    "reviewed_by": "automated",
+    "reviewed_at": "2026-05-19",
+    "expected_translation": {
+      "target_vendor": "huawei",
+      "high_level": "Huawei equivalent with ospf [process-id] router-id, area 0, and default-route-advertise",
+      "key_lines": [
+        "ospf 1 router-id 198.18.255.1",
+        "area 0.0.0.0",
+        "default-route-advertise"
+      ],
+      "must_not_contain": [
+        "router ospf",
+        "network 198.18",
+        "ip ospf 1 area"
+      ]
+    },
+    "verification": {
+      "static_pass": true,
+      "deployable": true,
+      "manual_review_required": false,
+      "notes": ""
+    }
+  },
+
+  "benchmark": {
+    "case_generated": false,
+    "case_path": "",
+    "tier": "smoke",
+    "last_run": "",
+    "static_pass": false,
+    "live_pass": false
+  }
+}

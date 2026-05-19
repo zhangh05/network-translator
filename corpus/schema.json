@@ -1,0 +1,69 @@
+{
+  "$schema": "corpus-schema-v1",
+  "description": "Schema for corpus annotation entries. Each file in annotations/ follows this structure.",
+
+  "entry": {
+    "id": "unique identifier, e.g. 'fw-nat-001'",
+    "title": "short description",
+    "status": "draft | annotated | verified | archived | bench_generated",
+
+    "source": {
+      "origin": "customer | public_doc | internal_lab | synthentic | bench_migration",
+      "description": "where this config came from",
+      "collected_at": "ISO date when the original was collected",
+      "original_hash": "SHA-256 of the original (pre-sanitization) config, for integrity without storing raw"
+    },
+
+    "classification": {
+      "domain": "enterprise | datacenter | service_provider | campus",
+      "vendor": "cisco | huawei | h3c | ruijie | hillstone | topsec | dbappsecurity | dptech",
+      "platform": "specific platform name, e.g. 'CE12800', 'ASA 5525-X', 'S5720'",
+      "os_version": "optional software version",
+      "features": [
+        "list of features covered, matching registry.yaml feature names"
+      ],
+      "risk": "high | medium | low",
+      "tags": ["optional", "freeform", "tags"]
+    },
+
+    "config": {
+      "sanitized_path": "relative path under corpus/sanitized/, e.g. 'fw-nat-001.txt'",
+      "sanitized_hash": "SHA-256 of the sanitized file",
+      "line_count": 42,
+      "description": "what this config does in natural language",
+      "known_issues": [
+        "optional list of known quirks or limitations"
+      ]
+    },
+
+    "annotation": {
+      "reviewed_by": "reviewer name or role",
+      "reviewed_at": "ISO date",
+      "expected_translation": {
+        "target_vendor": "cisco",
+        "high_level": "what the translated config should look like",
+        "key_lines": [
+          "critical config lines that must appear in the translation"
+        ],
+        "must_not_contain": [
+          "patterns that should never appear (e.g., source-vendor commands)"
+        ]
+      },
+      "verification": {
+        "static_pass": true,
+        "deployable": true | false,
+        "manual_review_required": true | false,
+        "notes": "any additional verification notes"
+      }
+    },
+
+    "benchmark": {
+      "case_generated": true | false,
+      "case_path": "relative path under bench/cases/ if generated",
+      "tier": "smoke | core | full",
+      "last_run": "ISO date",
+      "static_pass": true | false,
+      "live_pass": true | false
+    }
+  }
+}

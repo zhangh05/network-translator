@@ -23,6 +23,9 @@ cache_data/
 knowledge/.semantic_cache/
 knowledge_data/.semantic_cache/
 
+# Corpus — raw samples never committed
+corpus/samples/
+
 # Tool and editor noise
 .claude/settings.local.json
 .DS_Store
