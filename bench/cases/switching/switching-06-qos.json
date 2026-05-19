@@ -1,0 +1,31 @@
+{
+  "name": "huawei-switching-qos-to-h3c",
+  "source_domain": "switching",
+  "source_vendor": "huawei",
+  "source_platform": "vrp",
+  "target_domain": "switching",
+  "target_vendor": "h3c",
+  "target_platform": "comware",
+  "features": [
+    "qos"
+  ],
+  "risk": "medium",
+  "source_config": "#\ntraffic classifier VIDEO operator or\n if-match dscp af41\n#\ntraffic behavior VIDEO-QOS\n remark dscp af41\n car cir 10000 pir 20000 cbs 2000000 pbs 4000000\n#\ntraffic policy SWITCH-POLICY\n classifier VIDEO behavior VIDEO-QOS\n#\ninterface GigabitEthernet0/0/1\n traffic-policy SWITCH-POLICY inbound\n#",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "traffic classifier",
+      "traffic behavior",
+      "traffic policy",
+      "car cir"
+    ],
+    "must_not_include": [
+      "class-map",
+      "policy-map"
+    ],
+    "max_level": "warning"
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "name": "cisco-switching-acl-to-huawei",
+  "source_domain": "switching",
+  "source_vendor": "cisco",
+  "source_platform": "ios",
+  "target_domain": "switching",
+  "target_vendor": "huawei",
+  "target_platform": "vrp",
+  "features": [
+    "acl"
+  ],
+  "risk": "medium",
+  "source_config": "!\naccess-list 101 permit tcp 192.168.1.0 0.0.0.255 any eq 80\naccess-list 101 deny ip 192.168.2.0 0.0.0.255 any\n!\ninterface GigabitEthernet0/1\n ip access-group 101 in\n!",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "acl",
+      "traffic-filter"
+    ],
+    "must_not_include": [
+      "ip access-group",
+      "access-list 101"
+    ],
+    "max_level": "warning"
+  }
+}

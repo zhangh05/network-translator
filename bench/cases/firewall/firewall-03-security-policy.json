@@ -1,0 +1,33 @@
+{
+  "name": "cisco-firewall-security-policy-to-h3c",
+  "source_domain": "firewall",
+  "source_vendor": "cisco",
+  "source_platform": "asa",
+  "target_domain": "firewall",
+  "target_vendor": "h3c",
+  "target_platform": "comware",
+  "features": [
+    "security_policy",
+    "address_object",
+    "service_object"
+  ],
+  "risk": "high",
+  "source_config": "!\nobject-group network LAN\n network-object 192.168.1.0 255.255.255.0\n!\nobject-group network DMZ\n network-object 10.0.0.0 255.255.255.0\n!\nobject-group service WEB\n service-object tcp-udp destination eq 80\n service-object tcp destination eq 443\n!\naccess-list GLOBAL extended permit tcp object-group LAN object-group DMZ object-group WEB\naccess-list GLOBAL extended deny ip any any\n!\naccess-group GLOBAL in interface inside\n!",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": true,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "security-policy",
+      "rule",
+      "source-zone",
+      "destination-zone"
+    ],
+    "must_not_include": [
+      "access-list GLOBAL",
+      "object-group network"
+    ],
+    "max_level": "warning"
+  }
+}

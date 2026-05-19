@@ -1,0 +1,30 @@
+{
+  "name": "cisco-routing-ospf-to-huawei",
+  "source_domain": "routing",
+  "source_vendor": "cisco",
+  "source_platform": "ios",
+  "target_domain": "routing",
+  "target_vendor": "huawei",
+  "target_platform": "vrp",
+  "features": [
+    "ospf"
+  ],
+  "risk": "medium",
+  "source_config": "!\ninterface GigabitEthernet0/0\n ip address 192.168.1.1 255.255.255.0\n!\nrouter ospf 100\n router-id 1.1.1.1\n network 192.168.1.0 0.0.0.255 area 0\n network 10.0.0.0 0.0.0.255 area 1\n default-information originate always\n!",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "ospf",
+      "area",
+      "default-route-advertise"
+    ],
+    "must_not_include": [
+      "network 192",
+      "wildcard"
+    ],
+    "max_level": "info"
+  }
+}

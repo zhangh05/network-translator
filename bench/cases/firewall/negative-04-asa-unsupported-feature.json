@@ -1,0 +1,31 @@
+{
+  "name": "cisco-asa-unsupported-to-huawei",
+  "source_domain": "firewall",
+  "source_vendor": "cisco",
+  "source_platform": "asa",
+  "target_domain": "firewall",
+  "target_vendor": "huawei",
+  "target_platform": "vrp",
+  "features": [
+    "security_policy",
+    "nat"
+  ],
+  "risk": "high",
+  "source_config": "!\nobject-group network INSIDE\n network-object 192.168.1.0 255.255.255.0\n!\nnat (inside,outside) source dynamic INSIDE interface\n!\naccess-list GLOBAL extended permit icmp any any echo-reply\n!\naccess-group GLOBAL in interface outside\n!",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": true,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "MANUAL_REVIEW"
+    ],
+    "must_not_include": [
+      "<OBJECT",
+      "TODO",
+      "PLACEHOLDER",
+      "<"
+    ],
+    "max_level": "warning"
+  }
+}

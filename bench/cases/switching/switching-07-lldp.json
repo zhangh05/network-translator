@@ -1,0 +1,28 @@
+{
+  "name": "cisco-switching-lldp-to-huawei",
+  "source_domain": "switching",
+  "source_vendor": "cisco",
+  "source_platform": "ios",
+  "target_domain": "switching",
+  "target_vendor": "huawei",
+  "target_platform": "vrp",
+  "features": [
+    "lldp"
+  ],
+  "risk": "low",
+  "source_config": "!\nlldp run\nlldp timer 30\nlldp holdtime 120\nlldp reinit 2\n!\ninterface GigabitEthernet0/1\n lldp transmit\n lldp receive\n!\ninterface GigabitEthernet0/2\n no lldp transmit\n no lldp receive\n!",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "lldp enable",
+      "lldp"
+    ],
+    "must_not_include": [
+      "lldp reinit"
+    ],
+    "max_level": "info"
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "h3c-firewall-nat-server-to-huawei",
+  "source_domain": "firewall",
+  "source_vendor": "h3c",
+  "source_platform": "comware",
+  "target_domain": "firewall",
+  "target_vendor": "huawei",
+  "target_platform": "vrp",
+  "features": [
+    "nat",
+    "zone",
+    "address_object"
+  ],
+  "risk": "high",
+  "source_config": "#\ninterface GigabitEthernet1/0/1\n port link-mode route\n ip address 203.0.113.1 255.255.255.0\n nat server protocol tcp global 203.0.113.10 443 inside 10.0.0.10 443\n nat server protocol tcp global 203.0.113.10 80 inside 10.0.0.10 80\n#\nsecurity-zone name Untrust\n import interface GigabitEthernet1/0/1\n#\nsecurity-zone name Trust\n import interface GigabitEthernet1/0/2\n#\nobject network WEB-SERVER\n ip address 10.0.0.10 255.255.255.255\n#",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": true,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "nat server",
+      "global",
+      "inside"
+    ],
+    "must_not_include": [
+      "object network",
+      "security-zone"
+    ],
+    "max_level": "warning"
+  }
+}

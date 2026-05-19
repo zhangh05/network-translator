@@ -1,0 +1,243 @@
+# Feature Registry
+# 注册所有受支持的配置特性及其元数据
+# 未列出的 feature 默认为 legacy（无 domain 绑定）
+
+features:
+  # ── P0: 第一批 ──────────────────────────────────────────
+  system:
+    domains: [routing, switching, firewall]
+    priority: p0
+    risk: low
+
+  interface:
+    domains: [routing, switching, firewall]
+    priority: p0
+    risk: medium
+
+  static_route:
+    domains: [routing, firewall]
+    priority: p0
+    risk: low
+
+  ospf:
+    domains: [routing, firewall]
+    priority: p0
+    risk: medium
+
+  bgp:
+    domains: [routing, firewall]
+    priority: p0
+    risk: medium
+
+  isis:
+    domains: [routing]
+    priority: p0
+    risk: medium
+
+  vlan:
+    domains: [switching, firewall]
+    priority: p0
+    risk: low
+
+  trunk:
+    domains: [switching]
+    priority: p0
+    risk: low
+
+  stp:
+    domains: [switching]
+    priority: p0
+    risk: medium
+    analyzer: stp
+
+  lacp:
+    domains: [switching]
+    priority: p0
+    risk: low
+    analyzer: lacp
+
+  acl:
+    domains: [routing, switching, firewall]
+    priority: p0
+    risk: high
+    analyzer: acl
+
+  prefix_list:
+    domains: [routing]
+    priority: p0
+    risk: low
+
+  route_policy:
+    domains: [routing]
+    priority: p0
+    risk: medium
+    analyzer: route_policy
+
+  nat:
+    domains: [routing, firewall]
+    priority: p0
+    risk: high
+    analyzer: nat
+
+  security_policy:
+    domains: [firewall]
+    priority: p0
+    risk: high
+    analyzer: security_policy
+
+  address_object:
+    domains: [firewall]
+    priority: p0
+    risk: low
+    analyzer: address_object
+
+  service_object:
+    domains: [firewall]
+    priority: p0
+    risk: low
+    analyzer: address_object
+
+  zone:
+    domains: [firewall]
+    priority: p0
+    risk: low
+
+  ipsec:
+    domains: [routing, firewall]
+    priority: p0
+    risk: high
+    analyzer: ipsec
+
+  dhcp:
+    domains: [routing, switching]
+    priority: p0
+    risk: low
+    analyzer: dhcp
+
+  vrrp:
+    domains: [routing, switching]
+    priority: p0
+    risk: medium
+    analyzer: vrrp
+
+  # ── P1: 第二批 ──────────────────────────────────────────
+  aaa:
+    domains: [routing, switching, firewall]
+    priority: p1
+    risk: medium
+
+  local_user:
+    domains: [routing, switching, firewall]
+    priority: p1
+    risk: low
+
+  snmp:
+    domains: [routing, switching, firewall]
+    priority: p1
+    risk: low
+
+  ntp:
+    domains: [routing, switching, firewall]
+    priority: p1
+    risk: low
+
+  syslog:
+    domains: [routing, switching, firewall]
+    priority: p1
+    risk: low
+
+  ssh:
+    domains: [routing, switching, firewall]
+    priority: p1
+    risk: low
+
+  lldp:
+    domains: [routing, switching]
+    priority: p1
+    risk: low
+
+  cdp:
+    domains: [routing, switching]
+    priority: p1
+    risk: low
+
+  qos:
+    domains: [routing, switching]
+    priority: p1
+    risk: medium
+    analyzer: qos
+
+  pbr:
+    domains: [routing]
+    priority: p1
+    risk: medium
+
+  multicast:
+    domains: [routing]
+    priority: p1
+    risk: medium
+
+  bfd:
+    domains: [routing]
+    priority: p1
+    risk: medium
+    analyzer: bfd
+
+  vrf:
+    domains: [routing]
+    priority: p1
+    risk: medium
+    analyzer: vrf
+
+  tunnel:
+    domains: [routing]
+    priority: p1
+    risk: medium
+    analyzer: tunnel
+
+  # ── P2: 高级场景 ────────────────────────────────────────
+  vxlan:
+    domains: [switching]
+    priority: p2
+    risk: high
+
+  evpn:
+    domains: [switching]
+    priority: p2
+    risk: high
+
+  mpls:
+    domains: [routing]
+    priority: p2
+    risk: high
+
+  port_channel:
+    domains: [routing, switching]
+    priority: p1
+    risk: low
+
+  ipv6:
+    domains: [routing, switching, firewall]
+    priority: p1
+    risk: medium
+
+  # capability_map 遗留特征（有知识无注册）
+  dcn:
+    domains: [routing]
+    priority: p2
+    risk: medium
+
+  irf:
+    domains: [switching]
+    priority: p2
+    risk: medium
+
+  etherchannel:
+    domains: [switching]
+    priority: p1
+    risk: low
+
+  poe:
+    domains: [switching]
+    priority: p1
+    risk: low

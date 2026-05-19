@@ -1,0 +1,31 @@
+{
+  "name": "cisco-routing-acl-pbr-to-h3c",
+  "source_domain": "routing",
+  "source_vendor": "cisco",
+  "source_platform": "ios",
+  "target_domain": "routing",
+  "target_vendor": "h3c",
+  "target_platform": "comware",
+  "features": [
+    "acl",
+    "pbr"
+  ],
+  "risk": "medium",
+  "source_config": "!\ninterface GigabitEthernet0/0\n ip address 10.0.0.1 255.255.255.0\n!\nip access-list extended TRAFFIC-MATCH\n permit ip 192.168.1.0 0.0.0.255 any\n!\nroute-map PBR permit 10\n match ip address TRAFFIC-MATCH\n set ip next-hop 10.0.0.254\n!\ninterface GigabitEthernet0/0\n ip policy route-map PBR\n!",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "policy-based-route",
+      "if-match acl",
+      "apply ip-address next-hop"
+    ],
+    "must_not_include": [
+      "route-map",
+      "ip policy route-map"
+    ],
+    "max_level": "warning"
+  }
+}

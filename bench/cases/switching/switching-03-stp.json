@@ -1,0 +1,32 @@
+{
+  "name": "huawei-switching-stp-to-cisco",
+  "source_domain": "switching",
+  "source_vendor": "huawei",
+  "source_platform": "vrp",
+  "target_domain": "switching",
+  "target_vendor": "cisco",
+  "target_platform": "ios",
+  "features": [
+    "stp"
+  ],
+  "risk": "medium",
+  "source_config": "#\nstp enable\nstp mode mstp\nstp region-configuration\n region-name CORE\n revision-level 1\n instance 1 vlan 10 20\n instance 2 vlan 30 40\n active region-configuration\n#\ninterface GigabitEthernet0/0/1\n stp instance 1 priority 4096\n#",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "spanning-tree",
+      "mst",
+      "instance",
+      "vlan"
+    ],
+    "must_not_include": [
+      "stp enable",
+      "stp mode",
+      "region-configuration"
+    ],
+    "max_level": "warning"
+  }
+}

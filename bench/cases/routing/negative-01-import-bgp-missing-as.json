@@ -1,0 +1,31 @@
+{
+  "name": "h3c-routing-import-bgp-missing-as-to-cisco",
+  "source_domain": "routing",
+  "source_vendor": "h3c",
+  "source_platform": "comware",
+  "target_domain": "routing",
+  "target_vendor": "cisco",
+  "target_platform": "ios",
+  "features": [
+    "bgp",
+    "ospf"
+  ],
+  "risk": "high",
+  "source_config": "#\nospf 1\n import-route bgp\n#\nbgp 65001\n peer 10.0.0.2 as-number 65002\n#",
+  "expected": {
+    "deployable": false,
+    "manual_review_required": true,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "MANUAL_REVIEW"
+    ],
+    "must_not_include": [
+      "<AS",
+      "TODO",
+      "PLACEHOLDER",
+      "<"
+    ],
+    "max_level": "warning"
+  }
+}

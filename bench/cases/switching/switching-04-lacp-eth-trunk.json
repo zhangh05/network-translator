@@ -1,0 +1,30 @@
+{
+  "name": "h3c-switching-lacp-to-cisco",
+  "source_domain": "switching",
+  "source_vendor": "h3c",
+  "source_platform": "comware",
+  "target_domain": "switching",
+  "target_vendor": "cisco",
+  "target_platform": "ios",
+  "features": [
+    "lacp"
+  ],
+  "risk": "low",
+  "source_config": "#\ninterface Bridge-Aggregation1\n port link-type trunk\n port trunk permit vlan 10 20 30\n#\ninterface GigabitEthernet1/0/1\n port link-aggregation group 1\n#\ninterface GigabitEthernet1/0/2\n port link-aggregation group 1\n#",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "channel-group",
+      "interface Port-channel",
+      "switchport mode trunk"
+    ],
+    "must_not_include": [
+      "Bridge-Aggregation",
+      "link-aggregation"
+    ],
+    "max_level": "info"
+  }
+}

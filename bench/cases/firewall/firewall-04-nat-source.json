@@ -1,0 +1,31 @@
+{
+  "name": "huawei-firewall-nat-source-to-cisco",
+  "source_domain": "firewall",
+  "source_vendor": "huawei",
+  "source_platform": "vrp",
+  "target_domain": "firewall",
+  "target_vendor": "cisco",
+  "target_platform": "asa",
+  "features": [
+    "nat"
+  ],
+  "risk": "high",
+  "source_config": "#\nnat address-group NAT-POOL 0\n mode pat\n section 0 203.0.113.10 203.0.113.20\n#\nnat policy NAT-POLICY\n rule name SOURCE-NAT\n  source-zone trust\n  destination-zone untrust\n  source-address 192.168.1.0 mask 255.255.255.0\n  action source-nat address-group NAT-POOL\n#",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": true,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "nat",
+      "MANUAL_REVIEW"
+    ],
+    "must_not_include": [
+      "nat address-group",
+      "nat policy",
+      "TODO",
+      "PLACEHOLDER"
+    ],
+    "max_level": "warning"
+  }
+}

@@ -1,0 +1,8870 @@
+[
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "acl",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "acl",
+    "validator": "generic",
+    "tests": {
+      "unit": 8,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "address_object",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "bgp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "interface",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 9
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "ipsec",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "ipsec",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "nat",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "nat",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "ospf",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "security_policy",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "security_policy",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "service_object",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "static_route",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "system",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "vlan",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 2
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "zone",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 2,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "aaa",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "ipv6",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "local_user",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "ntp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "snmp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "ssh",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platforms": [
+      "asa",
+      "ftd"
+    ],
+    "feature": "syslog",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "acl",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "acl",
+    "validator": "generic",
+    "tests": {
+      "unit": 8,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "address_object",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "bgp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "interface",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 9
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "ipsec",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "ipsec",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "nat",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "nat",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "ospf",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "security_policy",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "security_policy",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "service_object",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "static_route",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "system",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "vlan",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 2
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "zone",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 2,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "aaa",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "ipv6",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "local_user",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "ntp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "snmp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "ssh",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dbappsecurity",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "syslog",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "acl",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "acl",
+    "validator": "generic",
+    "tests": {
+      "unit": 8,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "address_object",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "bgp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "interface",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 9
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "ipsec",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "ipsec",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "nat",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "nat",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "ospf",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "security_policy",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "security_policy",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "service_object",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "static_route",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "system",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "vlan",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 2
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "zone",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 2,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "aaa",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "ipv6",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "local_user",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "ntp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "snmp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "ssh",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "dptech",
+    "platforms": [
+      "unknown"
+    ],
+    "feature": "syslog",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "acl",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "acl",
+    "validator": "generic",
+    "tests": {
+      "unit": 8,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "address_object",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "bgp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "interface",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 9
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "ipsec",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "ipsec",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "nat",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "nat",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "ospf",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "security_policy",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "security_policy",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "service_object",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "static_route",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "system",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "vlan",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 2
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "zone",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 2,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "aaa",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "ipv6",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "local_user",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "ntp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "snmp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "ssh",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "h3c",
+    "platforms": [
+      "secpath"
+    ],
+    "feature": "syslog",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "acl",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "acl",
+    "validator": "generic",
+    "tests": {
+      "unit": 8,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "address_object",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "bgp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "interface",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 9
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "ipsec",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "ipsec",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "nat",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "nat",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "ospf",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "security_policy",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "security_policy",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "service_object",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "static_route",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "system",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "vlan",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 2
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "zone",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 2,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "aaa",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "ipv6",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "local_user",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "ntp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "snmp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "ssh",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "hillstone",
+    "platforms": [
+      "stoneos"
+    ],
+    "feature": "syslog",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "acl",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "acl",
+    "validator": "generic",
+    "tests": {
+      "unit": 8,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "address_object",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "bgp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "interface",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 9
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "ipsec",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "ipsec",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "nat",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "nat",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "ospf",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "security_policy",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "security_policy",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "service_object",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "static_route",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "system",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "vlan",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 2
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "zone",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 2,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "aaa",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "ipv6",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "local_user",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "ntp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "snmp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "ssh",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platforms": [
+      "usg"
+    ],
+    "feature": "syslog",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "acl",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "acl",
+    "validator": "generic",
+    "tests": {
+      "unit": 8,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "address_object",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "bgp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "interface",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 9
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "ipsec",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "ipsec",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "nat",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "nat",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "ospf",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "security_policy",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "security_policy",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "service_object",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "static_route",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "system",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "vlan",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 2
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "zone",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 2,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "aaa",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "ipv6",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "local_user",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "ntp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "snmp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "ssh",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "firewall",
+    "vendor": "topsec",
+    "platforms": [
+      "topsec-os"
+    ],
+    "feature": "syslog",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "acl",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "acl",
+    "validator": "generic",
+    "tests": {
+      "unit": 8,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "bgp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "dhcp",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "interface",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 9
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "ipsec",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "ipsec",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "isis",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "nat",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "nat",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "ospf",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "prefix_list",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "route_policy",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "route_policy",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "static_route",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "system",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "vrrp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "aaa",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "bfd",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "cdp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "ipv6",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "lldp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "local_user",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "multicast",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "ntp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "pbr",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "port_channel",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "qos",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "qos",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "snmp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "ssh",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "syslog",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "tunnel",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "vrf",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "dcn",
+    "priority": "p2",
+    "risk": "medium",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unsupported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "mpls",
+    "priority": "p2",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "acl",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "acl",
+    "validator": "generic",
+    "tests": {
+      "unit": 8,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "bgp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "dhcp",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "interface",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 9
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "ipsec",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "ipsec",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "isis",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "nat",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "nat",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "ospf",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "prefix_list",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "route_policy",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "route_policy",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "static_route",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "system",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "vrrp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "aaa",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "bfd",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "cdp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "unsupported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "ipv6",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "lldp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "local_user",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "multicast",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "ntp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "pbr",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "port_channel",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "qos",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "qos",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "snmp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "ssh",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "syslog",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "tunnel",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "vrf",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "dcn",
+    "priority": "p2",
+    "risk": "medium",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unsupported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "mpls",
+    "priority": "p2",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "acl",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "acl",
+    "validator": "generic",
+    "tests": {
+      "unit": 8,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "bgp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "dhcp",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "interface",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 9
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "ipsec",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "ipsec",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "isis",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "nat",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "nat",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "ospf",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "prefix_list",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "route_policy",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "route_policy",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "static_route",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "system",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "vrrp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "aaa",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "bfd",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "cdp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "unsupported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "ipv6",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "lldp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "local_user",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "multicast",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "ntp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "pbr",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "port_channel",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "qos",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "qos",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "snmp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "ssh",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "syslog",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "tunnel",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "vrf",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "dcn",
+    "priority": "p2",
+    "risk": "medium",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "mpls",
+    "priority": "p2",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "acl",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "acl",
+    "validator": "generic",
+    "tests": {
+      "unit": 8,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "bgp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "partial",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "dhcp",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "interface",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 9
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "ipsec",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "ipsec",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "isis",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "nat",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "nat",
+    "validator": "generic",
+    "tests": {
+      "unit": 3,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "ospf",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "prefix_list",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "route_policy",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "route_policy",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "static_route",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "system",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "vrrp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "aaa",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "bfd",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "cdp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "ipv6",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "lldp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "local_user",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "multicast",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "ntp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "pbr",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "port_channel",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "qos",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "qos",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "snmp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "ssh",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "syslog",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "tunnel",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "vrf",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "dcn",
+    "priority": "p2",
+    "risk": "medium",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "missing"
+  },
+  {
+    "domain": "routing",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "mpls",
+    "priority": "p2",
+    "risk": "high",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "missing"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "acl",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "acl",
+    "validator": "generic",
+    "tests": {
+      "unit": 8,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "dhcp",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "interface",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 9
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "lacp",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "stp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "system",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "trunk",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "vlan",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 2
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "vrrp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "aaa",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "cdp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "etherchannel",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "ipv6",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "lldp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "local_user",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "ntp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "poe",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "port_channel",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "qos",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "qos",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "snmp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "ssh",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "syslog",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "evpn",
+    "priority": "p2",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "irf",
+    "priority": "p2",
+    "risk": "medium",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unsupported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platforms": [
+      "ios",
+      "ios-xe",
+      "nx-os"
+    ],
+    "feature": "vxlan",
+    "priority": "p2",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "acl",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "acl",
+    "validator": "generic",
+    "tests": {
+      "unit": 8,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "dhcp",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "interface",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 9
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "lacp",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "stp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "system",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "trunk",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "vlan",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 2
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "vrrp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "aaa",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "cdp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "unsupported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "etherchannel",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "partial",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "ipv6",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "lldp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "local_user",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "ntp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "poe",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "port_channel",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "qos",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "qos",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "snmp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "ssh",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "syslog",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "evpn",
+    "priority": "p2",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "irf",
+    "priority": "p2",
+    "risk": "medium",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platforms": [
+      "comware"
+    ],
+    "feature": "vxlan",
+    "priority": "p2",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "acl",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "acl",
+    "validator": "generic",
+    "tests": {
+      "unit": 8,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "dhcp",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "interface",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 9
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "lacp",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "stp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "system",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "trunk",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "vlan",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 2
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "vrrp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "aaa",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "cdp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "unsupported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "etherchannel",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "partial",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "ipv6",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "lldp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "local_user",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "ntp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "poe",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "port_channel",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "qos",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": true,
+    "knowledge_any": true,
+    "capability_status": "supported",
+    "analyzer": "qos",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "snmp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "ssh",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "syslog",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "evpn",
+    "priority": "p2",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "irf",
+    "priority": "p2",
+    "risk": "medium",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unsupported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platforms": [
+      "vrp"
+    ],
+    "feature": "vxlan",
+    "priority": "p2",
+    "risk": "high",
+    "profile_support": "supported",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "supported",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "acl",
+    "priority": "p0",
+    "risk": "high",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "acl",
+    "validator": "generic",
+    "tests": {
+      "unit": 8,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "dhcp",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "interface",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "generic",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 9
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "lacp",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "stp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "system",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "trunk",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "vlan",
+    "priority": "p0",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 2
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "vrrp",
+    "priority": "p0",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "aaa",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "cdp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "etherchannel",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "ipv6",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "lldp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "local_user",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "ntp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "poe",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "port_channel",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "qos",
+    "priority": "p1",
+    "risk": "medium",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "qos",
+    "validator": "missing",
+    "tests": {
+      "unit": 1,
+      "e2e": 0,
+      "benchmark": 1
+    },
+    "profile_missing": false,
+    "status": "covered"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "snmp",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "ssh",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "syslog",
+    "priority": "p1",
+    "risk": "low",
+    "profile_support": "unknown",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "unknown",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "partial"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "evpn",
+    "priority": "p2",
+    "risk": "high",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "missing"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "irf",
+    "priority": "p2",
+    "risk": "medium",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "missing"
+  },
+  {
+    "domain": "switching",
+    "vendor": "ruijie",
+    "platforms": [
+      "rg-os"
+    ],
+    "feature": "vxlan",
+    "priority": "p2",
+    "risk": "high",
+    "profile_support": "missing",
+    "knowledge_new_path": false,
+    "knowledge_legacy_path": false,
+    "knowledge_any": false,
+    "capability_status": "missing",
+    "analyzer": "noop",
+    "validator": "missing",
+    "tests": {
+      "unit": 0,
+      "e2e": 0,
+      "benchmark": 0
+    },
+    "profile_missing": false,
+    "status": "missing"
+  }
+]

@@ -1,0 +1,29 @@
+{
+  "name": "huawei-switching-interface-to-h3c",
+  "source_domain": "switching",
+  "source_vendor": "huawei",
+  "source_platform": "vrp",
+  "target_domain": "switching",
+  "target_vendor": "h3c",
+  "target_platform": "comware",
+  "features": [
+    "interface"
+  ],
+  "risk": "low",
+  "source_config": "#\ninterface GigabitEthernet0/0/1\n description Link-to-Core\n undo shutdown\n#\ninterface GigabitEthernet0/0/2\n description Link-to-DMZ\n shutdown\n#\ninterface GigabitEthernet0/0/48\n description Trunk-to-Server\n#",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "description",
+      "undo shutdown"
+    ],
+    "must_not_include": [
+      "<interface",
+      "TODO"
+    ],
+    "max_level": "info"
+  }
+}

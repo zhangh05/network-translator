@@ -1,0 +1,31 @@
+{
+  "name": "cisco-firewall-ipsec-to-huawei",
+  "source_domain": "firewall",
+  "source_vendor": "cisco",
+  "source_platform": "asa",
+  "target_domain": "firewall",
+  "target_vendor": "huawei",
+  "target_platform": "vrp",
+  "features": [
+    "ipsec"
+  ],
+  "risk": "high",
+  "source_config": "!\ncrypto ikev1 policy 10\n authentication pre-share\n encryption aes-256\n hash sha\n group 14\n lifetime 86400\n!\ncrypto ikev1 key CISCO123 address 203.0.113.2\n!\ncrypto ipsec transform-set AES256-SHA esp-aes-256 esp-sha-hmac\n mode tunnel\n!\ncrypto map CMAP 10 match address VPN-TRAFFIC\ncrypto map CMAP 10 set peer 203.0.113.2\ncrypto map CMAP 10 set transform-set AES256-SHA\ncrypto map CMAP interface outside\n!",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": true,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "ipsec",
+      "ike",
+      "proposal"
+    ],
+    "must_not_include": [
+      "<crypto",
+      "TODO",
+      "PLACEHOLDER"
+    ],
+    "max_level": "warning"
+  }
+}

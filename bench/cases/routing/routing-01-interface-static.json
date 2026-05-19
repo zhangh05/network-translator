@@ -1,0 +1,30 @@
+{
+  "name": "h3c-routing-interface-static-to-cisco",
+  "source_domain": "routing",
+  "source_vendor": "h3c",
+  "source_platform": "comware",
+  "target_domain": "routing",
+  "target_vendor": "cisco",
+  "target_platform": "ios",
+  "features": [
+    "interface",
+    "static_route"
+  ],
+  "risk": "low",
+  "source_config": "#\ninterface GigabitEthernet0/0\n description Uplink\n ip address 192.168.1.1 255.255.255.0\n#\ninterface GigabitEthernet0/1\n ip address 10.0.0.1 255.255.255.252\n#\nip route-static 0.0.0.0 0.0.0.0 192.168.1.254\nip route-static 172.16.0.0 255.255.0.0 10.0.0.2",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "interface",
+      "ip address",
+      "ip route"
+    ],
+    "must_not_include": [
+      "ip route-static"
+    ],
+    "max_level": "info"
+  }
+}

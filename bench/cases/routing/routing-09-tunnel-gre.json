@@ -1,0 +1,31 @@
+{
+  "name": "cisco-routing-tunnel-to-huawei",
+  "source_domain": "routing",
+  "source_vendor": "cisco",
+  "source_platform": "ios",
+  "target_domain": "routing",
+  "target_vendor": "huawei",
+  "target_platform": "vrp",
+  "features": [
+    "tunnel"
+  ],
+  "risk": "medium",
+  "source_config": "!\ninterface Tunnel0\n ip address 10.255.255.1 255.255.255.252\n tunnel source GigabitEthernet0/0\n tunnel destination 203.0.113.1\n tunnel mode gre ip\n ip mtu 1400\n ip tcp adjust-mss 1360\n keepalive 10 3\n!",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "interface Tunnel",
+      "tunnel-protocol gre",
+      "source",
+      "destination"
+    ],
+    "must_not_include": [
+      "tunnel mode gre",
+      "keepalive"
+    ],
+    "max_level": "warning"
+  }
+}

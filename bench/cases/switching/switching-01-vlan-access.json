@@ -1,0 +1,30 @@
+{
+  "name": "cisco-switching-vlan-access-to-h3c",
+  "source_domain": "switching",
+  "source_vendor": "cisco",
+  "source_platform": "ios",
+  "target_domain": "switching",
+  "target_vendor": "h3c",
+  "target_platform": "comware",
+  "features": [
+    "vlan"
+  ],
+  "risk": "low",
+  "source_config": "!\nvlan 10\n name USERS\n!\nvlan 20\n name GUESTS\n!\ninterface GigabitEthernet0/1\n switchport mode access\n switchport access vlan 10\n spanning-tree portfast\n!\ninterface GigabitEthernet0/2\n switchport mode access\n switchport access vlan 20\n!",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "vlan",
+      "port access",
+      "port link-type access"
+    ],
+    "must_not_include": [
+      "switchport mode access",
+      "switchport access vlan"
+    ],
+    "max_level": "info"
+  }
+}

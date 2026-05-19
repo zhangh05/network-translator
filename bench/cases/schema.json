@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "BenchmarkCase",
+  "description": "A single translation benchmark case for the Network Translator",
+  "type": "object",
+  "required": [
+    "name", "source_domain", "source_vendor", "source_platform",
+    "target_domain", "target_vendor", "target_platform",
+    "features", "risk", "source_config", "expected"
+  ],
+  "properties": {
+    "name": {
+      "type": "string",
+      "description": "Unique case identifier, e.g. h3c-routing-ospf-to-cisco"
+    },
+    "source_domain": {
+      "type": "string",
+      "enum": ["routing", "switching", "firewall"]
+    },
+    "source_vendor": {
+      "type": "string",
+      "enum": ["cisco", "huawei", "h3c", "ruijie", "hillstone", "topsec", "dbappsecurity", "dptech"]
+    },
+    "source_platform": {
+      "type": "string",
+      "description": "Platform name, e.g. ios, vrp, comware"
+    },
+    "target_domain": {
+      "type": "string",
+      "enum": ["routing", "switching", "firewall"]
+    },
+    "target_vendor": {
+      "type": "string",
+      "enum": ["cisco", "huawei", "h3c", "ruijie", "hillstone", "topsec", "dbappsecurity", "dptech"]
+    },
+    "target_platform": {
+      "type": "string",
+      "description": "Target platform name"
+    },
+    "features": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1,
+      "description": "Feature set under test"
+    },
+    "risk": {
+      "type": "string",
+      "enum": ["low", "medium", "high"]
+    },
+    "source_config": {
+      "type": "string",
+      "description": "Source vendor configuration text"
+    },
+    "expected": {
+      "type": "object",
+      "required": [
+        "deployable", "manual_review_required",
+        "no_markdown_fence", "no_placeholder"
+      ],
+      "properties": {
+        "deployable": { "type": "boolean" },
+        "manual_review_required": { "type": "boolean" },
+        "no_markdown_fence": { "type": "boolean" },
+        "no_placeholder": { "type": "boolean" },
+        "must_include": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Keywords that must appear in translated output"
+        },
+        "must_not_include": {
+          "type": "array",
+          "items": { "type": "string" },
+          "description": "Keywords that must NOT appear in translated output"
+        },
+        "max_level": {
+          "type": "string",
+          "enum": ["info", "warning", "error"],
+          "description": "Maximum allowed validation level"
+        }
+      }
+    }
+  }
+}

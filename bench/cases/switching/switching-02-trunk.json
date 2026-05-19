@@ -1,0 +1,30 @@
+{
+  "name": "h3c-switching-trunk-to-cisco",
+  "source_domain": "switching",
+  "source_vendor": "h3c",
+  "source_platform": "comware",
+  "target_domain": "switching",
+  "target_vendor": "cisco",
+  "target_platform": "ios",
+  "features": [
+    "trunk"
+  ],
+  "risk": "low",
+  "source_config": "#\ninterface GigabitEthernet1/0/1\n port link-type trunk\n port trunk permit vlan 10 20 30 100-200\n port trunk pvid vlan 10\n#\ninterface GigabitEthernet1/0/2\n port link-type trunk\n port trunk permit vlan all\n#",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "switchport mode trunk",
+      "switchport trunk allowed vlan",
+      "switchport trunk native vlan"
+    ],
+    "must_not_include": [
+      "port link-type trunk",
+      "port trunk permit vlan"
+    ],
+    "max_level": "info"
+  }
+}

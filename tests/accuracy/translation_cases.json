@@ -1,0 +1,106 @@
+[
+  {
+    "id": "basic_interface_vlan",
+    "description": "basic interface and VLAN from Cisco to Huawei",
+    "from": "cisco", "to": "huawei",
+    "config": "hostname SW1\nvlan 10\n name Users\ninterface Vlan10\n ip address 192.168.10.1 255.255.255.0\ninterface GigabitEthernet0/1\n switchport mode access\n switchport access vlan 10\n spanning-tree portfast",
+    "expect_contains": ["sysname SW1", "vlan 10", "port link-type access", "port default vlan 10", "stp edged-port enable"],
+    "expect_forbidden": []
+  },
+  {
+    "id": "ospf_single_area",
+    "description": "OSPF single area from H3C to Huawei",
+    "from": "h3c", "to": "huawei",
+    "config": "ospf 1 router-id 1.1.1.1\n area 0.0.0.0\n  network 10.0.0.0 0.255.255.255\ninterface GigabitEthernet1/0/1\n ospf cost 10",
+    "expect_contains": ["ospf 1 router-id 1.1.1.1", "area 0.0.0.0", "network 10.0.0.0"],
+    "expect_forbidden": []
+  },
+  {
+    "id": "bgp_basic",
+    "description": "BGP basic from Cisco to Huawei",
+    "from": "cisco", "to": "huawei",
+    "config": "router bgp 65000\n bgp router-id 1.1.1.1\n neighbor 10.0.0.1 remote-as 65001\n neighbor 10.0.0.1 description PEER1\n address-family ipv4\n  network 192.168.0.0 mask 255.255.255.0\n  neighbor 10.0.0.1 activate",
+    "expect_contains": ["bgp 65000", "router-id 1.1.1.1", "peer 10.0.0.1 as-number 65001", "network 192.168.0.0"],
+    "expect_forbidden": []
+  },
+  {
+    "id": "vrrp_hsrp",
+    "description": "HSRP translation to Huawei VRRP",
+    "from": "cisco", "to": "huawei",
+    "config": "interface Vlan10\n ip address 192.168.10.1 255.255.255.0\n standby 1 ip 192.168.10.254\n standby 1 priority 110\n standby 1 preempt",
+    "expect_contains": ["vrrp vrid 1", "virtual-ip 192.168.10.254", "priority 110", "preempt-mode"],
+    "expect_forbidden": []
+  },
+  {
+    "id": "static_route_default",
+    "description": "static route from Cisco to H3C",
+    "from": "cisco", "to": "h3c",
+    "config": "ip route 0.0.0.0 0.0.0.0 10.0.0.1\nip route 192.168.0.0 255.255.255.0 10.0.0.2",
+    "expect_contains": ["ip route-static 0.0.0.0 0.0.0.0 10.0.0.1", "ip route-static 192.168.0.0 255.255.255.0 10.0.0.2"],
+    "expect_forbidden": []
+  },
+  {
+    "id": "acl_extended",
+    "description": "extended ACL from Cisco to Huawei",
+    "from": "cisco", "to": "huawei",
+    "config": "ip access-list extended BLOCK_TELNET\n deny tcp any any eq telnet\n permit ip any any",
+    "expect_contains": ["acl number", "BLOCK_TELNET", "rule", "deny", "tcp", "telnet"],
+    "expect_forbidden": []
+  },
+  {
+    "id": "cdp_unsupported",
+    "description": "CDP is unsupported on Huawei — should skip or MANUAL_REVIEW",
+    "from": "cisco", "to": "huawei",
+    "config": "cdp run\ninterface GigabitEthernet0/1\n cdp enable",
+    "expect_contains": ["// MANUAL_REVIEW"],
+    "expect_forbidden": []
+  },
+  {
+    "id": "nat_pat",
+    "description": "NAT PAT overload from Cisco to Huawei",
+    "from": "cisco", "to": "huawei",
+    "config": "ip access-list standard NAT_POOL\n permit 192.168.0.0 0.0.255.255\nip nat inside source list NAT_POOL interface GigabitEthernet0/0 overload\ninterface GigabitEthernet0/0\n ip nat outside\ninterface GigabitEthernet0/1\n ip nat inside",
+    "expect_contains": ["nat", "acl", "outbound", "easy-ip"],
+    "expect_forbidden": []
+  },
+  {
+    "id": "lldp",
+    "description": "LLDP from H3C to Huawei",
+    "from": "h3c", "to": "huawei",
+    "config": "lldp global enable\ninterface GigabitEthernet1/0/1\n lldp enable\n lldp tlv-enable basic-tlv management-address",
+    "expect_contains": ["lldp enable", "lldp", "management-address"],
+    "expect_forbidden": []
+  },
+  {
+    "id": "qos_class_map",
+    "description": "QoS class-map from Cisco to Huawei",
+    "from": "cisco", "to": "huawei",
+    "config": "class-map match-any VOICE\n match ip dscp ef\npolicy-map QOS_POLICY\n class VOICE\n  priority level 1\ninterface GigabitEthernet0/1\n service-policy output QOS_POLICY",
+    "expect_contains": ["traffic classifier", "if-match", "dscp", "ef", "traffic behavior", "service-template", "qos apply"],
+    "expect_forbidden": []
+  },
+  {
+    "id": "dcn_unsupported",
+    "description": "DCN is Huawei-only — unsupported to H3C, should skip",
+    "from": "huawei", "to": "h3c",
+    "config": "dcn\n dcn router-id 1.1.1.1\ninterface GigabitEthernet0/0/1\n dcn",
+    "expect_contains": [],
+    "expect_forbidden": ["dcn"]
+  },
+  {
+    "id": "ruijie_stp",
+    "description": "STP from Ruijie to Cisco (fallback)",
+    "from": "ruijie", "to": "cisco",
+    "config": "spanning-tree mode rstp\ninterface GigabitEthernet0/1\n spanning-tree portfast",
+    "expect_contains": ["spanning-tree mode rapid-pvst", "spanning-tree portfast"],
+    "expect_forbidden": []
+  },
+  {
+    "id": "dhcp_pool",
+    "description": "DHCP server pool from Cisco to H3C",
+    "from": "cisco", "to": "h3c",
+    "config": "ip dhcp pool LAN\n network 192.168.10.0 255.255.255.0\n default-router 192.168.10.1\n dns-server 8.8.8.8\n lease 7",
+    "expect_contains": ["dhcp server", "network 192.168.10.0", "gateway-list 192.168.10.1", "dns-list 8.8.8.8"],
+    "expect_forbidden": []
+  }
+]

@@ -1,0 +1,32 @@
+{
+  "name": "huawei-firewall-security-policy-deny-to-h3c",
+  "source_domain": "firewall",
+  "source_vendor": "huawei",
+  "source_platform": "vrp",
+  "target_domain": "firewall",
+  "target_vendor": "h3c",
+  "target_platform": "comware",
+  "features": [
+    "security_policy",
+    "zone",
+    "address_object"
+  ],
+  "risk": "medium",
+  "source_config": "#\nfirewall zone trust\n set priority 85\n#\nzone name DMZ\n set priority 50\n#\nsecurity-policy\n rule name TRUST-TO-DMZ\n  source-zone trust\n  destination-zone DMZ\n  source-address 192.168.1.0 mask 255.255.255.0\n  destination-address 10.0.0.0 mask 255.255.255.0\n  action permit\n rule name DENY-ALL\n  source-zone trust\n  destination-zone DMZ\n  action deny\n#",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "security-policy",
+      "rule",
+      "action"
+    ],
+    "must_not_include": [
+      "zone name",
+      "set priority"
+    ],
+    "max_level": "warning"
+  }
+}

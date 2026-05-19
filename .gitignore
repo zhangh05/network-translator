@@ -1,0 +1,29 @@
+# Python runtime artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local virtual environments
+venv/
+.venv/
+env/
+
+# Service runtime
+.run/
+logs/
+
+# Local/runtime state
+memory_data/
+projects/
+llmsetting.json
+bench/harness_results.json
+bench/*.tmp
+cache_data/
+.semantic_cache/
+knowledge/.semantic_cache/
+knowledge_data/.semantic_cache/
+
+# Tool and editor noise
+.claude/settings.local.json
+.DS_Store
+Thumbs.db

@@ -1,0 +1,30 @@
+{
+  "name": "cisco-switching-cdp-to-huawei",
+  "source_domain": "switching",
+  "source_vendor": "cisco",
+  "source_platform": "ios",
+  "target_domain": "switching",
+  "target_vendor": "huawei",
+  "target_platform": "vrp",
+  "features": [
+    "cdp"
+  ],
+  "risk": "low",
+  "source_config": "!\ncdp run\ncdp timer 60\ncdp holdtime 180\n!\ninterface GigabitEthernet0/1\n cdp enable\n!\ninterface GigabitEthernet0/2\n no cdp enable\n!",
+  "expected": {
+    "deployable": false,
+    "manual_review_required": true,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "MANUAL_REVIEW",
+      "CDP"
+    ],
+    "must_not_include": [
+      "<cdp",
+      "TODO",
+      "PLACEHOLDER"
+    ],
+    "max_level": "warning"
+  }
+}

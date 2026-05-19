@@ -1,0 +1,25 @@
+domain: firewall
+vendor: topsec
+platforms:
+- topsec-os
+features:
+  acl: unknown
+  address_object: unknown
+  bgp: unknown
+  interface: unknown
+  ipsec: unknown
+  nat: unknown
+  ospf: unknown
+  security_policy: unknown
+  service_object: unknown
+  static_route: unknown
+  system: unknown
+  vlan: unknown
+  zone: unknown
+  aaa: unknown
+  ipv6: unknown
+  local_user: unknown
+  ntp: unknown
+  snmp: unknown
+  ssh: unknown
+  syslog: unknown

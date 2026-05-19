@@ -1,0 +1,808 @@
+"""Step 23: Platform Validator Expansion — positive & negative tests."""
+import pytest, re
+
+# Reuse the same regex patterns and logic from ValidateNode
+from core.graph.nodes import ValidateNode
+
+node = ValidateNode()
+
+
+# ── Helpers ─────────────────────────────────────────────────────
+def _run_validation(config: str, to_vendor: str, source_config: str = "") -> dict:
+    """Simulate ValidateNode execution for testing."""
+    errors, warnings = node._content_quality_checks(config, to_vendor, source_config)
+    pw = node._platform_validation(config, to_vendor)
+    result = type("R", (), {"valid": True, "errors": list(errors), "warnings": list(warnings)})()
+
+    critical = node._has_critical_content_warnings(list(warnings) + pw)
+    has_critical_residues = any("源厂商残留" in w for w in warnings)
+    has_high_risk = bool(pw) or has_critical_residues
+
+    level = "fatal" if len(errors) > 0 else ("warning" if warnings or pw else "info")
+    deployable = not (critical or has_critical_residues or level == "fatal")
+
+    return {
+        "errors": errors,
+        "warnings": warnings + pw,
+        "level": level,
+        "deployable": deployable,
+    }
+
+
+# ═══════════════════════════════════════════════════════════════════
+# POSITIVE TESTS (things that SHOULD be flagged)
+# ═══════════════════════════════════════════════════════════════════
+
+class TestCiscoIOSPositive:
+    """Cisco IOS target — residues that must set deployable=false."""
+
+    def test_import_route_fatal(self):
+        r = _run_validation("router ospf 1\n import-route bgp\n", "cisco")
+        assert "import-route" in str(r["warnings"]), "import-route must be flagged"
+        assert not r["deployable"], "import-route → deployable=false"
+
+    def test_nat_outbound_fatal(self):
+        r = _run_validation("nat outbound 2000\n", "cisco")
+        assert "nat outbound" in str(r["warnings"]), "nat outbound must be flagged"
+        assert not r["deployable"], "nat outbound → deployable=false"
+
+    def test_security_zone_fatal(self):
+        r = _run_validation("security-zone name trust\n", "cisco")
+        assert "security-zone" in str(r["warnings"])
+        assert not r["deployable"]
+
+    def test_security_policy_fatal(self):
+        r = _run_validation("security-policy\n rule name TEST\n action permit\n", "cisco")
+        assert "security-policy" in str(r["warnings"])
+        assert not r["deployable"]
+
+    def test_huawei_acl_number_fatal(self):
+        r = _run_validation("acl number 3000\n rule 0 permit ip source 1.1.1.0 0.0.0.255\n", "cisco")
+        assert "acl number" in str(r["warnings"])
+        assert not r["deployable"]
+
+    def test_route_policy_fatal(self):
+        r = _run_validation("route-policy ALLOW permit node 10\n if-match ip-prefix P1\n apply local-preference 200\n", "cisco")
+        assert "route-policy" in str(r["warnings"])
+        assert not r["deployable"]
+
+    def test_ip_prefix_fatal(self):
+        r = _run_validation("route-policy FILTER permit node 10\n if-match ip-prefix P1\n", "cisco")
+        assert "ip-prefix" in str(r["warnings"])
+
+    def test_huawei_undo_shutdown_fatal(self):
+        r = _run_validation("interface GigabitEthernet0/0\n undo shutdown\n", "cisco")
+        assert "undo shutdown" in str(r["warnings"])
+
+    def test_h3c_port_link_mode_fatal(self):
+        r = _run_validation("interface GigabitEthernet0/1\n port link-mode route\n", "cisco")
+        assert "port link-mode" in str(r["warnings"])
+
+    def test_info_center_fatal(self):
+        r = _run_validation("info-center enable\n", "cisco")
+        assert "info-center" in str(r["warnings"])
+
+    def test_local_user_fatal(self):
+        r = _run_validation("local-user admin class manage password hash xxx\n", "cisco")
+        assert "local-user" in str(r["warnings"])
+
+    def test_reference_missing_prefix_list(self):
+        config = """!
+route-map BGP-TO-OSPF permit 10
+ match ip address prefix-list IMPORT
+ set metric 20
+!"""
+        r = _run_validation(config, "cisco")
+        # prefix-list IMPORT is referenced but not defined
+        refs = [w for w in r["warnings"] if "未找到定义" in w]
+        assert any("prefix-list" in w for w in refs), "undefined prefix-list ref must be flagged"
+
+
+class TestHuaweiVRPPositive:
+    """Huawei VRP target — residues that must set deployable=false."""
+
+    def test_route_map_fatal(self):
+        r = _run_validation("route-map RMAP permit 10\n set local-preference 200\n", "huawei")
+        assert "route-map" in str(r["warnings"])
+        assert not r["deployable"]
+
+    def test_ip_nat_inside_source_fatal(self):
+        r = _run_validation("ip nat inside source list 100 interface GigabitEthernet0/0 overload\n", "huawei")
+        assert "ip nat inside source" in str(r["warnings"])
+        assert not r["deployable"]
+
+    def test_object_group_fatal(self):
+        r = _run_validation("object-group network LAN\n network-object 10.0.0.0 255.0.0.0\n", "huawei")
+        assert "object-group" in str(r["warnings"])
+        assert not r["deployable"]
+
+    def test_access_group_fatal(self):
+        r = _run_validation("access-group GLOBAL in interface outside\n", "huawei")
+        assert "access-group" in str(r["warnings"])
+        assert not r["deployable"]
+
+    def test_reference_missing_route_policy(self):
+        config = """#
+bgp 65001
+ peer 10.0.0.2 route-policy FROM_EBGP import
+#"""
+        r = _run_validation(config, "huawei")
+        refs = [w for w in r["warnings"] if "未找到定义" in w]
+        assert any("route-policy" in w for w in refs), "undefined route-policy ref must be flagged"
+
+    def test_reference_missing_ip_prefix(self):
+        config = """#
+route-policy TEST permit node 10
+ if-match ip-prefix NOT_DEFINED
+#"""
+        r = _run_validation(config, "huawei")
+        refs = [w for w in r["warnings"] if "未找到定义" in w]
+        assert any("ip-prefix" in w for w in refs), "undefined ip-prefix ref must be flagged"
+
+
+class TestH3CComwarePositive:
+    """H3C Comware target — residues."""
+
+    def test_route_map_fatal(self):
+        r = _run_validation("route-map RMAP permit 10\n set community 100:1\n", "h3c")
+        assert "route-map" in str(r["warnings"])
+        assert not r["deployable"]
+
+    def test_ip_nat_inside_source_fatal(self):
+        r = _run_validation("ip nat inside source list 1 pool NATPOOL\n", "h3c")
+        assert "ip nat inside source" in str(r["warnings"])
+        assert not r["deployable"]
+
+    def test_cisco_channel_group(self):
+        r = _run_validation("channel-group 1 mode active\n", "h3c")
+        assert "channel-group" in str(r["warnings"])
+
+    def test_cisco_dhcp_pool(self):
+        r = _run_validation("ip dhcp pool LAN-POOL\n network 192.168.1.0 255.255.255.0\n", "h3c")
+        assert "dhcp pool" in str(r["warnings"])
+
+
+class TestASAFirewallPositive:
+    """ASA target — residues."""
+
+    def test_ios_nat(self):
+        r = _run_validation("ip nat inside source list 100 interface outside overload\n", "asa")
+        assert any("ip nat" in w for w in r["warnings"]), "IOS NAT must be flagged"
+        assert not r["deployable"]
+
+    def test_nat_outbound(self):
+        r = _run_validation("nat outbound 2000\n", "asa")
+        assert "nat outbound" in str(r["warnings"])
+
+    def test_router_ospf(self):
+        r = _run_validation("router ospf 1\n network 10.0.0.0 0.0.0.255 area 0\n", "asa")
+        assert "router ospf" in str(r["warnings"])
+
+    def test_route_policy_huawei(self):
+        r = _run_validation("route-policy FILTER permit node 10\n", "asa")
+        assert "route-policy" in str(r["warnings"])
+
+
+# ═══════════════════════════════════════════════════════════════════
+# NEGATIVE TESTS (things that should NOT be flagged)
+# ═══════════════════════════════════════════════════════════════════
+
+class TestNoFalsePositives:
+    """Platform-appropriate config that should pass cleanly."""
+
+    def test_cisco_ospf_without_import_route(self):
+        """Cisco router ospf without import-route — clean."""
+        config = """!
+router ospf 100
+ router-id 1.1.1.1
+ network 10.0.0.0 0.0.0.255 area 0
+ default-information originate always
+!
+ip route 0.0.0.0 0.0.0.0 10.0.0.1
+!"""
+        r = _run_validation(config, "cisco")
+        ios_residues = [w for w in r["warnings"] if "源厂商残留" in w]
+        assert len(ios_residues) == 0, f"Clean Cisco IOS config flagged: {ios_residues}"
+
+    def test_cisco_bgp_with_route_map(self):
+        """Cisco route-map is NATIVE to Cisco — should NOT trigger residue on Cisco target."""
+        config = """!
+route-map FROM_EBGP permit 10
+ match ip address prefix-list IMPORT
+ set local-preference 200
+!
+ip prefix-list IMPORT seq 5 permit 10.0.0.0/8 le 24
+!"""
+        r = _run_validation(config, "cisco")
+        # route-map is native to Cisco, should NOT be flagged
+        assert not any("route-map" in w for w in r["warnings"]), "Cisco route-map on Cisco target must not be flagged"
+
+    def test_huawei_route_policy_with_definitions(self):
+        """Huawei route-policy with all references defined — clean."""
+        config = """#
+route-policy FROM_EBGP permit node 10
+ if-match ip-prefix IMPORT
+ apply local-preference 200
+#
+ip ip-prefix IMPORT permit 10.0.0.0 8 greater-equal 16 less-equal 24
+#
+bgp 65001
+ peer 10.0.0.2 route-policy FROM_EBGP import
+#"""
+        r = _run_validation(config, "huawei")
+        # route-policy is NATIVE to Huawei — only style-level check
+        refs = [w for w in r["warnings"] if "未找到定义" in w]
+        assert len(refs) == 0, f"Huawei clean config flagged refs: {refs}"
+
+    def test_ospf_area_consistency(self):
+        """OSPF area 0.0.0.18 → area 18 should NOT be flagged."""
+        src = """ospf 1
+ area 0.0.0.18
+  network 10.0.0.0 0.0.0.255
+"""
+        tgt = """router ospf 1
+ network 10.0.0.0 0.0.0.255 area 18
+"""
+        r = _run_validation(tgt, "cisco", source_config=src)
+        area_warnings = [w for w in r["warnings"] if "OSPF area" in w]
+        assert len(area_warnings) == 0, f"OSPF area 0.0.0.18 ←→ 18 should not warn: {area_warnings}"
+
+    def test_asa_legitimate_route(self):
+        """ASA 'route' command should NOT be flagged as IOS 'ip route'."""
+        config = """!
+route outside 0.0.0.0 0.0.0.0 203.0.113.254
+route inside 10.0.0.0 255.0.0.0 192.168.1.1
+!"""
+        r = _run_validation(config, "asa")
+        # ASA uses 'route' not 'ip route'
+        assert not any("ip route" in w.lower() for w in r["warnings"]), "ASA 'route' must not be flagged"
+
+    def test_huawei_nat_server_clean(self):
+        """Huawei nat server should not trigger nat outbound residue on huawei."""
+        config = """#
+interface GigabitEthernet0/0/1
+ ip address 203.0.113.1 255.255.255.0
+ nat server protocol tcp global 203.0.113.10 443 inside 10.0.0.10 443
+#"""
+        r = _run_validation(config, "huawei")
+        # nat server is native to Huawei
+        assert not any("nat outbound" in w for w in r["warnings"]), "Huawei nat server not nat outbound"
+
+
+# ═══════════════════════════════════════════════════════════════════
+# CONSISTENCY CHECK TESTS (Step 37)
+# ═══════════════════════════════════════════════════════════════════
+
+class TestConsistencyCheck:
+    """_consistency_check: analyzer findings match translated output."""
+
+    def test_nat_analyzer_matches_translated(self):
+        """NAT analyzer found NAT → translated has NAT keywords."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": [{"feature": "nat", "status": "analyzed", "risk_level": "warning"}]
+        }.get(k, d)})()
+        translated = "ip nat inside source list 1 interface GigabitEthernet0/0 overload"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert len(warnings) == 0, f"NAT present but flagged: {warnings}"
+        assert not high_risk
+
+    def test_nat_analyzer_mismatch_translated(self):
+        """NAT analyzer found NAT → translated missing NAT → warning."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": [{"feature": "nat", "status": "analyzed", "risk_level": "warning"}]
+        }.get(k, d)})()
+        translated = "interface GigabitEthernet0/0\n ip address 10.0.0.1 255.255.255.0"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert any("nat" in w for w in warnings), "Missing NAT in output should warn"
+        assert high_risk, "NAT is high-risk → has_high_risk=True"
+
+    def test_lacp_analyzer_matches_translated(self):
+        """LACP analyzer → translated has Eth-Trunk."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": [{"feature": "lacp", "status": "analyzed", "risk_level": "warning"}]
+        }.get(k, d)})()
+        translated = "interface Eth-Trunk1\n description LACP bundle\n mode lacp"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert len(warnings) == 0, f"LACP present but flagged: {warnings}"
+        assert not high_risk
+
+    def test_lacp_analyzer_mismatch_translated(self):
+        """LACP analyzer → translated missing LACP → warning (no high_risk)."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": [{"feature": "lacp", "status": "analyzed", "risk_level": "warning"}]
+        }.get(k, d)})()
+        translated = "interface GigabitEthernet0/0\n no shutdown"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert any("lacp" in w for w in warnings), "Missing LACP in output should warn"
+        assert not high_risk, "LACP is not high-risk → has_high_risk=False"
+
+    def test_bfd_analyzer_matches_translated(self):
+        """BFD analyzer → translated has BFD."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": [{"feature": "bfd", "status": "analyzed", "risk_level": "warning"}]
+        }.get(k, d)})()
+        translated = "bfd echo interface GigabitEthernet0/0\n bfd interval 50 min_rx 50 multiplier 3"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert len(warnings) == 0, f"BFD present but flagged: {warnings}"
+        assert not high_risk
+
+    def test_bfd_analyzer_mismatch_translated(self):
+        """BFD analyzer → translated missing BFD → warning."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": [{"feature": "bfd", "status": "analyzed", "risk_level": "warning"}]
+        }.get(k, d)})()
+        translated = "router bgp 65001\n network 10.0.0.0 mask 255.0.0.0"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert any("bfd" in w for w in warnings), "Missing BFD in output should warn"
+        assert not high_risk
+
+    def test_multiple_analyzers_partial_match(self):
+        """Two analyzers, only one matches → one warning, no high_risk (qos not in HR set)."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": [
+                {"feature": "nat", "status": "analyzed", "risk_level": "warning"},
+                {"feature": "qos", "status": "analyzed", "risk_level": "warning"},
+            ]
+        }.get(k, d)})()
+        translated = "ip nat inside source list 1 pool POOL overload"
+        warnings, high_risk = node._consistency_check(state, translated)
+        missing = [w for w in warnings if "consistency" in w]
+        features_flagged = [w.split(":")[1].split("]")[0] for w in missing]
+        assert "qos" in features_flagged, "Missing QoS should be flagged"
+        assert "nat" not in features_flagged, "Present NAT should not be flagged"
+        assert not high_risk, "QoS not in HIGH_RISK_CONSISTENCY_FEATURES"
+
+    def test_low_risk_skipped(self):
+        """Analyzers with risk_level=none do NOT generate warnings."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": [{"feature": "nat", "status": "analyzed", "risk_level": "none"}]
+        }.get(k, d)})()
+        translated = "interface GigabitEthernet0/0\n no shutdown"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert len(warnings) == 0, "Low-risk analyzers should be skipped"
+        assert not high_risk
+
+    def test_unknown_feature_skipped(self):
+        """Features not in FEATURE_OUTPUT_PATTERNS are skipped cleanly."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": [{"feature": "unknown_xyz", "status": "analyzed", "risk_level": "warning"}]
+        }.get(k, d)})()
+        translated = "any config here"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert len(warnings) == 0, "Unknown features should be skipped"
+        assert not high_risk
+
+    def test_no_analyzer_results(self):
+        """No analyzer_results in state → no warnings."""
+        state = type("S", (), {"get": lambda s, k, d=None: {}.get(k, d)})()
+        translated = "any config here"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert len(warnings) == 0, "No analyzers → no warnings"
+        assert not high_risk
+
+    def test_no_status_field(self):
+        """Missing status field gracefully handled (not 'analyzed' → skipped)."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": [{"feature": "nat", "risk_level": "warning"}]
+        }.get(k, d)})()
+        translated = "interface GigabitEthernet0/0\n no shutdown"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert len(warnings) == 0, "Missing status key → should be skipped"
+        assert not high_risk
+
+    def test_empty_analyzer_results_list(self):
+        """Empty analyzer_results list → no warnings."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": []
+        }.get(k, d)})()
+        translated = "any config here"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert len(warnings) == 0, "Empty list → no warnings"
+        assert not high_risk
+
+    def test_analyzer_results_as_dict_legacy(self):
+        """Legacy dict format for analyzer_results still works."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": {"nat": {"feature": "nat", "status": "analyzed", "risk_level": "warning"}}
+        }.get(k, d)})()
+        translated = "ip nat inside source list 1 pool POOL overload"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert len(warnings) == 0, "Dict format should still work"
+        assert not high_risk
+
+    def test_stp_analyzer_matches_translated(self):
+        """STP analyzer → translated has spanning-tree."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": [{"feature": "stp", "status": "analyzed", "risk_level": "warning"}]
+        }.get(k, d)})()
+        translated = "spanning-tree mode rapid-pvst\n spanning-tree vlan 100 priority 4096"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert len(warnings) == 0, f"STP present but flagged: {warnings}"
+        assert not high_risk
+
+    def test_vrf_analyzer_matches_translated(self):
+        """VRF analyzer → translated has vrf forwarding."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": [{"feature": "vrf", "status": "analyzed", "risk_level": "warning"}]
+        }.get(k, d)})()
+        translated = "vrf definition CUSTOMER\n rd 100:1\n !\n interface GigabitEthernet0/0\n vrf forwarding CUSTOMER"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert len(warnings) == 0, f"VRF present but flagged: {warnings}"
+        assert not high_risk
+
+    def test_security_policy_mismatch_high_risk(self):
+        """Security-policy missing from output → high_risk=True."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": [{"feature": "security_policy", "status": "analyzed", "risk_level": "warning"}]
+        }.get(k, d)})()
+        translated = "interface GigabitEthernet0/0\n no shutdown"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert any("security_policy" in w for w in warnings)
+        assert high_risk, "security_policy is high-risk → has_high_risk=True"
+
+    def test_ipsec_mismatch_high_risk(self):
+        """IPsec missing from output → high_risk=True."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": [{"feature": "ipsec", "status": "analyzed", "risk_level": "warning"}]
+        }.get(k, d)})()
+        translated = "interface GigabitEthernet0/0\n no shutdown"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert high_risk, "ipsec is high-risk → has_high_risk=True"
+
+    def test_acl_mismatch_high_risk(self):
+        """ACL missing from output → high_risk=True."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": [{"feature": "acl", "status": "analyzed", "risk_level": "warning"}]
+        }.get(k, d)})()
+        translated = "interface GigabitEthernet0/0\n no shutdown"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert high_risk, "acl is high-risk → has_high_risk=True"
+
+    def test_route_policy_mismatch_high_risk(self):
+        """Route-policy missing from output → high_risk=True."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": [{"feature": "route_policy", "status": "analyzed", "risk_level": "warning"}]
+        }.get(k, d)})()
+        translated = "interface GigabitEthernet0/0\n no shutdown"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert high_risk, "route_policy is high-risk → has_high_risk=True"
+
+    def test_high_risk_with_manual_review_no_high_risk(self):
+        """MANUAL_REVIEW in output suppresses high_risk flag."""
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "analyzer_results": [{"feature": "nat", "status": "analyzed", "risk_level": "warning"}]
+        }.get(k, d)})()
+        translated = "MANUAL_REVIEW: NAT translation requires manual configuration\n no ip nat inside source"
+        warnings, high_risk = node._consistency_check(state, translated)
+        assert len(warnings) == 0, "MANUAL_REVIEW suppresses warning"
+        assert not high_risk
+
+
+# ═══════════════════════════════════════════════════════════════════
+# STEP 38: Platform Validator Deepening
+# ═══════════════════════════════════════════════════════════════════
+
+class TestPlatformValidatorCiscoResidue:
+    """Cisco IOS target — new deep residue patterns."""
+
+    def test_asa_object_network(self):
+        r = _run_validation("object network LAN\n subnet 10.0.0.0 255.0.0.0\n", "cisco")
+        assert any("源厂商残留" in w for w in r["warnings"]), "ASA object network in IOS → residue"
+        assert not r["deployable"]
+
+    def test_asa_object_group(self):
+        r = _run_validation("object-group network LAN\n network-object 10.0.0.0 255.0.0.0\n", "cisco")
+        assert any("object-group" in w for w in r["warnings"])
+
+    def test_asa_access_group(self):
+        r = _run_validation("access-group OUTSIDE in interface outside\n", "cisco")
+        assert any("access-group" in w for w in r["warnings"])
+
+    def test_huawei_security_zone(self):
+        r = _run_validation("security-zone name trust\n zone-pair security source trust destination untrust\n", "cisco")
+        assert any("security-zone" in w for w in r["warnings"])
+
+    def test_huawei_security_policy(self):
+        r = _run_validation("security-policy\n rule name PERMIT\n action permit\n", "cisco")
+        assert any("security-policy" in w for w in r["warnings"])
+        assert not r["deployable"]
+
+    def test_huawei_route_policy(self):
+        r = _run_validation("route-policy ALLOW permit node 10\n if-match ip-prefix P1\n apply local-preference 200\n", "cisco")
+        assert any("route-policy" in w for w in r["warnings"])
+
+    def test_huawei_ip_ip_prefix(self):
+        r = _run_validation("ip ip-prefix P1 permit 10.0.0.0 8 greater-equal 16\n", "cisco")
+        assert any("ip-prefix" in w for w in r["warnings"])
+
+    def test_huawei_import_route(self):
+        r = _run_validation("router ospf 1\n import-route bgp\n", "cisco")
+        assert any("import-route" in w for w in r["warnings"])
+
+    def test_huawei_nat_outbound(self):
+        r = _run_validation("nat outbound 2000\n", "cisco")
+        assert any("nat outbound" in w for w in r["warnings"])
+
+    def test_huawei_info_center(self):
+        r = _run_validation("info-center enable\n", "cisco")
+        assert any("info-center" in w for w in r["warnings"])
+
+    def test_huawei_local_user(self):
+        r = _run_validation("local-user admin class manage password hash xxx\n", "cisco")
+        assert any("local-user" in w for w in r["warnings"])
+
+    def test_huawei_undo_shutdown(self):
+        r = _run_validation("interface GigabitEthernet0/0\n undo shutdown\n", "cisco")
+        assert any("undo shutdown" in w for w in r["warnings"])
+
+    def test_h3c_port_link_mode(self):
+        r = _run_validation("interface GigabitEthernet0/1\n port link-mode route\n", "cisco")
+        assert any("port link-mode" in w for w in r["warnings"])
+
+    def test_aclnumber_in_cisco(self):
+        r = _run_validation("acl number 3000\n rule 0 permit ip source 1.1.1.0 0.0.0.255\n", "cisco")
+        assert any("acl number" in w for w in r["warnings"])
+
+
+class TestPlatformValidatorHuaweiResidue:
+    """Huawei VRP target — new deep residue patterns."""
+
+    def test_cisco_route_map(self):
+        r = _run_validation("route-map RMAP permit 10\n set metric 20\n", "huawei")
+        assert any("route-map" in w for w in r["warnings"])
+        assert not r["deployable"]
+
+    def test_cisco_ip_prefix_list(self):
+        r = _run_validation("ip prefix-list P1 seq 5 permit 10.0.0.0/8\n", "huawei")
+        assert any("prefix-list" in w for w in r["warnings"])
+
+    def test_cisco_ip_nat_inside_source(self):
+        r = _run_validation("ip nat inside source list 100 interface GigabitEthernet0/0 overload\n", "huawei")
+        assert any("nat inside" in w for w in r["warnings"])
+
+    def test_cisco_access_group(self):
+        r = _run_validation("access-group OUT in interface outside\n", "huawei")
+        assert any("access-group" in w for w in r["warnings"])
+
+    def test_cisco_object_network(self):
+        r = _run_validation("object network LAN\n subnet 10.0.0.0 255.0.0.0\n", "huawei")
+        assert any("object network" in w for w in r["warnings"])
+
+    def test_cisco_channel_group(self):
+        r = _run_validation("interface Port-channel1\n channel-group 1 mode active\n", "huawei")
+        assert any("channel-group" in w for w in r["warnings"])
+
+    def test_cisco_ip_dhcp_pool(self):
+        r = _run_validation("ip dhcp pool LAN-POOL\n network 192.168.1.0 255.255.255.0\n", "huawei")
+        assert any("dhcp pool" in w for w in r["warnings"])
+
+    def test_cisco_default_information_originate(self):
+        r = _run_validation("router bgp 65001\n default-information originate\n", "huawei")
+        assert any("default-information" in w for w in r["warnings"])
+
+    def test_cisco_router_ospf(self):
+        r = _run_validation("router ospf 1\n network 10.0.0.0 0.0.0.255 area 0\n", "huawei")
+        assert any("Cisco" in w for w in r["warnings"])
+
+    def test_cisco_standby(self):
+        r = _run_validation("interface Vlan100\n standby 10 ip 10.0.0.254\n", "huawei")
+        assert any("standby" in w for w in r["warnings"])
+
+    def test_cisco_no_shutdown(self):
+        r = _run_validation("interface GigabitEthernet0/0\n no shutdown\n", "huawei")
+        assert any("no shutdown" in w for w in r["warnings"])
+
+    def test_cisco_object_group_in_huawei(self):
+        r = _run_validation("object-group network LAN\n network-object 10.0.0.0 255.0.0.0\n", "huawei")
+        assert any("object-group" in w for w in r["warnings"])
+
+
+class TestPlatformValidatorH3CResidue:
+    """H3C Comware target — new deep residue patterns."""
+
+    def test_cisco_route_map(self):
+        r = _run_validation("route-map RMAP permit 10\n set metric 20\n", "h3c")
+        assert any("route-map" in w for w in r["warnings"])
+        assert not r["deployable"]
+
+    def test_cisco_ip_prefix_list(self):
+        r = _run_validation("ip prefix-list P1 seq 5 permit 10.0.0.0/8\n", "h3c")
+        assert any("prefix-list" in w for w in r["warnings"])
+
+    def test_cisco_ip_nat_inside_source(self):
+        r = _run_validation("ip nat inside source list 100 interface GigabitEthernet0/0 overload\n", "h3c")
+        assert any("nat inside" in w for w in r["warnings"])
+
+    def test_cisco_channel_group(self):
+        r = _run_validation("channel-group 1 mode active\n", "h3c")
+        assert any("channel-group" in w for w in r["warnings"])
+
+    def test_cisco_no_shutdown(self):
+        r = _run_validation("interface GigabitEthernet0/0\n no shutdown\n", "h3c")
+        assert any("no shutdown" in w for w in r["warnings"])
+
+    def test_cisco_ip_dhcp_pool(self):
+        r = _run_validation("ip dhcp pool LAN-POOL\n network 192.168.1.0 255.255.255.0\n", "h3c")
+        assert any("dhcp pool" in w for w in r["warnings"])
+
+
+class TestPlatformValidatorASAResidue:
+    """ASA target — new deep residue patterns."""
+
+    def test_ios_router_ospf(self):
+        r = _run_validation("router ospf 1\n network 10.0.0.0 0.0.0.255 area 0\n", "asa")
+        assert any("router ospf" in w for w in r["warnings"])
+        assert not r["deployable"]
+
+    def test_ios_router_bgp(self):
+        r = _run_validation("router bgp 65001\n", "asa")
+        assert any("router bgp" in w for w in r["warnings"])
+
+    def test_ios_ip_nat_inside_source(self):
+        r = _run_validation("ip nat inside source list 100 interface outside overload\n", "asa")
+        assert any("nat inside" in w for w in r["warnings"])
+
+    def test_ios_ip_route(self):
+        r = _run_validation("ip route 0.0.0.0 0.0.0.0 10.0.0.1\n", "asa")
+        assert any("ip route" in w for w in r["warnings"])
+
+    def test_ios_route_map(self):
+        r = _run_validation("route-map RMAP permit 10\n set metric 20\n", "asa")
+        assert any("route-map" in w for w in r["warnings"])
+
+    def test_huawei_security_zone(self):
+        r = _run_validation("security-zone name trust\n", "asa")
+        assert any("security-zone" in w for w in r["warnings"])
+
+    def test_huawei_route_policy(self):
+        r = _run_validation("route-policy ALLOW permit node 10\n", "asa")
+        assert any("route-policy" in w for w in r["warnings"])
+
+    def test_undo_shutdown(self):
+        r = _run_validation("interface GigabitEthernet0/0\n undo shutdown\n", "asa")
+        assert any("undo shutdown" in w for w in r["warnings"])
+
+    def test_ios_prefix_list(self):
+        r = _run_validation("ip prefix-list P1 seq 5 permit 10.0.0.0/8\n", "asa")
+        assert any("prefix-list" in w for w in r["warnings"])
+
+
+class TestPlatformValidatorStructure:
+    """Structure checks — ACL number, VRF format, interface naming."""
+
+    def test_huawei_acl_out_of_range(self):
+        r = _run_validation("acl number 5000\n rule 0 permit ip\n", "huawei")
+        assert any("ACL number" in w for w in r["warnings"]), "5000 out of Huawei ACL range"
+
+    def test_huawei_acl_2000_in_range(self):
+        r = _run_validation("acl number 2000\n rule 0 permit\n", "huawei")
+        assert not any("ACL number" in w for w in r["warnings"]), "2000 is valid basic ACL"
+
+    def test_huawei_acl_3000_in_range(self):
+        r = _run_validation("acl number 3000\n rule 0 permit ip\n", "huawei")
+        assert not any("ACL number" in w for w in r["warnings"]), "3000 is valid advanced ACL"
+
+    def test_h3c_acl_out_of_range(self):
+        r = _run_validation("acl number 5000\n rule 0 permit ip\n", "h3c")
+        assert any("ACL number" in w for w in r["warnings"]), "5000 out of H3C ACL range"
+
+    def test_cisco_vrf_rd_missing_colon(self):
+        r = _run_validation("vrf definition CUSTOMER\n rd 1001001\n", "cisco")
+        assert any("缺少冒号" in w for w in r["warnings"]), "RD without colon should warn"
+
+    def test_cisco_vrf_rd_valid(self):
+        r = _run_validation("vrf definition CUSTOMER\n rd 100:1\n", "cisco")
+        assert not any("route-target" in w for w in r["warnings"]), "RD with colon is valid"
+
+    def test_cisco_vrf_rt_missing_colon(self):
+        r = _run_validation("vrf definition CUSTOMER\n route-target export 1001001\n", "cisco")
+        assert any("缺少冒号" in w for w in r["warnings"])
+
+    def test_huawei_interface_mixed_types(self):
+        r = _run_validation("interface GigabitEthernet0/0/1\n ip address 10.0.0.1 255.0.0.0\n interface Ethernet0/0/2\n ip address 10.0.0.2 255.0.0.0\n", "huawei")
+        assert any("接口类型混用" in w for w in r["warnings"])
+
+
+class TestPlatformValidatorReferences:
+    """Reference relationship checks — new patterns."""
+
+    def test_asa_object_group_reference_missing(self):
+        config = """object-group network LAN
+ network-object 10.0.0.0 255.0.0.0
+!
+access-group LAN in interface outside"""
+        r = _run_validation(config, "asa")
+        refs = [w for w in r["warnings"] if "未找到定义" in w]
+        assert any("object-group" in w for w in refs), "ASA object-group ref must be checked"
+
+    def test_asa_object_network_reference(self):
+        config = """object network MY_NET
+ subnet 10.0.0.0 255.0.0.0
+!
+nat (inside,outside) source dynamic MY_NET interface"""
+        r = _run_validation(config, "asa")
+        refs = [w for w in r["warnings"] if "未找到定义" in w]
+        assert not any("MY_NET" in w for w in refs), "MY_NET is defined (object network)"
+
+    def test_cisco_access_group_reference_missing(self):
+        config = """!
+access-group MY_ACL in
+!"""
+        r = _run_validation(config, "cisco")
+        refs = [w for w in r["warnings"] if "未找到定义" in w]
+        assert any("MY_ACL" in w for w in refs), "undefined access-list in access-group"
+
+    def test_cisco_access_group_reference_valid(self):
+        config = """access-list 100 permit ip 10.0.0.0 0.0.0.255 any
+!
+access-group 100 in"""
+        r = _run_validation(config, "cisco")
+        refs = [w for w in r["warnings"] if "未找到定义" in w]
+        assert not any("100" in w for w in refs), "access-list 100 is defined"
+
+    def test_h3c_route_policy_reference_missing(self):
+        config = """#
+bgp 65001
+ peer 10.0.0.2 route-policy FROM_EBGP import
+#"""
+        r = _run_validation(config, "h3c")
+        refs = [w for w in r["warnings"] if "未找到定义" in w]
+        assert any("route-policy" in w for w in refs), "H3C undefined route-policy ref"
+
+    def test_h3c_route_policy_reference_valid(self):
+        config = """#
+route-policy FROM_EBGP permit node 10
+ if-match ip-prefix IMPORT
+#
+ip ip-prefix IMPORT permit 10.0.0.0 8 greater-equal 16 less-equal 24
+#
+bgp 65001
+ peer 10.0.0.2 route-policy FROM_EBGP import
+#"""
+        r = _run_validation(config, "h3c")
+        refs = [w for w in r["warnings"] if "未找到定义" in w]
+        assert not any("route-policy" in w for w in refs), "H3C route-policy FROM_EBGP is defined"
+
+
+class TestPlatformValidatorNoFalsePositives:
+    """Platform-appropriate config that should NOT trigger new residues."""
+
+    def test_cisco_native_route_map(self):
+        r = _run_validation("route-map RMAP permit 10\n match ip address prefix-list P1\n set metric 20\n!", "cisco")
+        ios_residues = [w for w in r["warnings"] if "源厂商残留" in w]
+        assert len(ios_residues) == 0, f"Cisco route-map on Cisco flagged: {ios_residues}"
+
+    def test_cisco_native_access_list(self):
+        r = _run_validation("access-list 100 permit ip 10.0.0.0 0.0.0.255 any\n!", "cisco")
+        ios_residues = [w for w in r["warnings"] if "源厂商残留" in w]
+        assert len(ios_residues) == 0, f"Cisco access-list on Cisco flagged: {ios_residues}"
+
+    def test_huawei_native_route_policy(self):
+        r = _run_validation("route-policy ALLOW permit node 10\n if-match ip-prefix P1\n apply local-preference 200\n#", "huawei")
+        residues = [w for w in r["warnings"] if "源厂商残留" in w]
+        assert len(residues) == 0, f"Huawei route-policy on Huawei flagged: {residues}"
+
+    def test_huawei_native_nat_server(self):
+        r = _run_validation("interface GigabitEthernet0/0/1\n ip address 203.0.113.1 255.255.255.0\n nat server protocol tcp global 203.0.113.10 443 inside 10.0.0.10 443\n#", "huawei")
+        residues = [w for w in r["warnings"] if "源厂商残留" in w]
+        assert len(residues) == 0, f"Huawei nat server flagged as residue: {residues}"
+
+    def test_h3c_native_route_policy(self):
+        r = _run_validation("route-policy ALLOW permit node 10\n if-match ip-prefix P1\n apply local-preference 200\n#", "h3c")
+        residues = [w for w in r["warnings"] if "源厂商残留" in w]
+        assert len(residues) == 0, f"H3C route-policy on H3C flagged: {residues}"
+
+    def test_asa_native_nat(self):
+        r = _run_validation("nat (inside,outside) source dynamic interface\n!", "asa")
+        residues = [w for w in r["warnings"] if "源厂商残留" in w]
+        assert len(residues) == 0, f"ASA native nat flagged as residue: {residues}"
+
+    def test_cisco_vrf_rd_with_colon(self):
+        r = _run_validation("vrf definition CUSTOMER\n rd 100:1\n route-target export 100:1\n route-target import 100:1\n!", "cisco")
+        rd_issues = [w for w in r["warnings"] if "缺少冒号" in w]
+        assert len(rd_issues) == 0, f"Valid RD/RT flagged: {rd_issues}"
+
+    def test_huawei_valid_acl_range(self):
+        r = _run_validation("acl number 3000\n rule 0 permit ip source 10.0.0.0 0.0.0.255 destination any\n#", "huawei")
+        acl_issues = [w for w in r["warnings"] if "ACL number" in w]
+        assert len(acl_issues) == 0, f"Valid ACL 3000 flagged: {acl_issues}"

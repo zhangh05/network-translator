@@ -1,0 +1,30 @@
+{
+  "name": "cisco-routing-ospf-incomplete-to-h3c",
+  "source_domain": "routing",
+  "source_vendor": "cisco",
+  "source_platform": "ios",
+  "target_domain": "routing",
+  "target_vendor": "h3c",
+  "target_platform": "comware",
+  "features": [
+    "ospf"
+  ],
+  "risk": "high",
+  "source_config": "!\nrouter ospf 1\n redistribute bgp 65001 subnets\n redistribute connected subnets\n default-information originate always metric 20\n!\nrouter bgp 65001\n neighbor 10.0.0.2 remote-as 65002\n!",
+  "expected": {
+    "deployable": false,
+    "manual_review_required": true,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "MANUAL_REVIEW"
+    ],
+    "must_not_include": [
+      "<BGP",
+      "TODO",
+      "PLACEHOLDER",
+      "<"
+    ],
+    "max_level": "warning"
+  }
+}

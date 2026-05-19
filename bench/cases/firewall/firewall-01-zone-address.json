@@ -1,0 +1,32 @@
+{
+  "name": "huawei-firewall-zone-address-to-cisco",
+  "source_domain": "firewall",
+  "source_vendor": "huawei",
+  "source_platform": "vrp",
+  "target_domain": "firewall",
+  "target_vendor": "cisco",
+  "target_platform": "asa",
+  "features": [
+    "zone",
+    "address_object"
+  ],
+  "risk": "medium",
+  "source_config": "#\nfirewall zone trust\n set priority 85\n add interface GigabitEthernet0/0/1\n#\nfirewall zone untrust\n set priority 5\n add interface GigabitEthernet0/0/2\n#\nip address-set TRUST-LAN type object\n address 0 192.168.1.0 255.255.255.0\n#\nip address-set DMZ-SERVER type object\n address 0 10.0.0.0 255.255.255.0\n#",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "object-group",
+      "subnet",
+      "nameif",
+      "security-level"
+    ],
+    "must_not_include": [
+      "ip address-set",
+      "set priority"
+    ],
+    "max_level": "warning"
+  }
+}

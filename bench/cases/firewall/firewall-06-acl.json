@@ -1,0 +1,31 @@
+{
+  "name": "cisco-firewall-acl-to-huawei",
+  "source_domain": "firewall",
+  "source_vendor": "cisco",
+  "source_platform": "asa",
+  "target_domain": "firewall",
+  "target_vendor": "huawei",
+  "target_platform": "vrp",
+  "features": [
+    "acl",
+    "zone"
+  ],
+  "risk": "medium",
+  "source_config": "!\naccess-list INSIDE_IN extended permit tcp 192.168.1.0 255.255.255.0 any eq 80\naccess-list INSIDE_IN extended permit tcp 192.168.1.0 255.255.255.0 any eq 443\naccess-list INSIDE_IN extended deny ip any any\n!\naccess-group INSIDE_IN in interface inside\n!",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "acl",
+      "traffic-filter",
+      "rule"
+    ],
+    "must_not_include": [
+      "access-list INSIDE_IN",
+      "access-group"
+    ],
+    "max_level": "warning"
+  }
+}

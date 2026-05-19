@@ -1,0 +1,30 @@
+{
+  "name": "huawei-routing-vrrp-to-cisco",
+  "source_domain": "routing",
+  "source_vendor": "huawei",
+  "source_platform": "vrp",
+  "target_domain": "routing",
+  "target_vendor": "cisco",
+  "target_platform": "ios",
+  "features": [
+    "vrrp"
+  ],
+  "risk": "low",
+  "source_config": "#\ninterface GigabitEthernet0/0/1\n ip address 192.168.1.1 255.255.255.0\n vrrp vrid 1 virtual-ip 192.168.1.254\n vrrp vrid 1 priority 120\n vrrp vrid 1 preempt-mode timer delay 10\n#",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "vrrp",
+      "standby",
+      "ip"
+    ],
+    "must_not_include": [
+      "vrid",
+      "preempt-mode"
+    ],
+    "max_level": "info"
+  }
+}

@@ -1,0 +1,30 @@
+{
+  "name": "cisco-routing-dhcp-to-h3c",
+  "source_domain": "routing",
+  "source_vendor": "cisco",
+  "source_platform": "ios",
+  "target_domain": "routing",
+  "target_vendor": "h3c",
+  "target_platform": "comware",
+  "features": [
+    "dhcp"
+  ],
+  "risk": "low",
+  "source_config": "!\nip dhcp excluded-address 192.168.1.1 192.168.1.10\nip dhcp pool LAN-POOL\n network 192.168.1.0 255.255.255.0\n default-router 192.168.1.254\n dns-server 8.8.8.8\n lease 7\n!",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "dhcp",
+      "network",
+      "gateway-list"
+    ],
+    "must_not_include": [
+      "default-router",
+      "ip dhcp pool"
+    ],
+    "max_level": "info"
+  }
+}

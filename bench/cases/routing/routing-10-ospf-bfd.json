@@ -1,0 +1,30 @@
+{
+  "name": "h3c-routing-ospf-bfd-to-cisco",
+  "source_domain": "routing",
+  "source_vendor": "h3c",
+  "source_platform": "comware",
+  "target_domain": "routing",
+  "target_vendor": "cisco",
+  "target_platform": "ios",
+  "features": [
+    "ospf",
+    "bfd"
+  ],
+  "risk": "medium",
+  "source_config": "#\nbfd multi-hop min-transmit-interval 200 min-receive-interval 200 detect-multiplier 3\n#\nospf 1 router-id 3.3.3.3\n area 0.0.0.0\n  network 10.0.0.0 0.0.0.255\n bfd all-interfaces enable\n#",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "bfd",
+      "router ospf",
+      "area"
+    ],
+    "must_not_include": [
+      "bfd all-interfaces enable"
+    ],
+    "max_level": "warning"
+  }
+}

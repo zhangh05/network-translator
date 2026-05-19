@@ -1,0 +1,27 @@
+domain: switching
+vendor: ruijie
+platforms:
+- rg-os
+features:
+  acl: unknown
+  dhcp: unknown
+  interface: unknown
+  lacp: unknown
+  stp: unknown
+  system: unknown
+  trunk: unknown
+  vlan: unknown
+  vrrp: unknown
+  aaa: unknown
+  cdp: unknown
+  etherchannel: unknown
+  ipv6: unknown
+  lldp: unknown
+  local_user: unknown
+  ntp: unknown
+  poe: unknown
+  port_channel: unknown
+  qos: unknown
+  snmp: unknown
+  ssh: unknown
+  syslog: unknown

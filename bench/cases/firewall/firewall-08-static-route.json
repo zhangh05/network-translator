@@ -1,0 +1,30 @@
+{
+  "name": "h3c-firewall-static-route-to-cisco",
+  "source_domain": "firewall",
+  "source_vendor": "h3c",
+  "source_platform": "comware",
+  "target_domain": "firewall",
+  "target_vendor": "cisco",
+  "target_platform": "asa",
+  "features": [
+    "static_route",
+    "interface"
+  ],
+  "risk": "low",
+  "source_config": "#\ninterface GigabitEthernet1/0/1\n ip address 203.0.113.1 255.255.255.0\n#\nip route-static 0.0.0.0 0.0.0.0 203.0.113.254\nip route-static 192.168.0.0 255.255.0.0 10.0.0.2\n#",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "route",
+      "0.0.0.0"
+    ],
+    "must_not_include": [
+      "ip route-static",
+      "TODO"
+    ],
+    "max_level": "info"
+  }
+}

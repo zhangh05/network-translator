@@ -1,0 +1,29 @@
+{
+  "name": "cisco-firewall-syslog-to-huawei",
+  "source_domain": "firewall",
+  "source_vendor": "cisco",
+  "source_platform": "asa",
+  "target_domain": "firewall",
+  "target_vendor": "huawei",
+  "target_platform": "vrp",
+  "features": [
+    "syslog"
+  ],
+  "risk": "low",
+  "source_config": "!\nlogging enable\nlogging host inside 192.168.1.100\nlogging trap informational\nlogging source-interface inside\nlogging timestamp\n!",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "info-center",
+      "loghost"
+    ],
+    "must_not_include": [
+      "logging host",
+      "logging trap"
+    ],
+    "max_level": "info"
+  }
+}

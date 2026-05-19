@@ -1,0 +1,31 @@
+{
+  "name": "huawei-switching-to-cisco-ios-no-vlan-database",
+  "source_domain": "switching",
+  "source_vendor": "huawei",
+  "source_platform": "vrp",
+  "target_domain": "switching",
+  "target_vendor": "cisco",
+  "target_platform": "ios",
+  "features": [
+    "vlan",
+    "interface"
+  ],
+  "risk": "high",
+  "source_config": "#\nvlan batch 10 20 30 100 to 200\n#\ninterface GigabitEthernet0/0/1\n port link-type trunk\n port trunk allow-pass vlan 10 20 30\n#",
+  "expected": {
+    "deployable": false,
+    "manual_review_required": true,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "MANUAL_REVIEW"
+    ],
+    "must_not_include": [
+      "<vlan",
+      "TODO",
+      "PLACEHOLDER",
+      "<"
+    ],
+    "max_level": "warning"
+  }
+}

@@ -1,0 +1,30 @@
+domain: firewall
+vendor: h3c
+platforms:
+- secpath
+features:
+  interface: supported
+  zone: supported
+  address_object: supported
+  service_object: supported
+  security_policy: supported
+  nat: supported
+  acl: supported
+  aaa: supported
+  dhcp: supported
+  vrrp: supported
+  ipsec: supported
+  lldp: supported
+  ntp: supported
+  snmp: supported
+  system: supported
+  ipv6: supported
+  route_policy: supported
+  prefix_list: supported
+  static_route: supported
+  ospf: supported
+  bgp: supported
+  tunnel: supported
+  ssh: supported
+  syslog: supported
+  local_user: supported

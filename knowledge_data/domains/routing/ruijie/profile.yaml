@@ -1,0 +1,34 @@
+domain: routing
+vendor: ruijie
+platforms:
+- rg-os
+features:
+  acl: unknown
+  bgp: partial
+  dhcp: unknown
+  interface: unknown
+  ipsec: unknown
+  isis: unknown
+  nat: unknown
+  ospf: unknown
+  prefix_list: unknown
+  route_policy: unknown
+  static_route: unknown
+  system: unknown
+  vrrp: unknown
+  aaa: unknown
+  bfd: unknown
+  cdp: unknown
+  ipv6: unknown
+  lldp: unknown
+  local_user: unknown
+  multicast: unknown
+  ntp: unknown
+  pbr: unknown
+  port_channel: unknown
+  qos: unknown
+  snmp: unknown
+  ssh: unknown
+  syslog: unknown
+  tunnel: unknown
+  vrf: unknown

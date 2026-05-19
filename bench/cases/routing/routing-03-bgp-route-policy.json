@@ -1,0 +1,33 @@
+{
+  "name": "huawei-routing-bgp-route-policy-to-cisco",
+  "source_domain": "routing",
+  "source_vendor": "huawei",
+  "source_platform": "vrp",
+  "target_domain": "routing",
+  "target_vendor": "cisco",
+  "target_platform": "ios",
+  "features": [
+    "bgp",
+    "route_policy"
+  ],
+  "risk": "medium",
+  "source_config": "#\nbgp 65001\n router-id 2.2.2.2\n peer 192.168.1.2 as-number 65002\n peer 192.168.1.2 route-policy FROM_EBGP import\n#\nroute-policy FROM_EBGP permit node 10\n if-match ip-prefix IMPORT\n apply local-preference 200\n#\nip ip-prefix IMPORT permit 10.0.0.0 8 greater-equal 16 less-equal 24",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "route-map",
+      "bgp",
+      "neighbor",
+      "set local-preference",
+      "ip prefix-list"
+    ],
+    "must_not_include": [
+      "route-policy",
+      "ip-prefix"
+    ],
+    "max_level": "warning"
+  }
+}

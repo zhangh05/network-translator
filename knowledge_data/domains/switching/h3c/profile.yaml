@@ -1,0 +1,29 @@
+domain: switching
+vendor: h3c
+platforms:
+- comware
+features:
+  interface: supported
+  vlan: supported
+  trunk: supported
+  stp: supported
+  lacp: supported
+  dhcp: supported
+  vrrp: supported
+  aaa: supported
+  qos: supported
+  lldp: supported
+  ntp: supported
+  snmp: supported
+  system: supported
+  port_channel: supported
+  ipv6: supported
+  vxlan: supported
+  evpn: supported
+  mpls: supported
+  acl: supported
+  bfd: supported
+  multicast: supported
+  ssh: supported
+  syslog: supported
+  local_user: supported

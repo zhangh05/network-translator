@@ -1,0 +1,33 @@
+{
+  "name": "cisco-routing-vrf-static-to-huawei",
+  "source_domain": "routing",
+  "source_vendor": "cisco",
+  "source_platform": "ios",
+  "target_domain": "routing",
+  "target_vendor": "huawei",
+  "target_platform": "vrp",
+  "features": [
+    "vrf",
+    "static_route"
+  ],
+  "risk": "medium",
+  "source_config": "!\nip vrf CUSTOMER-A\n rd 100:1\n route-target export 100:1\n route-target import 100:1\n!\nip vrf CUSTOMER-B\n rd 100:2\n!\ninterface GigabitEthernet0/0.100\n encapsulation dot1Q 100\n ip vrf forwarding CUSTOMER-A\n ip address 192.168.1.1 255.255.255.0\n!\nip route vrf CUSTOMER-A 0.0.0.0 0.0.0.0 192.168.1.254\nip route vrf CUSTOMER-B 172.16.0.0 255.255.0.0 10.0.0.2\n!",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "ip vpn-instance",
+      "route-distinguisher",
+      "ip binding vpn-instance",
+      "ip route-static vpn-instance"
+    ],
+    "must_not_include": [
+      "ip vrf",
+      "vrf forwarding",
+      "route-target"
+    ],
+    "max_level": "warning"
+  }
+}

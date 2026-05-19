@@ -1,0 +1,356 @@
+interface:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+isis:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+prefix_list:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+route_policy:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+vlan:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+ospf:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+bgp:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+static_route:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+acl:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+dhcp:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+nat:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+stp:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+vrrp:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+aaa:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+qos:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+tunnel:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+ipsec:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+lldp:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+cdp:
+  cisco: supported
+  huawei: unsupported
+  h3c: unsupported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+security_policy:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+dcn:
+  huawei: supported
+  h3c: unsupported
+  cisco: unsupported
+irf:
+  h3c: supported
+  cisco: unsupported
+  huawei: unsupported
+etherchannel:
+  cisco: supported
+  huawei: partial
+  h3c: partial
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+mpls:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+ntp:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+snmp:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+vxlan:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+poe:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+system:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+vrf:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+multicast:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+bfd:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+ipv6:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+port_channel:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+pbr:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+evpn:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+address_object:
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+lacp:
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+service_object:
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+trunk:
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+zone:
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+ssh:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+syslog:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+local_user:
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown
+  cisco: supported
+  huawei: supported
+  h3c: supported

@@ -1,0 +1,30 @@
+{
+  "name": "h3c-firewall-nat-missing-zone-to-huawei",
+  "source_domain": "firewall",
+  "source_vendor": "h3c",
+  "source_platform": "comware",
+  "target_domain": "firewall",
+  "target_vendor": "huawei",
+  "target_platform": "vrp",
+  "features": [
+    "nat"
+  ],
+  "risk": "high",
+  "source_config": "#\ninterface GigabitEthernet1/0/1\n port link-mode route\n ip address 203.0.113.1 255.255.255.0\n nat outbound 2000 address-group NAT-POOL\n#\nacl number 2000\n rule 0 permit source 192.168.1.0 0.0.0.255\n#",
+  "expected": {
+    "deployable": false,
+    "manual_review_required": true,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "MANUAL_REVIEW"
+    ],
+    "must_not_include": [
+      "<ACL",
+      "TODO",
+      "PLACEHOLDER",
+      "<"
+    ],
+    "max_level": "warning"
+  }
+}

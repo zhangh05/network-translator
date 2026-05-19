@@ -1,0 +1,33 @@
+domain: routing
+vendor: huawei
+platforms:
+- vrp
+features:
+  interface: supported
+  static_route: supported
+  ospf: supported
+  bgp: supported
+  acl: supported
+  prefix_list: supported
+  route_policy: supported
+  dhcp: supported
+  vrrp: supported
+  aaa: supported
+  qos: supported
+  pbr: supported
+  multicast: supported
+  bfd: supported
+  vrf: supported
+  tunnel: supported
+  ipsec: supported
+  lldp: supported
+  ntp: supported
+  snmp: supported
+  system: supported
+  port_channel: supported
+  ipv6: supported
+  nat: supported
+  mpls: supported
+  ssh: supported
+  syslog: supported
+  local_user: supported

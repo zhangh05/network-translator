@@ -1,0 +1,32 @@
+{
+  "name": "huawei-routing-qos-to-cisco",
+  "source_domain": "routing",
+  "source_vendor": "huawei",
+  "source_platform": "vrp",
+  "target_domain": "routing",
+  "target_vendor": "cisco",
+  "target_platform": "ios",
+  "features": [
+    "qos"
+  ],
+  "risk": "medium",
+  "source_config": "#\ntraffic classifier VOICE operator or\n if-match dscp ef\n#\ntraffic behavior VOICE-MARK\n remark dscp ef\n queue ef 1000\n#\ntraffic policy QOS-POLICY\n classifier VOICE behavior VOICE-MARK\n#\ninterface GigabitEthernet0/0/1\n traffic-policy QOS-POLICY inbound\n#",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "class-map",
+      "policy-map",
+      "service-policy",
+      "priority"
+    ],
+    "must_not_include": [
+      "traffic classifier",
+      "traffic behavior",
+      "traffic-policy"
+    ],
+    "max_level": "warning"
+  }
+}

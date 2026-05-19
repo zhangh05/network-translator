@@ -1,0 +1,30 @@
+{
+  "name": "h3c-firewall-service-object-to-huawei",
+  "source_domain": "firewall",
+  "source_vendor": "h3c",
+  "source_platform": "comware",
+  "target_domain": "firewall",
+  "target_vendor": "huawei",
+  "target_platform": "vrp",
+  "features": [
+    "service_object",
+    "address_object"
+  ],
+  "risk": "low",
+  "source_config": "#\nobject service WEB\n service tcp destination-port eq 80 443\n#\nobject service DNS\n service udp destination-port eq 53\n#\nobject network VIP-SERVERS\n host 10.0.0.10 255.255.255.255\n host 10.0.0.11 255.255.255.255\n#",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "ip address-set",
+      "service-set"
+    ],
+    "must_not_include": [
+      "object service",
+      "object network"
+    ],
+    "max_level": "info"
+  }
+}

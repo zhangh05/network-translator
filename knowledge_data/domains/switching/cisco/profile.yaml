@@ -1,0 +1,32 @@
+domain: switching
+vendor: cisco
+platforms:
+- ios
+- ios-xe
+- nx-os
+features:
+  interface: supported
+  vlan: supported
+  trunk: supported
+  stp: supported
+  lacp: supported
+  dhcp: supported
+  vrrp: supported
+  aaa: supported
+  qos: supported
+  lldp: supported
+  cdp: supported
+  ntp: supported
+  snmp: supported
+  system: supported
+  port_channel: supported
+  ipv6: supported
+  vxlan: supported
+  evpn: supported
+  mpls: supported
+  acl: supported
+  bfd: supported
+  multicast: supported
+  ssh: supported
+  syslog: supported
+  local_user: supported

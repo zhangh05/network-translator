@@ -1,0 +1,176 @@
+[
+  {
+    "feature": "bfd",
+    "priority": "p2",
+    "risk": "medium",
+    "domains": [
+      "routing"
+    ],
+    "analyzer_class": "BfdAnalyzer",
+    "status": "completed_phase5c",
+    "reason": "参数简单但关联 OSPF/BGP/static",
+    "bench_linked": [
+      "h3c-routing-ospf-bfd-to-cisco"
+    ],
+    "test_cases_planned": 2
+  },
+  {
+    "feature": "dhcp",
+    "priority": "p1",
+    "risk": "low",
+    "domains": [
+      "routing",
+      "switching"
+    ],
+    "analyzer_class": "DhcpAnalyzer",
+    "status": "completed_phase5b",
+    "reason": "常见，参数映射简单",
+    "bench_linked": [
+      "cisco-routing-dhcp-to-h3c"
+    ],
+    "test_cases_planned": 2
+  },
+  {
+    "feature": "ipsec",
+    "priority": "p0",
+    "risk": "high",
+    "domains": [
+      "routing",
+      "firewall"
+    ],
+    "analyzer_class": "IpsecAnalyzer",
+    "status": "completed_phase5a",
+    "reason": "参数依赖强，缺 proposal/ike/peer/acl 导致不可用",
+    "bench_linked": [
+      "cisco-firewall-ipsec-to-huawei"
+    ],
+    "test_cases_planned": 4
+  },
+  {
+    "feature": "lacp",
+    "priority": "p2",
+    "risk": "low",
+    "domains": [
+      "switching"
+    ],
+    "analyzer_class": "LacpAnalyzer",
+    "status": "completed_phase5c",
+    "reason": "结构简单，risk 低",
+    "bench_linked": [
+      "h3c-switching-lacp-to-cisco"
+    ],
+    "test_cases_planned": 2
+  },
+  {
+    "feature": "object",
+    "priority": "p1",
+    "risk": "low",
+    "domains": [
+      "firewall"
+    ],
+    "analyzer_class": "ObjectAnalyzer",
+    "status": "completed_phase5b",
+    "reason": "防火墙对象支撑 NAT/security_policy",
+    "bench_linked": [
+      "cisco-firewall-security-policy-to-h3c",
+      "h3c-firewall-nat-server-to-huawei",
+      "h3c-firewall-service-object-to-huawei",
+      "huawei-firewall-security-policy-deny-to-h3c",
+      "huawei-firewall-zone-address-to-cisco"
+    ],
+    "test_cases_planned": 3
+  },
+  {
+    "feature": "qos",
+    "priority": "p0",
+    "risk": "medium",
+    "domains": [
+      "routing",
+      "switching"
+    ],
+    "analyzer_class": "QosAnalyzer",
+    "status": "completed_phase5a",
+    "reason": "厂商差异大，class/behavior/policy/service-policy 关系易丢",
+    "bench_linked": [
+      "huawei-routing-qos-to-cisco",
+      "huawei-switching-qos-to-h3c"
+    ],
+    "test_cases_planned": 4
+  },
+  {
+    "feature": "route_policy",
+    "priority": "p0",
+    "risk": "medium",
+    "domains": [
+      "routing"
+    ],
+    "analyzer_class": "RoutePolicyAnalyzer",
+    "status": "completed_phase5a",
+    "reason": "与 BGP/OSPF import/export 强相关，误翻影响路由传播",
+    "bench_linked": [
+      "huawei-routing-bgp-route-policy-to-cisco"
+    ],
+    "test_cases_planned": 6
+  },
+  {
+    "feature": "stp",
+    "priority": "p2",
+    "risk": "medium",
+    "domains": [
+      "switching"
+    ],
+    "analyzer_class": "StpAnalyzer",
+    "status": "completed_phase5c",
+    "reason": "MSTP 多实例关系需要验证",
+    "bench_linked": [
+      "huawei-switching-stp-to-cisco"
+    ],
+    "test_cases_planned": 2
+  },
+  {
+    "feature": "tunnel",
+    "priority": "p2",
+    "risk": "medium",
+    "domains": [
+      "routing"
+    ],
+    "analyzer_class": "TunnelAnalyzer",
+    "status": "completed_phase5c",
+    "reason": "GRE/IPIP 结构简单，IPsec over tunnel 需单独处理",
+    "bench_linked": [
+      "cisco-routing-tunnel-to-huawei"
+    ],
+    "test_cases_planned": 2
+  },
+  {
+    "feature": "vrf",
+    "priority": "p2",
+    "risk": "medium",
+    "domains": [
+      "routing"
+    ],
+    "analyzer_class": "VrfAnalyzer",
+    "status": "completed_phase5c",
+    "reason": "结构稳定，风险中等",
+    "bench_linked": [
+      "cisco-routing-vrf-static-to-huawei"
+    ],
+    "test_cases_planned": 2
+  },
+  {
+    "feature": "vrrp",
+    "priority": "p1",
+    "risk": "low",
+    "domains": [
+      "routing",
+      "switching"
+    ],
+    "analyzer_class": "VrrpAnalyzer",
+    "status": "completed_phase5b",
+    "reason": "常见但结构相对简单",
+    "bench_linked": [
+      "huawei-routing-vrrp-to-cisco"
+    ],
+    "test_cases_planned": 2
+  }
+]
