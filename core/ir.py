@@ -123,6 +123,24 @@ def parse_to_ir(config_text: str, vendor: str, llm) -> Union[list, dict]:
     return parsed
 
 
+def _asa_nat_rule(cp: str, target_platform: str) -> str:
+    if target_platform != "asa":
+        return ""
+    return (
+        "6. 目标为 Cisco ASA NAT 约束：禁止使用 IOS 风格 ip nat inside/source/outside/overload/pool 命令；"
+        "禁止保留 nat source/nat server 原命令。"
+        f"NAT 须使用 object network ... nat (...) 或 nat (src,dst) ... 语法。"
+        f"缺少 inside/outside 接口映射时以 {cp} MANUAL_REVIEW 标记，不得编造。\n"
+    )
+
+
+def _bfd_rule(cp: str, target_platform: str) -> str:
+    return (
+        "7. 源配置存在 OSPF/BGP 与 BFD 绑定时，目标配置必须保留对应协议的 BFD 绑定语义；"
+        f"无法确定目标平台绑定语法时以 {cp} MANUAL_REVIEW 标记，不得省略。\n"
+    )
+
+
 def translate_config(
     config_text: str, from_vendor: str, to_vendor: str, llm,
     knowledge_context: str = None,
@@ -162,6 +180,8 @@ def translate_config(
    - 若需保留语义线索，以目标平台注释格式 {cp} MANUAL_REVIEW 在 translated_lines 中标记，并在 notes 中说明缺失参数。
 4. NAT / security-policy / ACL 须保持规则顺序和引用关系；缺少被引用对象时，仍输出规则本身并在行末追加 {cp} MANUAL_REVIEW 注释。
 5. 目标 {to_vendor} ({target_platform or to_vendor}) 是权威平台命令集；禁止混入其他平台（如源或第三方）的命令。
+{_asa_nat_rule(cp, target_platform)}
+{_bfd_rule(cp, target_platform)}
 
 返回**非空** JSON 数组，每条含 type, translated_lines, original_lines, notes, confidence。
 type 选预定义: vlan,interface,ospf,bgp,acl,stp,dhcp,nat,static_route,vrrp,tunnel,ipsec,qos,system。

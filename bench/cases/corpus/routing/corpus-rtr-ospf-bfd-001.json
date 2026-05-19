@@ -1,0 +1,37 @@
+{
+  "name": "corpus-rtr-ospf-bfd-001",
+  "source_domain": "routing",
+  "source_vendor": "huawei",
+  "source_platform": "VRP",
+  "target_domain": "routing",
+  "target_vendor": "cisco",
+  "target_platform": "ios",
+  "features": [
+    "ospf",
+    "bfd",
+    "interface"
+  ],
+  "risk": "medium",
+  "tier": "core",
+  "source_config": "!\n! Huawei VRP — OSPF with BFD\n! Source: internal_lab\n! Domain: routing, Features: ospf, bfd, interface\n!\nsysname ROUTER_OSPF_BFD\n#\ninterface GigabitEthernet0/0/0\n description Link-to-Core-1\n ip address 198.18.1.1 255.255.255.0\n ospf enable 1 area 0.0.0.0\n ospf bfd enable\n bfd min-tx-interval 100 min-rx-interval 100 detect-multiplier 3\n undo shutdown\n#\ninterface GigabitEthernet0/0/1\n description Link-to-Core-2\n ip address 198.18.2.1 255.255.255.0\n ospf enable 1 area 0.0.0.0\n ospf bfd enable\n bfd min-tx-interval 100 min-rx-interval 100 detect-multiplier 3\n undo shutdown\n#\ninterface LoopBack0\n ip address 198.18.255.1 255.255.255.255\n ospf enable 1 area 0.0.0.0\n#\nospf 1 router-id 198.18.255.1\n area 0.0.0.0\n  network 198.18.0.0 255.255.0.0\n#\nbfd\n#",
+  "expected": {
+    "deployable": false,
+    "manual_review_required": true,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "router ospf",
+      "bfd"
+    ],
+    "must_not_include": [
+      "ospf enable",
+      "bfd enable",
+      "sysname"
+    ],
+    "max_level": "error"
+  },
+  "corpus_ref": {
+    "sanitized_file": "rtr-ospf-bfd-001.txt",
+    "annotation_file": "rtr-ospf-bfd-001.txt.annotation.json"
+  }
+}

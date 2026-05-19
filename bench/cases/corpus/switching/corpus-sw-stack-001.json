@@ -1,0 +1,33 @@
+{
+  "name": "corpus-sw-stack-001",
+  "source_domain": "switching",
+  "source_vendor": "h3c",
+  "source_platform": "Comware",
+  "target_domain": "switching",
+  "target_vendor": "cisco",
+  "target_platform": "ios",
+  "features": [
+    "interface",
+    "irf"
+  ],
+  "risk": "high",
+  "tier": "full",
+  "source_config": "!\n! H3C Comware — IRF stacking\n! Source: public_doc\n! Domain: switching, Features: interface\n!\nsysname MEMBER-1\n#\nirf member 1 member-priority 10\n#\ninterface GigabitEthernet1/0/1\n description Stack-Port-1\n port link-mode bridge\n#\ninterface GigabitEthernet1/0/2\n description Stack-Port-2\n port link-mode bridge\n#\nirf-port 1/1\n port group interface GigabitEthernet1/0/1\n#\nirf-port 1/2\n port group interface GigabitEthernet1/0/2\n#\ninterface GigabitEthernet1/0/10\n description Access-VLAN10\n port link-mode bridge\n port access vlan 10\n#\ninterface GigabitEthernet1/0/11\n description Access-VLAN20\n port link-mode bridge\n port access vlan 20\n#\nirf-port-configuration active\n#",
+  "expected": {
+    "deployable": false,
+    "manual_review_required": true,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_not_include": [
+      "irf member",
+      "irf-port",
+      "irf-port-configuration",
+      "sysname MEMBER"
+    ],
+    "max_level": "error"
+  },
+  "corpus_ref": {
+    "sanitized_file": "sw-stack-001.txt",
+    "annotation_file": "sw-stack-001.txt.annotation.json"
+  }
+}

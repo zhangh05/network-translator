@@ -1,0 +1,38 @@
+{
+  "name": "corpus-sw-mstp-001",
+  "source_domain": "switching",
+  "source_vendor": "cisco",
+  "source_platform": "IOS",
+  "target_domain": "switching",
+  "target_vendor": "huawei",
+  "target_platform": "vrp",
+  "features": [
+    "stp",
+    "vlan",
+    "interface"
+  ],
+  "risk": "medium",
+  "tier": "core",
+  "source_config": "!\n! Cisco IOS — MSTP with multiple instances\n! Source: public_doc\n! Domain: switching, Features: stp, vlan, interface\n!\nspanning-tree mode mst\nspanning-tree mst configuration\n name LAB_MSTP\n revision 1\n instance 1 vlan 10, 20\n instance 2 vlan 30, 40\n!\nspanning-tree mst 1 root primary\nspanning-tree mst 2 root secondary\n!\ninterface GigabitEthernet0/1\n description Trunk-to-Core\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,40,100\n spanning-tree portfast disable\n no shutdown\n!\ninterface GigabitEthernet0/2\n description Access-VLAN10\n switchport mode access\n switchport access vlan 10\n spanning-tree portfast\n no shutdown\n!\ninterface GigabitEthernet0/3\n description Access-VLAN20\n switchport mode access\n switchport access vlan 20\n spanning-tree portfast\n no shutdown\n!\ninterface Vlan100\n description Management\n ip address 198.18.100.1 255.255.255.0\n no shutdown\n!",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "stp mode mstp",
+      "stp region-configuration",
+      "instance 1 vlan",
+      "root primary"
+    ],
+    "must_not_include": [
+      "spanning-tree",
+      "switchport mode"
+    ],
+    "max_level": "warning"
+  },
+  "corpus_ref": {
+    "sanitized_file": "sw-mstp-001.txt",
+    "annotation_file": "sw-mstp-001.txt.annotation.json"
+  }
+}

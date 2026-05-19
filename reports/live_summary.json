@@ -1,0 +1,81 @@
+{
+  "generated_at": "2026-05-20T01:07:28",
+  "source": "bench/live_report.json",
+  "total": 8,
+  "by_priority": {
+    "P0": 2,
+    "P1": 6
+  },
+  "by_category": {
+    "validator_false_negative": 2,
+    "llm_quality_issue": 5,
+    "llm_timeout": 1
+  },
+  "failures": [
+    {
+      "name": "corpus-rtr-bgp-001",
+      "priority": "P0",
+      "category": "validator_false_negative",
+      "errors": [
+        "missing must_include: ip ip-prefix",
+        "contains forbidden: ip prefix-list"
+      ]
+    },
+    {
+      "name": "corpus-sw-stack-001",
+      "priority": "P0",
+      "category": "validator_false_negative",
+      "errors": [
+        "contains forbidden: irf member",
+        "contains forbidden: irf-port"
+      ]
+    },
+    {
+      "name": "corpus-fw-ipsec-vpn-001",
+      "priority": "P1",
+      "category": "llm_quality_issue",
+      "errors": [
+        "missing must_include: ipsec policy"
+      ]
+    },
+    {
+      "name": "corpus-fw-nat-001",
+      "priority": "P1",
+      "category": "llm_timeout",
+      "errors": []
+    },
+    {
+      "name": "corpus-fw-nat-sp-001",
+      "priority": "P1",
+      "category": "llm_quality_issue",
+      "errors": [
+        "missing must_include: nat (inside,outside) dynamic",
+        "missing must_include: access-list"
+      ]
+    },
+    {
+      "name": "corpus-fw-object-policy-001",
+      "priority": "P1",
+      "category": "llm_quality_issue",
+      "errors": [
+        "missing must_include: access-list extended"
+      ]
+    },
+    {
+      "name": "corpus-sw-dhcp-acl-001",
+      "priority": "P1",
+      "category": "llm_quality_issue",
+      "errors": [
+        "missing must_include: dhcp snooping trusted"
+      ]
+    },
+    {
+      "name": "corpus-sw-lacp-001",
+      "priority": "P1",
+      "category": "llm_quality_issue",
+      "errors": [
+        "contains forbidden: lacp-static"
+      ]
+    }
+  ]
+}

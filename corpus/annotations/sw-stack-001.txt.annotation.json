@@ -1,0 +1,65 @@
+{
+  "id": "sw-stack-001",
+  "title": "H3C Comware — IRF stacking configuration",
+  "status": "bench_generated",
+  "source": {
+    "origin": "public_doc",
+    "description": "IRF member configuration with member priority, stack ports bound to IRF-port, and access VLAN ports",
+    "collected_at": "2026-05-19",
+    "original_hash": "sha256:placeholder-for-original-hash"
+  },
+  "classification": {
+    "domain": "switching",
+    "vendor": "h3c",
+    "platform": "Comware",
+    "features": [
+      "interface",
+      "irf"
+    ],
+    "risk": "high",
+    "tags": [
+      "switching",
+      "irf",
+      "stacking",
+      "h3c"
+    ]
+  },
+  "config": {
+    "sanitized_path": "sw-stack-001.txt",
+    "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
+    "line_count": 35,
+    "description": "IRF stacking with member-priority, physical-to-IRF-port binding, and IRF-port-configuration activation",
+    "known_issues": [
+      "IRF is H3C-specific; Cisco VSS/StackWise has different CLI. Translation may produce Cisco stackwise-virtual config"
+    ]
+  },
+  "annotation": {
+    "reviewed_by": "automated",
+    "reviewed_at": "2026-05-19",
+    "expected_translation": {
+      "target_vendor": "cisco",
+      "high_level": "H3C IRF 无直接 Cisco IOS 等价能力。平台验证器检测到 H3C irf 残留后自动标记为不可部署。翻译结果应不包含 H3C 命令引用。",
+      "key_lines": [],
+      "must_not_contain": [
+        "irf member",
+        "irf-port",
+        "irf-port-configuration",
+        "sysname MEMBER"
+      ]
+    },
+    "verification": {
+      "static_pass": true,
+      "deployable": false,
+      "manual_review_required": true,
+      "notes": "H3C IRF 堆叠无 Cisco IOS 直接等价。Cisco 平台需 VSS/StackWise（取决于平台），普通 IOS 无法等价。翻译结果应标记 MANUAL_REVIEW 而非硬翻成 Port-channel 或空接口配置。"
+    }
+  },
+  "benchmark": {
+    "case_generated": true,
+    "case_path": "../bench/cases/corpus/switching/corpus-sw-stack-001.json",
+    "tier": "full",
+    "last_run": "",
+    "static_pass": false,
+    "live_pass": false
+  }
+}

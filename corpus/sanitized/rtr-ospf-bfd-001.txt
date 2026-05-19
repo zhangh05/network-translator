@@ -1,0 +1,33 @@
+!
+! Huawei VRP — OSPF with BFD
+! Source: internal_lab
+! Domain: routing, Features: ospf, bfd, interface
+!
+sysname ROUTER_OSPF_BFD
+#
+interface GigabitEthernet0/0/0
+ description Link-to-Core-1
+ ip address 198.18.1.1 255.255.255.0
+ ospf enable 1 area 0.0.0.0
+ ospf bfd enable
+ bfd min-tx-interval 100 min-rx-interval 100 detect-multiplier 3
+ undo shutdown
+#
+interface GigabitEthernet0/0/1
+ description Link-to-Core-2
+ ip address 198.18.2.1 255.255.255.0
+ ospf enable 1 area 0.0.0.0
+ ospf bfd enable
+ bfd min-tx-interval 100 min-rx-interval 100 detect-multiplier 3
+ undo shutdown
+#
+interface LoopBack0
+ ip address 198.18.255.1 255.255.255.255
+ ospf enable 1 area 0.0.0.0
+#
+ospf 1 router-id 198.18.255.1
+ area 0.0.0.0
+  network 198.18.0.0 255.255.0.0
+#
+bfd
+#

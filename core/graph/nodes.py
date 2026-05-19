@@ -690,6 +690,7 @@ class ValidateNode(Node):
                 (r'\baclnumber\b', 'Huawei/H3C: acl number'),
                 (r'\binterface\s+GE\d+', 'Huawei/H3C: GE abbreviated interface'),
                 (r'\binterface\s+XGigabitEthernet\d+', 'Huawei/H3C: XGigabitEthernet abbreviation'),
+                (r'\b(irf\s+member|irf-port)\b', 'H3C: irf member/irf-port'),
             ],
             'huawei': [
                 # Cisco residues in Huawei VRP
@@ -734,7 +735,12 @@ class ValidateNode(Node):
                 (r'\bip\s+prefix-list\b', 'IOS: ip prefix-list'),
                 (r'\binterface\s+Ethernet\d+', 'IOS: interface Ethernet'),
                 # Huawei/H3C residues in ASA
+                (r'\bnat\s+static\s+enable\b', 'Huawei/H3C: nat static enable'),
+                (r'\bnat\s+source\b', 'Huawei/H3C: nat source'),
+                (r'\bnat\s+server\b', 'Huawei/H3C: nat server'),
+                (r'\bnat\s+outbound\b', 'Huawei/H3C: nat outbound'),
                 (r'\bsecurity-zone\b', 'Huawei/H3C: security-zone'),
+                (r'\bsecurity-policy\b', 'Huawei/H3C: security-policy'),
                 (r'\broute-policy\b', 'Huawei/H3C: route-policy'),
                 (r'\bundo\s+shutdown\b', 'Huawei/H3C: undo shutdown'),
             ],
@@ -750,7 +756,6 @@ class ValidateNode(Node):
                 (r'interface\s+Ethernet\d+', '华为建议使用 GigabitEthernet 而非 Ethernet'),
                 (r'ip\s+address\s+\d+\.\d+\.\d+\.\d+\s+\d+\.\d+\.\d+\.\d+\s+secondary',
                  '华为 VRP 不支持 secondary IP'),
-                (r'ospf\s+\d+\s+router-id\s+', '华为 VRP 的 OSPF router-id 应在 ospf [pid] router-id <id> 格式'),
                 (r'interface\s+Null\d+', '华为 VRP 不支持 Null 接口'),
                 (r'acl\s+name\s+', '华为 VRP 使用 acl name 时注意 name 前面无需 number'),
                 (r'interface\s+Vlanif\d+\s+ip\s+address\s+\S+\s+\S+\s+sub',
@@ -813,6 +818,11 @@ class ValidateNode(Node):
             if gigs and eths:
                 warnings.append("华为 VRP 接口类型混用（GigabitEthernet + Ethernet），建议统一")
 
+        # OSPF area format check: Cisco-style "network <ip> <wildcard> area <id>" in Huawei/H3C target
+        if tl in ('huawei', 'h3c'):
+            for m in re.finditer(r'(?:^|\n)\s*network\s+\S+\s+\S+\s+area\s+\d', config_content):
+                warnings.append(f"OSPF area 格式异常 — 检测到 Cisco 风格 'network <ip> <wildcard> area <id>'，华为/华三应使用 area <id> 视图下的 network 命令")
+
         # Reference checks
         ref_warnings = self._resolve_references(config_content, to_vendor)
         warnings.extend(ref_warnings)
@@ -871,6 +881,8 @@ class ValidateNode(Node):
                 if is_high:
                     has_high_risk = True
         return warnings, has_high_risk
+
+    def _feature_validation(self, state: State, result) -> dict:
         gap_severity = state.get("capability_gap_severity", "info")
         analyzer_results = _normalize_analyzer_results(state)
         analyzer_fatal = False
@@ -903,6 +915,7 @@ class ValidateNode(Node):
             "todo", "placeholder", "待填充",
             "源厂商残留", "残留",
             "缺少源",
+            "Cisco 风格", "格式异常",
         ]
         for w in warnings:
             wl = w.lower()
@@ -911,10 +924,16 @@ class ValidateNode(Node):
         return False
 
     def _evaluate_deployability(self, validation_level: str, high_risk_warning: bool,
-                                 critical_content_warning: bool) -> dict:
+                                 critical_content_warning: bool,
+                                 features: Optional[list] = None) -> dict:
         if validation_level == "fatal":
             return {"deployable": False, "manual_review_required": True}
         if high_risk_warning or critical_content_warning:
+            return {"deployable": False, "manual_review_required": True}
+        has_high_risk_feature = bool(features) and bool(
+            set(features or []) & self.HIGH_RISK_CONSISTENCY_FEATURES
+        )
+        if has_high_risk_feature:
             return {"deployable": False, "manual_review_required": True}
         if validation_level == "warning":
             return {"deployable": True, "manual_review_required": True}
@@ -983,7 +1002,8 @@ class ValidateNode(Node):
             validation_level = "warning"
 
         dep = self._evaluate_deployability(
-            validation_level, feat["high_risk_warning"] or has_high_risk_consistency, critical_content
+            validation_level, feat["high_risk_warning"] or has_high_risk_consistency, critical_content,
+            features=state.get("features", []),
         )
 
         output = {

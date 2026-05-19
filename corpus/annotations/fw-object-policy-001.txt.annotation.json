@@ -1,0 +1,71 @@
+{
+  "id": "fw-object-policy-001",
+  "title": "Huawei USG — Address/service objects with security-policy",
+  "status": "bench_generated",
+  "source": {
+    "origin": "internal_lab",
+    "description": "Address-set and service-set objects with security-policy rules across trust/dmz/untrust zones",
+    "collected_at": "2026-05-19",
+    "original_hash": "sha256:placeholder-for-original-hash"
+  },
+  "classification": {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platform": "USG",
+    "features": [
+      "address_object",
+      "service_object",
+      "security_policy",
+      "zone",
+      "interface"
+    ],
+    "risk": "high",
+    "tags": [
+      "firewall",
+      "object-group",
+      "security-policy",
+      "zone-based"
+    ]
+  },
+  "config": {
+    "sanitized_path": "fw-object-policy-001.txt",
+    "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
+    "line_count": 62,
+    "description": "Address-set and service-set object definitions with security-policy rules referencing objects across trust/dmz/untrust zones",
+    "known_issues": []
+  },
+  "annotation": {
+    "reviewed_by": "automated",
+    "reviewed_at": "2026-05-19",
+    "expected_translation": {
+      "target_vendor": "cisco",
+      "high_level": "Cisco ASA equivalent with object-group network, object-group service, access-list with object-group, and access-group",
+      "key_lines": [
+        "object-group network",
+        "object-group service",
+        "access-list extended",
+        "access-group"
+      ],
+      "must_not_contain": [
+        "ip address-set",
+        "ip service-set",
+        "security-policy",
+        "firewall zone"
+      ]
+    },
+    "verification": {
+      "static_pass": true,
+      "deployable": false,
+      "manual_review_required": true,
+      "notes": "High-risk: security-policy with object groups. Zone-based security-policy must be translated to ASA ACLs with proper direction/interface binding"
+    }
+  },
+  "benchmark": {
+    "case_generated": true,
+    "case_path": "../bench/cases/corpus/firewall/corpus-fw-object-policy-001.json",
+    "tier": "full",
+    "last_run": "",
+    "static_pass": false,
+    "live_pass": false
+  }
+}

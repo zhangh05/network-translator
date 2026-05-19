@@ -1,0 +1,36 @@
+!
+! Cisco IOS-XE — VRF with static routes
+! Source: public_doc
+! Domain: routing, Features: vrf, static_route, interface
+!
+ip vrf CUSTOMER_A
+ rd 65001:100
+ route-target export 65001:100
+ route-target import 65001:100
+!
+ip vrf CUSTOMER_B
+ rd 65001:200
+ route-target export 65001:200
+ route-target import 65001:200
+!
+interface GigabitEthernet0/0
+ description To-Customer-A
+ ip vrf forwarding CUSTOMER_A
+ ip address 198.18.10.1 255.255.255.0
+ no shutdown
+!
+interface GigabitEthernet0/1
+ description To-Customer-B
+ ip vrf forwarding CUSTOMER_B
+ ip address 198.18.20.1 255.255.255.0
+ no shutdown
+!
+interface GigabitEthernet0/2
+ description To-Upstream
+ ip address 198.18.254.1 255.255.255.0
+ no shutdown
+!
+ip route vrf CUSTOMER_A 0.0.0.0 0.0.0.0 198.18.254.2
+ip route vrf CUSTOMER_B 0.0.0.0 0.0.0.0 198.18.254.2
+ip route 198.18.254.0 255.255.255.0 198.18.254.2
+!

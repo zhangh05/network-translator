@@ -1,0 +1,35 @@
+!
+! H3C Comware — IRF stacking
+! Source: public_doc
+! Domain: switching, Features: interface
+!
+sysname MEMBER-1
+#
+irf member 1 member-priority 10
+#
+interface GigabitEthernet1/0/1
+ description Stack-Port-1
+ port link-mode bridge
+#
+interface GigabitEthernet1/0/2
+ description Stack-Port-2
+ port link-mode bridge
+#
+irf-port 1/1
+ port group interface GigabitEthernet1/0/1
+#
+irf-port 1/2
+ port group interface GigabitEthernet1/0/2
+#
+interface GigabitEthernet1/0/10
+ description Access-VLAN10
+ port link-mode bridge
+ port access vlan 10
+#
+interface GigabitEthernet1/0/11
+ description Access-VLAN20
+ port link-mode bridge
+ port access vlan 20
+#
+irf-port-configuration active
+#

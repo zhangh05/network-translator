@@ -1,0 +1,42 @@
+!
+! Cisco IOS — DHCP snooping with ACL
+! Source: internal_lab
+! Domain: switching, Features: dhcp, acl, interface, vlan
+!
+ip dhcp snooping
+ip dhcp snooping vlan 10,20,30
+ip dhcp snooping information option
+!
+interface GigabitEthernet0/1
+ description Trunk-to-Core
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,100
+ ip dhcp snooping trust
+ no shutdown
+!
+interface GigabitEthernet0/2
+ description Access-VLAN10
+ switchport mode access
+ switchport access vlan 10
+ no shutdown
+!
+interface GigabitEthernet0/3
+ description Access-VLAN20
+ switchport mode access
+ switchport access vlan 20
+ no shutdown
+!
+interface Vlan100
+ description Management
+ ip address 198.18.100.1 255.255.255.0
+ no shutdown
+!
+ip access-list extended BLOCK_P2P
+ deny tcp any any eq 4662
+ deny tcp any any eq 6699
+ permit ip any any
+!
+interface Vlan10
+ ip access-group BLOCK_P2P in
+!

@@ -134,9 +134,28 @@ def _validate_sanitized(san_path: Path, errors, warnings):
             f"sanitized/{san_path.name}:{line_num}: raw IP {m.group()} found"
             " (should be redacted to 198.18.x.x)"
         )
-    # check for password/secret values
+    # check for password/secret values (skip known redaction tokens)
+    KNOWN_REDACTION = {"__REDACTED__", "[REDACTED]", "$REDACTED$", "REDACTED"}
     for m in SECRET_RE.finditer(text):
         line_num = text[: m.start()].count("\n") + 1
+        line_start = text.rfind("\n", 0, m.start()) + 1
+        line_end = text.find("\n", m.start())
+        full_line = text[line_start:line_end] if line_end != -1 else text[line_start:]
+        parts = full_line.strip().split()
+        keyword_idx = None
+        for idx, part in enumerate(parts):
+            if part.lower() in ("password", "secret", "key", "community", "auth"):
+                keyword_idx = idx
+                break
+        # Handle hyphenated keywords like pre-shared-key (embedded "key" not in parts)
+        if keyword_idx is None:
+            for idx, part in enumerate(parts):
+                if "key" in part.lower() or "secret" in part.lower() or "auth" in part.lower():
+                    keyword_idx = idx
+                    break
+        secret_val = parts[keyword_idx + 1] if keyword_idx is not None and keyword_idx + 1 < len(parts) else ""
+        if secret_val in KNOWN_REDACTION:
+            continue
         warnings.append(
             f"sanitized/{san_path.name}:{line_num}: possible secret '{m.group()}'"
             " (should be [REDACTED])"

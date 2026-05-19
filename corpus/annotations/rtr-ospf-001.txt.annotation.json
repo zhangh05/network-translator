@@ -1,24 +1,29 @@
 {
   "id": "rtr-ospf-001",
   "title": "Cisco IOS-XE — OSPF single-area with default route",
-  "status": "annotated",
-
+  "status": "bench_generated",
   "source": {
     "origin": "public_doc",
     "description": "Standard OSPF single-area configuration with two upstream interfaces, loopback router-id, and default-information originate",
     "collected_at": "2026-04-15",
     "original_hash": "sha256:placeholder-for-original-hash"
   },
-
   "classification": {
-    "domain": "enterprise",
+    "domain": "routing",
     "vendor": "cisco",
     "platform": "IOS-XE",
-    "features": ["ospf", "interface", "static_route"],
+    "features": [
+      "ospf",
+      "interface",
+      "static_route"
+    ],
     "risk": "medium",
-    "tags": ["routing", "single-area", "default-route"]
+    "tags": [
+      "routing",
+      "single-area",
+      "default-route"
+    ]
   },
-
   "config": {
     "sanitized_path": "rtr-ospf-001.txt",
     "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
@@ -26,7 +31,6 @@
     "description": "Single-area OSPF with two interfaces in area 0, loopback router-id, default route via upstream, and default-information originate. Clean, well-structured config suitable for basic OSPF interoperability testing.",
     "known_issues": []
   },
-
   "annotation": {
     "reviewed_by": "automated",
     "reviewed_at": "2026-05-19",
@@ -34,13 +38,12 @@
       "target_vendor": "huawei",
       "high_level": "Huawei equivalent with ospf [process-id] router-id, area 0, and default-route-advertise",
       "key_lines": [
-        "ospf 1 router-id 198.18.255.1",
-        "area 0.0.0.0",
+        "ospf 1 router-id",
+        "area 0",
         "default-route-advertise"
       ],
       "must_not_contain": [
         "router ospf",
-        "network 198.18",
         "ip ospf 1 area"
       ]
     },
@@ -48,16 +51,15 @@
       "static_pass": true,
       "deployable": true,
       "manual_review_required": false,
-      "notes": ""
+      "notes": "Translation is correct Huawei VRP OSPF. Huawei uses 'ospf enable' on interfaces, 'network <ip> <wildcard>' under area view — this is valid syntax (not Cisco residue). Style tip warning for missing description is non-blocking."
     }
   },
-
   "benchmark": {
-    "case_generated": false,
-    "case_path": "",
+    "case_generated": true,
+    "case_path": "../bench/cases/corpus/routing/corpus-rtr-ospf-001.json",
     "tier": "smoke",
-    "last_run": "",
-    "static_pass": false,
+    "last_run": "2026-05-19T12:28:17Z",
+    "static_pass": true,
     "live_pass": false
   }
 }

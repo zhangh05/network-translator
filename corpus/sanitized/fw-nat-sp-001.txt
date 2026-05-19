@@ -1,0 +1,48 @@
+!
+! Huawei USG — NAT source with security-policy
+! Source: internal_lab
+! Domain: firewall, Features: nat, security_policy, zone, address_object, interface
+!
+sysname FIREWALL_NAT_SP
+#
+interface GigabitEthernet0/0/0
+ description To-Internal
+ ip address 10.0.0.1 255.255.255.0
+ undo shutdown
+#
+interface GigabitEthernet0/0/1
+ description To-Internet
+ ip address 198.18.1.1 255.255.255.0
+ undo shutdown
+#
+firewall zone trust
+ set priority 85
+ add interface GigabitEthernet0/0/0
+#
+firewall zone untrust
+ set priority 5
+ add interface GigabitEthernet0/0/1
+#
+nat address-group POOL_INTERNET 1
+ mode pat
+ section 0 198.18.10.1 198.18.10.254
+#
+nat policy SOURCE_NAT
+ rule name SNAT_TRUST
+  source-zone trust
+  destination-zone untrust
+  source-address 10.0.0.0 255.255.0.0
+  action source-nat address-group POOL_INTERNET
+#
+security-policy
+ rule name PERMIT_OUTBOUND
+  source-zone trust
+  destination-zone untrust
+  action permit
+ rule name DENY_INBOUND
+  source-zone untrust
+  destination-zone trust
+  action deny
+#
+ip route-static 0.0.0.0 0.0.0.0 198.18.1.254
+#

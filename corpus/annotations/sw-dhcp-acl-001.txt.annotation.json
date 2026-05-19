@@ -1,0 +1,69 @@
+{
+  "id": "sw-dhcp-acl-001",
+  "title": "Cisco IOS — DHCP snooping with ACL",
+  "status": "bench_generated",
+  "source": {
+    "origin": "internal_lab",
+    "description": "DHCP snooping enabled on VLANs with trusted uplink, plus a VLAN ACL to block P2P traffic",
+    "collected_at": "2026-05-19",
+    "original_hash": "sha256:placeholder-for-original-hash"
+  },
+  "classification": {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platform": "IOS",
+    "features": [
+      "dhcp",
+      "acl",
+      "vlan",
+      "interface"
+    ],
+    "risk": "high",
+    "tags": [
+      "switching",
+      "dhcp-snooping",
+      "acl",
+      "security"
+    ]
+  },
+  "config": {
+    "sanitized_path": "sw-dhcp-acl-001.txt",
+    "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
+    "line_count": 42,
+    "description": "DHCP snooping with trusted port on trunk, untrusted access ports, and VLAN ACL filtering P2P traffic on internal VLAN",
+    "known_issues": []
+  },
+  "annotation": {
+    "reviewed_by": "automated",
+    "reviewed_at": "2026-05-19",
+    "expected_translation": {
+      "target_vendor": "huawei",
+      "high_level": "Huawei VRP equivalent with dhcp snooping enable, dhcp snooping trusted, and traffic-filter with acl",
+      "key_lines": [
+        "dhcp snooping enable",
+        "dhcp snooping trusted",
+        "acl",
+        "traffic-filter"
+      ],
+      "must_not_contain": [
+        "ip dhcp snooping",
+        "ip access-group",
+        "switchport mode"
+      ]
+    },
+    "verification": {
+      "static_pass": true,
+      "deployable": false,
+      "manual_review_required": true,
+      "notes": "High-risk: ACL applied to VLAN. ACL translation requires careful permit/deny reversal check for Huawei traffic-filter. DHCP snooping mapping straightforward"
+    }
+  },
+  "benchmark": {
+    "case_generated": true,
+    "case_path": "../bench/cases/corpus/switching/corpus-sw-dhcp-acl-001.json",
+    "tier": "full",
+    "last_run": "",
+    "static_pass": false,
+    "live_pass": false
+  }
+}

@@ -1,0 +1,49 @@
+!
+! Cisco ASA — IPsec site-to-site VPN
+! Source: internal_lab
+! Domain: firewall, Features: ipsec, nat, acl, interface
+!
+interface GigabitEthernet0/0
+ nameif inside
+ security-level 100
+ ip address 10.0.0.1 255.255.255.0
+ no shutdown
+!
+interface GigabitEthernet0/1
+ nameif outside
+ security-level 0
+ ip address 198.18.1.1 255.255.255.0
+ no shutdown
+!
+object network INSIDE_NET
+ subnet 10.0.0.0 255.255.255.0
+!
+object network REMOTE_NET
+ subnet 198.18.100.0 255.255.255.0
+!
+access-list VPN_ACL extended permit ip object INSIDE_NET object REMOTE_NET
+!
+nat (inside,outside) source static INSIDE_NET INSIDE_NET destination static REMOTE_NET REMOTE_NET no-proxy-arp route-lookup
+!
+crypto ikev1 policy 10
+ authentication pre-share
+ encryption aes-256
+ hash sha
+ group 2
+ lifetime 86400
+!
+crypto ikev1 enable outside
+!
+tunnel-group 198.18.254.2 type ipsec-l2l
+tunnel-group 198.18.254.2 ipsec-attributes
+ ikev1 pre-shared-key __REDACTED__
+!
+crypto ipsec ikev1 transform-set AES256 esp-aes-256 esp-sha-hmac
+!
+crypto map VPN_MAP 10 match address VPN_ACL
+crypto map VPN_MAP 10 set peer 198.18.254.2
+crypto map VPN_MAP 10 set ikev1 transform-set AES256
+crypto map VPN_MAP interface outside
+!
+route outside 0.0.0.0 0.0.0.0 198.18.1.254 1
+!

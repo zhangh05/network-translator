@@ -1,0 +1,37 @@
+{
+  "name": "corpus-rtr-ospf-001",
+  "source_domain": "routing",
+  "source_vendor": "cisco",
+  "source_platform": "IOS-XE",
+  "target_domain": "routing",
+  "target_vendor": "huawei",
+  "target_platform": "vrp",
+  "features": [
+    "ospf",
+    "interface",
+    "static_route"
+  ],
+  "risk": "medium",
+  "tier": "smoke",
+  "source_config": "!\n! Cisco IOS-XE — OSPF with interface config\n! Source: public_doc\n! Domain: routing, Features: ospf, interface\n!\ninterface GigabitEthernet0/0\n ip address 198.18.1.1 255.255.255.0\n ip ospf 1 area 0\n no shutdown\n!\ninterface GigabitEthernet0/1\n ip address 198.18.2.1 255.255.255.0\n ip ospf 1 area 0\n no shutdown\n!\ninterface Loopback0\n ip address 198.18.255.1 255.255.255.255\n ip ospf 1 area 0\n!\nrouter ospf 1\n router-id 198.18.255.1\n network 198.18.1.0 0.0.0.255 area 0\n network 198.18.2.0 0.0.0.255 area 0\n default-information originate\n!\nip route 0.0.0.0 0.0.0.0 198.18.254.1",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "ospf 1 router-id",
+      "area 0",
+      "default-route-advertise"
+    ],
+    "must_not_include": [
+      "router ospf",
+      "ip ospf 1 area"
+    ],
+    "max_level": "warning"
+  },
+  "corpus_ref": {
+    "sanitized_file": "rtr-ospf-001.txt",
+    "annotation_file": "rtr-ospf-001.txt.annotation.json"
+  }
+}

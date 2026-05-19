@@ -1,0 +1,68 @@
+{
+  "id": "rtr-vrf-001",
+  "title": "Cisco IOS-XE — VRF with static routes",
+  "status": "bench_generated",
+  "source": {
+    "origin": "public_doc",
+    "description": "Two VRFs (CUSTOMER_A/B) with RD/RT, interface binding, and VRF-aware static default routes",
+    "collected_at": "2026-05-19",
+    "original_hash": "sha256:placeholder-for-original-hash"
+  },
+  "classification": {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platform": "IOS-XE",
+    "features": [
+      "vrf",
+      "static_route",
+      "interface"
+    ],
+    "risk": "medium",
+    "tags": [
+      "routing",
+      "vrf",
+      "static-route",
+      "l3vpn"
+    ]
+  },
+  "config": {
+    "sanitized_path": "rtr-vrf-001.txt",
+    "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
+    "line_count": 36,
+    "description": "Two VRF instances with RD/RT, interface bindings on subinterfaces, and VRF-aware static default routes via upstream",
+    "known_issues": []
+  },
+  "annotation": {
+    "reviewed_by": "automated",
+    "reviewed_at": "2026-05-19",
+    "expected_translation": {
+      "target_vendor": "huawei",
+      "high_level": "Huawei VRP equivalent with ip vpn-instance, route-distinguisher, vpn-target (export/import), ip binding, and ip route-static vpn-instance",
+      "key_lines": [
+        "vpn-instance",
+        "route-distinguisher",
+        "vpn-target",
+        "ip binding",
+        "ip route-static vpn-instance"
+      ],
+      "must_not_contain": [
+        "ip vrf",
+        "rd 65001"
+      ]
+    },
+    "verification": {
+      "static_pass": true,
+      "deployable": true,
+      "manual_review_required": false,
+      "notes": "Medium-risk VRF. Key Huawei mappings: ip vrf→ip vpn-instance, rd→route-distinguisher, route-target→vpn-target (export/import), ip route vrf→ip route-static vpn-instance"
+    }
+  },
+  "benchmark": {
+    "case_generated": true,
+    "case_path": "../bench/cases/corpus/routing/corpus-rtr-vrf-001.json",
+    "tier": "core",
+    "last_run": "",
+    "static_pass": false,
+    "live_pass": false
+  }
+}

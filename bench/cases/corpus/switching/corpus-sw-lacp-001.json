@@ -1,0 +1,42 @@
+{
+  "name": "corpus-sw-lacp-001",
+  "source_domain": "switching",
+  "source_vendor": "huawei",
+  "source_platform": "VRP",
+  "target_domain": "switching",
+  "target_vendor": "cisco",
+  "target_platform": "ios",
+  "features": [
+    "lacp",
+    "trunk",
+    "vlan",
+    "interface"
+  ],
+  "risk": "low",
+  "tier": "smoke",
+  "source_config": "!\n! Huawei VRP — LACP with Eth-Trunk\n! Source: public_doc\n! Domain: switching, Features: lacp, trunk, interface\n!\nsysname SWITCH_LACP\n#\ninterface Eth-Trunk1\n description Aggregated-Uplink\n port link-type trunk\n port trunk allow-pass vlan 10 20 30 100\n mode lacp-static\n load-balance src-dst-ip\n#\ninterface GigabitEthernet0/0/1\n eth-trunk 1\n undo shutdown\n#\ninterface GigabitEthernet0/0/2\n eth-trunk 1\n undo shutdown\n#\ninterface GigabitEthernet0/0/3\n eth-trunk 1\n undo shutdown\n#\ninterface GigabitEthernet0/0/10\n port link-type access\n port default vlan 10\n undo shutdown\n#\ninterface GigabitEthernet0/0/11\n port link-type access\n port default vlan 20\n undo shutdown\n#\ninterface Vlanif100\n ip address 198.18.100.1 255.255.255.0\n#",
+  "expected": {
+    "deployable": true,
+    "manual_review_required": false,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "interface Port-channel",
+      "channel-group",
+      "switchport mode trunk",
+      "interface Vlan"
+    ],
+    "must_not_include": [
+      "Eth-Trunk",
+      "lacp-static",
+      "port link-type",
+      "port trunk allow-pass",
+      "interface Vlanif"
+    ],
+    "max_level": "warning"
+  },
+  "corpus_ref": {
+    "sanitized_file": "sw-lacp-001.txt",
+    "annotation_file": "sw-lacp-001.txt.annotation.json"
+  }
+}

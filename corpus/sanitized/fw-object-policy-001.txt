@@ -1,0 +1,62 @@
+!
+! Huawei USG — Address/service objects with security-policy
+! Source: internal_lab
+! Domain: firewall, Features: address_object, service_object, security_policy, zone, interface
+!
+sysname FIREWALL_OBJ_POLICY
+#
+interface GigabitEthernet0/0/0
+ description To-LAN
+ ip address 10.0.0.1 255.255.255.0
+ undo shutdown
+#
+interface GigabitEthernet0/0/1
+ description To-DMZ
+ ip address 10.0.1.1 255.255.255.0
+ undo shutdown
+#
+interface GigabitEthernet0/0/2
+ description To-WAN
+ ip address 198.18.1.1 255.255.255.0
+ undo shutdown
+#
+firewall zone trust
+ set priority 85
+ add interface GigabitEthernet0/0/0
+#
+firewall zone dmz
+ set priority 50
+ add interface GigabitEthernet0/0/1
+#
+firewall zone untrust
+ set priority 5
+ add interface GigabitEthernet0/0/2
+#
+ip address-set LAN_SERVERS type object
+ address 0 10.0.0.10 255.255.255.255
+ address 1 10.0.0.11 255.255.255.255
+#
+ip address-set DMZ_SERVERS type object
+ address 0 10.0.1.10 255.255.255.255
+ address 1 10.0.1.11 255.255.255.255
+#
+ip service-set WEB_SERVICES type object
+ service 0 protocol tcp source-port 0 destination-port 80
+ service 1 protocol tcp source-port 0 destination-port 443
+#
+security-policy
+ rule name LAN_TO_DMZ
+  source-zone trust
+  destination-zone dmz
+  source-address address-set LAN_SERVERS
+  destination-address address-set DMZ_SERVERS
+  action permit
+ rule name DMZ_TO_WAN
+  source-zone dmz
+  destination-zone untrust
+  action permit
+ rule name WAN_TO_LAN_DENY
+  source-zone untrust
+  destination-zone trust
+  action deny
+#

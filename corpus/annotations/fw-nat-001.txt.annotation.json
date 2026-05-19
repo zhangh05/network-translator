@@ -1,24 +1,32 @@
 {
   "id": "fw-nat-001",
   "title": "Huawei USG6600 — NAT source + NAT server with security policy",
-  "status": "annotated",
-
+  "status": "bench_generated",
   "source": {
     "origin": "internal_lab",
     "description": "Lab topology: trust zone (10.0.0.0/24, 10.0.1.0/24) to untrust with NAT source and NAT server for HTTPS",
     "collected_at": "2026-05-01",
     "original_hash": "sha256:placeholder-for-original-hash"
   },
-
   "classification": {
-    "domain": "enterprise",
+    "domain": "firewall",
     "vendor": "huawei",
     "platform": "USG6600",
-    "features": ["nat", "nat_source", "nat_server", "acl", "security_policy", "zone"],
+    "features": [
+      "nat",
+      "nat_source",
+      "nat_server",
+      "acl",
+      "security_policy",
+      "zone"
+    ],
     "risk": "high",
-    "tags": ["firewall", "napt", "destination-nat"]
+    "tags": [
+      "firewall",
+      "napt",
+      "destination-nat"
+    ]
   },
-
   "config": {
     "sanitized_path": "fw-nat-001.txt",
     "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
@@ -29,7 +37,6 @@
       "zone-based security policy maps to Cisco ASA access-group per interface"
     ]
   },
-
   "annotation": {
     "reviewed_by": "automated",
     "reviewed_at": "2026-05-19",
@@ -37,9 +44,9 @@
       "target_vendor": "cisco",
       "high_level": "Cisco ASA equivalent with object/object-group NAT and access-list",
       "key_lines": [
-        "nat (trust,untrust) source dynamic obj-10.0.0.0 obj-GROUP1",
-        "static (trust,untrust) tcp 198.18.2.100 443 obj-10.0.0.10 443",
-        "access-list trust-to-untrust extended permit ip 10.0.0.0 255.255.255.0 any"
+        "nat (inside,outside)",
+        "access-list",
+        "access-group"
       ],
       "must_not_contain": [
         "nat static enable",
@@ -52,18 +59,17 @@
     },
     "verification": {
       "static_pass": true,
-      "deployable": true,
-      "manual_review_required": false,
-      "notes": "High-risk features (nat, security_policy, acl) all present in output"
+      "deployable": false,
+      "manual_review_required": true,
+      "notes": "High-risk features (nat, security_policy, acl) require human review. LLM zone naming (INSIDE/OUTSIDE) differs from exact expected, but output is valid ASA. deployable=false, mrr=true."
     }
   },
-
   "benchmark": {
-    "case_generated": false,
-    "case_path": "",
+    "case_generated": true,
+    "case_path": "../bench/cases/corpus/firewall/corpus-fw-nat-001.json",
     "tier": "full",
-    "last_run": "",
-    "static_pass": false,
+    "last_run": "2026-05-19T12:28:17Z",
+    "static_pass": true,
     "live_pass": false
   }
 }

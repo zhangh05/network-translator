@@ -1,0 +1,70 @@
+{
+  "id": "rtr-bgp-001",
+  "title": "Cisco IOS-XE — BGP with route-map and prefix-list",
+  "status": "bench_generated",
+  "source": {
+    "origin": "internal_lab",
+    "description": "Dual-homed BGP edge router with route-map for local-pref manipulation and prefix-list for outbound filtering",
+    "collected_at": "2026-05-19",
+    "original_hash": "sha256:placeholder-for-original-hash"
+  },
+  "classification": {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platform": "IOS-XE",
+    "features": [
+      "bgp",
+      "route_policy",
+      "prefix_list",
+      "interface"
+    ],
+    "risk": "medium",
+    "tags": [
+      "routing",
+      "bgp",
+      "route-map",
+      "prefix-list",
+      "dual-homed"
+    ]
+  },
+  "config": {
+    "sanitized_path": "rtr-bgp-001.txt",
+    "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
+    "line_count": 38,
+    "description": "Dual-homed BGP with two upstream ISPs, prefix-list outbound filtering, and route-map for local-preference",
+    "known_issues": []
+  },
+  "annotation": {
+    "reviewed_by": "automated",
+    "reviewed_at": "2026-05-19",
+    "expected_translation": {
+      "target_vendor": "huawei",
+      "high_level": "Huawei VRP equivalent with bgp [asn], peer, ip ip-prefix, and route-policy",
+      "key_lines": [
+        "bgp 65001",
+        "peer 198.18.1.2",
+        "ip ip-prefix",
+        "route-policy"
+      ],
+      "must_not_contain": [
+        "neighbor",
+        "route-map",
+        "ip prefix-list"
+      ]
+    },
+    "verification": {
+      "static_pass": true,
+      "deployable": false,
+      "manual_review_required": true,
+      "notes": "BGP 翻译。LLM 有时会输出 Cisco ip prefix-list 而非华为 ip ip-prefix。平台验证器检测到残留后自动标记为不可部署。翻译结果需人工确认 prefix-list 语义。"
+    }
+  },
+  "benchmark": {
+    "case_generated": true,
+    "case_path": "../bench/cases/corpus/routing/corpus-rtr-bgp-001.json",
+    "tier": "core",
+    "last_run": "",
+    "static_pass": false,
+    "live_pass": false
+  }
+}

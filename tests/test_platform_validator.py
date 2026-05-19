@@ -543,6 +543,10 @@ class TestPlatformValidatorCiscoResidue:
         r = _run_validation("acl number 3000\n rule 0 permit ip source 1.1.1.0 0.0.0.255\n", "cisco")
         assert any("acl number" in w for w in r["warnings"])
 
+    def test_cisco_bfd_syntax_not_false_positive(self):
+        r = _run_validation("interface GigabitEthernet0/0\n ip ospf bfd\n bfd interval 100\n", "cisco")
+        assert not any("bfd" in w for w in r["warnings"]), "Cisco BFD syntax should not trigger residue"
+
 
 class TestPlatformValidatorHuaweiResidue:
     """Huawei VRP target — new deep residue patterns."""

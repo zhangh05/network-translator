@@ -1,0 +1,71 @@
+{
+  "id": "sw-lacp-001",
+  "title": "Huawei VRP — LACP with Eth-Trunk",
+  "status": "bench_generated",
+  "source": {
+    "origin": "public_doc",
+    "description": "LACP static mode Eth-Trunk with 3 member interfaces, trunk allowed VLANs, and layer3 SVI",
+    "collected_at": "2026-05-19",
+    "original_hash": "sha256:placeholder-for-original-hash"
+  },
+  "classification": {
+    "domain": "switching",
+    "vendor": "huawei",
+    "platform": "VRP",
+    "features": [
+      "lacp",
+      "trunk",
+      "vlan",
+      "interface"
+    ],
+    "risk": "low",
+    "tags": [
+      "switching",
+      "lacp",
+      "eth-trunk",
+      "port-channel"
+    ]
+  },
+  "config": {
+    "sanitized_path": "sw-lacp-001.txt",
+    "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
+    "line_count": 39,
+    "description": "LACP static mode EtherChannel with 3 member interfaces, trunk VLAN filtering, and SVI for management",
+    "known_issues": []
+  },
+  "annotation": {
+    "reviewed_by": "automated",
+    "reviewed_at": "2026-05-19",
+    "expected_translation": {
+      "target_vendor": "cisco",
+      "high_level": "Cisco IOS equivalent with interface port-channel, channel-group mode active, switchport trunk, and interface vlan",
+      "key_lines": [
+        "interface Port-channel",
+        "channel-group",
+        "switchport mode trunk",
+        "interface Vlan"
+      ],
+      "must_not_contain": [
+        "Eth-Trunk",
+        "lacp-static",
+        "port link-type",
+        "port trunk allow-pass",
+        "interface Vlanif"
+      ]
+    },
+    "verification": {
+      "static_pass": true,
+      "deployable": true,
+      "manual_review_required": false,
+      "notes": "Low-risk LACP. Standard Cisco mappings: Eth-Trunk→Port-channel, lacp-static→active, port trunk allow-pass→switchport trunk allowed vlan"
+    }
+  },
+  "benchmark": {
+    "case_generated": true,
+    "case_path": "../bench/cases/corpus/switching/corpus-sw-lacp-001.json",
+    "tier": "smoke",
+    "last_run": "",
+    "static_pass": false,
+    "live_pass": false
+  }
+}

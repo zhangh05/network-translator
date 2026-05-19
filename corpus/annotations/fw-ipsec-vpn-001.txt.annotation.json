@@ -1,0 +1,71 @@
+{
+  "id": "fw-ipsec-vpn-001",
+  "title": "Cisco ASA — IPsec site-to-site VPN",
+  "status": "bench_generated",
+  "source": {
+    "origin": "internal_lab",
+    "description": "ASA IPsec site-to-site VPN with IKEv1 policy, pre-shared key, transform-set, crypto map, NAT exemption for VPN traffic",
+    "collected_at": "2026-05-19",
+    "original_hash": "sha256:placeholder-for-original-hash"
+  },
+  "classification": {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platform": "ASA",
+    "features": [
+      "ipsec",
+      "nat",
+      "acl",
+      "interface"
+    ],
+    "risk": "high",
+    "tags": [
+      "firewall",
+      "ipsec",
+      "vpn",
+      "site-to-site",
+      "asa"
+    ]
+  },
+  "config": {
+    "sanitized_path": "fw-ipsec-vpn-001.txt",
+    "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
+    "line_count": 49,
+    "description": "ASA site-to-site IPsec VPN with IKEv1 policy, tunnel-group with pre-shared key, crypto map on outside interface, NAT exemption for VPN traffic",
+    "known_issues": []
+  },
+  "annotation": {
+    "reviewed_by": "automated",
+    "reviewed_at": "2026-05-19",
+    "expected_translation": {
+      "target_vendor": "huawei",
+      "high_level": "Huawei USG equivalent with ike proposal, pre-shared-key, ipsec proposal, ipsec policy, and nat-policy for VPN traffic bypass",
+      "key_lines": [
+        "ike proposal",
+        "pre-shared-key",
+        "ipsec proposal",
+        "ipsec policy"
+      ],
+      "must_not_contain": [
+        "crypto ikev1",
+        "crypto ipsec",
+        "tunnel-group",
+        "crypto map"
+      ]
+    },
+    "verification": {
+      "static_pass": true,
+      "deployable": false,
+      "manual_review_required": true,
+      "notes": "High-risk: IPsec VPN with NAT interaction. ASA crypto map and tunnel-group have no direct Huawei equivalent; requires most manual review of all corpus entries"
+    }
+  },
+  "benchmark": {
+    "case_generated": true,
+    "case_path": "../bench/cases/corpus/firewall/corpus-fw-ipsec-vpn-001.json",
+    "tier": "full",
+    "last_run": "",
+    "static_pass": false,
+    "live_pass": false
+  }
+}

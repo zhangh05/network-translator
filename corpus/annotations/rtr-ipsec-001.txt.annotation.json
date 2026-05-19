@@ -1,0 +1,73 @@
+{
+  "id": "rtr-ipsec-001",
+  "title": "Cisco IOS-XE — IPsec site-to-site tunnel with IKEv1",
+  "status": "bench_generated",
+  "source": {
+    "origin": "internal_lab",
+    "description": "Site-to-site IPsec VPN with IKEv1 policy, pre-shared key, transform-set, crypto map, and tunnel interface",
+    "collected_at": "2026-05-19",
+    "original_hash": "sha256:placeholder-for-original-hash"
+  },
+  "classification": {
+    "domain": "routing",
+    "vendor": "cisco",
+    "platform": "IOS-XE",
+    "features": [
+      "ipsec",
+      "tunnel",
+      "interface",
+      "acl"
+    ],
+    "risk": "high",
+    "tags": [
+      "routing",
+      "ipsec",
+      "site-to-site",
+      "crypto-map",
+      "tunnel"
+    ]
+  },
+  "config": {
+    "sanitized_path": "rtr-ipsec-001.txt",
+    "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
+    "line_count": 38,
+    "description": "IKEv1 site-to-site IPsec with AES256-SHA, pre-shared key authentication, crypto map bound to outside interface, and tunnel interface for overlay",
+    "known_issues": [
+      "IKEv1 deprecation; IKEv2 preferred in modern deployments"
+    ]
+  },
+  "annotation": {
+    "reviewed_by": "automated",
+    "reviewed_at": "2026-05-19",
+    "expected_translation": {
+      "target_vendor": "huawei",
+      "high_level": "Huawei VRP equivalent with ike proposal, pre-shared-key, ipsec proposal, ipsec policy, and tunnel interface",
+      "key_lines": [
+        "ike proposal",
+        "pre-shared-key",
+        "ipsec proposal",
+        "ipsec policy",
+        "interface Tunnel"
+      ],
+      "must_not_contain": [
+        "crypto isakmp",
+        "crypto ipsec",
+        "crypto map"
+      ]
+    },
+    "verification": {
+      "static_pass": true,
+      "deployable": false,
+      "manual_review_required": true,
+      "notes": "High-risk: IPsec + ACL. Complex feature requiring manual review of SA parameters, crypto profiles, and ACL-to-policy mapping"
+    }
+  },
+  "benchmark": {
+    "case_generated": true,
+    "case_path": "../bench/cases/corpus/routing/corpus-rtr-ipsec-001.json",
+    "tier": "full",
+    "last_run": "",
+    "static_pass": false,
+    "live_pass": false
+  }
+}

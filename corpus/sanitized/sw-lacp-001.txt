@@ -1,0 +1,39 @@
+!
+! Huawei VRP — LACP with Eth-Trunk
+! Source: public_doc
+! Domain: switching, Features: lacp, trunk, interface
+!
+sysname SWITCH_LACP
+#
+interface Eth-Trunk1
+ description Aggregated-Uplink
+ port link-type trunk
+ port trunk allow-pass vlan 10 20 30 100
+ mode lacp-static
+ load-balance src-dst-ip
+#
+interface GigabitEthernet0/0/1
+ eth-trunk 1
+ undo shutdown
+#
+interface GigabitEthernet0/0/2
+ eth-trunk 1
+ undo shutdown
+#
+interface GigabitEthernet0/0/3
+ eth-trunk 1
+ undo shutdown
+#
+interface GigabitEthernet0/0/10
+ port link-type access
+ port default vlan 10
+ undo shutdown
+#
+interface GigabitEthernet0/0/11
+ port link-type access
+ port default vlan 20
+ undo shutdown
+#
+interface Vlanif100
+ ip address 198.18.100.1 255.255.255.0
+#

@@ -1,0 +1,70 @@
+{
+  "id": "fw-nat-server-001",
+  "title": "Cisco ASA — NAT server/port forwarding",
+  "status": "bench_generated",
+  "source": {
+    "origin": "public_doc",
+    "description": "ASA NAT for port forwarding (HTTP, SMTP servers), dynamic PAT with address pool, and ACL for outside access",
+    "collected_at": "2026-05-19",
+    "original_hash": "sha256:placeholder-for-original-hash"
+  },
+  "classification": {
+    "domain": "firewall",
+    "vendor": "cisco",
+    "platform": "ASA",
+    "features": [
+      "nat",
+      "acl",
+      "interface",
+      "static_route"
+    ],
+    "risk": "high",
+    "tags": [
+      "firewall",
+      "nat",
+      "port-forwarding",
+      "asa"
+    ]
+  },
+  "config": {
+    "sanitized_path": "fw-nat-server-001.txt",
+    "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
+    "line_count": 36,
+    "description": "Static NAT for web and mail servers (port forwarding), dynamic PAT for internal users, outside ACL for internet access to servers",
+    "known_issues": []
+  },
+  "annotation": {
+    "reviewed_by": "automated",
+    "reviewed_at": "2026-05-19",
+    "expected_translation": {
+      "target_vendor": "huawei",
+      "high_level": "Huawei USG equivalent with nat server protocol tcp global interface vs local-server, nat outbound, and security-policy",
+      "key_lines": [
+        "nat server",
+        "protocol tcp",
+        "global",
+        "inside"
+      ],
+      "must_not_contain": [
+        "object network",
+        "access-list",
+        "access-group",
+        "nameif"
+      ]
+    },
+    "verification": {
+      "static_pass": true,
+      "deployable": false,
+      "manual_review_required": true,
+      "notes": "High-risk: NAT server/port-forwarding. ASA static NAT with service keyword requires careful mapping to Huawei nat server"
+    }
+  },
+  "benchmark": {
+    "case_generated": true,
+    "case_path": "../bench/cases/corpus/firewall/corpus-fw-nat-server-001.json",
+    "tier": "full",
+    "last_run": "",
+    "static_pass": false,
+    "live_pass": false
+  }
+}

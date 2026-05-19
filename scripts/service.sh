@@ -68,6 +68,7 @@ start_service() {
       env ${env_block} "${GUNICORN}" \
         -w "${WORKERS}" \
         -b "${HOST}:${PORT}" \
+        --timeout 120 \
         --access-logfile "${LOG_DIR}/access.log" \
         --error-logfile "${LOG_DIR}/error.log" \
         --pid "${PID_FILE}" \

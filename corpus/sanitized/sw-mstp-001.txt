@@ -1,0 +1,42 @@
+!
+! Cisco IOS — MSTP with multiple instances
+! Source: public_doc
+! Domain: switching, Features: stp, vlan, interface
+!
+spanning-tree mode mst
+spanning-tree mst configuration
+ name LAB_MSTP
+ revision 1
+ instance 1 vlan 10, 20
+ instance 2 vlan 30, 40
+!
+spanning-tree mst 1 root primary
+spanning-tree mst 2 root secondary
+!
+interface GigabitEthernet0/1
+ description Trunk-to-Core
+ switchport trunk encapsulation dot1q
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20,30,40,100
+ spanning-tree portfast disable
+ no shutdown
+!
+interface GigabitEthernet0/2
+ description Access-VLAN10
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+ no shutdown
+!
+interface GigabitEthernet0/3
+ description Access-VLAN20
+ switchport mode access
+ switchport access vlan 20
+ spanning-tree portfast
+ no shutdown
+!
+interface Vlan100
+ description Management
+ ip address 198.18.100.1 255.255.255.0
+ no shutdown
+!

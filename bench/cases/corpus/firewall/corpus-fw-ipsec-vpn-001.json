@@ -1,0 +1,41 @@
+{
+  "name": "corpus-fw-ipsec-vpn-001",
+  "source_domain": "firewall",
+  "source_vendor": "cisco",
+  "source_platform": "ASA",
+  "target_domain": "firewall",
+  "target_vendor": "huawei",
+  "target_platform": "vrp",
+  "features": [
+    "ipsec",
+    "nat",
+    "acl",
+    "interface"
+  ],
+  "risk": "high",
+  "tier": "full",
+  "source_config": "!\n! Cisco ASA — IPsec site-to-site VPN\n! Source: internal_lab\n! Domain: firewall, Features: ipsec, nat, acl, interface\n!\ninterface GigabitEthernet0/0\n nameif inside\n security-level 100\n ip address 10.0.0.1 255.255.255.0\n no shutdown\n!\ninterface GigabitEthernet0/1\n nameif outside\n security-level 0\n ip address 198.18.1.1 255.255.255.0\n no shutdown\n!\nobject network INSIDE_NET\n subnet 10.0.0.0 255.255.255.0\n!\nobject network REMOTE_NET\n subnet 198.18.100.0 255.255.255.0\n!\naccess-list VPN_ACL extended permit ip object INSIDE_NET object REMOTE_NET\n!\nnat (inside,outside) source static INSIDE_NET INSIDE_NET destination static REMOTE_NET REMOTE_NET no-proxy-arp route-lookup\n!\ncrypto ikev1 policy 10\n authentication pre-share\n encryption aes-256\n hash sha\n group 2\n lifetime 86400\n!\ncrypto ikev1 enable outside\n!\ntunnel-group 198.18.254.2 type ipsec-l2l\ntunnel-group 198.18.254.2 ipsec-attributes\n ikev1 pre-shared-key __REDACTED__\n!\ncrypto ipsec ikev1 transform-set AES256 esp-aes-256 esp-sha-hmac\n!\ncrypto map VPN_MAP 10 match address VPN_ACL\ncrypto map VPN_MAP 10 set peer 198.18.254.2\ncrypto map VPN_MAP 10 set ikev1 transform-set AES256\ncrypto map VPN_MAP interface outside\n!\nroute outside 0.0.0.0 0.0.0.0 198.18.1.254 1\n!",
+  "expected": {
+    "deployable": false,
+    "manual_review_required": true,
+    "no_markdown_fence": true,
+    "no_placeholder": true,
+    "must_include": [
+      "ike proposal",
+      "pre-shared-key",
+      "ipsec proposal",
+      "ipsec policy"
+    ],
+    "must_not_include": [
+      "crypto ikev1",
+      "crypto ipsec",
+      "tunnel-group",
+      "crypto map"
+    ],
+    "max_level": "error"
+  },
+  "corpus_ref": {
+    "sanitized_file": "fw-ipsec-vpn-001.txt",
+    "annotation_file": "fw-ipsec-vpn-001.txt.annotation.json"
+  }
+}

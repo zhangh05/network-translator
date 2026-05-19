@@ -1,0 +1,67 @@
+{
+  "id": "sw-mstp-001",
+  "title": "Cisco IOS — MSTP with multiple instances",
+  "status": "bench_generated",
+  "source": {
+    "origin": "public_doc",
+    "description": "MSTP with two instances (VLAN 10,20 and 30,40), root primary/secondary, trunk and access ports with portfast",
+    "collected_at": "2026-05-19",
+    "original_hash": "sha256:placeholder-for-original-hash"
+  },
+  "classification": {
+    "domain": "switching",
+    "vendor": "cisco",
+    "platform": "IOS",
+    "features": [
+      "stp",
+      "vlan",
+      "interface"
+    ],
+    "risk": "medium",
+    "tags": [
+      "switching",
+      "mstp",
+      "spanning-tree",
+      "vlan"
+    ]
+  },
+  "config": {
+    "sanitized_path": "sw-mstp-001.txt",
+    "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
+    "line_count": 42,
+    "description": "MSTP with named region, two spanning-tree instances, root bridge election, trunk and access ports with portfast",
+    "known_issues": []
+  },
+  "annotation": {
+    "reviewed_by": "automated",
+    "reviewed_at": "2026-05-19",
+    "expected_translation": {
+      "target_vendor": "huawei",
+      "high_level": "Huawei VRP equivalent with stp mode mstp, stp region-configuration, instance vlan mapping, stp root primary/secondary",
+      "key_lines": [
+        "stp mode mstp",
+        "stp region-configuration",
+        "instance 1 vlan",
+        "root primary"
+      ],
+      "must_not_contain": [
+        "spanning-tree",
+        "switchport mode"
+      ]
+    },
+    "verification": {
+      "static_pass": true,
+      "deployable": true,
+      "manual_review_required": false,
+      "notes": "Medium-risk STP. Key Huawei mappings: spanning-tree mst→stp region-configuration, instance vlan mapping, spanning-tree portfast→stp edged-port"
+    }
+  },
+  "benchmark": {
+    "case_generated": true,
+    "case_path": "../bench/cases/corpus/switching/corpus-sw-mstp-001.json",
+    "tier": "core",
+    "last_run": "",
+    "static_pass": false,
+    "live_pass": false
+  }
+}

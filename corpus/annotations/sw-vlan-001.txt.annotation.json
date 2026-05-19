@@ -1,24 +1,29 @@
 {
   "id": "sw-vlan-001",
   "title": "Huawei S5720 — VLAN trunk, access ports, and SVI",
-  "status": "annotated",
-
+  "status": "bench_generated",
   "source": {
     "origin": "internal_lab",
     "description": "Access switch with three user VLANs, two trunk uplinks, and a management SVI",
     "collected_at": "2026-05-10",
     "original_hash": "sha256:placeholder-for-original-hash"
   },
-
   "classification": {
-    "domain": "enterprise",
+    "domain": "switching",
     "vendor": "huawei",
     "platform": "S5720",
-    "features": ["vlan", "interface"],
+    "features": [
+      "vlan",
+      "interface"
+    ],
     "risk": "low",
-    "tags": ["switching", "trunk", "access-port", "svi"]
+    "tags": [
+      "switching",
+      "trunk",
+      "access-port",
+      "svi"
+    ]
   },
-
   "config": {
     "sanitized_path": "sw-vlan-001.txt",
     "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
@@ -26,7 +31,6 @@
     "description": "Basic VLAN configuration with two trunk uplinks (carrying different VLAN sets), three access ports, and an SVI for management.",
     "known_issues": []
   },
-
   "annotation": {
     "reviewed_by": "automated",
     "reviewed_at": "2026-05-19",
@@ -51,16 +55,15 @@
       "static_pass": true,
       "deployable": true,
       "manual_review_required": false,
-      "notes": ""
+      "notes": "Clean VLAN translation: trunk, access, SVI all correct. Validation produces style-tip warning (suggests description) — level=warning, non-blocking."
     }
   },
-
   "benchmark": {
-    "case_generated": false,
-    "case_path": "",
+    "case_generated": true,
+    "case_path": "../bench/cases/corpus/switching/corpus-sw-vlan-001.json",
     "tier": "smoke",
-    "last_run": "",
-    "static_pass": false,
-    "live_pass": false
+    "last_run": "2026-05-19T12:28:17Z",
+    "static_pass": true,
+    "live_pass": true
   }
 }

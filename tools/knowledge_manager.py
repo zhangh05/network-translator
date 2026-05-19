@@ -87,6 +87,7 @@ TYPE_TO_FILE = {
     "wireless_radio": "wireless_ap.md",
     "l2tp": "tunnel.md",
     "system": "system.md",
+    "irf": "irf.md",
 }
 
 # 目录名映射（vendor name -> directory name）
@@ -168,6 +169,7 @@ _FEATURE_PATTERNS = [
     ("ipv6", r"(ipv6\s+|ipv6\s+address|ipv6\s+route)"),
     ("port_channel", r"(port-channel|interface\s+Port-Channel|eth-trunk|bridge-aggregation)"),
     ("pbr", r"(route-map\s+|policy-based-route|traffic\s+policy)"),
+    ("irf", r"(irf\s+(member|port|domain|mad)|stacking|stack\s+ports)"),
 ]
 
 

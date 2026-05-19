@@ -133,8 +133,8 @@ def check_translated(case, translated, meta):
         if exp.get("manual_review_required") is not None:
             expected_mrr = exp["manual_review_required"]
             actual_mrr = meta.get("manual_review_required", False)
-            if expected_mrr and "MANUAL_REVIEW" not in translated:
-                errors.append("expected manual_review_required but no MANUAL_REVIEW in output")
+            if expected_mrr and not actual_mrr:
+                errors.append("expected manual_review_required=True but system returned False")
 
         if exp.get("max_level"):
             level = meta.get("level", "info")
@@ -172,6 +172,7 @@ def run_live(case):
     import requests
     BASE = os.environ.get("BENCH_API_BASE", "http://127.0.0.1:5008")
     session = requests.Session()
+    session.trust_env = False
     session.proxies = {"http": "", "https": ""}
 
     payload = {
@@ -188,8 +189,22 @@ def run_live(case):
     try:
         resp = session.post(f"{BASE}/api/translate", json=payload, timeout=120)
         elapsed = time.time() - t0
+    except requests.exceptions.ReadTimeout:
+        elapsed = time.time() - t0
+        return {
+            "status": "error",
+            "category": "llm_timeout",
+            "error": "LLM translation timed out (120s)",
+            "elapsed": elapsed or 120,
+            "deployable": False,
+            "manual_review_required": True,
+            "detail": {
+                "meta": {"level": "error", "deployable": False, "manual_review_required": True, "capability_gaps": []},
+                "validation": {"valid": False, "level": "error", "deployable": False, "manual_review_required": True, "errors": ["LLM timeout"], "warnings": []},
+            },
+        }
     except Exception as e:
-        return {"status": "error", "error": str(e), "elapsed": 0}
+        return {"status": "error", "category": "connection_error", "error": str(e), "elapsed": 0}
 
     if resp.status_code != 200:
         return {"status": "fail", "error": f"HTTP {resp.status_code}", "elapsed": elapsed}
@@ -201,9 +216,12 @@ def run_live(case):
 
     translated = result.get("result", {}).get("translated", "")
     meta = result.get("result", {})
-    meta["level"] = result.get("level", "")
-    meta["deployable"] = result.get("deployable", None)
-    meta["manual_review_required"] = result.get("manual_review_required", None)
+    validation = result.get("result", {}).get("validation", {}) or {}
+    meta["level"] = validation.get("level", "")
+    meta["deployable"] = validation.get("deployable")
+    meta["manual_review_required"] = validation.get("manual_review_required")
+    meta["capability_gaps"] = meta.get("capability_gaps", [])
+    meta["analyzer_results"] = meta.get("analyzer_results", [])
     meta["capability_gaps"] = result.get("capability_gaps", [])
     meta["analyzer_results"] = result.get("analyzer_results", [])
 
@@ -229,6 +247,7 @@ def run_cache_hit_test(case, api_base):
     """Run translation twice; verify second call is faster."""
     import requests
     session = requests.Session()
+    session.trust_env = False
     session.proxies = {"http": "", "https": ""}
 
     payload = {
@@ -361,6 +380,8 @@ def main():
     parser.add_argument("--feature", help="Filter by feature")
     parser.add_argument("--static-only", action="store_true", help="Skip live API checks")
     parser.add_argument("--api-base", default=os.environ.get("BENCH_API_BASE", "http://127.0.0.1:5008"))
+    parser.add_argument("--no-corpus", action="store_true", help="Exclude corpus-derived bench cases")
+    parser.add_argument("--corpus-only", action="store_true", help="Only corpus-derived bench cases")
     parser.add_argument("--generate-report", action="store_true", help="Generate benchmark_coverage.md")
     parser.add_argument("--cache-test", type=int, nargs="?", const=1, default=0,
                         help="Run cache hit test on N cases (default: 1)")
@@ -372,6 +393,16 @@ def main():
 
     schema = load_schema()
     cases = discover_cases(tier=args.tier, domain=args.domain, vendor=args.vendor, feature=args.feature)
+
+    if args.no_corpus:
+        before = len(cases)
+        cases = [c for c in cases if "corpus_ref" not in c]
+        print(f"  --no-corpus: {before} -> {len(cases)} cases")
+
+    if args.corpus_only:
+        before = len(cases)
+        cases = [c for c in cases if "corpus_ref" in c]
+        print(f"  --corpus-only: {before} -> {len(cases)} cases")
 
     if not cases:
         print("No cases found matching filters.")
@@ -420,11 +451,19 @@ def main():
     print(f"{'='*60}")
 
     has_api_key = bool(os.environ.get("LLM_API_KEY"))
+    if not has_api_key:
+        try:
+            from llm_settings import get_current_settings
+            has_api_key = bool(get_current_settings().get("api_key"))
+        except Exception:
+            pass
     api_available = False
     if not args.static_only and has_api_key:
         import requests
         try:
-            r = requests.get(f"{args.api_base}/healthz", timeout=5, proxies={"http": "", "https": ""})
+            sess = requests.Session()
+            sess.trust_env = False
+            r = sess.get(f"{args.api_base}/healthz", timeout=5, proxies={"http": "", "https": ""})
             api_available = r.status_code == 200
         except Exception:
             pass
@@ -455,26 +494,55 @@ def main():
 
         result = run_live(c)
         tier_stats[t]["live_total"] += 1
+
+        # Detect unsafe_success: translation passes quality check but deployability
+        # expectation is violated (manual_review_required=True or high-risk
+        # deployable=true when it should be false)
+        exp = c.get("expected", {})
+        meta = result.get("detail", {}).get("meta", {})
+        is_unsafe = (
+            result["status"] == "pass"
+            and exp.get("manual_review_required") is True
+            and meta.get("manual_review_required") is True
+            and meta.get("deployable") is True
+            and exp.get("deployable") is False
+        )
+        if is_unsafe:
+            result["status"] = "unsafe_success"
+            result["category"] = "unsafe_success"
+
         if result["status"] == "pass":
             c["_live_result"] = "PASS"
             c["_elapsed_ms"] = f"{result['elapsed']*1000:.0f}"
             RESULTS["live"]["pass"] += 1
             tier_stats[t]["live_pass"] += 1
             print(f"  PASS {c['_path']} ({result['elapsed']:.1f}s, {result['translated_len']}B) [{t}]")
+        elif result["status"] == "unsafe_success":
+            c["_live_result"] = "UNSAFE"
+            c["_elapsed_ms"] = f"{result['elapsed']*1000:.0f}"
+            RESULTS["live"]["fail"] += 1
+            tier_stats[t]["live_fail"] += 1
+            print(f"  UNSAFE_SUCCESS {c['_path']}: deployable=True but manual_review_required=True required")
         else:
             c["_live_result"] = "FAIL"
             c["_elapsed_ms"] = f"{result['elapsed']*1000:.0f}"
             RESULTS["live"]["fail"] += 1
             tier_stats[t]["live_fail"] += 1
+            category = result.get("category", "")
+            if category:
+                label = category.upper()
+            else:
+                label = "FAIL"
             err_msg = result.get("error") or "; ".join(result.get("errors", []))
-            print(f"  FAIL {c['_path']}: {err_msg} ({result['elapsed']:.1f}s)")
+            print(f"  {label} {c['_path']}: {err_msg} ({result['elapsed']:.1f}s)")
             detail = result.get("detail", {})
             if detail:
                 excerpt = detail.get("translated_excerpt", "")
                 if excerpt:
                     print(f"        excerpt: {excerpt}")
                 meta = detail.get("meta", {})
-                print(f"        meta: {json.dumps(meta)}")
+                if meta:
+                    print(f"        meta: {json.dumps(meta)}")
                 val = detail.get("validation", {})
                 if val.get("errors"):
                     print(f"        validation errors: {val['errors'][:3]}")
@@ -489,8 +557,10 @@ def main():
             "path": c["_path"],
             "tier": c["_tier"],
             "status": result["status"],
+            "category": result.get("category", ""),
             "elapsed_ms": c["_elapsed_ms"],
             "errors": result.get("errors", []) if result["status"] != "pass" else [],
+            "meta": result.get("detail", {}).get("meta", {}),
             "detail": result.get("detail", {}),
         })
 

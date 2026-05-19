@@ -1,0 +1,66 @@
+{
+  "id": "rtr-ospf-bfd-001",
+  "title": "Huawei VRP — OSPF with BFD integration",
+  "status": "bench_generated",
+  "source": {
+    "origin": "internal_lab",
+    "description": "OSPF single-area with BFD on all OSPF-enabled interfaces, transit interfaces plus loopback",
+    "collected_at": "2026-05-19",
+    "original_hash": "sha256:placeholder-for-original-hash"
+  },
+  "classification": {
+    "domain": "routing",
+    "vendor": "huawei",
+    "platform": "VRP",
+    "features": [
+      "ospf",
+      "bfd",
+      "interface"
+    ],
+    "risk": "medium",
+    "tags": [
+      "routing",
+      "ospf",
+      "bfd",
+      "fast-convergence"
+    ]
+  },
+  "config": {
+    "sanitized_path": "rtr-ospf-bfd-001.txt",
+    "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
+    "line_count": 33,
+    "description": "Single-area OSPF with BFD enabled on interfaces, loopback, and router-id. BFD timing aggressive for fast convergence",
+    "known_issues": []
+  },
+  "annotation": {
+    "reviewed_by": "automated",
+    "reviewed_at": "2026-05-19",
+    "expected_translation": {
+      "target_vendor": "cisco",
+      "high_level": "Cisco IOS equivalent with router ospf, ip ospf bfd interface config, and bfd template or interface bfd settings",
+      "key_lines": [
+        "router ospf",
+        "bfd"
+      ],
+      "must_not_contain": [
+        "ospf enable",
+        "bfd enable",
+        "sysname"
+      ]
+    },
+    "verification": {
+      "static_pass": true,
+      "deployable": false,
+      "manual_review_required": true,
+      "notes": "OSPF+BFD 翻译。BFD 分析器检测到源配置 BFD 信息不完整（如缺少 BFD session peer-ip），导致翻译结果标记为不可部署。翻译本身使用了正确的 Cisco IOS BFD 语法（bfd all-interfaces + bfd interval）。此 case 的 dep=false 由源分析器 warning 驱动，非翻译质量问题。d"
+    }
+  },
+  "benchmark": {
+    "case_generated": true,
+    "case_path": "../bench/cases/corpus/routing/corpus-rtr-ospf-bfd-001.json",
+    "tier": "core",
+    "last_run": "",
+    "static_pass": false,
+    "live_pass": false
+  }
+}

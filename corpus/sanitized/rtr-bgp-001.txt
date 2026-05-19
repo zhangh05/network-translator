@@ -1,0 +1,38 @@
+!
+! Cisco IOS-XE — BGP with route-policy
+! Source: internal_lab
+! Domain: routing, Features: bgp, route_policy, prefix_list, interface
+!
+interface Loopback0
+ ip address 198.18.255.1 255.255.255.255
+ no shutdown
+!
+interface GigabitEthernet0/0
+ description To ISP-1
+ ip address 198.18.1.1 255.255.255.0
+ no shutdown
+!
+interface GigabitEthernet0/1
+ description To ISP-2
+ ip address 198.18.2.1 255.255.255.0
+ no shutdown
+!
+router bgp 65001
+ bgp router-id 198.18.255.1
+ neighbor 198.18.1.2 remote-as 65002
+ neighbor 198.18.1.2 description ISP-1
+ neighbor 198.18.1.2 route-map PREFER_ISP1 in
+ neighbor 198.18.1.2 prefix-list CUSTOMER_PREFIXES out
+ neighbor 198.18.2.2 remote-as 65003
+ neighbor 198.18.2.2 description ISP-2
+ network 198.18.0.0 mask 255.255.0.0
+!
+ip prefix-list CUSTOMER_PREFIXES seq 5 permit 198.18.0.0/16
+!
+route-map PREFER_ISP1 permit 10
+ match ip address prefix-list CUSTOMER_PREFIXES
+ set local-preference 150
+!
+route-map PREFER_ISP1 permit 20
+ set local-preference 100
+!

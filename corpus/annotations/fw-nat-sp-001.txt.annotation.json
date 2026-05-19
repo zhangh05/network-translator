@@ -1,0 +1,70 @@
+{
+  "id": "fw-nat-sp-001",
+  "title": "Huawei USG — NAT source with security-policy",
+  "status": "bench_generated",
+  "source": {
+    "origin": "internal_lab",
+    "description": "NAT source PAT with address pool, security zones (trust/untrust), security-policy permitting outbound and blocking inbound",
+    "collected_at": "2026-05-19",
+    "original_hash": "sha256:placeholder-for-original-hash"
+  },
+  "classification": {
+    "domain": "firewall",
+    "vendor": "huawei",
+    "platform": "USG",
+    "features": [
+      "nat",
+      "security_policy",
+      "zone",
+      "address_object",
+      "interface"
+    ],
+    "risk": "high",
+    "tags": [
+      "firewall",
+      "nat",
+      "security-policy",
+      "pat",
+      "address-pool"
+    ]
+  },
+  "config": {
+    "sanitized_path": "fw-nat-sp-001.txt",
+    "sanitized_hash": "sha256:placeholder-for-sanitized-hash",
+    "line_count": 48,
+    "description": "NAT source PAT with address pool, trust/untrust zones, security policies for outbound permit and inbound deny",
+    "known_issues": []
+  },
+  "annotation": {
+    "reviewed_by": "automated",
+    "reviewed_at": "2026-05-19",
+    "expected_translation": {
+      "target_vendor": "cisco",
+      "high_level": "Cisco ASA equivalent with object network, nat (inside,outside), implicit security-level-based ACL (no explicit access-list needed)",
+      "key_lines": [
+        "nat (inside,outside)",
+        "object network",
+        "nameif"
+      ],
+      "must_not_contain": [
+        "nat address-group",
+        "nat policy",
+        "firewall zone"
+      ]
+    },
+    "verification": {
+      "static_pass": true,
+      "deployable": false,
+      "manual_review_required": true,
+      "notes": "ASA NAT 翻译。ASA 使用 security-level 隐式控制流量，不需要显式 ACL。目标输出应包含 object network + nat (inside,outside) 风格。验证器通过 source_platform 约束确保不输出 IOS 风格 ip nat 命令。"
+    }
+  },
+  "benchmark": {
+    "case_generated": true,
+    "case_path": "../bench/cases/corpus/firewall/corpus-fw-nat-sp-001.json",
+    "tier": "full",
+    "last_run": "",
+    "static_pass": false,
+    "live_pass": false
+  }
+}

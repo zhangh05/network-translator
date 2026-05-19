@@ -39,6 +39,9 @@ _RE_HW_OSPF_BFD = re.compile(
 _RE_HW_OSPF_BFD_BLOCK = re.compile(
     r"^\s*bfd\s+enable", re.IGNORECASE,
 )
+_RE_HW_BFD_ALL_INTERFACES = re.compile(
+    r"^\s*bfd\s+all-interfaces", re.IGNORECASE,
+)
 _RE_HW_BGP_BFD = re.compile(
     r"^\s*bgp\s+(\S+)\s+bfd", re.IGNORECASE,
 )
@@ -270,6 +273,11 @@ class BfdAnalyzer(FeatureAnalyzer):
 
         if _RE_HW_OSPF_BFD_BLOCK.match(stripped) and current_proto == "ospf":
             protocol_refs.append("ospf bfd enable")
+            refs.setdefault("protocols", []).append("ospf")
+            return
+
+        if _RE_HW_BFD_ALL_INTERFACES.match(stripped):
+            protocol_refs.append("bfd all-interfaces")
             refs.setdefault("protocols", []).append("ospf")
             return
 
