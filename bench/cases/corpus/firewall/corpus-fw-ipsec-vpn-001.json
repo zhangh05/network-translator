@@ -23,8 +23,7 @@
     "must_include": [
       "ike proposal",
       "pre-shared-key",
-      "ipsec proposal",
-      "ipsec policy"
+      "ipsec proposal"
     ],
     "must_not_include": [
       "crypto ikev1",

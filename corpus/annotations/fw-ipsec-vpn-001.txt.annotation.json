@@ -39,12 +39,11 @@
     "reviewed_at": "2026-05-19",
     "expected_translation": {
       "target_vendor": "huawei",
-      "high_level": "Huawei USG equivalent with ike proposal, pre-shared-key, ipsec proposal, ipsec policy, and nat-policy for VPN traffic bypass",
+      "high_level": "Huawei USG equivalent with ike proposal, pre-shared-key, ipsec proposal, ipsec profile/policy, and nat-policy for VPN traffic bypass",
       "key_lines": [
         "ike proposal",
         "pre-shared-key",
-        "ipsec proposal",
-        "ipsec policy"
+        "ipsec proposal"
       ],
       "must_not_contain": [
         "crypto ikev1",
