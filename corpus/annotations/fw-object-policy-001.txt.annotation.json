@@ -43,7 +43,7 @@
       "key_lines": [
         "object-group network",
         "object-group service",
-        "access-list extended",
+        "access-list",
         "access-group"
       ],
       "must_not_contain": [
