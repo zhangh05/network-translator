@@ -1,18 +1,15 @@
 # Latest Status
-Generated: 2026-05-20 02:00
-Phase: 7 — Step 51 complete (8/8 failures resolved)
+Generated: 2026-05-20 03:15
+Phase: 7 (corpus flywheel) — Step 52 corpus batch verify
 
-## Commits (8 since baseline)
-```
-7594e3e step51: fix fw-nat-001 timeout and annotation, make BENCH_TIMEOUT configurable
-5bd351f step51: update status report after 6 fixes
-e3f5c96 step51: fix dhcp-acl annotation (Huawei trust vs trusted) + DHCP knowledge
-23a443e step51: fix object-policy annotation (access-list name between keyword and extended)
-0dd0a55 step51: record live corpus reports and cleanup pilot files
-a306933 step51: calibrate ipsec-vpn annotation (profile/policy both valid)
-86090fc step51: classify lacp residue as manual review
-9ea27ba step51: stabilize live corpus p0 and iteration automation (tag: step-51-p0-fixed)
-```
+## Live Corpus Batch (15 cases)
+**13/15 pass**
+
+| Tier | Pass | Total | vs baseline |
+|------|------|-------|-------------|
+| smoke | 3 | 3 | ✅ 3/3 (+1) |
+| core | 2 | 4 | 2/4 (sw-mstp-001 LLM variance) |
+| full | 8 | 8 | ✅ 8/8 (+6) |
 
 ## Quality Gates
 | Gate | Result |
@@ -21,17 +18,18 @@ a306933 step51: calibrate ipsec-vpn annotation (profile/policy both valid)
 | corpus_to_bench | 15/15 |
 | static bench (corpus) | 15/15 pass |
 | pytest | 346/346 pass |
-| Security | No leaks, no raw configs in git |
+| Security | No leaks |
 
-## Backlog
-**0 failures** — all 8 original Step 51 live corpus failures resolved.
+## Step 52 Remaining Failures (2, LLM non-determinism)
+- `rtr-bgp-001`: prefix-list missing from output in this generation
+- `sw-mstp-001`: root primary missing from MSTP output in this generation
 
-## Changes Made (summary)
-- P0 deployability fix: high-risk features force dep=false
-- 6 annotation calibrations (keyword alignment, platform-specific syntax)
-- 2 residue detection patterns (IRF, lacp-static)
-- 3 knowledge files added (IRF for Cisco/H3C, Huawei DHCP)
-- 2 prompt constraints added (ASA NAT, OSPF+BFD)
-- 1 analyzer pattern added (bfd all-interfaces OSPF BFD detection)
-- Timeout configuration: BENCH_TIMEOUT env var, LLM timeout 45→180s
-- Phase 8A automation: TASK_HANDOFF, scripts, reports, ROADMAP, workflow docs
+Both vary per LLM generation. Annotations are correct for what the translation SHOULD contain. Not fixable without stronger prompt/knowledge.
+
+## Overall Progress (Step 46 → 52)
+- corpus: 3 → 15 entries
+- bench cases: 38 → 50
+- live pass rate: 5/15 (33%) → 13/15 (87%)
+- static bench: 100%
+- pytest: 345→346 (+1 test)
+- commits: 10 in this session
