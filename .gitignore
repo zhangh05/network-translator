@@ -26,6 +26,12 @@ knowledge_data/.semantic_cache/
 # Corpus — raw samples never committed
 corpus/samples/
 
+# Live report caches (regeneratable)
+docs/coverage/live_corpus_cache.json
+docs/coverage/live_corpus_pilot*.json
+docs/coverage/live_corpus_pilot*.md
+bench/live_report_p0.json
+
 # Tool and editor noise
 .claude/settings.local.json
 .DS_Store
