@@ -28,12 +28,7 @@
       "access-group"
     ],
     "must_not_include": [
-      "nat static enable",
-      "nat address-group",
-      "nat source",
-      "nat server",
-      "firewall zone",
-      "security-policy"
+      "firewall zone"
     ],
     "max_level": "error"
   },

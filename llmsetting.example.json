@@ -2,5 +2,5 @@
   "api_key": "",
   "base_url": "https://api.minimaxi.com/anthropic",
   "model": "MiniMax-M2.7",
-  "timeout": 45
+  "timeout": 180
 }

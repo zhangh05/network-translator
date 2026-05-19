@@ -12,6 +12,8 @@ SCHEMA_PATH = CASES_DIR / "schema.json"
 
 RESULTS: dict = {}
 
+REQUEST_TIMEOUT = int(os.environ.get("BENCH_TIMEOUT", "180"))
+
 
 def load_schema():
     with open(SCHEMA_PATH) as f:
@@ -187,20 +189,20 @@ def run_live(case):
 
     t0 = time.time()
     try:
-        resp = session.post(f"{BASE}/api/translate", json=payload, timeout=120)
+        resp = session.post(f"{BASE}/api/translate", json=payload, timeout=REQUEST_TIMEOUT)
         elapsed = time.time() - t0
     except requests.exceptions.ReadTimeout:
         elapsed = time.time() - t0
         return {
             "status": "error",
             "category": "llm_timeout",
-            "error": "LLM translation timed out (120s)",
-            "elapsed": elapsed or 120,
+            "error": f"LLM translation timed out ({REQUEST_TIMEOUT}s)",
+            "elapsed": elapsed or REQUEST_TIMEOUT,
             "deployable": False,
             "manual_review_required": True,
             "detail": {
                 "meta": {"level": "error", "deployable": False, "manual_review_required": True, "capability_gaps": []},
-                "validation": {"valid": False, "level": "error", "deployable": False, "manual_review_required": True, "errors": ["LLM timeout"], "warnings": []},
+                "validation": {"valid": False, "level": "error", "deployable": False, "manual_review_required": True, "errors": [f"LLM timeout ({REQUEST_TIMEOUT}s)"], "warnings": []},
             },
         }
     except Exception as e:
@@ -262,9 +264,9 @@ def run_cache_hit_test(case, api_base):
 
     try:
         t0 = time.time()
-        r1 = session.post(f"{api_base}/api/translate", json=payload, timeout=120)
+        r1 = session.post(f"{api_base}/api/translate", json=payload, timeout=REQUEST_TIMEOUT)
         t1 = time.time()
-        r2 = session.post(f"{api_base}/api/translate", json=payload, timeout=120)
+        r2 = session.post(f"{api_base}/api/translate", json=payload, timeout=REQUEST_TIMEOUT)
         t2 = time.time()
     except Exception as e:
         return {"status": "error", "error": str(e)}

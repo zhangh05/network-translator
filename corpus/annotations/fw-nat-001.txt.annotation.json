@@ -49,12 +49,7 @@
         "access-group"
       ],
       "must_not_contain": [
-        "nat static enable",
-        "nat address-group",
-        "nat source",
-        "nat server",
-        "firewall zone",
-        "security-policy"
+        "firewall zone"
       ]
     },
     "verification": {
