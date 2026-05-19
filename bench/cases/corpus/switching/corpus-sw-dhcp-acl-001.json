@@ -22,7 +22,7 @@
     "no_placeholder": true,
     "must_include": [
       "dhcp snooping enable",
-      "dhcp snooping trusted",
+      "dhcp snooping trust",
       "acl",
       "traffic-filter"
     ],

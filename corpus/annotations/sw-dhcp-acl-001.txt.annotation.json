@@ -38,10 +38,10 @@
     "reviewed_at": "2026-05-19",
     "expected_translation": {
       "target_vendor": "huawei",
-      "high_level": "Huawei VRP equivalent with dhcp snooping enable, dhcp snooping trusted, and traffic-filter with acl",
+      "high_level": "Huawei VRP equivalent with dhcp snooping enable, dhcp snooping trust (port), and traffic-filter with acl",
       "key_lines": [
         "dhcp snooping enable",
-        "dhcp snooping trusted",
+        "dhcp snooping trust",
         "acl",
         "traffic-filter"
       ],
