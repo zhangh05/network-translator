@@ -74,3 +74,82 @@ def test_network_translator_agent_passes_configured_llm_to_graph_nodes():
 
     assert translate_node.llm is llm
     assert semantic_node.llm is llm
+
+
+class TestCapabilityGapNodeAnalyzerIntegration:
+    """P1-2: CapabilityGapNode must handle list-type analyzer_results."""
+
+    def test_analyzer_list_injects_capability_gap(self):
+        from core.graph.nodes import CapabilityGapNode
+        state = State()
+        state.set("config_text", "ip nat inside source list 10 pool P overload\n")
+        state.set("from_vendor", "cisco")
+        state.set("to_vendor", "huawei")
+        state.set("analyzer_results", [
+            {
+                "feature": "nat",
+                "status": "analyzed",
+                "risk_level": "warning",
+                "summary": "missing NAT reference",
+                "source_lines": ["ip nat inside source list 10 pool P overload"],
+                "details": {"missing_references": ["ACL 10"]},
+            }
+        ])
+        node = CapabilityGapNode()
+        result = node.execute(state)
+        assert result.is_success()
+        gaps = state.get("capability_gaps", [])
+        analyzer_gaps = [g for g in gaps if g["feature"].startswith("analyzer:")]
+        assert len(analyzer_gaps) > 0, "No analyzer gaps found"
+        nat_gap = next((g for g in analyzer_gaps if "nat" in g["feature"]), None)
+        assert nat_gap is not None, f"Expected analyzer:nat gap, got features: {[g['feature'] for g in analyzer_gaps]}"
+        assert nat_gap["severity"] == "warning"
+        assert nat_gap["source_lines"] == ["ip nat inside source list 10 pool P overload"]
+        assert nat_gap["details"]["missing_references"] == ["ACL 10"]
+
+    def test_analyzer_list_fatal_creates_gap(self):
+        from core.graph.nodes import CapabilityGapNode
+        state = State()
+        state.set("config_text", "object-group network A\n network-object object B\n")
+        state.set("from_vendor", "cisco")
+        state.set("to_vendor", "huawei")
+        state.set("analyzer_results", [
+            {
+                "feature": "object",
+                "status": "analyzed",
+                "risk_level": "fatal",
+                "summary": "circular reference detected",
+                "source_lines": ["object-group network A", "object-group network B"],
+                "details": {"circular_ref": True},
+            }
+        ])
+        node = CapabilityGapNode()
+        result = node.execute(state)
+        assert result.is_success()
+        gaps = state.get("capability_gaps", [])
+        object_gap = next((g for g in gaps if g["feature"].startswith("analyzer:") and "object" in g["feature"]), None)
+        assert object_gap is not None
+        assert object_gap["severity"] == "fatal"
+
+    def test_analyzer_list_info_does_not_create_gap(self):
+        from core.graph.nodes import CapabilityGapNode
+        state = State()
+        state.set("config_text", "hostname R1\n")
+        state.set("from_vendor", "cisco")
+        state.set("to_vendor", "huawei")
+        state.set("analyzer_results", [
+            {
+                "feature": "system",
+                "status": "analyzed",
+                "risk_level": "info",
+                "summary": "system config",
+                "source_lines": ["hostname R1"],
+                "details": {},
+            }
+        ])
+        node = CapabilityGapNode()
+        result = node.execute(state)
+        assert result.is_success()
+        gaps = state.get("capability_gaps", [])
+        analyzer_gaps = [g for g in gaps if g["feature"].startswith("analyzer:")]
+        assert len(analyzer_gaps) == 0, f"Expected no analyzer gaps for info risk, got {analyzer_gaps}"

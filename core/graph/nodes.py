@@ -1208,22 +1208,21 @@ class CapabilityGapNode(Node):
             elif f in ("vrrp",):
                 gap["details"]["note"] = "VRRP group ID 和优先级需人工核对"
 
-        analyzer_results = state.get("analyzer_results", {})
-        if isinstance(analyzer_results, dict):
-            for feature_key, analysis in analyzer_results.items():
-                if isinstance(analysis, dict):
-                    risk = analysis.get("risk_level", "none")
-                    if risk in ("fatal", "warning"):
-                        gaps.append({
-                            "feature": f"analyzer:{feature_key}",
-                            "source_vendor": source_vendor,
-                            "target_vendor": target_vendor,
-                            "status": "analyzer_risk",
-                            "severity": risk,
-                            "suggestion": analysis.get("summary", f"分析器检测到风险: {risk}"),
-                            "source_lines": analysis.get("source_lines", []),
-                            "details": analysis.get("details", {}),
-                        })
+        analyzer_results = _normalize_analyzer_results(state)
+        for feature_key, analysis in analyzer_results.items():
+            if isinstance(analysis, dict):
+                risk = analysis.get("risk_level", "none")
+                if risk in ("fatal", "warning"):
+                    gaps.append({
+                        "feature": f"analyzer:{feature_key}",
+                        "source_vendor": source_vendor,
+                        "target_vendor": target_vendor,
+                        "status": "analyzer_risk",
+                        "severity": risk,
+                        "suggestion": analysis.get("summary", f"分析器检测到风险: {risk}"),
+                        "source_lines": analysis.get("source_lines", []),
+                        "details": analysis.get("details", {}),
+                    })
 
         max_gap_severity = "info"
         for g in gaps:
