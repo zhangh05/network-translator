@@ -169,6 +169,7 @@ _FEATURE_PATTERNS = [
     ("ipv6", r"(ipv6\s+|ipv6\s+address|ipv6\s+route)"),
     ("port_channel", r"(port-channel|interface\s+Port-Channel|eth-trunk|bridge-aggregation)"),
     ("pbr", r"(route-map\s+|policy-based-route|traffic\s+policy)"),
+    ("route_policy", r"(route-map\s+|prefix-list|route-policy|ip ip-prefix)"),
     ("irf", r"(irf\s+(member|port|domain|mad)|stacking|stack\s+ports)"),
 ]
 

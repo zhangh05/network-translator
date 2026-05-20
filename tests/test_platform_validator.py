@@ -810,3 +810,61 @@ class TestPlatformValidatorNoFalsePositives:
         r = _run_validation("acl number 3000\n rule 0 permit ip source 10.0.0.0 0.0.0.255 destination any\n#", "huawei")
         acl_issues = [w for w in r["warnings"] if "ACL number" in w]
         assert len(acl_issues) == 0, f"Valid ACL 3000 flagged: {acl_issues}"
+
+
+class TestBgpRoutePolicyDeployability:
+    """P0-4: BGP route-policy cross-references always set deployable=false."""
+
+    def test_route_policy_feature_deployable_false(self):
+        """route_policy in state.features → deployable=false, manual_review=true."""
+        dep = node._evaluate_deployability(
+            validation_level="info",
+            high_risk_warning=False,
+            critical_content_warning=False,
+            features=["route_policy"],
+        )
+        assert not dep["deployable"], "route_policy feature must set deployable=false"
+        assert dep["manual_review_required"], "route_policy feature must set manual_review_required=true"
+
+    def test_route_policy_feature_even_without_high_risk(self):
+        """Even without high_risk_warning, route_policy feature alone is enough."""
+        dep = node._evaluate_deployability(
+            validation_level="info",
+            high_risk_warning=False,
+            critical_content_warning=False,
+            features=["bgp", "route_policy", "interface", "system"],
+        )
+        assert not dep["deployable"], "route_policy alone forces deployable=false"
+
+    def test_other_features_not_high_risk(self):
+        """Non-high-risk features do NOT trigger deployable=false."""
+        dep = node._evaluate_deployability(
+            validation_level="info",
+            high_risk_warning=False,
+            critical_content_warning=False,
+            features=["bgp", "interface", "system", "static_route"],
+        )
+        assert dep["deployable"], "Non-high-risk features: deployable=true"
+        assert not dep["manual_review_required"], "Non-high-risk features: no manual review"
+
+    def test_detect_features_from_config_includes_route_policy(self):
+        """rtr-bgp-001 source config must yield route_policy in detected features."""
+        from tools.knowledge_manager import detect_features_from_config
+        bgp_config = """!
+router bgp 65001
+ neighbor 198.18.1.2 route-map PREFER_ISP1 in
+ neighbor 198.18.1.2 prefix-list CUSTOMER_PREFIXES out
+!
+ip prefix-list CUSTOMER_PREFIXES seq 5 permit 198.18.0.0/16
+!
+route-map PREFER_ISP1 permit 10
+ match ip address prefix-list CUSTOMER_PREFIXES
+ set local-preference 150
+!
+route-map PREFER_ISP1 permit 20
+ set local-preference 100
+!"""
+        features = detect_features_from_config(bgp_config)
+        assert "route_policy" in features, f"route_policy must be detected, got {features}"
+        assert "bgp" in features
+        assert "pbr" in features
