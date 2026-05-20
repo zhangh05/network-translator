@@ -305,6 +305,7 @@ def run_translation(
         "target_domain": result.get("target_domain", ""),
         "target_platform": result.get("target_platform", ""),
         "features": result.get("features", []),
+        "analyzer_results": result.get("analyzer_results", []),
     }
 
 

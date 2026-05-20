@@ -296,6 +296,20 @@ def _build_log_entry(
     entry["features"] = result.get("features", [])
     entry["node_results"] = result.get("node_results", [])
     entry["capability_gaps"] = result.get("capability_gaps", [])
+    entry["analyzer_results"] = result.get("analyzer_results", [])
+
+    ar = result.get("analyzer_results", [])
+    warning_count = 0
+    fatal_count = 0
+    if isinstance(ar, list):
+        for a in ar:
+            risk = a.get("risk_level", "") if isinstance(a, dict) else ""
+            if risk == "fatal":
+                fatal_count += 1
+            elif risk == "warning":
+                warning_count += 1
+    entry["analyzer_warning_count"] = warning_count
+    entry["analyzer_fatal_count"] = fatal_count
 
     val = result.get("validation", {})
     if isinstance(val, dict):
