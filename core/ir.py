@@ -134,7 +134,7 @@ def _asa_nat_rule(cp: str, target_platform: str) -> str:
     if target_platform != "asa":
         return ""
     return (
-        "6. 目标为 Cisco ASA NAT 约束：禁止使用 IOS 风格 ip nat inside/source/outside/overload/pool 命令；"
+        "7. 目标为 Cisco ASA NAT 约束：禁止使用 IOS 风格 ip nat inside/source/outside/overload/pool 命令；"
         "禁止保留 nat source/nat server 原命令。"
         f"NAT 须使用 object network ... nat (...) 或 nat (src,dst) ... 语法。"
         f"缺少 inside/outside 接口映射时以 {cp} MANUAL_REVIEW 标记，不得编造。\n"
@@ -143,14 +143,14 @@ def _asa_nat_rule(cp: str, target_platform: str) -> str:
 
 def _bfd_rule(cp: str, target_platform: str) -> str:
     return (
-        "7. 源配置存在 OSPF/BGP 与 BFD 绑定时，目标配置必须保留对应协议的 BFD 绑定语义；"
+        "8. 源配置存在 OSPF/BGP 与 BFD 绑定时，目标配置必须保留对应协议的 BFD 绑定语义；"
         f"无法确定目标平台绑定语法时以 {cp} MANUAL_REVIEW 标记，不得省略。\n"
     )
 
 
 def _stp_rule(cp: str) -> str:
     return (
-        "8. 源配置包含 STP/MSTP root primary/root secondary/priority 语义时，"
+        "9. 源配置包含 STP/MSTP root primary/root secondary/priority 语义时，"
         "目标输出必须保留等价根桥语义。"
         f"合法形式：stp instance <id> root primary / root secondary，"
         f"或等价 priority 配置（primary=24576，secondary=28672）。"
@@ -396,13 +396,14 @@ prompt_version: {PROMPT_VERSION}
    - 不生成该危险命令；
    - 若需保留语义线索，以目标平台注释格式 {cp} MANUAL_REVIEW 在 translated_lines 中标记，并在 notes 中说明缺失参数。
 4. NAT / security-policy / ACL 须保持规则顺序和引用关系；缺少被引用对象时，仍输出规则本身并在行末追加 {cp} MANUAL_REVIEW 注释。
-5. 目标 {to_vendor} ({target_platform or to_vendor}) 是权威平台命令集；禁止混入其他平台（如源或第三方）的命令。
+5. 地址组/服务组（address-set / service-set / object-group network / object-group service）必须保持引用语义：源配置多个地址组成一组时，目标必须保留等价的分组结构（如 object-group network），不得将其拆散为单个 object network 条目。
+6. 目标 {to_vendor} ({target_platform or to_vendor}) 是权威平台命令集；禁止混入其他平台（如源或第三方）的命令。
 {_asa_nat_rule(cp, target_platform)}
 {_bfd_rule(cp, target_platform)}
 {_stp_rule(cp) if features and "stp" in features else ""}
 
 返回**非空** JSON 数组，每条含 type, translated_lines, original_lines, notes, confidence。
-type 选预定义: vlan,interface,ospf,bgp,acl,stp,dhcp,nat,static_route,vrrp,tunnel,ipsec,qos,system。
+type 选预定义: vlan,interface,ospf,bgp,acl,stp,dhcp,nat,static_route,vrrp,tunnel,ipsec,qos,system,address_object,service_object。
 original_lines 为该功能在源配置中的原始行，translated_lines 为该功能的目标配置行列表。
 无等价能力则 translated_lines 留空，notes 说明原因。
 

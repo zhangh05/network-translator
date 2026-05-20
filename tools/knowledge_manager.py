@@ -88,6 +88,8 @@ TYPE_TO_FILE = {
     "l2tp": "tunnel.md",
     "system": "system.md",
     "irf": "irf.md",
+    "address_object": "address_object.md",
+    "service_object": "service_object.md",
 }
 
 # 目录名映射（vendor name -> directory name）
@@ -171,6 +173,8 @@ _FEATURE_PATTERNS = [
     ("pbr", r"(route-map\s+|policy-based-route|traffic\s+policy)"),
     ("route_policy", r"(route-map\s+|prefix-list|route-policy|ip ip-prefix)"),
     ("irf", r"(irf\s+(member|port|domain|mad)|stacking|stack\s+ports)"),
+    ("address_object", r"(ip\s+address-set|object-group\s+network)"),
+    ("service_object", r"(ip\s+service-set|object-group\s+service)"),
 ]
 
 
