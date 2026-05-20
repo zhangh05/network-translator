@@ -533,12 +533,13 @@ function _updateRiskSummary(r){
   var warns=(v.warnings||[]).length;
   var gaps=(r.capability_gaps||[]).length;
   var ar=(r.analyzer_results||[]).length;
+  var rs=(r.risk_signals||[]).length;
   var cls,label;
   if(dep===true&&!mrr){cls="ok";label="可部署"}
   else if(lv==="fatal"||errs>0){cls="fail";label="不建议部署"}
   else{cls="warn";label="需人工复核"}
   ss.className="rsb rsb--"+cls;ss.textContent=label;
-  sc.innerHTML="错误 <span class='s'>"+errs+"</span> · 警告 <span class='s'>"+warns+"</span> · 能力缺口 <span class='s'>"+gaps+"</span> · 分析器发现 <span class='s'>"+ar+"</span>";
+  sc.innerHTML="错误 <span class='s'>"+errs+"</span> · 警告 <span class='s'>"+warns+"</span> · 能力缺口 <span class='s'>"+gaps+"</span> · 分析器 <span class='s'>"+ar+"</span> · 风险信号 <span class='s'>"+rs+"</span>";
   sb.classList.remove("h")
 }
 function _renderRiskTabGrouped(r){
@@ -546,10 +547,11 @@ function _renderRiskTabGrouped(r){
   var errors=v.errors||[], warnings=v.warnings||[];
   var gaps=r.capability_gaps||[];
   var ar=r.analyzer_results||[];
+  var riskSignals=r.risk_signals||[];
 
   // Collect items by feature
   var groups={};
-  function add(feature,type,html){if(!groups[feature])groups[feature]={gaps:[],analyzer:[],errors:[],warnings:[]};groups[feature][type].push(html)}
+  function add(feature,type,html){if(!groups[feature])groups[feature]={gaps:[],analyzer:[],errors:[],warnings:[],risk_signals:[]};groups[feature][type].push(html)}
 
   // Capability gaps by feature
   gaps.forEach(function(g){add(g.feature||"General","gaps",
@@ -577,21 +579,33 @@ function _renderRiskTabGrouped(r){
     var feat=m?m[2]:"General";
     add(feat,"errors",'<div class="err-item">✖ '+esc(e)+'</div>')});
 
+  // Risk signals by feature
+  riskSignals.forEach(function(s){
+    var feat=s.feature||"General";
+    var sev=s.severity||"unknown";
+    var msg=s.message||"-";
+    var sevCls=sev==="fatal"?"fail":sev==="warning"?"warn":"info";
+    add(feat,"risk_signals",
+      '<div class="warn-item" style="margin-bottom:4px">! <strong>风险信号</strong> <span class="sev sev--'+sevCls+'">'+esc(sev)+
+      '</span> '+esc(msg)+'</div>')});
+
   // Render grouped HTML
   var html="";
   var featOrder=Object.keys(groups).sort(function(a,b){
     var rank={General:99};return (rank[a]||ar.find(function(x){return x.feature===a})?1:50)-(rank[b]||ar.find(function(x){return x.feature===b})?1:50)});
   featOrder.forEach(function(feat){
     var g=groups[feat];
-    if(!g.gaps.length&&!g.analyzer.length&&!g.errors.length&&!g.warnings.length)return;
+    if(!g.gaps.length&&!g.analyzer.length&&!g.errors.length&&!g.warnings.length&&!g.risk_signals.length)return;
     html+='<h4 style="margin-top:16px;border-bottom:1px solid var(--s2);padding-bottom:4px">'+esc(feat)+
       ' <span style="font-weight:400;color:var(--t3);font-size:11px">'+
       (g.gaps.length?'缺口 '+g.gaps.length+' ':'')+
       (g.analyzer.length?'分析器 '+g.analyzer.length+' ':'')+
       (g.warnings.length?'警告 '+g.warnings.length+' ':'')+
-      (g.errors.length?'错误 '+g.errors.length:'')+'</span></h4>';
+      (g.errors.length?'错误 '+g.errors.length+' ':'')+
+      (g.risk_signals.length?'风险信号 '+g.risk_signals.length:'')+'</span></h4>';
     html+=g.gaps.join("");
     html+=g.analyzer.join("");
+    g.risk_signals.forEach(function(r){html+=r});
     g.errors.forEach(function(e){html+=e});
     g.warnings.forEach(function(w){html+=w});
   });
@@ -694,11 +708,11 @@ function _closeCopyMenu(){E("cpmenu").classList.remove("on")}
 
 async function _copyAll(){_closeCopyMenu();var t=stripFence(R.result?R.result.translated:"");if(!t.trim())return;try{await navigator.clipboard.writeText(t);_flashCopyBtn()}catch(_){}}
 async function _copyDeployable(){_closeCopyMenu();var t=stripFence(R.result?R.result.translated:"");var lines=t.split("\n");var filtered=lines.filter(function(l){return l.indexOf("MANUAL_REVIEW")===-1}).filter(function(l){return l.trim()}).join("\n");if(!filtered.trim()){_flashCopyBtn("无可用");return};try{await navigator.clipboard.writeText(filtered);_flashCopyBtn()}catch(_){}}
-async function _copyReport(){_closeCopyMenu();var r=R.result;if(!r)return;var v=r.validation||{};var lines=["=== 翻译风险报告 ===","","Request ID: "+R.request_id,"Version: "+R.version+(R.model?" ("+R.model+")":""),"","--- 验证 ---","Level: "+(v.level||"info"),"Deployable: "+(v.deployable===false?"否":"是"),"Manual Review: "+(v.manual_review_required?"需复核":"否"),"Errors: "+(v.errors||[]).length,"Warnings: "+(v.warnings||[]).length,"","--- 能力缺口 ---"].concat((r.capability_gaps||[]).map(function(g){return"  ["+g.severity+"] "+g.feature+": "+(g.suggestion||g.status)})).concat(["","--- 分析器发现 ---"]).concat((r.analyzer_results||[]).map(function(a){var rl=a.risk_level||"none";return"  ["+rl+"] "+a.feature+": "+(a.summary||a.notes&&a.notes[0]||"-")})).concat(["","--- 节点耗时 ---"]).concat((r.node_results||[]).map(function(n){return"  "+n.node+": "+(n.elapsed_ms||0).toFixed(1)+"ms "+n.status}));try{await navigator.clipboard.writeText(lines.join("\n"));_flashCopyBtn()}catch(_){}}
+async function _copyReport(){_closeCopyMenu();var r=R.result;if(!r)return;var v=r.validation||{};var riskSignals=r.risk_signals||[];var lines=["=== 翻译风险报告 ===","","Request ID: "+R.request_id,"Version: "+R.version+(R.model?" ("+R.model+")":""),"","--- 验证 ---","Level: "+(v.level||"info"),"Deployable: "+(v.deployable===false?"否":"是"),"Manual Review: "+(v.manual_review_required?"需复核":"否"),"Errors: "+(v.errors||[]).length,"Warnings: "+(v.warnings||[]).length,"","--- 风险信号 ---"].concat(riskSignals.map(function(s){return"  ["+s.severity+"] "+s.feature+": "+(s.message||"-")})).concat(["","--- 能力缺口 ---"]).concat((r.capability_gaps||[]).map(function(g){return"  ["+g.severity+"] "+g.feature+": "+(g.suggestion||g.status)})).concat(["","--- 分析器发现 ---"]).concat((r.analyzer_results||[]).map(function(a){var rl=a.risk_level||"none";return"  ["+rl+"] "+a.feature+": "+(a.summary||a.notes&&a.notes[0]||"-")})).concat(["","--- 节点耗时 ---"]).concat((r.node_results||[]).map(function(n){return"  "+n.node+": "+(n.elapsed_ms||0).toFixed(1)+"ms "+n.status}));try{await navigator.clipboard.writeText(lines.join("\n"));_flashCopyBtn()}catch(_){}}
 function _flashCopyBtn(msg){var b=E("cbtn");b.textContent=msg||"已复制";setTimeout(function(){b.textContent="复制"},1200)}
 
 // ── Export ──
-function _buildExportReport(){var r=R.result;if(!r)return null;var v=r.validation||{};return{request_id:R.request_id,version:R.version,model:R.model,source:{vendor:E("fv").value,domain:E("sd").value,platform:E("sp").value},target:{vendor:E("tv").value,domain:E("td").value,platform:E("tp").value},translated:stripFence(r.translated||""),validation:v,capability_gaps:r.capability_gaps||[],analyzer_results:r.analyzer_results||[],node_results:r.node_results||[],timing:{elapsed_ms:Date.now()-R.t0}}}
+function _buildExportReport(){var r=R.result;if(!r)return null;var v=r.validation||{};return{request_id:R.request_id,version:R.version,model:R.model,source:{vendor:E("fv").value,domain:E("sd").value,platform:E("sp").value},target:{vendor:E("tv").value,domain:E("td").value,platform:E("tp").value},translated:stripFence(r.translated||""),validation:v,risk_signals:r.risk_signals||[],capability_gaps:r.capability_gaps||[],analyzer_results:r.analyzer_results||[],node_results:r.node_results||[],timing:{elapsed_ms:Date.now()-R.t0}}}
 async function _exportReport(){var report=_buildExportReport();if(!report)return;var name="translation-report-"+R.request_id+".json";var blob=new Blob([JSON.stringify(report,null,2)],{type:"application/json"});var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
 
 document.querySelectorAll(".tabs button").forEach(function(t){t.addEventListener("click",function(){R.tab=this.dataset.tab;document.querySelectorAll(".tabs button").forEach(function(b){b.classList.toggle("on",b===t)});RN();saveActive()})});

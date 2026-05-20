@@ -57,7 +57,12 @@ VERSION = _read_version()
 
 
 def _get_model_name() -> str:
-    return os.environ.get("LLM_MODEL", "MiniMax-M2.7")
+    name = os.environ.get("LLM_MODEL")
+    if name:
+        return name
+    if os.environ.get("LLM_API_KEY"):
+        return "configured"
+    return "rule-based"
 
 
 def _get_analyzer_count() -> int:
@@ -294,6 +299,7 @@ def _build_log_entry(
     entry["fallback_used"] = result.get("fallback_used", False)
     entry["route_decision"] = result.get("route_decision", "unknown")
     entry["features"] = result.get("features", [])
+    entry["risk_signals"] = result.get("risk_signals", [])
     entry["node_results"] = result.get("node_results", [])
     entry["capability_gaps"] = result.get("capability_gaps", [])
     entry["analyzer_results"] = result.get("analyzer_results", [])
