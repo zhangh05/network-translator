@@ -31,6 +31,7 @@ docs/coverage/live_corpus_cache.json
 docs/coverage/live_corpus_pilot*.json
 docs/coverage/live_corpus_pilot*.md
 bench/live_report_p0.json
+reports/coverage_matrix.json
 
 # Tool and editor noise
 .claude/settings.local.json

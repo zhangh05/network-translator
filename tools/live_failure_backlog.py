@@ -69,18 +69,33 @@ def main():
             continue
         cat = categorize_case(case)
         pri = priority_for(cat)
+        features = case.get("features", [])
+        if isinstance(features, list):
+            features_str = ", ".join(features[:5])
+        else:
+            features_str = str(features)[:80]
         backlog.append({
             "name": case["name"],
             "path": case.get("path", ""),
+            "case_id": case.get("case_id", ""),
+            "request_id": case.get("request_id", ""),
             "tier": case.get("tier", ""),
-            "domain": case.get("path", "").split("/")[0] if "/" in case.get("path", "") else "",
-            "source_vendor": "",
-            "target_vendor": "",
+            "domain": case.get("source_domain", "") or (case.get("path", "").split("/")[0] if "/" in case.get("path", "") else ""),
+            "source_vendor": case.get("source_vendor", ""),
+            "target_vendor": case.get("target_vendor", ""),
+            "target_domain": case.get("target_domain", ""),
+            "features": features_str,
             "status": case.get("status", ""),
             "category": cat,
             "priority": pri,
+            "deployable": case.get("deployable", None),
+            "manual_review_required": case.get("manual_review_required", None),
+            "validation_level": case.get("validation_level", ""),
             "errors": case.get("errors", []),
+            "failure_reason": case.get("failure_reason", ""),
             "meta": case.get("meta", {}),
+            "capability_gaps": case.get("capability_gaps", []),
+            "analyzer_results": case.get("analyzer_results", []),
         })
 
     # Sort by priority
@@ -124,13 +139,17 @@ def main():
     lines.extend([
         "## Backlog",
         "",
-        "| Pri | Case | Domain | Category | Errors |",
-        "|-----|------|--------|----------|--------|",
+        "| Pri | Case | Domain | Src→Tgt | Features | Category | Reason | Deployable | MRev |",
+        "|-----|------|--------|---------|----------|----------|--------|------------|------|",
     ])
     for b in backlog:
-        err_summary = "; ".join(b["errors"][:2]) if b["errors"] else b["status"]
+        src_tgt = f"{b['source_vendor']}→{b['target_vendor']}" if b['source_vendor'] and b['target_vendor'] else ""
+        feats = b.get("features", "")[:40]
+        reason = b.get("failure_reason", "")[:60] or ("; ".join(b["errors"][:2])[:60] if b["errors"] else b["status"])
+        dep = "✓" if b.get("deployable") else "✗" if b.get("deployable") is False else "?"
+        mrev = "⚠" if b.get("manual_review_required") else "✓" if b.get("manual_review_required") is False else "?"
         lines.append(
-            f"| {b['priority']} | {b['name']} | {b['domain']} | {b['category']} | {err_summary[:80]} |"
+            f"| {b['priority']} | {b['name']} | {b['domain']} | {src_tgt} | {feats} | {b['category']} | {reason} | {dep} | {mrev} |"
         )
 
     # Write summary JSON
@@ -142,8 +161,13 @@ def main():
         "by_priority": dict(pcount),
         "by_category": dict(ccount),
         "failures": [
-            {"name": b["name"], "priority": b["priority"],
-             "category": b["category"], "errors": b["errors"][:2]}
+            {"name": b["name"], "case_id": b["case_id"], "request_id": b["request_id"],
+             "priority": b["priority"], "category": b["category"],
+             "source_vendor": b["source_vendor"], "target_vendor": b["target_vendor"],
+             "features": b["features"], "deployable": b["deployable"],
+             "manual_review_required": b["manual_review_required"],
+             "failure_reason": b["failure_reason"],
+             "errors": b["errors"][:2]}
             for b in backlog
         ],
     }

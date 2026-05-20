@@ -146,8 +146,16 @@ def check_translated(case, translated, meta):
 
         # ── Enhanced live checks ──
         if meta.get("capability_gaps"):
-            if isinstance(meta["capability_gaps"], list) and len(meta["capability_gaps"]) > 0:
-                errors.append(f"capability_gaps present: {meta['capability_gaps']}")
+            if isinstance(meta["capability_gaps"], list):
+                fatal_gaps = [g for g in meta["capability_gaps"] if g.get("severity") == "fatal"]
+                warning_gaps = [g for g in meta["capability_gaps"] if g.get("severity") == "warning"]
+                unknown_gaps = [g for g in meta["capability_gaps"]
+                                if g.get("status") in ("unknown", "unsupported", "partial")
+                                and g.get("severity") in ("warning", "fatal")]
+                if fatal_gaps:
+                    errors.append(f"fatal capability_gaps: {fatal_gaps}")
+                elif warning_gaps or unknown_gaps:
+                    errors.append(f"warning capability_gaps: {warning_gaps or unknown_gaps}")
 
         if meta.get("analyzer_results"):
             if isinstance(meta.get("analyzer_results"), list) and len(meta["analyzer_results"]) > 0:
@@ -225,13 +233,20 @@ def run_live(case):
     meta["capability_gaps"] = meta.get("capability_gaps", [])
     meta["analyzer_results"] = meta.get("analyzer_results", [])
 
+    api_result = result.get("result", {})
+    request_id = api_result.get("request_id", "") or result.get("request_id", "")
+
     detail = {
         "translated": translated,
         "translated_excerpt": translated[:300] + ("..." if len(translated) > 300 else ""),
         "status_code": resp.status_code,
         "elapsed": elapsed,
+        "request_id": request_id,
+        "api_result": api_result,
         "meta": {k: meta.get(k) for k in ("level", "deployable", "manual_review_required", "capability_gaps", "analyzer_results")},
-        "validation": {k: result.get(k) for k in ("valid", "level", "deployable", "manual_review_required", "errors", "warnings") if k in result},
+        "validation": {k: result.get(k) for k in ("valid", "level", "deployable", "manual_review_required", "errors", "warnings") if k in result} if not validation else validation,
+        "analyzer_results": meta.get("analyzer_results", []),
+        "capability_gaps": meta.get("capability_gaps", []),
         "analyzer_findings": _summarize_analyzers(result.get("result", {}).get("analyzer_results", [])),
     }
 
@@ -495,11 +510,12 @@ def main():
         result = run_live(c)
         tier_stats[t]["live_total"] += 1
 
-        # Detect unsafe_success: translation passes quality check but deployability
-        # expectation is violated (manual_review_required=True or high-risk
-        # deployable=true when it should be false)
         exp = c.get("expected", {})
         meta = result.get("detail", {}).get("meta", {})
+        detail = result.get("detail", {})
+        validation = detail.get("validation", {})
+        api_result = detail.get("api_result", {})
+
         is_unsafe = (
             result["status"] == "pass"
             and exp.get("manual_review_required") is True
@@ -510,6 +526,9 @@ def main():
         if is_unsafe:
             result["status"] = "unsafe_success"
             result["category"] = "unsafe_success"
+
+        error_category = result.get("category", "")
+        failure_reason = result.get("error") or "; ".join(result.get("errors", [])) if result["status"] != "pass" else ""
 
         if result["status"] == "pass":
             c["_live_result"] = "PASS"
@@ -528,26 +547,21 @@ def main():
             c["_elapsed_ms"] = f"{result['elapsed']*1000:.0f}"
             RESULTS["live"]["fail"] += 1
             tier_stats[t]["live_fail"] += 1
-            category = result.get("category", "")
-            if category:
-                label = category.upper()
+            if error_category:
+                label = error_category.upper()
             else:
                 label = "FAIL"
-            err_msg = result.get("error") or "; ".join(result.get("errors", []))
-            print(f"  {label} {c['_path']}: {err_msg} ({result['elapsed']:.1f}s)")
-            detail = result.get("detail", {})
+            print(f"  {label} {c['_path']}: {failure_reason} ({result['elapsed']:.1f}s)")
             if detail:
                 excerpt = detail.get("translated_excerpt", "")
                 if excerpt:
                     print(f"        excerpt: {excerpt}")
-                meta = detail.get("meta", {})
                 if meta:
                     print(f"        meta: {json.dumps(meta)}")
-                val = detail.get("validation", {})
-                if val.get("errors"):
-                    print(f"        validation errors: {val['errors'][:3]}")
-                if val.get("warnings"):
-                    print(f"        validation warnings: {val['warnings'][:3]}")
+                if validation.get("errors"):
+                    print(f"        validation errors: {validation['errors'][:3]}")
+                if validation.get("warnings"):
+                    print(f"        validation warnings: {validation['warnings'][:3]}")
                 af = detail.get("analyzer_findings", {})
                 if af:
                     print(f"        analyzer risks: {json.dumps(af)}")
@@ -555,13 +569,27 @@ def main():
         live_results_detail.append({
             "name": c["name"],
             "path": c["_path"],
+            "case_id": c.get("name", ""),
+            "request_id": api_result.get("request_id", ""),
             "tier": c["_tier"],
+            "source_domain": c.get("source_domain", ""),
+            "target_domain": c.get("target_domain", ""),
+            "source_vendor": c.get("source_vendor", ""),
+            "target_vendor": c.get("target_vendor", ""),
+            "features": c.get("features", []),
             "status": result["status"],
-            "category": result.get("category", ""),
+            "category": error_category,
+            "failure_reason": failure_reason,
             "elapsed_ms": c["_elapsed_ms"],
             "errors": result.get("errors", []) if result["status"] != "pass" else [],
-            "meta": result.get("detail", {}).get("meta", {}),
-            "detail": result.get("detail", {}),
+            "deployable": validation.get("deployable", None),
+            "manual_review_required": validation.get("manual_review_required", None),
+            "validation_level": validation.get("level", "info"),
+            "analyzer_results": detail.get("analyzer_results", []),
+            "capability_gaps": detail.get("capability_gaps", []),
+            "validation": validation,
+            "translated_excerpt": detail.get("translated_excerpt", ""),
+            "detail": detail,
         })
 
     # Cache test
