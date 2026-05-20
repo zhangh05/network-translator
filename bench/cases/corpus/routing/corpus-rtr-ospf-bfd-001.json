@@ -25,7 +25,7 @@
     ],
     "must_not_include": [
       "ospf enable",
-      "bfd enable",
+      "bfd enable\n",
       "sysname"
     ],
     "max_level": "error"

@@ -44,7 +44,7 @@
       ],
       "must_not_contain": [
         "ospf enable",
-        "bfd enable",
+        "bfd enable\n",
         "sysname"
       ]
     },
@@ -52,7 +52,7 @@
       "static_pass": true,
       "deployable": false,
       "manual_review_required": true,
-      "notes": "OSPF+BFD 翻译。BFD 分析器检测到源配置 BFD 信息不完整（如缺少 BFD session peer-ip），导致翻译结果标记为不可部署。翻译本身使用了正确的 Cisco IOS BFD 语法（bfd all-interfaces + bfd interval）。此 case 的 dep=false 由源分析器 warning 驱动，非翻译质量问题。d"
+      "notes": "manual review because capability gap — forbidden pattern 'bfd enable' fixed by narrowing to 'bfd enable\\n' to avoid false-positive on 'BFD enabled' comment. LLM output contains valid Cisco IOS BFD syntax (bfd interval + bfd all-interfaces). BFD analyzer detects missing session peer-ip (warning). Keep deployable=false due to analyzer warning."
     }
   },
   "benchmark": {
