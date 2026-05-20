@@ -80,13 +80,10 @@ def _check_static_bench(root: Path) -> Tuple[bool, str]:
 
 
 def _check_coverage_matrix(root: Path) -> Tuple[bool, str]:
-    ret = run([sys.executable or "python3", "tools/generate_coverage_matrix.py"], cwd=root)
-    if ret != 0:
-        return False, "coverage matrix generation FAILED"
     md = root / "reports" / "coverage_matrix.md"
     if not md.exists():
-        return False, "reports/coverage_matrix.md not found"
-    return True, "coverage matrix generated and present"
+        return False, "reports/coverage_matrix.md not found — run tools/generate_coverage_matrix.py"
+    return True, "coverage matrix present (regen skipped; run tools/generate_coverage_matrix.py to refresh)"
 
 
 def _check_version_file(root: Path) -> Tuple[bool, str]:

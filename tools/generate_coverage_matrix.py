@@ -160,7 +160,7 @@ def generate_report(entries, vendor_domain, feature_vendor, gaps, capability_map
 
     w("# Coverage Matrix")
     w()
-    w(f"Generated: {__import__('time').strftime('%Y-%m-%d %H:%M:%S')}")
+    w(f"Generated for: {PROJECT_ROOT.joinpath('VERSION').read_text().strip()}")
     w(f"Corpus entries: {len(entries)}")
     w(f"Registered features: {len(registry.get('features', {}))}")
     w()
@@ -314,7 +314,7 @@ def generate_report(entries, vendor_domain, feature_vendor, gaps, capability_map
 
 def build_json_output(entries, vendor_domain, feature_vendor, gaps, capability_map, registry):
     return {
-        "generated_at": __import__('time').strftime('%Y-%m-%dT%H:%M:%S'),
+        "version": PROJECT_ROOT.joinpath('VERSION').read_text().strip(),
         "corpus": {
             "total_entries": len(entries),
             "by_domain": dict(Counter(e["source_domain"] for e in entries)),

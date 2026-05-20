@@ -116,6 +116,31 @@ Do not commit real customer configurations or credentials. Log entries contain c
 6. Update `VERSION` file
 7. Restart service: `./scripts/restart.sh`
 
+## Live Corpus Verification
+
+Requires `LLM_API_KEY` in environment and a running service.
+
+```bash
+BENCH_TIMEOUT=180 python bench/run_cases.py \
+  --api-base http://127.0.0.1:5008 \
+  --domain corpus \
+  --live-report-json bench/live_report.json
+
+python tools/live_failure_backlog.py
+```
+
+**Current status (as of 2026-05-20): BLOCKED** — LLM_API_KEY not available in this
+environment. The stale baseline at `bench/live_report.json` (13/15) was generated
+before the P0/P1 risk model changes and cannot be used as a quality indicator.
+Regenerate after obtaining a valid LLM key.
+
+Expected output files:
+- `bench/live_report.json` — per-case live translation results
+- `reports/live_failure_backlog.md` — categorized failure report
+
+Do not release until live corpus passes (or explicit waiver with documented
+acceptance criteria).
+
 ## Architecture Overview
 
 DAG nodes (execution order):
