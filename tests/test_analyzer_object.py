@@ -190,3 +190,61 @@ object-group network B
     assert r.risk_level == "fatal"
     ctx = " ".join(r.missing_context)
     assert "循环引用" in ctx
+
+
+# ═══════════════════════════════════════════════════════════════════
+# P1-1: Registry resolves address_object/service_object → ObjectAnalyzer
+# ═══════════════════════════════════════════════════════════════════
+
+def test_registry_has_address_object_analyzer():
+    from core.analyzers import AnalyzerRegistry
+    reg = AnalyzerRegistry()
+    assert reg.has_analyzer("address_object"), "address_object must have registered analyzer"
+
+def test_registry_has_service_object_analyzer():
+    from core.analyzers import AnalyzerRegistry
+    reg = AnalyzerRegistry()
+    assert reg.has_analyzer("service_object"), "service_object must have registered analyzer"
+
+def test_registry_address_object_is_object_analyzer():
+    from core.analyzers import AnalyzerRegistry
+    reg = AnalyzerRegistry()
+    cls_name = type(reg.get_analyzer("address_object")).__name__
+    assert cls_name == "ObjectAnalyzer", f"Expected ObjectAnalyzer, got {cls_name}"
+
+def test_registry_service_object_is_object_analyzer():
+    from core.analyzers import AnalyzerRegistry
+    reg = AnalyzerRegistry()
+    cls_name = type(reg.get_analyzer("service_object")).__name__
+    assert cls_name == "ObjectAnalyzer", f"Expected ObjectAnalyzer, got {cls_name}"
+
+def test_registry_not_noop_for_address_object():
+    from core.analyzers import AnalyzerRegistry, NoopAnalyzer
+    reg = AnalyzerRegistry()
+    analyzer = reg.get_analyzer("address_object")
+    assert not isinstance(analyzer, NoopAnalyzer), "address_object must not be NoopAnalyzer"
+
+def test_registry_not_noop_for_service_object():
+    from core.analyzers import AnalyzerRegistry, NoopAnalyzer
+    reg = AnalyzerRegistry()
+    analyzer = reg.get_analyzer("service_object")
+    assert not isinstance(analyzer, NoopAnalyzer), "service_object must not be NoopAnalyzer"
+
+def test_registry_analyze_all_produces_analyzed_results():
+    """FeatureAnalyzerNode-like run: ASA object-group config yields analyzed results, not Noop skipped."""
+    from core.analyzers import AnalyzerRegistry
+    reg = AnalyzerRegistry()
+    config = """!
+object-group network SERVERS
+ network-object 10.1.0.0 255.255.0.0
+!
+object-group service WEB
+ service-object tcp destination eq 80
+!"""
+    results = reg.analyze_all(config, "cisco", "firewall", "asa", ["address_object", "service_object"])
+    assert len(results) == 2, f"expected 2 results, got {len(results)}"
+    for r in results:
+        assert r.status != "skipped", f"{r.feature} was skipped (Noop): {r.notes}"
+        assert r.risk_level != "none"
+    features = {r.feature for r in results}
+    assert "address_object" in features, "address_object must produce analyzer results"

@@ -89,13 +89,13 @@ features:
     domains: [firewall]
     priority: p0
     risk: low
-    analyzer: address_object
+    analyzer: object
 
   service_object:
     domains: [firewall]
     priority: p0
     risk: low
-    analyzer: address_object
+    analyzer: object
 
   zone:
     domains: [firewall]
