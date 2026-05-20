@@ -36,6 +36,8 @@ class LLM:
     """Small chat wrapper.
 
     If no API key is configured, return an error payload so graph fallback can trigger.
+
+    Supports optional provider fallback via ProviderFallback for resilience.
     """
 
     def __init__(
@@ -45,12 +47,25 @@ class LLM:
         base_url: Optional[str] = None,
         timeout: int = 45,
         max_retries: int = 2,
+        fallback_providers: Optional[List[ProviderConfig]] = None,
     ):
         self.api_key = api_key or os.environ.get("LLM_API_KEY", "")
         self.model = model or os.environ.get("LLM_MODEL", "MiniMax-M2.7")
         self.base_url = base_url or os.environ.get("LLM_BASE_URL", "").strip()
         self.timeout = timeout
         self.max_retries = max_retries
+
+        # Provider fallback system (optional)
+        from core.provider_fallback import ProviderConfig, ProviderFallback
+        self._fallback: Optional[ProviderFallback] = None
+        # Build a list of providers: primary from constructor + any explicit fallbacks
+        all_providers: List[ProviderConfig] = []
+        if fallback_providers:
+            all_providers = list(fallback_providers)
+        else:
+            all_providers = ProviderConfig.from_env_with_fallback()
+        if len(all_providers) > 1:
+            self._fallback = ProviderFallback(all_providers)
 
     def _retry_post(self, fn, *args, **kwargs):
         last_err = ""
@@ -93,19 +108,39 @@ class LLM:
         max_tokens: int = 4096,
         tools: Optional[List[Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
-        if not self.api_key:
-            return {"error": "LLM API key missing", "content": ""}
+        if self._fallback and len(self._fallback.providers) > 1:
+            return self._chat_with_fallback(
+                messages=messages, system=system,
+                temperature=temperature, max_tokens=max_tokens, tools=tools,
+            )
 
-        # Compatible no-network default: caller can still fall back.
-        if not self.base_url:
+        return self._chat_single(
+            self.api_key, self.base_url, self.model,
+            messages=messages, system=system,
+            temperature=temperature, max_tokens=max_tokens, tools=tools,
+        )
+
+    def _chat_single(
+        self,
+        api_key: str,
+        base_url: str,
+        model: str,
+        messages: List[Dict[str, str]],
+        system: Optional[str] = None,
+        temperature: float = 0.2,
+        max_tokens: int = 4096,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        if not api_key:
+            return {"error": "LLM API key missing", "content": ""}
+        if not base_url:
             return {"error": "LLM base URL missing", "content": ""}
 
-        if self._is_anthropic_endpoint():
-            return self._chat_anthropic(
-                messages=messages,
-                system=system,
-                temperature=temperature,
-                max_tokens=max_tokens,
+        if self._is_anthropic_endpoint_base(base_url):
+            return self._chat_anthropic_at(
+                api_key=api_key, base_url=base_url,
+                messages=messages, system=system,
+                temperature=temperature, max_tokens=max_tokens,
             )
 
         payload_messages: List[Dict[str, str]] = []
@@ -114,7 +149,7 @@ class LLM:
         payload_messages.extend(messages or [])
 
         payload: Dict[str, Any] = {
-            "model": self.model,
+            "model": model,
             "messages": payload_messages,
             "temperature": temperature,
             "max_tokens": max_tokens,
@@ -123,19 +158,18 @@ class LLM:
             payload["tools"] = tools
 
         headers = {
-            "Authorization": f"Bearer {self.api_key}",
+            "Authorization": f"Bearer {api_key}",
             "Content-Type": "application/json",
         }
 
         try:
-            data = self._post_json(payload, headers)
+            data = self._post_json_at(payload, headers, base_url)
         except Exception as exc:
             return {"error": str(exc), "content": ""}
 
         if isinstance(data, dict) and data.get("error"):
             return {"error": data.get("error", "LLM request failed"), "content": ""}
 
-        # Try common response shapes.
         if isinstance(data, dict):
             if "choices" in data and data["choices"]:
                 msg = data["choices"][0].get("message", {})
@@ -157,20 +191,34 @@ class LLM:
 
         return {"error": "unrecognized LLM response", "content": ""}
 
-    def _is_anthropic_endpoint(self) -> bool:
-        base = self.base_url.rstrip("/").lower()
+    def _chat_with_fallback(
+        self,
+        messages: List[Dict[str, str]],
+        system: Optional[str] = None,
+        temperature: float = 0.2,
+        max_tokens: int = 4096,
+        tools: Optional[List[Dict[str, Any]]] = None,
+    ) -> Dict[str, Any]:
+        """Try providers in health order via ProviderFallback."""
+        def call_fn(provider: ProviderConfig) -> Dict[str, Any]:
+            return self._chat_single(
+                api_key=provider.api_key,
+                base_url=provider.base_url,
+                model=provider.model or self.model,
+                messages=messages, system=system,
+                temperature=temperature, max_tokens=max_tokens, tools=tools,
+            )
+
+        return self._fallback.execute(call_fn)
+
+    def _is_anthropic_endpoint_base(self, base_url: str) -> bool:
+        base = base_url.rstrip("/").lower()
         return "api.anthropic.com" in base or "/anthropic" in base
 
-    def _anthropic_url(self) -> str:
-        base = self.base_url.rstrip("/")
-        if base.endswith("/v1/messages"):
-            return base
-        if base.endswith("/v1"):
-            return base + "/messages"
-        return base + "/v1/messages"
-
-    def _chat_anthropic(
+    def _chat_anthropic_at(
         self,
+        api_key: str,
+        base_url: str,
         messages: List[Dict[str, str]],
         system: Optional[str],
         temperature: float,
@@ -186,12 +234,12 @@ class LLM:
             payload["system"] = system
 
         headers = {
-            "X-Api-Key": self.api_key,
+            "X-Api-Key": api_key,
             "Content-Type": "application/json",
             "anthropic-version": "2023-06-01",
         }
 
-        target_url = self._anthropic_url()
+        target_url = self._anthropic_url_from(base_url)
         try:
             data = self._post_json_at(payload, headers, target_url, prefer_urllib=True)
         except Exception as exc:
@@ -212,6 +260,14 @@ class LLM:
         if isinstance(content, str):
             return {"content": content, "tool_calls": []}
         return {"error": "empty Anthropic response", "content": ""}
+
+    def _anthropic_url_from(self, base_url: str) -> str:
+        base = base_url.rstrip("/")
+        if base.endswith("/v1/messages"):
+            return base
+        if base.endswith("/v1"):
+            return base + "/messages"
+        return base + "/v1/messages"
 
     def _post_json(
         self,
