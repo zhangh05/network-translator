@@ -57,7 +57,7 @@
       "static_pass": true,
       "deployable": true,
       "manual_review_required": false,
-      "notes": "LACP 翻译。端口聚合模式映射（Huawei Eth-Trunk + lacp-static → Cisco Port-channel + channel-group mode active）。翻译结果干净无残留。"
+      "notes": "clean deployable — LACP port-aggregation mapping well-established: Eth-Trunk + lacp-static → Port-channel + channel-group mode active. Clean translation with no source vendor residue. max_level=warning allows style warnings."
     }
   },
   "benchmark": {

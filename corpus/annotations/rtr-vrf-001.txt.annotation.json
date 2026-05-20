@@ -54,7 +54,7 @@
       "static_pass": true,
       "deployable": true,
       "manual_review_required": false,
-      "notes": "Medium-risk VRF. Key Huawei mappings: ip vrf→ip vpn-instance, rd→route-distinguisher, route-target→vpn-target (export/import), ip route vrf→ip route-static vpn-instance"
+      "notes": "clean deployable — VRF Cisco→Huawei mapping well-established. Key mappings: ip vrf→ip vpn-instance, rd→route-distinguisher, route-target→vpn-target, ip route vrf→ip route-static vpn-instance. max_level=warning allows style warnings. No capability gaps."
     }
   },
   "benchmark": {

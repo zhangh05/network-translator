@@ -55,7 +55,7 @@
       "static_pass": true,
       "deployable": false,
       "manual_review_required": true,
-      "notes": "High-risk: ACL applied to VLAN. ACL translation requires careful permit/deny reversal check for Huawei traffic-filter. DHCP snooping mapping straightforward"
+      "notes": "manual review because capability gap — ACL applied to VLAN requires permit/deny reversal check for Huawei traffic-filter. ACL semantic preservation is unverifiable by must_include/must_not_include alone. DHCP snooping mapping is straightforward but ACL risk warrants manual review."
     }
   },
   "benchmark": {

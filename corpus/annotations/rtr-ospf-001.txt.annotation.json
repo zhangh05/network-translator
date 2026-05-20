@@ -51,7 +51,7 @@
       "static_pass": true,
       "deployable": true,
       "manual_review_required": false,
-      "notes": "OSPF 翻译（Cisco IOS → Huawei VRP）。翻译使用正确的华为 VRP 语法（ospf enable + router-id + default-route-advertise）。系统 level=warning 来自 style 检查，非语义问题。"
+      "notes": "clean deployable — OSPF single-area Cisco→Huawei mapping well-established. Correct VRP syntax (ospf enable + router-id + default-route-advertise). max_level=warning allows style-tip warnings. No capability gaps, no forbidden patterns, no validator errors."
     }
   },
   "benchmark": {

@@ -59,7 +59,7 @@
       "static_pass": true,
       "deployable": false,
       "manual_review_required": true,
-      "notes": "High-risk: IPsec + ACL. Complex feature requiring manual review of SA parameters, crypto profiles, and ACL-to-policy mapping"
+      "notes": "manual review because capability gap — IOS IPsec crypto with IKEv1 to Huawei VRP ike+ipsec mapping. Multiple parameters (encryption, hash, DH group, lifetime) must be preserved across platforms. IPsec is high-risk and error-prone even with well-known mappings."
     }
   },
   "benchmark": {

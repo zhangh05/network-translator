@@ -14,12 +14,12 @@
     "security_policy",
     "zone"
   ],
-  "risk": "high",
+  "risk": "medium",
   "tier": "full",
   "source_config": "!\n! Huawei USG6600 — NAT source + NAT server\n! Source: internal-lab\n! Domain: firewall, Features: nat, security_policy\n!\ninterface GigabitEthernet1/0/1\n ip address 198.18.1.1 255.255.255.0\n nat static enable\n!\ninterface GigabitEthernet2/0/1\n ip address 198.18.2.1 255.255.255.0\n!\nnat address-group GROUP1 198.18.10.1 198.18.10.254\n!\nnat source acl 2000 address-group GROUP1\n!\nnat server protocol tcp global 198.18.2.100 443 inside 10.0.0.10 443\n!\nacl number 2000\n rule 10 permit source 10.0.0.0 0.0.0.255\n rule 20 permit source 10.0.1.0 0.0.0.255\n!\nfirewall zone trust\n set priority 85\n add interface GigabitEthernet1/0/1\n!\nfirewall zone untrust\n set priority 5\n add interface GigabitEthernet2/0/1\n!\nsecurity-policy\n rule name trust-to-untrust\n  source-zone trust\n  destination-zone untrust\n  source-address 10.0.0.0 255.255.255.0\n  action permit",
   "expected": {
-    "deployable": false,
-    "manual_review_required": true,
+    "deployable": true,
+    "manual_review_required": false,
     "no_markdown_fence": true,
     "no_placeholder": true,
     "must_include": [
@@ -27,7 +27,7 @@
       "access-list",
       "access-group"
     ],
-    "max_level": "error"
+    "max_level": "warning"
   },
   "corpus_ref": {
     "sanitized_file": "fw-nat-001.txt",

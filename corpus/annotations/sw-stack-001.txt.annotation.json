@@ -51,7 +51,7 @@
       "static_pass": true,
       "deployable": false,
       "manual_review_required": true,
-      "notes": "H3C IRF 堆叠无 Cisco IOS 直接等价。Cisco 平台需 VSS/StackWise（取决于平台），普通 IOS 无法等价。翻译结果应标记 MANUAL_REVIEW 而非硬翻成 Port-channel 或空接口配置。"
+      "notes": "non-deployable because capability gap — H3C IRF stacking has no Cisco IOS equivalent. IOS cannot support VSS/StackWise. LLM must produce MANUAL_REVIEW instead of translating to Port-channel or empty config. must_not_include checks catch H3C residue."
     }
   },
   "benchmark": {

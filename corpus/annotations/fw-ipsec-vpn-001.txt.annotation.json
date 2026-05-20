@@ -56,7 +56,7 @@
       "static_pass": true,
       "deployable": false,
       "manual_review_required": true,
-      "notes": "High-risk: IPsec VPN with NAT interaction. ASA crypto map and tunnel-group have no direct Huawei equivalent; requires most manual review of all corpus entries"
+      "notes": "manual review because capability gap — ASA IPsec VPN with NAT interaction. Crypto map and tunnel-group have no direct Huawei equivalent; requires manual verification of SA parameters, crypto profiles, and ACL-to-policy mapping. High-risk features (ipsec, nat, acl) with genuine semantic gaps."
     }
   },
   "benchmark": {

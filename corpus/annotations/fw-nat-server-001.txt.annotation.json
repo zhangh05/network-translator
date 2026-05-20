@@ -55,7 +55,7 @@
       "static_pass": true,
       "deployable": false,
       "manual_review_required": true,
-      "notes": "High-risk: NAT server/port-forwarding. ASA static NAT with service keyword requires careful mapping to Huawei nat server"
+      "notes": "manual review because capability gap — ASA static NAT with service keyword requires careful mapping to Huawei nat server protocol tcp global. Service-specific NAT port forwarding semantics differ between platforms; translation must preserve port mapping correctly."
     }
   },
   "benchmark": {

@@ -16,8 +16,8 @@
   "tier": "core",
   "source_config": "!\n! Cisco IOS-XE — BGP with route-policy\n! Source: internal_lab\n! Domain: routing, Features: bgp, route_policy, prefix_list, interface\n!\ninterface Loopback0\n ip address 198.18.255.1 255.255.255.255\n no shutdown\n!\ninterface GigabitEthernet0/0\n description To ISP-1\n ip address 198.18.1.1 255.255.255.0\n no shutdown\n!\ninterface GigabitEthernet0/1\n description To ISP-2\n ip address 198.18.2.1 255.255.255.0\n no shutdown\n!\nrouter bgp 65001\n bgp router-id 198.18.255.1\n neighbor 198.18.1.2 remote-as 65002\n neighbor 198.18.1.2 description ISP-1\n neighbor 198.18.1.2 route-map PREFER_ISP1 in\n neighbor 198.18.1.2 prefix-list CUSTOMER_PREFIXES out\n neighbor 198.18.2.2 remote-as 65003\n neighbor 198.18.2.2 description ISP-2\n network 198.18.0.0 mask 255.255.0.0\n!\nip prefix-list CUSTOMER_PREFIXES seq 5 permit 198.18.0.0/16\n!\nroute-map PREFER_ISP1 permit 10\n match ip address prefix-list CUSTOMER_PREFIXES\n set local-preference 150\n!\nroute-map PREFER_ISP1 permit 20\n set local-preference 100\n!",
   "expected": {
-    "deployable": false,
-    "manual_review_required": true,
+    "deployable": true,
+    "manual_review_required": false,
     "no_markdown_fence": true,
     "no_placeholder": true,
     "must_include": [
@@ -31,7 +31,7 @@
       "route-map",
       "ip prefix-list"
     ],
-    "max_level": "error"
+    "max_level": "warning"
   },
   "corpus_ref": {
     "sanitized_file": "rtr-bgp-001.txt",

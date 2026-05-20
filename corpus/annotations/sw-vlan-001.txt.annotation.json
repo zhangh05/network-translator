@@ -55,7 +55,7 @@
       "static_pass": true,
       "deployable": true,
       "manual_review_required": false,
-      "notes": "Clean VLAN translation: trunk, access, SVI all correct. Validation produces style-tip warning (suggests description) — level=warning, non-blocking."
+      "notes": "clean deployable — VLAN trunk/access/SVI Cisco→Huawei mapping well-established. Previous run confirmed static_pass=true, live_pass=true. max_level=warning allows style warnings (description suggestion). No capability gaps."
     }
   },
   "benchmark": {

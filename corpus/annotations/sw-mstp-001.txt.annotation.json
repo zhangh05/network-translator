@@ -53,7 +53,7 @@
       "static_pass": true,
       "deployable": true,
       "manual_review_required": false,
-      "notes": "Medium-risk STP. Key Huawei mappings: spanning-tree mst→stp region-configuration, instance vlan mapping, spanning-tree portfast→stp edged-port"
+      "notes": "clean deployable — MSTP Cisco→Huawei mapping well-established: spanning-tree mst→stp region-configuration, instance vlan mapping, spanning-tree portfast→stp edged-port, root primary/secondary. max_level=warning allows style warnings. No capability gaps."
     }
   },
   "benchmark": {

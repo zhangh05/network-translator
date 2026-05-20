@@ -56,7 +56,7 @@
       "static_pass": true,
       "deployable": false,
       "manual_review_required": true,
-      "notes": "ASA NAT 翻译。ASA 使用 security-level 隐式控制流量，不需要显式 ACL。目标输出应包含 object network + nat (inside,outside) 风格。验证器通过 source_platform 约束确保不输出 IOS 风格 ip nat 命令。"
+      "notes": "manual review because capability gap — Huawei security-policy + nat policy must be mapped to ASA's implicit security-level model (no explicit ACL). LLM must drop security-policy entirely and produce object network + nat (inside,outside). Genuine semantic transformation risk."
     }
   },
   "benchmark": {

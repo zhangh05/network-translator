@@ -57,7 +57,7 @@
       "static_pass": true,
       "deployable": false,
       "manual_review_required": true,
-      "notes": "High-risk: security-policy with object groups. Zone-based security-policy must be translated to ASA ACLs with proper direction/interface binding"
+      "notes": "non-deployable because missing object-group reference — P0-3 tracked. LLM output missing object-group definitions for address-set/service-set mapping. Must NOT be covered by annotation; requires analyzer/knowledge/prompt fix. Keep deployable=false until root cause resolved."
     }
   },
   "benchmark": {
