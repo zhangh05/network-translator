@@ -1,5 +1,33 @@
 # Changelog
 
+## Unreleased — Phase 7 Production Hardening (Step 53)
+
+### Fixed
+
+- **P0-4**: BGP route-policy/prefix-list validator false negative — `route_policy`
+  feature detection + `HIGH_RISK_CONSISTENCY_FEATURES` forces deployable=false
+- **P1-3**: STP/MSTP root primary/root secondary semantic preservation —
+  `_check_stp_root_role()` in ValidateNode blocks deployable when root role missing
+- **P1-4**: BGP policy cross-reference deployability — `_check_bgp_policy_refs()`
+  verifies route-policy/prefix-list definitions exist in output; critical warning
+
+### Added
+
+- **P0-1**: `analyzer_results` + `analyzer_warning_count` + `analyzer_fatal_count`
+  exposed in `/api/translate` response and JSONL log
+- **P0-3**: JSONL logging for `/api/projects/<id>/translate` endpoint
+- **P1-1**: ObjectAnalyzer registered for `address_object` and `service_object`
+  features via registry.yaml → `core.analyzers.object`
+- **P1-2**: CapabilityGapNode handles list-type `analyzer_results` (from
+  FeatureAnalyzerNode); analyzer warnings/fatals appear in `capability_gaps`
+- **P1-5**: VERSION → `v11-phase7-step53-dev`, updated handoff/docs
+
+### Changed
+
+- **P0-2**: bench live report reads `analyzer_results` from `result["result"]`
+  (nested), not top-level response
+- `_normalize_analyzer_results()` now used in CapabilityGapNode (was dict-only)
+
 ## v11-phase6-release-ready (2026-05-19)
 
 Phase 6: Production Hardening — the system is now deployable, observable,

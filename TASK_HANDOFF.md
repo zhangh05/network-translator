@@ -1,42 +1,48 @@
 # Task Handoff — Network Translator Production Landing
 
 ## Current Phase
-Phase 7 (corpus flywheel) — ready for corpus batch 2
+Phase 7 (corpus flywheel) — production hardening complete, 384 tests
 
 ## Current Version
-Latest: step-51-p0-fixed + 10 commits (live pass 5/15 → 13/15)
+v11-phase7-step53-dev (post-phase-6 hardening)
 
 ## Next Milestone
-Step 53: Corpus batch 2 — add 10–15 new entries targeting Ruijie, H3C, and feature gaps
+Step 54: Corpus batch 2 — add 10–15 new entries targeting Ruijie, H3C, and feature gaps
 
 ## Long-term Roadmap
 See `docs/ROADMAP.md`:
-- Phase 7: Corpus flywheel (Step 53: batch 2)
+- Phase 7: Corpus flywheel (Step 53: hardening, Step 54: batch 2)
 - Phase 8: Collaboration automation (tools/reports done)
 - Phase 9: Production deployment (not started)
 - Phase 10: Productization (not started)
 
 ## Completed (this session)
-- Step 48–52: Full corpus loop cycle
-  - P0 deployability fix (high-risk → dep=false)
-  - 8/8 live failures fixed (annotation calibrations, residue patterns, knowledge)
-  - Live pass rate: 33% → 87% (13/15)
-  - 10 commits, 1 tag (step-51-p0-fixed)
-- Phase 8A: TASK_HANDOFF.md, scripts/project_status.sh, scripts/run_iteration.sh, tools/live_failure_backlog.py, ITERATION_WORKFLOW.md, ROADMAP.md, reports/
+- Step 53: Production Hardening (P0-P1)
+  - P0-1: Expose analyzer_results to API/JSONL
+  - P0-2: Fix bench live report nested field reading
+  - P0-3: Write JSONL for project translate endpoint
+  - P0-4: BGP route-policy validator false negative fix
+  - P1-1: Register ObjectAnalyzer for address/service objects
+  - P1-2: CapabilityGapNode list-type analyzer_results compatibility
+  - P1-3: STP/MSTP root role semantic preservation
+  - P1-4: BGP policy cross-reference deployability checks
+  - P1-5: Version/status document consistency
+  - 384 tests, 0 failures
+  - Static bench: 50/50 pass
 
 ## In Progress
-- Step 53: Corpus batch 2 (plan created, ready to execute)
+- Step 53 complete — ready for Step 54 corpus batch 2
 
 ## Failed Cases (2 remaining, LLM nondeterminism)
 | Pri | Case | Category | Root Cause |
 |-----|------|----------|------------|
-| P0 | corpus-rtr-bgp-001 | validator_false_negative | LLM varies: sometimes omits prefix-list entirely |
-| P1 | corpus-sw-mstp-001 | llm_quality_issue | LLM varies: sometimes omits root primary |
+| P0 | corpus-rtr-bgp-001 | validator_false_negative | **Fixed** in P0-4: route_policy → HIGH_RISK deployable=false |
+| P1 | corpus-sw-mstp-001 | llm_quality_issue | Mitigated in P1-3: STP root role check forces deployable=false |
 
 ## Quality Gates
 | Gate | Result |
 |------|--------|
-| pytest | 346/346 pass |
+| pytest | 384/384 pass |
 | corpus_validate | 0 errors, 0 warnings |
 | corpus_to_bench | 15/15 |
 | static bench (corpus) | 15/15 pass |
