@@ -909,6 +909,61 @@ class ValidateNode(Node):
 
         return [f"STP root role: 源配置包含根桥/优先级语义, 但目标输出缺少 root primary/root priority/MANUAL_REVIEW"]
 
+    def _check_bgp_policy_refs(self, source_config: str, translated: str, to_vendor: str) -> list:
+        """Check BGP route-policy/prefix-list cross-references are preserved.
+
+        Returns list of warning strings (empty if OK).
+        """
+        ref_names = set()
+
+        for m in re.finditer(r'(?:neighbor|peer)\s+\S+\s+(?:route-map|route-policy|prefix-list|ip-prefix)\s+(\S+)', source_config, re.IGNORECASE):
+            ref_names.add(m.group(1))
+
+        for m in re.finditer(r'prefix-list\s+(\S+)', source_config, re.IGNORECASE):
+            ref_names.add(m.group(1))
+
+        for m in re.finditer(r'filter-list\s+(\S+)', source_config, re.IGNORECASE):
+            ref_names.add(m.group(1))
+
+        if not ref_names:
+            return []
+
+        is_cisco_target = to_vendor == "cisco"
+        if is_cisco_target:
+            def_patterns = [
+                (r'route-map\s+(\S+)', 'route-map'),
+                (r'ip\s+prefix-list\s+(\S+)', 'ip prefix-list'),
+            ]
+        else:
+            def_patterns = [
+                (r'route-policy\s+(\S+)', 'route-policy'),
+                (r'ip\s+ip-prefix\s+(\S+)', 'ip ip-prefix'),
+            ]
+
+        defined_names = set()
+        for pat, _ in def_patterns:
+            for m in re.finditer(pat, translated, re.IGNORECASE):
+                defined_names.add(m.group(1))
+
+        missing = ref_names - defined_names
+        if not missing:
+            return []
+
+        has_manual_review = 'MANUAL_REVIEW' in translated.upper()
+
+        warnings = []
+        for name in sorted(missing):
+            label = 'route-map/prefix-list' if is_cisco_target else 'route-policy/ip-prefix'
+            warnings.append(
+                f"BGP policy ref: 源配置引用了 {label} 「{name}」, "
+                f"但目标输出中未找到对应定义"
+            )
+        if has_manual_review:
+            warnings.append(
+                "BGP policy ref: 目标输出含 MANUAL_REVIEW, 标记为人工确认"
+            )
+        return warnings
+
     def _feature_validation(self, state: State, result) -> dict:
         gap_severity = state.get("capability_gap_severity", "info")
         analyzer_results = _normalize_analyzer_results(state)
@@ -944,6 +999,7 @@ class ValidateNode(Node):
             "缺少源",
             "Cisco 风格", "格式异常",
             "STP root role",
+            "BGP policy ref",
         ]
         for w in warnings:
             wl = w.lower()
@@ -1005,6 +1061,11 @@ class ValidateNode(Node):
         # STP root role consistency check
         stp_warnings = self._check_stp_root_role(source_config, config_content)
         for w in stp_warnings:
+            result.warnings.append(w)
+
+        # BGP policy cross-reference check
+        bgp_warnings = self._check_bgp_policy_refs(source_config, config_content, to_vendor)
+        for w in bgp_warnings:
             result.warnings.append(w)
 
         state.set("validation_result", result)

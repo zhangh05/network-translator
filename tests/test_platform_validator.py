@@ -870,6 +870,118 @@ route-map PREFER_ISP1 permit 20
         assert "pbr" in features
 
 
+class TestBgpPolicyRefs:
+    """P1-4: BGP route-policy/prefix-list cross-references must be preserved."""
+
+    def test_cisco_neighbor_route_map_missing_in_huawei_target(self):
+        """Cisco BGP neighbor route-map → Huawei target missing route-policy → warning."""
+        source = """!
+router bgp 65001
+ neighbor 198.18.1.2 route-map PREFER_ISP1 in
+!"""
+        target = """bgp 65001
+ peer 198.18.1.2 as-number 65001
+!"""
+        warnings = node._check_bgp_policy_refs(source, target, "huawei")
+        assert len(warnings) > 0, "Missing route-policy should be flagged"
+        assert any("PREFER_ISP1" in w for w in warnings)
+
+    def test_cisco_neighbor_prefix_list_missing_in_huawei_target(self):
+        """Cisco BGP neighbor prefix-list → Huawei target missing ip-prefix → warning."""
+        source = """!
+router bgp 65001
+ neighbor 198.18.1.2 prefix-list CUSTOMER_PREFIXES out
+!"""
+        target = """bgp 65001
+ peer 198.18.1.2 as-number 65001
+!"""
+        warnings = node._check_bgp_policy_refs(source, target, "huawei")
+        assert len(warnings) > 0
+        assert any("CUSTOMER_PREFIXES" in w for w in warnings)
+
+    def test_huawei_peer_route_policy_missing_in_cisco_target(self):
+        """Huawei BGP peer route-policy → Cisco target missing route-map → warning."""
+        source = """#
+bgp 65001
+ peer 10.0.0.2 route-policy FROM_EBGP import
+#"""
+        target = """!
+router bgp 65001
+ neighbor 10.0.0.2 remote-as 65002
+!"""
+        warnings = node._check_bgp_policy_refs(source, target, "cisco")
+        assert len(warnings) > 0
+        assert any("FROM_EBGP" in w for w in warnings)
+
+    def test_bgp_policy_defined_in_huawei_target_no_warning(self):
+        """Source has route-map ref, Huawei target has route-policy defined → OK."""
+        source = """!
+router bgp 65001
+ neighbor 198.18.1.2 route-map PREFER_ISP1 in
+ neighbor 198.18.1.2 prefix-list CUSTOMER_PREFIXES out
+!"""
+        target = """bgp 65001
+ peer 198.18.1.2 as-number 65001
+ peer 198.18.1.2 route-policy PREFER_ISP1 import
+!
+route-policy PREFER_ISP1 permit node 10
+ apply local-preference 150
+!
+ip ip-prefix CUSTOMER_PREFIXES permit 198.18.0.0 16
+!"""
+        warnings = node._check_bgp_policy_refs(source, target, "huawei")
+        assert len(warnings) == 0, f"All refs present but got warnings: {warnings}"
+
+    def test_bgp_policy_defined_in_cisco_target_no_warning(self):
+        """Source has route-policy ref, Cisco target has route-map defined → OK."""
+        source = """#
+bgp 65001
+ peer 10.0.0.2 route-policy FROM_EBGP import
+ peer 10.0.0.2 ip-prefix PREFIXES export
+#"""
+        target = """!
+router bgp 65001
+ neighbor 10.0.0.2 remote-as 65002
+ neighbor 10.0.0.2 route-map FROM_EBGP in
+ neighbor 10.0.0.2 prefix-list PREFIXES out
+!
+route-map FROM_EBGP permit 10
+ set local-preference 200
+!
+ip prefix-list PREFIXES seq 5 permit 10.0.0.0/8
+!"""
+        warnings = node._check_bgp_policy_refs(source, target, "cisco")
+        assert len(warnings) == 0, f"All refs present but got warnings: {warnings}"
+
+    def test_bgp_policy_manual_review_flagged(self):
+        """Target has MANUAL_REVIEW for BGP policy → flagged but allowed."""
+        source = """!
+router bgp 65001
+ neighbor 198.18.1.2 route-map PREFER_ISP1 in
+!"""
+        target = """! MANUAL_REVIEW: route-policy needs manual config
+bgp 65001
+ peer 198.18.1.2 as-number 65001
+!"""
+        warnings = node._check_bgp_policy_refs(source, target, "huawei")
+        assert len(warnings) > 0, "MANUAL_REVIEW should still produce warning"
+        assert any("MANUAL_REVIEW" in w for w in warnings) or any("PREFER_ISP1" in w for w in warnings)
+
+    def test_no_bgp_policy_in_source_no_warning(self):
+        """Source without BGP policy refs → no warning."""
+        source = """!
+router bgp 65001
+ neighbor 198.18.1.2 remote-as 65002
+ network 10.0.0.0
+!"""
+        target = """bgp 65001
+ peer 198.18.1.2 as-number 65002
+ network 10.0.0.0
+!"""
+        warnings = node._check_bgp_policy_refs(source, target, "huawei")
+        assert len(warnings) == 0
+
+
 class TestStpRootRole:
     """P1-3: STP root primary/root secondary/priority semantics must be preserved."""
 
