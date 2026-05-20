@@ -62,7 +62,25 @@ def _get_model_name() -> str:
         return name
     if os.environ.get("LLM_API_KEY"):
         return "configured"
+    try:
+        from llm_settings import get_current_settings
+        cfg = get_current_settings()
+        if cfg.get("api_key") and cfg.get("base_url"):
+            return cfg.get("model", "configured")
+    except Exception:
+        pass
     return "rule-based"
+
+
+def _is_llm_configured() -> bool:
+    if os.environ.get("LLM_API_KEY"):
+        return True
+    try:
+        from llm_settings import get_current_settings
+        cfg = get_current_settings()
+        return bool(cfg.get("api_key")) and bool(cfg.get("base_url"))
+    except Exception:
+        return False
 
 
 def _get_analyzer_count() -> int:
@@ -163,7 +181,7 @@ def create_app():
             issues.append("VERSION missing")
         if not (project_root / "knowledge_data").is_dir():
             issues.append("knowledge_data missing")
-        if not os.environ.get("LLM_API_KEY"):
+        if not _is_llm_configured():
             warnings.append("LLM_API_KEY not set — falling back to rule-based translation")
         if not (project_root / "memory_data").is_dir():
             warnings.append("memory_data directory missing")
