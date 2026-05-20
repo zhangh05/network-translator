@@ -883,6 +883,32 @@ class ValidateNode(Node):
                     has_high_risk = True
         return warnings, has_high_risk
 
+    def _check_stp_root_role(self, source_config: str, translated: str) -> list:
+        """Check STP root primary/root secondary/priority semantics preserved.
+
+        Returns list of warning strings (empty if OK).
+        """
+        source_has_root_role = bool(
+            re.search(r'root\s+primary', source_config, re.IGNORECASE) or
+            re.search(r'root\s+secondary', source_config, re.IGNORECASE) or
+            re.search(r'spanning-tree\s+(?:mst\s+\d+|vlan\s+\d+)\s+priority\s+\d+', source_config, re.IGNORECASE) or
+            re.search(r'stp\s+(?:instance\s+\d+)?\s*priority\s+\d+', source_config, re.IGNORECASE)
+        )
+        if not source_has_root_role:
+            return []
+
+        target_has_root_role = bool(
+            re.search(r'root\s+primary', translated, re.IGNORECASE) or
+            re.search(r'root\s+secondary', translated, re.IGNORECASE) or
+            re.search(r'stp\s+(?:instance\s+\d+)?\s*priority\s+\d+', translated, re.IGNORECASE) or
+            re.search(r'priority\s+\d+', translated, re.IGNORECASE) or
+            re.search(r'MANUAL_REVIEW', translated)
+        )
+        if target_has_root_role:
+            return []
+
+        return [f"STP root role: 源配置包含根桥/优先级语义, 但目标输出缺少 root primary/root priority/MANUAL_REVIEW"]
+
     def _feature_validation(self, state: State, result) -> dict:
         gap_severity = state.get("capability_gap_severity", "info")
         analyzer_results = _normalize_analyzer_results(state)
@@ -917,6 +943,7 @@ class ValidateNode(Node):
             "源厂商残留", "残留",
             "缺少源",
             "Cisco 风格", "格式异常",
+            "STP root role",
         ]
         for w in warnings:
             wl = w.lower()
@@ -973,6 +1000,11 @@ class ValidateNode(Node):
         # Step 37: Analyzer consistency check
         consistency_warnings, has_high_risk_consistency = self._consistency_check(state, config_content)
         for w in consistency_warnings:
+            result.warnings.append(w)
+
+        # STP root role consistency check
+        stp_warnings = self._check_stp_root_role(source_config, config_content)
+        for w in stp_warnings:
             result.warnings.append(w)
 
         state.set("validation_result", result)

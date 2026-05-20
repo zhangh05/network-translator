@@ -868,3 +868,80 @@ route-map PREFER_ISP1 permit 20
         assert "route_policy" in features, f"route_policy must be detected, got {features}"
         assert "bgp" in features
         assert "pbr" in features
+
+
+class TestStpRootRole:
+    """P1-3: STP root primary/root secondary/priority semantics must be preserved."""
+
+    def test_stp_root_primary_missing_flagged(self):
+        """Source has root primary, target lacks it → warning."""
+        source = """!
+spanning-tree mode mst
+spanning-tree mst configuration
+ name LAB
+ instance 1 vlan 10,20
+!
+spanning-tree mst 1 root primary
+!"""
+        target = """stp mode mstp
+stp region-configuration
+ region-name LAB
+ instance 1 vlan 10 20
+ active region-configuration
+!"""
+        warnings = node._check_stp_root_role(source, target)
+        assert len(warnings) > 0, "Missing root primary should be flagged"
+        assert any("STP root role" in w for w in warnings), "Warning should mention STP root role"
+
+    def test_stp_root_primary_present_no_warning(self):
+        """Source has root primary, target has root primary → no warning."""
+        source = """!
+spanning-tree mst 1 root primary
+!"""
+        target = """stp instance 1 root primary"""
+        warnings = node._check_stp_root_role(source, target)
+        assert len(warnings) == 0, f"root primary present but got warnings: {warnings}"
+
+    def test_stp_root_primary_with_priority_no_warning(self):
+        """Source has root primary, target has equivalent priority → no warning."""
+        source = """!
+spanning-tree mst 1 root primary
+!"""
+        target = """stp instance 1 priority 24576"""
+        warnings = node._check_stp_root_role(source, target)
+        assert len(warnings) == 0, f"priority 24576 present but got warnings: {warnings}"
+
+    def test_stp_root_secondary_in_target_no_warning(self):
+        """Source has root secondary, target has root secondary → no warning."""
+        source = """!
+spanning-tree mst 2 root secondary
+!"""
+        target = """stp instance 2 root secondary"""
+        warnings = node._check_stp_root_role(source, target)
+        assert len(warnings) == 0
+
+    def test_stp_manual_review_suppresses_warning(self):
+        """Source has root primary, target has MANUAL_REVIEW → no warning."""
+        source = """!
+spanning-tree mst 1 root primary
+!"""
+        target = """! MANUAL_REVIEW: MST root role requires manual config"""
+        warnings = node._check_stp_root_role(source, target)
+        assert len(warnings) == 0, f"MANUAL_REVIEW present but got warnings: {warnings}"
+
+    def test_stp_no_root_role_in_source_no_warning(self):
+        """Source without STP root role → no warning."""
+        source = """!
+spanning-tree mode mst
+spanning-tree mst configuration
+ name LAB
+ instance 1 vlan 10,20
+!"""
+        target = """stp mode mstp
+stp region-configuration
+ region-name LAB
+ instance 1 vlan 10 20
+ active region-configuration
+!"""
+        warnings = node._check_stp_root_role(source, target)
+        assert len(warnings) == 0, f"No root role in source but got warnings: {warnings}"

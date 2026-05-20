@@ -141,6 +141,16 @@ def _bfd_rule(cp: str, target_platform: str) -> str:
     )
 
 
+def _stp_rule(cp: str) -> str:
+    return (
+        "8. 源配置包含 STP/MSTP root primary/root secondary/priority 语义时，"
+        "目标输出必须保留等价根桥语义。"
+        f"合法形式：stp instance <id> root primary / root secondary，"
+        f"或等价 priority 配置（primary=24576，secondary=28672）。"
+        f"无法确定 instance/vlan 映射时以 {cp} MANUAL_REVIEW 标记，不得静默省略。\n"
+    )
+
+
 def translate_config(
     config_text: str, from_vendor: str, to_vendor: str, llm,
     knowledge_context: str = None,
@@ -182,6 +192,7 @@ def translate_config(
 5. 目标 {to_vendor} ({target_platform or to_vendor}) 是权威平台命令集；禁止混入其他平台（如源或第三方）的命令。
 {_asa_nat_rule(cp, target_platform)}
 {_bfd_rule(cp, target_platform)}
+{_stp_rule(cp) if features and "stp" in features else ""}
 
 返回**非空** JSON 数组，每条含 type, translated_lines, original_lines, notes, confidence。
 type 选预定义: vlan,interface,ospf,bgp,acl,stp,dhcp,nat,static_route,vrrp,tunnel,ipsec,qos,system。

@@ -64,6 +64,21 @@ class TestPromptHardConstraints:
         assert "analyzer:nat" in llm.last_prompt
         assert "nat: partial" in llm.last_prompt
 
+    def test_stp_root_primary_rule_in_prompt(self):
+        """P1-3: Source with STP root primary adds root role constraint to prompt."""
+        llm = MockLLM('[]')
+        translate_config(
+            "spanning-tree mode mst\n"
+            "spanning-tree mst configuration\n"
+            " name LAB\n"
+            " instance 1 vlan 10,20\n"
+            "!\n"
+            "spanning-tree mst 1 root primary\n",
+            "cisco", "huawei", llm,
+            features=["stp", "vlan"],
+        )
+        assert "root primary" in llm.last_prompt or "根桥" in llm.last_prompt
+
     def test_prompt_comment_prefix_for_cisco(self):
         llm = MockLLM('[]')
         translate_config("hostname R1", "huawei", "cisco", llm)
