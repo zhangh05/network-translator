@@ -31,12 +31,14 @@ class GraphAgent:
         enable_diff: bool = True,
         enable_fallback: bool = True,
         llm: Optional[LLM] = None,
+        cache_dir: str = "",
     ):
         self.knowledge_dir = knowledge_dir
         self.memory_dir = memory_dir
         self.enable_diff = enable_diff
         self.enable_fallback = enable_fallback
         self.llm = llm if llm is not None else get_llm()
+        self.cache_dir = cache_dir
 
         # 记忆系统
         self.working_memory = WorkingMemory(max_size=30, ttl_seconds=7200)
@@ -50,6 +52,7 @@ class GraphAgent:
             enable_diff=enable_diff,
             enable_fallback=enable_fallback,
             llm=self.llm,
+            cache_dir=cache_dir,
         )
         self._attach_agent_to_nodes()
 

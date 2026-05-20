@@ -45,6 +45,7 @@ def create_translation_graph(
     enable_diff: bool = True,
     enable_fallback: bool = True,
     llm=None,
+    cache_dir: str = "",
 ) -> Graph:
     graph = Graph(name="translation_flow")
 
@@ -52,7 +53,8 @@ def create_translation_graph(
     parse_node = ParseNode("parse")
     feature_analyzer_node = FeatureAnalyzerNode("feature_analyzer")
     knowledge_node = KnowledgeNode("knowledge", knowledge_dir)
-    cache_node = CacheNode("cache")
+    cache_kwargs = {"cache_dir": cache_dir} if cache_dir else {}
+    cache_node = CacheNode("cache", **cache_kwargs)
     translate_node = TranslateNode("translate", llm=llm, knowledge_dir=knowledge_dir)
     semantic_validate_node = SemanticValidatorNode("semantic_validate", llm=llm)
     capability_gap_node = CapabilityGapNode("capability_gap")
@@ -64,7 +66,7 @@ def create_translation_graph(
         routes={"success": "semantic_validate", "failure": "fallback"}
     )
     fallback_node = FallbackNode("fallback", knowledge_dir)
-    cache_write_node = CacheWriteNode("cache_write")
+    cache_write_node = CacheWriteNode("cache_write", **cache_kwargs)
 
     graph.add_node(parse_node)
     graph.add_node(feature_analyzer_node)

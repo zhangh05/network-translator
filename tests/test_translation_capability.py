@@ -1,3 +1,5 @@
+import tempfile
+
 from core.graph import State
 from core.graph.agent import GraphAgent
 from core.graph.nodes import ParseNode
@@ -26,7 +28,7 @@ def test_parse_node_respects_explicit_vendor_for_ambiguous_config():
 
 
 def test_graph_agent_uses_rule_fallback_when_llm_is_unavailable():
-    agent = GraphAgent(llm=ErrorLLM())
+    agent = GraphAgent(llm=ErrorLLM(), cache_dir=tempfile.mkdtemp())
 
     result = agent.run(
         config_text="""hostname SW1
@@ -50,7 +52,7 @@ interface GigabitEthernet0/1
 
 
 def test_invalid_llm_json_falls_back_to_rule_translation():
-    agent = GraphAgent(llm=InvalidJsonLLM())
+    agent = GraphAgent(llm=InvalidJsonLLM(), cache_dir=tempfile.mkdtemp())
 
     result = agent.run(
         config_text="""interface GigabitEthernet1/0/1
