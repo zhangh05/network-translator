@@ -224,17 +224,15 @@ def run_live(case):
     meta["manual_review_required"] = validation.get("manual_review_required")
     meta["capability_gaps"] = meta.get("capability_gaps", [])
     meta["analyzer_results"] = meta.get("analyzer_results", [])
-    meta["capability_gaps"] = result.get("capability_gaps", [])
-    meta["analyzer_results"] = result.get("analyzer_results", [])
 
     detail = {
         "translated": translated,
         "translated_excerpt": translated[:300] + ("..." if len(translated) > 300 else ""),
         "status_code": resp.status_code,
         "elapsed": elapsed,
-        "meta": {k: meta.get(k) for k in ("level", "deployable", "manual_review_required", "capability_gaps")},
+        "meta": {k: meta.get(k) for k in ("level", "deployable", "manual_review_required", "capability_gaps", "analyzer_results")},
         "validation": {k: result.get(k) for k in ("valid", "level", "deployable", "manual_review_required", "errors", "warnings") if k in result},
-        "analyzer_findings": _summarize_analyzers(result.get("analyzer_results", [])),
+        "analyzer_findings": _summarize_analyzers(result.get("result", {}).get("analyzer_results", [])),
     }
 
     check_errors = check_translated(case, translated, meta)
