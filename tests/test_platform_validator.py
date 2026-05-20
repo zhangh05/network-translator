@@ -812,40 +812,63 @@ class TestPlatformValidatorNoFalsePositives:
         assert len(acl_issues) == 0, f"Valid ACL 3000 flagged: {acl_issues}"
 
 
-class TestBgpRoutePolicyDeployability:
-    """P0-4: BGP route-policy cross-references always set deployable=false."""
+class TestNewDeployabilityModel:
+    """P0-1: High-risk feature presence alone does NOT force deployable=false."""
 
-    def test_route_policy_feature_deployable_false(self):
-        """route_policy in state.features → deployable=false, manual_review=true."""
+    def test_high_risk_feature_clean_no_risk(self):
+        """nat present but no analyzer/validator/consistency risk → deployable=true."""
         dep = node._evaluate_deployability(
             validation_level="info",
             high_risk_warning=False,
             critical_content_warning=False,
-            features=["route_policy"],
+            features=["nat"],
         )
-        assert not dep["deployable"], "route_policy feature must set deployable=false"
-        assert dep["manual_review_required"], "route_policy feature must set manual_review_required=true"
+        assert dep["deployable"], "nat alone without risk should be deployable"
+        assert not dep["manual_review_required"], "nat alone should not force manual review"
 
-    def test_route_policy_feature_even_without_high_risk(self):
-        """Even without high_risk_warning, route_policy feature alone is enough."""
+    def test_high_risk_feature_with_warning(self):
+        """nat present + high_risk_warning=true → deployable=false."""
         dep = node._evaluate_deployability(
-            validation_level="info",
+            validation_level="warning",
+            high_risk_warning=True,
+            critical_content_warning=False,
+            features=["nat"],
+        )
+        assert not dep["deployable"], "nat with high_risk_warning: deployable=false"
+        assert dep["manual_review_required"], "nat with high_risk_warning: manual review"
+
+    def test_high_risk_feature_with_critical_content(self):
+        """nat present + critical_content_warning=true → deployable=false."""
+        dep = node._evaluate_deployability(
+            validation_level="warning",
+            high_risk_warning=False,
+            critical_content_warning=True,
+            features=["nat"],
+        )
+        assert not dep["deployable"], "nat with critical content: deployable=false"
+        assert dep["manual_review_required"], "nat with critical content: manual review"
+
+    def test_high_risk_feature_fatal_level(self):
+        """validation_level=fatal → deployable=false regardless of features."""
+        dep = node._evaluate_deployability(
+            validation_level="fatal",
             high_risk_warning=False,
             critical_content_warning=False,
-            features=["bgp", "route_policy", "interface", "system"],
+            features=["nat"],
         )
-        assert not dep["deployable"], "route_policy alone forces deployable=false"
+        assert not dep["deployable"], "fatal level: deployable=false"
+        assert dep["manual_review_required"], "fatal level: manual review"
 
-    def test_other_features_not_high_risk(self):
-        """Non-high-risk features do NOT trigger deployable=false."""
+    def test_non_high_risk_warning(self):
+        """warning level without high_risk → deployable=true, manual_review=true."""
         dep = node._evaluate_deployability(
-            validation_level="info",
+            validation_level="warning",
             high_risk_warning=False,
             critical_content_warning=False,
-            features=["bgp", "interface", "system", "static_route"],
+            features=[],
         )
-        assert dep["deployable"], "Non-high-risk features: deployable=true"
-        assert not dep["manual_review_required"], "Non-high-risk features: no manual review"
+        assert dep["deployable"], "ordinary warning: deployable=true"
+        assert dep["manual_review_required"], "ordinary warning: manual review"
 
     def test_detect_features_from_config_includes_route_policy(self):
         """rtr-bgp-001 source config must yield route_policy in detected features."""

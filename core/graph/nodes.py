@@ -16,6 +16,10 @@ from typing import Any, Dict, Optional
 from core import get_llm, LLM
 from core.graph import Node, NodeResult, NodeStatus, State
 from core.ir import translate_config
+from core.risk_decision import (
+    RiskSignal, RiskSeverity, RiskSource, RiskDecision,
+    decide_deployability, HIGH_RISK_FEATURES,
+)
 from core.rule_translator import RuleBasedTranslator
 from core.semantic_compare import SemanticComparator, IRBlock
 from memory import EpisodicMemory, TranslationEvent
@@ -964,6 +968,167 @@ class ValidateNode(Node):
             )
         return warnings
 
+    def _collect_risk_signals(
+        self,
+        state: State,
+        result,
+        config_content: str,
+        source_config: str,
+        to_vendor: str,
+        features: list,
+    ) -> dict:
+        signals = []
+        analyzer_results = _normalize_analyzer_results(state)
+        gap_severity = state.get("capability_gap_severity", "info")
+        capabilities = state.get("capability_gaps", [])
+
+        # Analyzer signals
+        for feature_key, analysis in analyzer_results.items():
+            if not isinstance(analysis, dict):
+                continue
+            risk = analysis.get("risk_level", "none")
+            if risk in ("none", "info"):
+                continue
+            severity = RiskSeverity.WARNING if risk == "warning" else RiskSeverity.FATAL
+            s = RiskSignal(
+                source=RiskSource.ANALYZER,
+                feature=feature_key,
+                severity=severity,
+                message=analysis.get("summary", f"{feature_key}: {risk}"),
+                deployability_impact=feature_key in HIGH_RISK_FEATURES and severity != RiskSeverity.INFO,
+                manual_review_impact=feature_key in HIGH_RISK_FEATURES,
+            )
+            signals.append(s)
+
+        # Capability gap signals
+        for gap in capabilities:
+            if isinstance(gap, dict):
+                gsev = gap.get("severity", "info")
+                if gsev in ("fatal", "warning"):
+                    sev = RiskSeverity.FATAL if gsev == "fatal" else RiskSeverity.WARNING
+                    signals.append(RiskSignal(
+                        source=RiskSource.CAPABILITY,
+                        feature=gap.get("feature", "unknown"),
+                        severity=sev,
+                        message=gap.get("suggestion", f"capability gap: {gap.get('status', 'unknown')}"),
+                        deployability_impact=True,
+                        manual_review_impact=True,
+                    ))
+
+        # Consistency check signals (analyzer findings not reflected in output)
+        consistency_warnings, has_high_risk_consistency = self._consistency_check(state, config_content)
+        for cw in consistency_warnings:
+            feat_match = [f for f in HIGH_RISK_FEATURES if f in cw]
+            feat = feat_match[0] if feat_match else "unknown"
+            signals.append(RiskSignal(
+                source=RiskSource.CONSISTENCY,
+                feature=feat,
+                severity=RiskSeverity.WARNING,
+                message=cw,
+                deployability_impact=feat in HIGH_RISK_FEATURES,
+                manual_review_impact=feat in HIGH_RISK_FEATURES,
+            ))
+
+        # Content quality signals
+        content_errors, content_warnings = self._domain_validation(config_content, to_vendor, source_config)
+        for ce in content_errors:
+            signals.append(RiskSignal(
+                source=RiskSource.CONTENT,
+                feature="content",
+                severity=RiskSeverity.FATAL,
+                message=ce,
+                deployability_impact=True,
+                manual_review_impact=True,
+            ))
+        for cw in content_warnings:
+            is_critical = any(kw in cw for kw in ["占位符", "<...>", "未替换", "todo", "placeholder", "待填充"])
+            sev = RiskSeverity.FATAL if is_critical else RiskSeverity.WARNING
+            signals.append(RiskSignal(
+                source=RiskSource.CONTENT,
+                feature="content",
+                severity=sev,
+                message=cw,
+                deployability_impact=is_critical,
+                manual_review_impact=True,
+            ))
+
+        # Platform validator signals
+        platform_warnings = self._platform_validation(config_content, to_vendor)
+        for pw in platform_warnings:
+            is_residue = "源厂商残留" in pw or "残留" in pw
+            signals.append(RiskSignal(
+                source=RiskSource.PLATFORM,
+                feature="platform",
+                severity=RiskSeverity.WARNING,
+                message=pw,
+                deployability_impact=is_residue,
+                manual_review_impact=True,
+            ))
+
+        # STP root role signals
+        stp_warnings = self._check_stp_root_role(source_config, config_content)
+        for sw in stp_warnings:
+            signals.append(RiskSignal(
+                source=RiskSource.VALIDATOR,
+                feature="stp",
+                severity=RiskSeverity.WARNING,
+                message=sw,
+                deployability_impact=True,
+                manual_review_impact=True,
+            ))
+
+        # BGP policy ref signals
+        bgp_warnings = self._check_bgp_policy_refs(source_config, config_content, to_vendor)
+        for bw in bgp_warnings:
+            signals.append(RiskSignal(
+                source=RiskSource.VALIDATOR,
+                feature="bgp",
+                severity=RiskSeverity.WARNING,
+                message=bw,
+                deployability_impact=True,
+                manual_review_impact=True,
+            ))
+
+        # MANUAL_REVIEW marker in output
+        if "MANUAL_REVIEW" in config_content.upper():
+            signals.append(RiskSignal(
+                source=RiskSource.MANUAL_REVIEW,
+                feature="output",
+                severity=RiskSeverity.WARNING,
+                message="翻译结果包含 MANUAL_REVIEW 标记",
+                deployability_impact=True,
+                manual_review_impact=True,
+            ))
+
+        # Critical content check (old path: combines all warnings)
+        all_warnings = list(result.warnings) if hasattr(result, "warnings") else []
+        critical_content = self._has_critical_content_warnings(all_warnings)
+        if critical_content:
+            signals.append(RiskSignal(
+                source=RiskSource.CONTENT,
+                feature="content",
+                severity=RiskSeverity.WARNING,
+                message="翻译结果包含关键内容问题（占位符/残留/引用断裂等）",
+                deployability_impact=True,
+                manual_review_impact=True,
+            ))
+
+        decision = decide_deployability(signals, features=features)
+
+        return {
+            "signals": [s.to_dict() for s in signals],
+            "decision": decision,
+            "gap_severity": gap_severity,
+            "has_high_risk_consistency": has_high_risk_consistency,
+            "critical_content": critical_content,
+            "consistency_warnings": consistency_warnings,
+            "stp_warnings": stp_warnings,
+            "bgp_warnings": bgp_warnings,
+            "content_errors": content_errors,
+            "content_warnings": content_warnings,
+            "platform_warnings": platform_warnings,
+        }
+
     def _feature_validation(self, state: State, result) -> dict:
         gap_severity = state.get("capability_gap_severity", "info")
         analyzer_results = _normalize_analyzer_results(state)
@@ -1014,11 +1179,6 @@ class ValidateNode(Node):
             return {"deployable": False, "manual_review_required": True}
         if high_risk_warning or critical_content_warning:
             return {"deployable": False, "manual_review_required": True}
-        has_high_risk_feature = bool(features) and bool(
-            set(features or []) & self.HIGH_RISK_CONSISTENCY_FEATURES
-        )
-        if has_high_risk_feature:
-            return {"deployable": False, "manual_review_required": True}
         if validation_level == "warning":
             return {"deployable": True, "manual_review_required": True}
         return {"deployable": True, "manual_review_required": False}
@@ -1043,74 +1203,56 @@ class ValidateNode(Node):
 
         result, parsed = self._generic_validation(config_content, to_vendor)
         source_config = state.get("config_text", "")
-        content_errors, content_warnings = self._domain_validation(config_content, to_vendor, source_config)
-        platform_warnings = self._platform_validation(config_content, to_vendor)
+        features = state.get("features", [])
 
-        for e in content_errors:
+        risk_info = self._collect_risk_signals(
+            state, result, config_content, source_config, to_vendor, features,
+        )
+        decision = risk_info["decision"]
+
+        for e in risk_info["content_errors"]:
             result.errors.append(e)
-        for w in content_warnings:
+        for w in risk_info["content_warnings"]:
             result.warnings.append(w)
-        for w in platform_warnings:
+        for w in risk_info["platform_warnings"]:
             result.warnings.append(w)
-
-        # Step 37: Analyzer consistency check
-        consistency_warnings, has_high_risk_consistency = self._consistency_check(state, config_content)
-        for w in consistency_warnings:
+        for w in risk_info["consistency_warnings"]:
             result.warnings.append(w)
-
-        # STP root role consistency check
-        stp_warnings = self._check_stp_root_role(source_config, config_content)
-        for w in stp_warnings:
+        for w in risk_info["stp_warnings"]:
             result.warnings.append(w)
-
-        # BGP policy cross-reference check
-        bgp_warnings = self._check_bgp_policy_refs(source_config, config_content, to_vendor)
-        for w in bgp_warnings:
+        for w in risk_info["bgp_warnings"]:
             result.warnings.append(w)
 
         state.set("validation_result", result)
 
         feat = self._feature_validation(state, result)
 
-        critical_content = self._has_critical_content_warnings(
-            list(result.warnings)
-        )
-
-        validation_level = "info"
-        if feat["gap_severity"] == "fatal" or feat["analyzer_fatal"]:
-            validation_level = "fatal"
-        elif not result.valid and len(result.errors) > 0:
-            fatal_keywords = ["拒答", "refuse", "sorry", "cannot", "unable", "as an ai", "i am an ai",
-                             "i'm an ai", "i cannot", "i can't", "not able to",
-                             "目标厂商无直接等价命令", "不自动生成目标配置"]
-            fatal_text = " ".join(result.errors + result.warnings).lower()
-            is_empty_output = len(config_content) < 10
-
-            if is_empty_output or any(k in fatal_text for k in fatal_keywords):
-                validation_level = "fatal"
-            elif len(result.errors) > 0:
-                validation_level = "warning"
-        elif len(result.warnings) > 0:
-            validation_level = "warning"
-        elif feat["gap_severity"] == "warning":
-            validation_level = "warning"
-
-        dep = self._evaluate_deployability(
-            validation_level, feat["high_risk_warning"] or has_high_risk_consistency, critical_content,
-            features=state.get("features", []),
-        )
+        validation_level = decision.validation_level
+        if validation_level == "info":
+            if not result.valid and len(result.errors) > 0:
+                fatal_keywords = ["拒答", "refuse", "sorry", "cannot", "unable", "as an ai", "i am an ai",
+                                 "i'm an ai", "i cannot", "i can't", "not able to",
+                                 "目标厂商无直接等价命令", "不自动生成目标配置"]
+                fatal_text = " ".join(result.errors + result.warnings).lower()
+                is_empty_output = len(config_content) < 10
+                if is_empty_output or any(k in fatal_text for k in fatal_keywords):
+                    validation_level = "fatal"
+                elif len(result.errors) > 0:
+                    validation_level = "warning"
 
         output = {
             "valid": result.valid,
             "level": validation_level,
-            "deployable": dep["deployable"],
-            "manual_review_required": dep["manual_review_required"],
+            "deployable": decision.deployable,
+            "manual_review_required": decision.manual_review_required,
             "errors": [str(e) for e in result.errors],
             "warnings": [str(w) for w in result.warnings],
+            "risk_signals": [s.to_dict() for s in decision.signals],
         }
         state.set("validation_level", validation_level)
-        state.set("deployable", dep["deployable"])
-        state.set("manual_review_required", dep["manual_review_required"])
+        state.set("deployable", decision.deployable)
+        state.set("manual_review_required", decision.manual_review_required)
+        state.set("risk_signals", [s.to_dict() for s in decision.signals])
         return NodeResult(
             self.node_id,
             NodeStatus.SUCCESS if validation_level != "fatal" else NodeStatus.FAILED,

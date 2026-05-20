@@ -70,6 +70,10 @@ class SemanticComparator:
     """
 
     def compare(self, ir_source: List[Any], ir_translation: List[Any]) -> Dict[str, Any]:
+        # Filter out internal _meta entries
+        ir_source = [b for b in (ir_source or []) if self._block_type(b) != "_meta"]
+        ir_translation = [b for b in (ir_translation or []) if self._block_type(b) != "_meta"]
+
         if not ir_source:
             return {"overall_match": False, "matched_blocks": [], "unmatched_source": [], "summary": "no source blocks"}
         if not ir_translation:

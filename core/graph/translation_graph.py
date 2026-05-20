@@ -192,6 +192,7 @@ def execute_translation_flow(
         "fallback_used": fallback_used,
         "fallback_reason": final_state.get("fallback_reason", ""),
         "cache_hit": final_state.get("cache_hit", False),
+        "risk_signals": final_state.get("risk_signals", []),
         "node_results": [
             {
                 "node": r.node_id,

@@ -52,12 +52,12 @@
         "ip prefix-list"
       ]
     },
-    "verification": {
-      "static_pass": true,
-      "deployable": false,
-      "manual_review_required": true,
-      "notes": "BGP 翻译。LLM 有时会输出 Cisco ip prefix-list 而非华为 ip ip-prefix。平台验证器检测到残留后自动标记为不可部署。翻译结果需人工确认 prefix-list 语义。"
-    }
+        "verification": {
+            "static_pass": true,
+            "deployable": false,
+            "manual_review_required": true,
+            "notes": "BGP 翻译。route_policy 为高风险，必须触发 manual_review。如果 platform validator 检测到 Cisco 残留（如 ip prefix-list），则 deployable=false；在 P0-1 新模型下，无风险信号时可 deployable=true，但必须 manual_review=true。翻译结果需人工确认。"
+        }
   },
   "benchmark": {
     "case_generated": true,
