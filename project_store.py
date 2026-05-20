@@ -351,6 +351,24 @@ def _get_model_name() -> str:
     return os.environ.get("LLM_MODEL", "MiniMax-M2.7")
 
 
+def _write_translation_log(
+    request_id, elapsed, config_text,
+    from_vendor, to_vendor, source_domain, source_platform,
+    target_domain, target_platform, result, error,
+):
+    """Write a JSONL log entry (lazy-import from web_app to avoid circular import)."""
+    try:
+        from web_app import _build_log_entry, _write_log
+        entry = _build_log_entry(
+            request_id, elapsed, config_text,
+            from_vendor, to_vendor, source_domain, source_platform,
+            target_domain, target_platform, result, error,
+        )
+        _write_log(entry)
+    except Exception:
+        logger.exception("Failed to write translation log for %s", request_id)
+
+
 def register_project_routes(app):
     """注册项目相关路由"""
     from flask import request, abort
@@ -449,6 +467,9 @@ def register_project_routes(app):
         import uuid
         request_id = str(uuid.uuid4())
 
+        import time as _time
+        t0 = _time.time()
+
         # 执行翻译
         try:
             result_data = run_translation(
@@ -463,6 +484,12 @@ def register_project_routes(app):
             )
         except Exception:
             logger.exception("Project translation failed for project %s", project_id)
+            elapsed = _time.time() - t0
+            _write_translation_log(
+                request_id, elapsed, config_text,
+                from_vendor, to_vendor, source_domain, source_platform,
+                target_domain, target_platform, result=None, error="Internal translation error",
+            )
             return {"ok": False, "error": "Internal translation error", "request_id": request_id}, 500
 
         store.update_project(project_id, {"result": result_data})
@@ -478,6 +505,14 @@ def register_project_routes(app):
             "success": result_data.get("success", False),
             "translated": result_data.get("translated", ""),
         })
+
+        import time as _time
+        elapsed = _time.time() - t0
+        _write_translation_log(
+            request_id, elapsed, config_text,
+            from_vendor, to_vendor, source_domain, source_platform,
+            target_domain, target_platform, result_data, error=None,
+        )
 
         return {
             "ok": True,
