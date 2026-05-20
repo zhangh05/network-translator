@@ -283,6 +283,33 @@ class TestCollectRiskSignals:
 # Verify HIGH_RISK_FEATURES set
 # ═══════════════════════════════════════════════════════════════════
 
+# ═══════════════════════════════════════════════════════════════════
+# _meta filtering: internal metadata must not affect deployability
+# ═══════════════════════════════════════════════════════════════════
+
+class TestMetaFiltering:
+    """P0-1: _meta is internal metadata, not a network feature."""
+
+    def test_meta_feature_not_in_high_risk(self):
+        assert "_meta" not in HIGH_RISK_FEATURES
+
+    def test_meta_capability_gap_does_not_affect_deployability(self):
+        """_meta warning gap must not force deployable=false."""
+        signals = [
+            RiskSignal(RiskSource.CAPABILITY, "_meta", RiskSeverity.WARNING,
+                       "测试用元数据", True, True),
+        ]
+        d = decide_deployability(signals)
+        assert d.deployable, "_meta capability gap should not force deployable=false"
+        assert not d.manual_review_required, "_meta gap should not force manual review"
+
+    def test_meta_feature_in_features_list_does_not_block(self):
+        """_meta in features list alone must not trigger deployability impact."""
+        d = decide_deployability([], features=["_meta"])
+        assert d.deployable
+        assert not d.manual_review_required
+
+
 def test_high_risk_features():
     assert "nat" in HIGH_RISK_FEATURES
     assert "acl" in HIGH_RISK_FEATURES

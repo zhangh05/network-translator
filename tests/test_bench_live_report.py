@@ -84,3 +84,115 @@ def test_summarize_analyzers_returns_risk_summary():
     assert "system" not in summary
     assert summary["nat"]["risk"] == "warning"
     assert summary["acl"]["risk"] == "fatal"
+
+
+# ═══════════════════════════════════════════════════════════════════
+# check_translated — capability gap pass/fail alignment
+# ═══════════════════════════════════════════════════════════════════
+
+@pytest.fixture
+def _base_case():
+    return {
+        "name": "test",
+        "features": ["nat"],
+        "source_config": "some config",
+        "risk": "high",
+        "expected": {
+            "deployable": False,
+            "manual_review_required": True,
+            "no_markdown_fence": True,
+            "no_placeholder": True,
+            "max_level": "error",
+        },
+    }
+
+
+class TestCapabilityGapPassFail:
+    def test_expected_non_deployable_with_cap_gap_passes(self, _base_case):
+        """expected dep=false/mrr=true + actual dep=false/mrr=true + cap gap → PASS."""
+        from bench.run_cases import check_translated
+        meta = {
+            "deployable": False,
+            "manual_review_required": True,
+            "level": "warning",
+            "capability_gaps": [{"feature": "ipsec", "severity": "warning", "status": "unknown"}],
+        }
+        errs = check_translated(_base_case, "some translated text", meta)
+        assert len(errs) == 0, f"expected clean pass, got errors: {errs}"
+
+    def test_expected_mrr_true_with_cap_gap_passes(self, _base_case):
+        """expected mrr=true + actual mrr=true + cap gap → PASS (mrr check doesn't error)."""
+        from bench.run_cases import check_translated
+        meta = {
+            "deployable": False,
+            "manual_review_required": True,
+            "level": "warning",
+            "capability_gaps": [{"feature": "nat", "severity": "warning", "status": "unknown"}],
+        }
+        errs = check_translated(_base_case, "some translated text", meta)
+        assert len(errs) == 0
+
+    def test_expected_clean_deploy_with_cap_gap_fails(self):
+        """expected dep=true/mrr=false but actual has cap gap → FAIL."""
+        from bench.run_cases import check_translated
+        case = {
+            "name": "test",
+            "features": ["nat"],
+            "source_config": "some config",
+            "risk": "high",
+            "expected": {
+                "deployable": True,
+                "manual_review_required": False,
+                "no_markdown_fence": True,
+                "no_placeholder": True,
+                "max_level": "warning",
+            },
+        }
+        meta = {
+            "deployable": True,
+            "manual_review_required": False,
+            "level": "warning",
+            "capability_gaps": [{"feature": "nat", "severity": "warning", "status": "unknown"}],
+        }
+        errs = check_translated(case, "some translated text", meta)
+        assert any("capability_gaps" in e for e in errs), f"expected cap gap error, got: {errs}"
+
+    def test_fatal_cap_gap_always_fails(self, _base_case):
+        """fatal capability gap fails even when annotation expects non-deployable."""
+        from bench.run_cases import check_translated
+        meta = {
+            "deployable": False,
+            "manual_review_required": True,
+            "level": "error",
+            "capability_gaps": [{"feature": "bgp", "severity": "fatal", "status": "unsupported"}],
+        }
+        errs = check_translated(_base_case, "some translated text", meta)
+        assert any("fatal capability_gaps" in e for e in errs), f"expected fatal error, got: {errs}"
+
+    def test_missing_must_include_still_fails(self, _base_case):
+        """must_include missing → FAIL regardless of cap gap alignment."""
+        from bench.run_cases import check_translated
+        case = dict(_base_case)
+        case["expected"]["must_include"] = ["MUST_BE_PRESENT"]
+        meta = {
+            "deployable": False,
+            "manual_review_required": True,
+            "level": "warning",
+            "capability_gaps": [{"feature": "ipsec", "severity": "warning", "status": "unknown"}],
+        }
+        errs = check_translated(case, "translated text without keyword", meta)
+        assert any("must_include" in e for e in errs), f"expected must_include error, got: {errs}"
+
+    def test_forbidden_pattern_still_fails(self, _base_case):
+        """must_not_include forbidden → FAIL regardless of cap gap alignment."""
+        from bench.run_cases import check_translated
+        case = dict(_base_case)
+        case["expected"]["must_not_include"] = ["forbidden-command"]
+        meta = {
+            "deployable": False,
+            "manual_review_required": True,
+            "level": "warning",
+            "capability_gaps": [{"feature": "ipsec", "severity": "warning", "status": "unknown"}],
+        }
+        errs = check_translated(case, "forbidden-command in output", meta)
+        assert any("forbidden" in e for e in errs), f"expected forbidden error, got: {errs}"

@@ -78,6 +78,7 @@ def decide_deployability(
     features: Optional[List[str]] = None,
 ) -> RiskDecision:
     features = features or []
+    signals = [s for s in signals if s.feature != "_meta"]
 
     fatal_signals = [s for s in signals if s.severity == RiskSeverity.FATAL]
     warning_signals = [s for s in signals if s.severity == RiskSeverity.WARNING]

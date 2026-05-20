@@ -1379,10 +1379,12 @@ class CapabilityGapNode(Node):
             for block in ir_source:
                 if isinstance(block, dict):
                     ftype = block.get("type", "").lower()
-                    if ftype:
+                    if ftype and ftype != "_meta":
                         features.add(ftype)
                 elif hasattr(block, "type") and block.type:
-                    features.add(block.type.lower())
+                    ftype = block.type.lower()
+                    if ftype != "_meta":
+                        features.add(ftype)
 
         features = sorted(features)
 

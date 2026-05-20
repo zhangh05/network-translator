@@ -147,15 +147,16 @@ def check_translated(case, translated, meta):
         # ── Enhanced live checks ──
         if meta.get("capability_gaps"):
             if isinstance(meta["capability_gaps"], list):
-                fatal_gaps = [g for g in meta["capability_gaps"] if g.get("severity") == "fatal"]
-                warning_gaps = [g for g in meta["capability_gaps"] if g.get("severity") == "warning"]
-                unknown_gaps = [g for g in meta["capability_gaps"]
-                                if g.get("status") in ("unknown", "unsupported", "partial")
-                                and g.get("severity") in ("warning", "fatal")]
+                fatal_gaps = [g for g in meta["capability_gaps"]
+                              if g.get("severity") == "fatal" and g.get("feature") != "_meta"]
+                warning_gaps = [g for g in meta["capability_gaps"]
+                                if g.get("severity") == "warning" and g.get("feature") != "_meta"]
+                exp_clean = exp.get("deployable") is True and exp.get("manual_review_required") is False
                 if fatal_gaps:
                     errors.append(f"fatal capability_gaps: {fatal_gaps}")
-                elif warning_gaps or unknown_gaps:
-                    errors.append(f"warning capability_gaps: {warning_gaps or unknown_gaps}")
+                elif warning_gaps and exp_clean:
+                    errors.append(f"unexpected warning capability_gaps (expected clean deploy): {warning_gaps}")
+                # else: warning gaps are expected per annotation (non-deployable case) — no error
 
         if meta.get("analyzer_results"):
             if isinstance(meta.get("analyzer_results"), list) and len(meta["analyzer_results"]) > 0:
