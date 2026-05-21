@@ -770,7 +770,6 @@ class ValidateNode(Node):
                 (r'interface\s+GE\d+', 'Cisco IOS 通常使用 GigabitEthernet 而非 GE'),
                 (r'interface\s+XGigabitEthernet\d+', 'Cisco IOS 通常使用 TenGigabitEthernet'),
                 (r'ip\s+address\s+\S+\s+\S+\s+secondary', 'Cisco IOS 多个 IP 需确认是否使用 secondary'),
-                (r'vlan\s+\d+$', 'Cisco IOS l2 VLAN 配置需要 switchport'),
                 (r'no\s+shut$', 'Cisco IOS 建议使用 no shutdown 而非 no shut'),
             ],
             'h3c': [
