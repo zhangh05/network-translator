@@ -1,0 +1,209 @@
+{
+  "fw-nat-001": [
+    {
+      "run": 1,
+      "request_id": "4b0ee5b6-da58-44c3-8f4c-d96d1af1a08c",
+      "deployable": true,
+      "manual_review_required": false,
+      "forbidden_pattern_hits": [],
+      "has_manual_review": false,
+      "has_manually_review": false,
+      "risk_signals": [],
+      "route_decision": "success",
+      "translated_excerpt_summary": "interface GigabitEthernet1/0/1\nnameif inside\nsecurity-level 100\nip address 198.18.1.1 255.255.255.0\nno shutdown\n!\ninterface GigabitEthernet2/0/1\nnamei...",
+      "result_status": "ok",
+      "provider": "",
+      "model": "MiniMax-M2.7",
+      "cache_hit": false,
+      "elapsed_s": 16.9,
+      "error": ""
+    },
+    {
+      "run": 2,
+      "request_id": "5cd822e6-a365-4a8a-b98d-8f64fa47b3a0",
+      "deployable": false,
+      "manual_review_required": true,
+      "forbidden_pattern_hits": [],
+      "has_manual_review": true,
+      "has_manually_review": false,
+      "risk_signals": [
+        "[warning]content/content: 可能存在源厂商残留：Huawei/H3C security-policy (dep_impact=False)",
+        "[warning]platform/platform: 源厂商残留 — Huawei/H3C: security-policy (dep_impact=True)",
+        "[warning]platform/platform: access-list binding 在 access-group 中被引用但未找到定义 (dep_impact=False)",
+        "[warning]manual_review/output: 翻译结果包含 MANUAL_REVIEW 标记 (dep_impact=True)"
+      ],
+      "route_decision": "success",
+      "translated_excerpt_summary": "interface GigabitEthernet1/0/0\n nameif inside\n security-level 100\n ip address 198.18.1.1 255.255.255.0\n no shutdown\n!\ninterface GigabitEthernet2/0/0\n ...",
+      "result_status": "ok",
+      "provider": "",
+      "model": "MiniMax-M2.7",
+      "cache_hit": false,
+      "elapsed_s": 36.6,
+      "error": ""
+    },
+    {
+      "run": 3,
+      "request_id": "df59aa1f-3893-4cfa-b6f0-8274f8d34c54",
+      "deployable": true,
+      "manual_review_required": false,
+      "forbidden_pattern_hits": [],
+      "has_manual_review": false,
+      "has_manually_review": false,
+      "risk_signals": [],
+      "route_decision": "success",
+      "translated_excerpt_summary": "interface GigabitEthernet0/0\n nameif inside\n security-level 100\n ip address 198.18.1.1 255.255.255.0\ninterface GigabitEthernet0/1\n nameif outside\n sec...",
+      "result_status": "ok",
+      "provider": "",
+      "model": "MiniMax-M2.7",
+      "cache_hit": false,
+      "elapsed_s": 19.1,
+      "error": ""
+    },
+    {
+      "run": 4,
+      "request_id": "c83b196a-d832-401b-8e12-032495b583c5",
+      "deployable": false,
+      "manual_review_required": true,
+      "forbidden_pattern_hits": [],
+      "has_manual_review": true,
+      "has_manually_review": false,
+      "risk_signals": [
+        "[warning]manual_review/output: 翻译结果包含 MANUAL_REVIEW 标记 (dep_impact=True)"
+      ],
+      "route_decision": "success",
+      "translated_excerpt_summary": "interface GigabitEthernet1/0/1\n nameif inside\n ip address 198.18.1.1 255.255.255.0\n security-level 85\n no shutdown\nexit\ninterface GigabitEthernet2/0/1...",
+      "result_status": "ok",
+      "provider": "",
+      "model": "MiniMax-M2.7",
+      "cache_hit": false,
+      "elapsed_s": 27.7,
+      "error": ""
+    },
+    {
+      "run": 5,
+      "request_id": "2f67263d-a652-4c63-9845-c91b71c7d48d",
+      "deployable": true,
+      "manual_review_required": false,
+      "forbidden_pattern_hits": [],
+      "has_manual_review": false,
+      "has_manually_review": false,
+      "risk_signals": [],
+      "route_decision": "success",
+      "translated_excerpt_summary": "interface GigabitEthernet1/0/1\nnameif inside\nip address 198.18.1.1 255.255.255.0\nno shutdown\ninterface GigabitEthernet2/0/1\nnameif outside\nip address ...",
+      "result_status": "ok",
+      "provider": "",
+      "model": "MiniMax-M2.7",
+      "cache_hit": false,
+      "elapsed_s": 10.5,
+      "error": ""
+    }
+  ],
+  "fw-nat-server-001": [
+    {
+      "run": 1,
+      "request_id": "53b2cc8e-035b-421d-b879-7fcb1573d7e4",
+      "deployable": false,
+      "manual_review_required": true,
+      "forbidden_pattern_hits": [],
+      "has_manual_review": true,
+      "has_manually_review": false,
+      "risk_signals": [
+        "[warning]manual_review/output: 翻译结果包含 MANUAL_REVIEW 标记 (dep_impact=True)"
+      ],
+      "route_decision": "success",
+      "translated_excerpt_summary": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outsi...",
+      "result_status": "ok",
+      "provider": "",
+      "model": "MiniMax-M2.7",
+      "cache_hit": false,
+      "elapsed_s": 52.6,
+      "error": ""
+    },
+    {
+      "run": 2,
+      "request_id": "1e9195da-4681-42b0-bc4b-2b0c4f413729",
+      "deployable": false,
+      "manual_review_required": true,
+      "forbidden_pattern_hits": [
+        "object network",
+        "access-list",
+        "nameif"
+      ],
+      "has_manual_review": true,
+      "has_manually_review": false,
+      "risk_signals": [
+        "[warning]content/content: 可能存在源厂商残留：Cisco access-list 命令 (dep_impact=False)",
+        "[warning]platform/platform: 源厂商残留 — Cisco/ASA: object network (dep_impact=True)",
+        "[warning]manual_review/output: 翻译结果包含 MANUAL_REVIEW 标记 (dep_impact=True)"
+      ],
+      "route_decision": "success",
+      "translated_excerpt_summary": "interface GigabitEthernet0/0/0\n undo shutdown\n description inside\n ip address 10.0.0.1 255.255.255.0\n# MANUAL_REVIEW: Cisco 'nameif inside' + 'securit...",
+      "result_status": "ok",
+      "provider": "",
+      "model": "MiniMax-M2.7",
+      "cache_hit": false,
+      "elapsed_s": 31.0,
+      "error": ""
+    },
+    {
+      "run": 3,
+      "request_id": "8ff50704-b495-46f3-aac2-ecbfd785a696",
+      "deployable": false,
+      "manual_review_required": true,
+      "forbidden_pattern_hits": [],
+      "has_manual_review": true,
+      "has_manually_review": false,
+      "risk_signals": [
+        "[warning]manual_review/output: 翻译结果包含 MANUAL_REVIEW 标记 (dep_impact=True)"
+      ],
+      "route_decision": "success",
+      "translated_excerpt_summary": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\n#\ninterface GigabitEthernet0/0/1\n description out...",
+      "result_status": "ok",
+      "provider": "",
+      "model": "MiniMax-M2.7",
+      "cache_hit": false,
+      "elapsed_s": 43.0,
+      "error": ""
+    },
+    {
+      "run": 4,
+      "request_id": "e04b8fb5-26da-478b-ac7e-c30f1e59d0fb",
+      "deployable": true,
+      "manual_review_required": true,
+      "forbidden_pattern_hits": [],
+      "has_manual_review": false,
+      "has_manually_review": false,
+      "risk_signals": [
+        "[warning]platform/platform: 华为 VRP 使用 acl name 时注意 name 前面无需 number (dep_impact=False)"
+      ],
+      "route_decision": "success",
+      "translated_excerpt_summary": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outsi...",
+      "result_status": "ok",
+      "provider": "",
+      "model": "MiniMax-M2.7",
+      "cache_hit": false,
+      "elapsed_s": 58.1,
+      "error": ""
+    },
+    {
+      "run": 5,
+      "request_id": "761eb54b-56ae-4429-9b1c-97bacd871e83",
+      "deployable": true,
+      "manual_review_required": true,
+      "forbidden_pattern_hits": [],
+      "has_manual_review": false,
+      "has_manually_review": false,
+      "risk_signals": [
+        "[warning]platform/platform: 华为 VRP 使用 acl name 时注意 name 前面无需 number (dep_impact=False)"
+      ],
+      "route_decision": "success",
+      "translated_excerpt_summary": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outsi...",
+      "result_status": "ok",
+      "provider": "",
+      "model": "MiniMax-M2.7",
+      "cache_hit": false,
+      "elapsed_s": 105.3,
+      "error": ""
+    }
+  ]
+}
