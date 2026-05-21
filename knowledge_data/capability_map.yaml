@@ -360,3 +360,12 @@ local_user:
   cisco: supported
   huawei: supported
   h3c: supported
+security_zone:
+  cisco: supported
+  huawei: supported
+  h3c: supported
+  dbappsecurity: unknown
+  dptech: unknown
+  hillstone: unknown
+  ruijie: unknown
+  topsec: unknown

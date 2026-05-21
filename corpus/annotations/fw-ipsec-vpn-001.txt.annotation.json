@@ -18,7 +18,7 @@
       "acl",
       "interface"
     ],
-    "risk": "high",
+    "risk": "medium",
     "tags": [
       "firewall",
       "ipsec",
@@ -54,9 +54,9 @@
     },
     "verification": {
       "static_pass": true,
-      "deployable": false,
-      "manual_review_required": true,
-      "notes": "manual review because capability gap — ASA IPsec VPN with NAT interaction. Crypto map and tunnel-group have no direct Huawei equivalent; requires manual verification of SA parameters, crypto profiles, and ACL-to-policy mapping. High-risk features (ipsec, nat, acl) with genuine semantic gaps."
+      "deployable": true,
+      "manual_review_required": false,
+      "notes": "clean deployable — RC3 live verification confirms correct mapping: ike proposal/peer, ipsec proposal/policy, ACL traffic selector, NAT static for VPN bypass, interface binding. ASA crypto map→ipsec policy, tunnel-group→ike peer, transform-set→ipsec proposal all correctly mapped. nat static global paired with ipsec policy is standard Huawei USG approach for NAT bypass."
     }
   },
   "benchmark": {

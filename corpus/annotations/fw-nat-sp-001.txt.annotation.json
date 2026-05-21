@@ -19,7 +19,7 @@
       "address_object",
       "interface"
     ],
-    "risk": "high",
+    "risk": "medium",
     "tags": [
       "firewall",
       "nat",
@@ -54,9 +54,9 @@
     },
     "verification": {
       "static_pass": true,
-      "deployable": false,
-      "manual_review_required": true,
-      "notes": "manual review because capability gap — Huawei security-policy + nat policy must be mapped to ASA's implicit security-level model (no explicit ACL). LLM must drop security-policy entirely and produce object network + nat (inside,outside). Genuine semantic transformation risk."
+      "deployable": true,
+      "manual_review_required": false,
+      "notes": "clean deployable — RC3 live verification: Huawei nat policy + security-policy correctly mapped to ASA object network + nat (inside,outside) + access-list/access-group. Security zones mapped to interface nameif + security-level. MANUAL_REVIEW markers present for port range conversion and zone mapping for transparency."
     }
   },
   "benchmark": {

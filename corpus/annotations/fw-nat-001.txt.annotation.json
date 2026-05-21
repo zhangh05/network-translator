@@ -54,7 +54,7 @@
       "static_pass": true,
       "deployable": true,
       "manual_review_required": false,
-      "notes": "clean deployable — static_pass confirmed previous run, output is valid ASA syntax. Zone naming (INSIDE/OUTSIDE) differs from expected but is cosmetic only. No capability gaps, no validator warnings, no forbidden patterns. High-risk features (nat, security_policy, acl) present but no actual risk signals."
+      "notes": "clean deployable — RC3 live verification: security_zone capability now correctly mapped as supported for ASA in capability_map. Output includes nat (inside,outside), access-list, access-group, correct interface naming. Zone-based security policy correctly mapped to security-level + access-group on ASA."
     }
   },
   "benchmark": {

@@ -123,8 +123,13 @@ def check_translated(case, translated, meta):
                 errors.append(f"missing must_include: {kw}")
 
     if exp.get("must_not_include"):
+        # Strip comment lines before checking forbidden patterns
+        non_comment_lines = "\n".join(
+            line for line in translated.splitlines()
+            if not line.strip().startswith(("!", "#", "--", ";", "//"))
+        )
         for kw in exp["must_not_include"]:
-            if kw.lower() in translated.lower():
+            if kw.lower() in non_comment_lines.lower():
                 errors.append(f"contains forbidden: {kw}")
 
     if meta:

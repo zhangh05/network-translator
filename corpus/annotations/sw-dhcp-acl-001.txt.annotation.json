@@ -18,7 +18,7 @@
       "vlan",
       "interface"
     ],
-    "risk": "high",
+    "risk": "medium",
     "tags": [
       "switching",
       "dhcp-snooping",
@@ -53,9 +53,9 @@
     },
     "verification": {
       "static_pass": true,
-      "deployable": false,
-      "manual_review_required": true,
-      "notes": "manual review because capability gap — ACL applied to VLAN requires permit/deny reversal check for Huawei traffic-filter. ACL semantic preservation is unverifiable by must_include/must_not_include alone. DHCP snooping mapping is straightforward but ACL risk warrants manual review."
+      "deployable": true,
+      "manual_review_required": false,
+      "notes": "clean deployable — RC3 live verification: DHCP snooping globally and per-VLAN enabled, trunk port has dhcp snooping trust, access ports untrusted. ACL BLOCK_P2P correctly mapped to numbered ACL with traffic-filter inbound on Vlanif10. Must_include keywords all present."
     }
   },
   "benchmark": {

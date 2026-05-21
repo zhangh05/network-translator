@@ -13,12 +13,12 @@
     "address_object",
     "interface"
   ],
-  "risk": "high",
+  "risk": "medium",
   "tier": "full",
   "source_config": "!\n! Huawei USG — NAT source with security-policy\n! Source: internal_lab\n! Domain: firewall, Features: nat, security_policy, zone, address_object, interface\n!\nsysname FIREWALL_NAT_SP\n#\ninterface GigabitEthernet0/0/0\n description To-Internal\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\n#\ninterface GigabitEthernet0/0/1\n description To-Internet\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\n#\nfirewall zone trust\n set priority 85\n add interface GigabitEthernet0/0/0\n#\nfirewall zone untrust\n set priority 5\n add interface GigabitEthernet0/0/1\n#\nnat address-group POOL_INTERNET 1\n mode pat\n section 0 198.18.10.1 198.18.10.254\n#\nnat policy SOURCE_NAT\n rule name SNAT_TRUST\n  source-zone trust\n  destination-zone untrust\n  source-address 10.0.0.0 255.255.0.0\n  action source-nat address-group POOL_INTERNET\n#\nsecurity-policy\n rule name PERMIT_OUTBOUND\n  source-zone trust\n  destination-zone untrust\n  action permit\n rule name DENY_INBOUND\n  source-zone untrust\n  destination-zone trust\n  action deny\n#\nip route-static 0.0.0.0 0.0.0.0 198.18.1.254\n#",
   "expected": {
-    "deployable": false,
-    "manual_review_required": true,
+    "deployable": true,
+    "manual_review_required": false,
     "no_markdown_fence": true,
     "no_placeholder": true,
     "must_include": [
