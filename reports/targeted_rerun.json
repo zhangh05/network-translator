@@ -8,7 +8,7 @@
       {
         "run": 1,
         "status": "ok",
-        "elapsed_ms": 44225,
+        "elapsed_ms": 28169,
         "deployable": true,
         "manual_review_required": false,
         "level": "info",
@@ -17,12 +17,12 @@
         "warnings": [
           "建议: 为接口配置 description 描述用途"
         ],
-        "translated_excerpt": "interface GigabitEthernet1/0/1\n nameif inside\n ip address 198.18.1.1 255.255.255.0\n security-level 85\ninterface GigabitEthernet2/0/1\n nameif outside\n ip address 198.18.2.1 255.255.255.0\n security-level 5\nobject-group network INSIDE_NETWORKS\n network-object 10.0.0.0 255.255.255.0\n network-object 10.0"
+        "translated_excerpt": "interface GigabitEthernet1/0/1\n nameif inside\n security-level 85\n ip address 198.18.1.1 255.255.255.0\ninterface GigabitEthernet2/0/1\n nameif outside\n security-level 5\n ip address 198.18.2.1 255.255.255.0\nobject-group network obj-10.0.0.0\n network-object 10.0.0.0 255.255.255.0\n network-object 10.0.1."
       },
       {
         "run": 2,
         "status": "ok",
-        "elapsed_ms": 61,
+        "elapsed_ms": 46,
         "deployable": true,
         "manual_review_required": false,
         "level": "info",
@@ -31,12 +31,12 @@
         "warnings": [
           "建议: 为接口配置 description 描述用途"
         ],
-        "translated_excerpt": "interface GigabitEthernet1/0/1\n nameif inside\n ip address 198.18.1.1 255.255.255.0\n security-level 85\ninterface GigabitEthernet2/0/1\n nameif outside\n ip address 198.18.2.1 255.255.255.0\n security-level 5\nobject-group network INSIDE_NETWORKS\n network-object 10.0.0.0 255.255.255.0\n network-object 10.0"
+        "translated_excerpt": "interface GigabitEthernet1/0/1\n nameif inside\n security-level 85\n ip address 198.18.1.1 255.255.255.0\ninterface GigabitEthernet2/0/1\n nameif outside\n security-level 5\n ip address 198.18.2.1 255.255.255.0\nobject-group network obj-10.0.0.0\n network-object 10.0.0.0 255.255.255.0\n network-object 10.0.1."
       },
       {
         "run": 3,
         "status": "ok",
-        "elapsed_ms": 30,
+        "elapsed_ms": 31,
         "deployable": true,
         "manual_review_required": false,
         "level": "info",
@@ -45,7 +45,7 @@
         "warnings": [
           "建议: 为接口配置 description 描述用途"
         ],
-        "translated_excerpt": "interface GigabitEthernet1/0/1\n nameif inside\n ip address 198.18.1.1 255.255.255.0\n security-level 85\ninterface GigabitEthernet2/0/1\n nameif outside\n ip address 198.18.2.1 255.255.255.0\n security-level 5\nobject-group network INSIDE_NETWORKS\n network-object 10.0.0.0 255.255.255.0\n network-object 10.0"
+        "translated_excerpt": "interface GigabitEthernet1/0/1\n nameif inside\n security-level 85\n ip address 198.18.1.1 255.255.255.0\ninterface GigabitEthernet2/0/1\n nameif outside\n security-level 5\n ip address 198.18.2.1 255.255.255.0\nobject-group network obj-10.0.0.0\n network-object 10.0.0.0 255.255.255.0\n network-object 10.0.1."
       }
     ],
     "pass_count": 3,
@@ -60,47 +60,41 @@
       {
         "run": 1,
         "status": "ok",
-        "elapsed_ms": 56533,
-        "deployable": false,
-        "manual_review_required": true,
-        "level": "warning",
+        "elapsed_ms": 48633,
+        "deployable": true,
+        "manual_review_required": false,
+        "level": "info",
         "has_manual_review_marker": false,
         "errors": [],
-        "warnings": [
-          "源厂商残留 — Cisco/ASA: object network"
-        ],
-        "translated_excerpt": "interface GigabitEthernet0/0/0\nundo shutdown\nip address 10.0.0.1 255.255.255.0\ndescription inside\nfirewall zone trust\nadd interface GigabitEthernet0/0/0\nquit\ninterface GigabitEthernet0/0/1\nundo shutdown\nip address 198.18.1.1 255.255.255.0\ndescription outside\nfirewall zone untrust\nadd interface Gigab"
+        "warnings": [],
+        "translated_excerpt": "interface GigabitEthernet0/0/0\n description Inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\n#\ninterface GigabitEthernet0/0/1\n description Outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nfirewall zone trust\n add interface GigabitEthernet0/0/0\n#\nfirewall zone untrust\n add interfac"
       },
       {
         "run": 2,
         "status": "ok",
-        "elapsed_ms": 45,
-        "deployable": false,
-        "manual_review_required": true,
-        "level": "warning",
+        "elapsed_ms": 32,
+        "deployable": true,
+        "manual_review_required": false,
+        "level": "info",
         "has_manual_review_marker": false,
         "errors": [],
-        "warnings": [
-          "源厂商残留 — Cisco/ASA: object network"
-        ],
-        "translated_excerpt": "interface GigabitEthernet0/0/0\nundo shutdown\nip address 10.0.0.1 255.255.255.0\ndescription inside\nfirewall zone trust\nadd interface GigabitEthernet0/0/0\nquit\ninterface GigabitEthernet0/0/1\nundo shutdown\nip address 198.18.1.1 255.255.255.0\ndescription outside\nfirewall zone untrust\nadd interface Gigab"
+        "warnings": [],
+        "translated_excerpt": "interface GigabitEthernet0/0/0\n description Inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\n#\ninterface GigabitEthernet0/0/1\n description Outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nfirewall zone trust\n add interface GigabitEthernet0/0/0\n#\nfirewall zone untrust\n add interfac"
       },
       {
         "run": 3,
         "status": "ok",
-        "elapsed_ms": 39,
-        "deployable": false,
-        "manual_review_required": true,
-        "level": "warning",
+        "elapsed_ms": 31,
+        "deployable": true,
+        "manual_review_required": false,
+        "level": "info",
         "has_manual_review_marker": false,
         "errors": [],
-        "warnings": [
-          "源厂商残留 — Cisco/ASA: object network"
-        ],
-        "translated_excerpt": "interface GigabitEthernet0/0/0\nundo shutdown\nip address 10.0.0.1 255.255.255.0\ndescription inside\nfirewall zone trust\nadd interface GigabitEthernet0/0/0\nquit\ninterface GigabitEthernet0/0/1\nundo shutdown\nip address 198.18.1.1 255.255.255.0\ndescription outside\nfirewall zone untrust\nadd interface Gigab"
+        "warnings": [],
+        "translated_excerpt": "interface GigabitEthernet0/0/0\n description Inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\n#\ninterface GigabitEthernet0/0/1\n description Outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nfirewall zone trust\n add interface GigabitEthernet0/0/0\n#\nfirewall zone untrust\n add interfac"
       }
     ],
-    "pass_count": 0,
+    "pass_count": 3,
     "total": 3
   },
   "corpus-fw-nat-server-001": {
@@ -112,44 +106,38 @@
       {
         "run": 1,
         "status": "ok",
-        "elapsed_ms": 51108,
+        "elapsed_ms": 39510,
         "deployable": false,
         "manual_review_required": true,
         "level": "warning",
-        "has_manual_review_marker": true,
+        "has_manual_review_marker": false,
         "errors": [],
-        "warnings": [
-          "源厂商残留 — Cisco/ASA: object network"
-        ],
-        "translated_excerpt": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\n # nameif inside # MANUAL_REVIEW: Cisco ASA nameif has no equivalent in Huawei VRP\n # security-level 100 # MANUAL_REVIEW: Cisco ASA security-level has no equivalent in Huawei VRP\ninterface GigabitEth"
+        "warnings": [],
+        "translated_excerpt": "interface GigabitEthernet0/0/0\n undo shutdown\n ip address 10.0.0.1 255.255.255.0\n description inside\n quit\nfirewall zone trust\n add interface GigabitEthernet0/0/0\n set priority 100\n quit\ninterface GigabitEthernet0/0/1\n undo shutdown\n ip address 198.18.1.1 255.255.255.0\n description outside\n quit\nfir"
       },
       {
         "run": 2,
         "status": "ok",
-        "elapsed_ms": 58,
+        "elapsed_ms": 61,
         "deployable": false,
         "manual_review_required": true,
         "level": "warning",
-        "has_manual_review_marker": true,
+        "has_manual_review_marker": false,
         "errors": [],
-        "warnings": [
-          "源厂商残留 — Cisco/ASA: object network"
-        ],
-        "translated_excerpt": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\n # nameif inside # MANUAL_REVIEW: Cisco ASA nameif has no equivalent in Huawei VRP\n # security-level 100 # MANUAL_REVIEW: Cisco ASA security-level has no equivalent in Huawei VRP\ninterface GigabitEth"
+        "warnings": [],
+        "translated_excerpt": "interface GigabitEthernet0/0/0\n undo shutdown\n ip address 10.0.0.1 255.255.255.0\n description inside\n quit\nfirewall zone trust\n add interface GigabitEthernet0/0/0\n set priority 100\n quit\ninterface GigabitEthernet0/0/1\n undo shutdown\n ip address 198.18.1.1 255.255.255.0\n description outside\n quit\nfir"
       },
       {
         "run": 3,
         "status": "ok",
-        "elapsed_ms": 41,
+        "elapsed_ms": 52,
         "deployable": false,
         "manual_review_required": true,
         "level": "warning",
-        "has_manual_review_marker": true,
+        "has_manual_review_marker": false,
         "errors": [],
-        "warnings": [
-          "源厂商残留 — Cisco/ASA: object network"
-        ],
-        "translated_excerpt": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\n # nameif inside # MANUAL_REVIEW: Cisco ASA nameif has no equivalent in Huawei VRP\n # security-level 100 # MANUAL_REVIEW: Cisco ASA security-level has no equivalent in Huawei VRP\ninterface GigabitEth"
+        "warnings": [],
+        "translated_excerpt": "interface GigabitEthernet0/0/0\n undo shutdown\n ip address 10.0.0.1 255.255.255.0\n description inside\n quit\nfirewall zone trust\n add interface GigabitEthernet0/0/0\n set priority 100\n quit\ninterface GigabitEthernet0/0/1\n undo shutdown\n ip address 198.18.1.1 255.255.255.0\n description outside\n quit\nfir"
       }
     ],
     "pass_count": 0,

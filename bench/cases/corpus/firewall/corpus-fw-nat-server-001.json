@@ -16,7 +16,7 @@
   "tier": "full",
   "source_config": "!\n! Cisco ASA — NAT server/port forwarding\n! Source: public_doc\n! Domain: firewall, Features: nat, interface, static_route\n!\ninterface GigabitEthernet0/0\n nameif inside\n security-level 100\n ip address 10.0.0.1 255.255.255.0\n no shutdown\n!\ninterface GigabitEthernet0/1\n nameif outside\n security-level 0\n ip address 198.18.1.1 255.255.255.0\n no shutdown\n!\nobject network WEB_SERVER\n host 10.0.0.10\n!\nobject network MAIL_SERVER\n host 10.0.0.11\n!\nobject network OUTSIDE_IPS\n range 198.18.10.100 198.18.10.110\n!\nnat (inside,outside) source static WEB_SERVER interface service tcp www www\nnat (inside,outside) source static MAIL_SERVER interface service tcp smtp smtp\nnat (inside,outside) source dynamic INSIDE_NET OUTSIDE_IPS\n!\naccess-list OUTSIDE_IN extended permit tcp any interface outside eq www\naccess-list OUTSIDE_IN extended permit tcp any interface outside eq smtp\naccess-group OUTSIDE_IN in interface outside\n!\nroute outside 0.0.0.0 0.0.0.0 198.18.1.254 1\n!",
   "expected": {
-    "deployable": true,
+    "deployable": false,
     "manual_review_required": true,
     "no_markdown_fence": true,
     "no_placeholder": true,

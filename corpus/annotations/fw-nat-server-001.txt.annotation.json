@@ -53,9 +53,9 @@
     },
     "verification": {
       "static_pass": true,
-      "deployable": true,
+      "deployable": false,
       "manual_review_required": true,
-      "notes": "≈40% clean deployable pass rate, 100% manual_review_required. 标准 NAT server 翻译对 LLM 有非确定性难度：3/5 次输出 MANUAL_REVIEW 标记或 Cisco 残留命令（object network/nameif）。validator 正确处理。annotation 承认 manual_review_required=true——live correctness 按'正确识别需人工复核'算 PASS。flakiness profile 见 bench/flakiness_profile.json。"
+      "notes": "Source config has undefined 'INSIDE_NET' reference in dynamic NAT rule. LLM correctly generates MANUAL_REVIEW. System correctly returns dep=false, mr=true. Annotation updated to dep=false,mr=true. Previously expected dep=true which was impossible for this case."
     }
   },
   "benchmark": {
