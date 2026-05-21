@@ -1084,13 +1084,14 @@ class ValidateNode(Node):
                 manual_review_impact=True,
             ))
 
-        # MANUAL_REVIEW marker in output
-        if "MANUAL_REVIEW" in config_content.upper():
+        # MANUAL_REVIEW / MANUALLY_REVIEW marker in output
+        if "MANUAL_REVIEW" in config_content.upper() or "MANUALLY_REVIEW" in config_content.upper():
+            label = "MANUAL" if "MANUAL_REVIEW" in config_content.upper() else "MANUALLY"
             signals.append(RiskSignal(
                 source=RiskSource.MANUAL_REVIEW,
                 feature="output",
                 severity=RiskSeverity.WARNING,
-                message="翻译结果包含 MANUAL_REVIEW 标记",
+                message=f"翻译结果包含 {label}_REVIEW 标记",
                 deployability_impact=True,
                 manual_review_impact=True,
             ))
