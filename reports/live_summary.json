@@ -1,18 +1,33 @@
 {
-  "generated_at": "2026-05-21T02:05:58",
+  "generated_at": "2026-05-21T12:44:32",
   "source": "bench/live_report.json",
-  "total": 7,
+  "total": 5,
   "by_priority": {
-    "P0": 3,
-    "P1": 3,
-    "P2": 1
+    "P0": 4,
+    "P1": 1
   },
   "by_category": {
-    "validator_false_negative": 3,
-    "llm_quality_issue": 3,
-    "unknown": 1
+    "validator_false_negative": 4,
+    "llm_quality_issue": 1
   },
   "failures": [
+    {
+      "name": "corpus-fw-ipsec-vpn-001",
+      "case_id": "corpus-fw-ipsec-vpn-001",
+      "request_id": "",
+      "priority": "P0",
+      "category": "validator_false_negative",
+      "source_vendor": "cisco",
+      "target_vendor": "huawei",
+      "features": "ipsec, nat, acl, interface",
+      "deployable": true,
+      "manual_review_required": false,
+      "failure_reason": "deployable expected=False got=True; expected manual_review_required=True but system returned False",
+      "errors": [
+        "deployable expected=False got=True",
+        "expected manual_review_required=True but system returned False"
+      ]
+    },
     {
       "name": "corpus-fw-nat-001",
       "case_id": "corpus-fw-nat-001",
@@ -24,21 +39,21 @@
       "features": "nat, nat_source, nat_server, acl, security_policy",
       "deployable": false,
       "manual_review_required": true,
-      "failure_reason": "missing must_include: access-group; deployable expected=True got=False",
+      "failure_reason": "deployable expected=True got=False; unexpected warning capability_gaps (expected clean deploy): [{'details': {'risk': 'LLM 自行推测，需人工核查'}, 'feature': 'security_zone', 'severity': 'warning', 'source_lines': ['(feature: security_zone)'], 'source_vendor': 'huawei', 'status': 'unknown', 'suggestion': '知识库未确认目标厂商支持状态，建议人工确认', 'target_vendor': 'cisco'}]",
       "errors": [
-        "missing must_include: access-group",
-        "deployable expected=True got=False"
+        "deployable expected=True got=False",
+        "unexpected warning capability_gaps (expected clean deploy): [{'details': {'risk': 'LLM 自行推测，需人工核查'}, 'feature': 'security_zone', 'severity': 'warning', 'source_lines': ['(feature: security_zone)'], 'source_vendor': 'huawei', 'status': 'unknown', 'suggestion': '知识库未确认目标厂商支持状态，建议人工确认', 'target_vendor': 'cisco'}]"
       ]
     },
     {
-      "name": "corpus-rtr-ipsec-001",
-      "case_id": "corpus-rtr-ipsec-001",
+      "name": "corpus-fw-nat-server-001",
+      "case_id": "corpus-fw-nat-server-001",
       "request_id": "",
       "priority": "P0",
       "category": "validator_false_negative",
       "source_vendor": "cisco",
       "target_vendor": "huawei",
-      "features": "ipsec, tunnel, interface, acl",
+      "features": "nat, acl, interface, static_route",
       "deployable": true,
       "manual_review_required": false,
       "failure_reason": "deployable expected=False got=True; expected manual_review_required=True but system returned False",
@@ -48,83 +63,36 @@
       ]
     },
     {
-      "name": "corpus-sw-vlan-001",
-      "case_id": "corpus-sw-vlan-001",
-      "request_id": "",
-      "priority": "P0",
-      "category": "validator_false_negative",
-      "source_vendor": "huawei",
-      "target_vendor": "cisco",
-      "features": "vlan, interface",
-      "deployable": false,
-      "manual_review_required": true,
-      "failure_reason": "deployable expected=True got=False",
-      "errors": [
-        "deployable expected=True got=False"
-      ]
-    },
-    {
-      "name": "corpus-rtr-vrf-001",
-      "case_id": "corpus-rtr-vrf-001",
-      "request_id": "",
-      "priority": "P1",
-      "category": "llm_quality_issue",
-      "source_vendor": "cisco",
-      "target_vendor": "huawei",
-      "features": "vrf, static_route, interface",
-      "deployable": true,
-      "manual_review_required": false,
-      "failure_reason": "missing must_include: ip route-static vpn-instance",
-      "errors": [
-        "missing must_include: ip route-static vpn-instance"
-      ]
-    },
-    {
       "name": "corpus-sw-dhcp-acl-001",
       "case_id": "corpus-sw-dhcp-acl-001",
       "request_id": "",
-      "priority": "P1",
-      "category": "llm_quality_issue",
+      "priority": "P0",
+      "category": "validator_false_negative",
       "source_vendor": "cisco",
       "target_vendor": "huawei",
       "features": "dhcp, acl, vlan, interface",
-      "deployable": false,
-      "manual_review_required": true,
-      "failure_reason": "missing must_include: dhcp snooping trust",
+      "deployable": true,
+      "manual_review_required": false,
+      "failure_reason": "deployable expected=False got=True; expected manual_review_required=True but system returned False",
       "errors": [
-        "missing must_include: dhcp snooping trust"
+        "deployable expected=False got=True",
+        "expected manual_review_required=True but system returned False"
       ]
     },
     {
-      "name": "corpus-sw-mstp-001",
-      "case_id": "corpus-sw-mstp-001",
+      "name": "corpus-fw-nat-sp-001",
+      "case_id": "corpus-fw-nat-sp-001",
       "request_id": "",
       "priority": "P1",
       "category": "llm_quality_issue",
-      "source_vendor": "cisco",
-      "target_vendor": "huawei",
-      "features": "stp, vlan, interface",
-      "deployable": true,
-      "manual_review_required": false,
-      "failure_reason": "missing must_include: stp region-name",
-      "errors": [
-        "missing must_include: stp region-name"
-      ]
-    },
-    {
-      "name": "corpus-sw-stack-001",
-      "case_id": "corpus-sw-stack-001",
-      "request_id": "",
-      "priority": "P2",
-      "category": "unknown",
-      "source_vendor": "h3c",
+      "source_vendor": "huawei",
       "target_vendor": "cisco",
-      "features": "interface, irf",
+      "features": "nat, security_policy, zone, address_object, interface",
       "deployable": false,
       "manual_review_required": true,
-      "failure_reason": "fatal capability_gaps: [{'details': {}, 'feature': 'irf', 'severity': 'fatal', 'source_lines': ['! H3C Comware — IRF stacking', 'irf member 1 member-priority 10', 'irf-port 1/1', 'irf-port 1/2', 'irf-port-configuration active'], 'source_vendor': 'h3c', 'status': 'unsupported', 'suggestion': '目标厂商不支持此功能，不自动生成目标配置', 'target_vendor': 'cisco'}]",
+      "failure_reason": "contains forbidden: nat policy",
       "errors": [
-        "fatal capability_gaps: [{'details': {}, 'feature': 'irf', 'severity': 'fatal', 'source_lines': ['! H3C Comware — IRF stacking', 'irf member 1 member-priority 10', 'irf-port 1/1', 'irf-port 1/2', 'irf-port-configuration active'], 'source_vendor': 'h3c', 'status': 'unsupported', 'suggestion': '目标厂商不支持此功能，不自动生成目标配置', 'target_vendor': 'cisco'}]"
+        "contains forbidden: nat policy"
       ]
     }
   ]

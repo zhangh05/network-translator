@@ -6,9 +6,18 @@
       "total": 15
     },
     "live": {
-      "pass": 8,
-      "fail": 7,
+      "pass": 10,
+      "fail": 5,
       "skip": 0
+    },
+    "correctness": {
+      "pass": 10,
+      "fail": 5,
+      "total": 15
+    },
+    "clean_deployable": {
+      "count": 10,
+      "total": 15
     },
     "cache": {
       "pass": 0,
@@ -22,8 +31,8 @@
         "static_pass": 8,
         "static_fail": 0,
         "static_total": 8,
-        "live_pass": 4,
-        "live_fail": 4,
+        "live_pass": 3,
+        "live_fail": 5,
         "live_total": 8,
         "live_skip": 0
       },
@@ -32,8 +41,8 @@
         "static_pass": 4,
         "static_fail": 0,
         "static_total": 4,
-        "live_pass": 2,
-        "live_fail": 2,
+        "live_pass": 4,
+        "live_fail": 0,
         "live_total": 4,
         "live_skip": 0
       },
@@ -42,8 +51,8 @@
         "static_pass": 3,
         "static_fail": 0,
         "static_total": 3,
-        "live_pass": 2,
-        "live_fail": 1,
+        "live_pass": 3,
+        "live_fail": 0,
         "live_total": 3,
         "live_skip": 0
       }
@@ -66,14 +75,19 @@
         "acl",
         "interface"
       ],
-      "status": "pass",
+      "status": "fail",
       "category": "",
-      "failure_reason": "",
-      "elapsed_ms": "224",
-      "errors": [],
-      "deployable": false,
-      "manual_review_required": true,
-      "validation_level": "warning",
+      "failure_reason": "deployable expected=False got=True; expected manual_review_required=True but system returned False",
+      "elapsed_ms": "233",
+      "errors": [
+        "deployable expected=False got=True",
+        "expected manual_review_required=True but system returned False"
+      ],
+      "correctness_pass": false,
+      "clean_deployable": true,
+      "deployable": true,
+      "manual_review_required": false,
+      "validation_level": "info",
       "analyzer_results": [
         {
           "feature": "interface",
@@ -229,20 +243,20 @@
         }
       ],
       "validation": {
-        "deployable": false,
+        "deployable": true,
         "errors": [],
-        "level": "warning",
-        "manual_review_required": true,
+        "level": "info",
+        "manual_review_required": false,
         "valid": true,
         "warnings": []
       },
-      "translated_excerpt": "interface GigabitEthernet0/0/0\n undo shutdown\n ip address 10.0.0.1 255.255.255.0\n description inside\nfirewall zone trust\n add interface GigabitEthernet0/0/0\ninterface GigabitEthernet0/0/1\n undo shutdown\n ip address 198.18.1.1 255.255.255.0\n description outside\nfirewall zone untrust\n add interface Gi...",
+      "translated_excerpt": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nip address-set INSIDE_NET type object\n address 10.0.0.0 255.255.255.0\nip address-set REMOTE_NET...",
       "detail": {
-        "translated": "interface GigabitEthernet0/0/0\n undo shutdown\n ip address 10.0.0.1 255.255.255.0\n description inside\nfirewall zone trust\n add interface GigabitEthernet0/0/0\ninterface GigabitEthernet0/0/1\n undo shutdown\n ip address 198.18.1.1 255.255.255.0\n description outside\nfirewall zone untrust\n add interface GigabitEthernet0/0/1\nip address-set INSIDE_NET type object\n address 0 10.0.0.0 255.255.255.0\nip address-set REMOTE_NET type object\n address 0 198.18.100.0 255.255.255.0\nacl number 3000\n rule 5 permit ip source 10.0.0.0 0.0.0.255 destination 198.18.100.0 0.0.0.255\nacl number 3001\n rule 5 permit ip source 10.0.0.0 0.0.0.255 destination 198.18.100.0 0.0.0.255\nnat static global 10.0.0.0 inside 10.0.0.0\nnat static global 198.18.100.0 inside 198.18.100.0\n# MANUAL_REVIEW: 双向static NAT需确认每个方向的应用接口\nike proposal 10\n encryption-algorithm aes-256\n authentication-algorithm sha\n dh group2\n sa duration 86400\nike peer IPSEC_PEER_198.18.254.2\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key %REDACTED%\nipsec proposal IPSEC_AES256\n encapsulation-mode tunnel\n esp authentication-algorithm sha\n esp encryption-algorithm aes-256\nipsec policy VPN_POLICY 10 isakmp\n security acl 3000\n ike-peer IPSEC_PEER_198.18.254.2\n proposal IPSEC_AES256\ninterface GigabitEthernet0/0/1\n ipsec policy VPN_POLICY\nip route-static 0.0.0.0 0.0.0.0 198.18.1.254",
-        "translated_excerpt": "interface GigabitEthernet0/0/0\n undo shutdown\n ip address 10.0.0.1 255.255.255.0\n description inside\nfirewall zone trust\n add interface GigabitEthernet0/0/0\ninterface GigabitEthernet0/0/1\n undo shutdown\n ip address 198.18.1.1 255.255.255.0\n description outside\nfirewall zone untrust\n add interface Gi...",
+        "translated": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nip address-set INSIDE_NET type object\n address 10.0.0.0 255.255.255.0\nip address-set REMOTE_NET type object\n address 198.18.100.0 255.255.255.0\nacl number 3000\n rule 5 permit ip source 10.0.0.0 0.0.0.255 destination 198.18.100.0 0.0.0.255\nike proposal 10\n encryption-algorithm aes-256\n authentication-algorithm sha1\n dh group2\n sa duration 86400\nike peer PEER_198.18.254.2\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key cipher __REDACTED__\nipsec proposal AES256\n esp encryption-algorithm aes-256\n esp authentication-algorithm sha1\nipsec policy VPN_POLICY 10 isakmp\n security acl 3000\n ike-peer PEER_198.18.254.2\n proposal AES256\nnat static global 10.0.0.0 inside 10.0.0.0\nnat static global 198.18.100.0 inside 198.18.100.0\nip route-static 0.0.0.0 0.0.0.0 198.18.1.254\ninterface GigabitEthernet0/0/1\n ipsec policy VPN_POLICY",
+        "translated_excerpt": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nip address-set INSIDE_NET type object\n address 10.0.0.0 255.255.255.0\nip address-set REMOTE_NET...",
         "status_code": 200,
-        "elapsed": 0.2240612506866455,
-        "request_id": "50e6c0b7-e710-4050-9b51-6e0395b3d168",
+        "elapsed": 0.23289752006530762,
+        "request_id": "066427bb-e86b-40af-9633-97447211c05d",
         "api_result": {
           "analyzer_results": [
             {
@@ -409,7 +423,7 @@
             "static_route: supported ()",
             "tunnel: supported ()"
           ],
-          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet0/1\n  original: `GigabitEthernet0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/0\n  original: `GigabitEthernet0/0`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **count_changed** @ interfaces\n  original: `2 个接口`\n  translated: `3 个接口`",
+          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet0/0\n  original: `GigabitEthernet0/0`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/1\n  original: `GigabitEthernet0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **count_changed** @ interfaces\n  original: `2 个接口`\n  translated: `3 个接口`",
           "fallback_reason": "",
           "fallback_used": false,
           "features": [
@@ -421,31 +435,31 @@
           ],
           "node_results": [
             {
-              "elapsed_ms": 8.71,
+              "elapsed_ms": 7.1,
               "error": null,
               "node": "parse",
               "status": "success"
             },
             {
-              "elapsed_ms": 94.55,
+              "elapsed_ms": 98.08,
               "error": null,
               "node": "feature_analyzer",
               "status": "success"
             },
             {
-              "elapsed_ms": 31.02,
+              "elapsed_ms": 45.0,
               "error": null,
               "node": "knowledge",
               "status": "success"
             },
             {
-              "elapsed_ms": 4.38,
+              "elapsed_ms": 6.57,
               "error": null,
               "node": "cache",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.0,
+              "elapsed_ms": 0.01,
               "error": null,
               "node": "translate",
               "status": "success"
@@ -457,65 +471,57 @@
               "status": "success"
             },
             {
-              "elapsed_ms": 0.04,
+              "elapsed_ms": 0.05,
               "error": null,
               "node": "semantic_validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.45,
+              "elapsed_ms": 0.69,
               "error": null,
               "node": "capability_gap",
               "status": "success"
             },
             {
-              "elapsed_ms": 6.48,
+              "elapsed_ms": 10.3,
               "error": null,
               "node": "validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.59,
+              "elapsed_ms": 0.82,
               "error": null,
               "node": "diff",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.0,
+              "elapsed_ms": 0.01,
               "error": null,
               "node": "cache_write",
               "status": "skipped"
             },
             {
-              "elapsed_ms": 0.29,
+              "elapsed_ms": 0.35,
               "error": null,
               "node": "memory",
               "status": "success"
             }
           ],
-          "risk_signals": [
-            {
-              "deployability_impact": true,
-              "feature": "output",
-              "manual_review_impact": true,
-              "message": "翻译结果包含 MANUAL_REVIEW 标记",
-              "severity": "warning",
-              "source": "manual_review"
-            }
-          ],
+          "risk_signals": [],
           "route_decision": "success",
           "semantic_validation": {
             "matched_features": [
               "interface",
               "address_object",
               "acl",
-              "nat",
               "ipsec",
-              "static_route"
+              "nat",
+              "static_route",
+              "tunnel"
             ],
             "missing_features": [],
             "notes": [],
-            "score": 0.75,
+            "score": 0.78,
             "source_vendor_residue": []
           },
           "source_domain": "firewall",
@@ -523,23 +529,23 @@
           "success": true,
           "target_domain": "firewall",
           "target_platform": "vrp",
-          "translated": "interface GigabitEthernet0/0/0\n undo shutdown\n ip address 10.0.0.1 255.255.255.0\n description inside\nfirewall zone trust\n add interface GigabitEthernet0/0/0\ninterface GigabitEthernet0/0/1\n undo shutdown\n ip address 198.18.1.1 255.255.255.0\n description outside\nfirewall zone untrust\n add interface GigabitEthernet0/0/1\nip address-set INSIDE_NET type object\n address 0 10.0.0.0 255.255.255.0\nip address-set REMOTE_NET type object\n address 0 198.18.100.0 255.255.255.0\nacl number 3000\n rule 5 permit ip source 10.0.0.0 0.0.0.255 destination 198.18.100.0 0.0.0.255\nacl number 3001\n rule 5 permit ip source 10.0.0.0 0.0.0.255 destination 198.18.100.0 0.0.0.255\nnat static global 10.0.0.0 inside 10.0.0.0\nnat static global 198.18.100.0 inside 198.18.100.0\n# MANUAL_REVIEW: 双向static NAT需确认每个方向的应用接口\nike proposal 10\n encryption-algorithm aes-256\n authentication-algorithm sha\n dh group2\n sa duration 86400\nike peer IPSEC_PEER_198.18.254.2\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key %REDACTED%\nipsec proposal IPSEC_AES256\n encapsulation-mode tunnel\n esp authentication-algorithm sha\n esp encryption-algorithm aes-256\nipsec policy VPN_POLICY 10 isakmp\n security acl 3000\n ike-peer IPSEC_PEER_198.18.254.2\n proposal IPSEC_AES256\ninterface GigabitEthernet0/0/1\n ipsec policy VPN_POLICY\nip route-static 0.0.0.0 0.0.0.0 198.18.1.254",
+          "translated": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nip address-set INSIDE_NET type object\n address 10.0.0.0 255.255.255.0\nip address-set REMOTE_NET type object\n address 198.18.100.0 255.255.255.0\nacl number 3000\n rule 5 permit ip source 10.0.0.0 0.0.0.255 destination 198.18.100.0 0.0.0.255\nike proposal 10\n encryption-algorithm aes-256\n authentication-algorithm sha1\n dh group2\n sa duration 86400\nike peer PEER_198.18.254.2\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key cipher __REDACTED__\nipsec proposal AES256\n esp encryption-algorithm aes-256\n esp authentication-algorithm sha1\nipsec policy VPN_POLICY 10 isakmp\n security acl 3000\n ike-peer PEER_198.18.254.2\n proposal AES256\nnat static global 10.0.0.0 inside 10.0.0.0\nnat static global 198.18.100.0 inside 198.18.100.0\nip route-static 0.0.0.0 0.0.0.0 198.18.1.254\ninterface GigabitEthernet0/0/1\n ipsec policy VPN_POLICY",
           "validation": {
-            "deployable": false,
+            "deployable": true,
             "errors": [],
-            "level": "warning",
-            "manual_review_required": true,
+            "level": "info",
+            "manual_review_required": false,
             "valid": true,
             "warnings": []
           },
-          "level": "warning",
-          "deployable": false,
-          "manual_review_required": true
+          "level": "info",
+          "deployable": true,
+          "manual_review_required": false
         },
         "meta": {
-          "level": "warning",
-          "deployable": false,
-          "manual_review_required": true,
+          "level": "info",
+          "deployable": true,
+          "manual_review_required": false,
           "capability_gaps": [
             {
               "details": {},
@@ -696,10 +702,10 @@
           ]
         },
         "validation": {
-          "deployable": false,
+          "deployable": true,
           "errors": [],
-          "level": "warning",
-          "manual_review_required": true,
+          "level": "info",
+          "manual_review_required": false,
           "valid": true,
           "warnings": []
         },
@@ -880,12 +886,14 @@
       ],
       "status": "fail",
       "category": "",
-      "failure_reason": "missing must_include: access-group; deployable expected=True got=False",
-      "elapsed_ms": "44",
+      "failure_reason": "deployable expected=True got=False; unexpected warning capability_gaps (expected clean deploy): [{'details': {'risk': 'LLM 自行推测，需人工核查'}, 'feature': 'security_zone', 'severity': 'warning', 'source_lines': ['(feature: security_zone)'], 'source_vendor': 'huawei', 'status': 'unknown', 'suggestion': '知识库未确认目标厂商支持状态，建议人工确认', 'target_vendor': 'cisco'}]",
+      "elapsed_ms": "42",
       "errors": [
-        "missing must_include: access-group",
-        "deployable expected=True got=False"
+        "deployable expected=True got=False",
+        "unexpected warning capability_gaps (expected clean deploy): [{'details': {'risk': 'LLM 自行推测，需人工核查'}, 'feature': 'security_zone', 'severity': 'warning', 'source_lines': ['(feature: security_zone)'], 'source_vendor': 'huawei', 'status': 'unknown', 'suggestion': '知识库未确认目标厂商支持状态，建议人工确认', 'target_vendor': 'cisco'}]"
       ],
+      "correctness_pass": false,
+      "clean_deployable": false,
       "deployable": false,
       "manual_review_required": true,
       "validation_level": "warning",
@@ -1038,16 +1046,6 @@
           "target_vendor": "cisco"
         },
         {
-          "details": {},
-          "feature": "address_object",
-          "severity": "info",
-          "source_lines": [],
-          "source_vendor": "huawei",
-          "status": "supported",
-          "suggestion": "",
-          "target_vendor": "cisco"
-        },
-        {
           "details": {
             "has_ip_address": true
           },
@@ -1068,6 +1066,20 @@
           "status": "supported",
           "suggestion": "",
           "target_vendor": "cisco"
+        },
+        {
+          "details": {
+            "risk": "LLM 自行推测，需人工核查"
+          },
+          "feature": "security_zone",
+          "severity": "warning",
+          "source_lines": [
+            "(feature: security_zone)"
+          ],
+          "source_vendor": "huawei",
+          "status": "unknown",
+          "suggestion": "知识库未确认目标厂商支持状态，建议人工确认",
+          "target_vendor": "cisco"
         }
       ],
       "validation": {
@@ -1079,16 +1091,18 @@
         "warnings": [
           "建议: 为接口配置 description 描述用途",
           "源厂商残留 — ASA: object network",
-          "源厂商残留 — ASA: object-group"
+          "源厂商残留 — ASA: access-group",
+          "源厂商残留 — Huawei/H3C: security-policy",
+          "access-list on 在 access-group 中被引用但未找到定义"
         ]
       },
-      "translated_excerpt": "interface GigabitEthernet0/0\n nameif inside\n security-level 100\n ip address 198.18.1.1 255.255.255.0\n! MANUAL_REVIEW: Original source interface GigabitEthernet1/0/1 mapped to GigabitEthernet0/0. Verify actual ASA interface naming.\ninterface GigabitEthernet0/1\n nameif outside\n security-level 0\n ip ad...",
+      "translated_excerpt": "interface GigabitEthernet1/0/1\n nameif inside\n ip address 198.18.1.1 255.255.255.0\n security-level 85\n no shutdown\n!\ninterface GigabitEthernet2/0/1\n nameif outside\n ip address 198.18.2.1 255.255.255.0\n security-level 5\n no shutdown\n! Source NAT: 10.0.0.0/24 and 10.0.1.0/24 → PAT pool 198.18.10.1-198...",
       "detail": {
-        "translated": "interface GigabitEthernet0/0\n nameif inside\n security-level 100\n ip address 198.18.1.1 255.255.255.0\n! MANUAL_REVIEW: Original source interface GigabitEthernet1/0/1 mapped to GigabitEthernet0/0. Verify actual ASA interface naming.\ninterface GigabitEthernet0/1\n nameif outside\n security-level 0\n ip address 198.18.2.1 255.255.255.0\n! MANUAL_REVIEW: Original source interface GigabitEthernet2/0/1 mapped to GigabitEthernet0/1. Verify actual ASA interface naming.\nobject-group network GROUP_LOCAL\n network-object 10.0.0.0 255.255.255.0\n network-object 10.0.1.0 255.255.255.0\nobject network GROUP1_NAT_POOL\n range 198.18.10.1 198.18.10.254\nobject network INSIDE_HOST_10_0_0_10\n host 10.0.0.10\nobject network OUTSIDE_GLOBAL_198_18_2_100\n host 198.18.2.100\nnat (inside,outside) source dynamic GROUP_LOCAL interface\n! MANUAL_REVIEW: Original nat source acl 2000 address-group GROUP1 overload translated. ASA uses interface PAT with object-group. Verify PAT behavior matches requirement.\nstatic (inside,outside) tcp interface 443 INSIDE_HOST_10_0_0_10 443\naccess-list TRUST_TO_UNTRUST extended permit ip object-group GROUP_LOCAL any",
-        "translated_excerpt": "interface GigabitEthernet0/0\n nameif inside\n security-level 100\n ip address 198.18.1.1 255.255.255.0\n! MANUAL_REVIEW: Original source interface GigabitEthernet1/0/1 mapped to GigabitEthernet0/0. Verify actual ASA interface naming.\ninterface GigabitEthernet0/1\n nameif outside\n security-level 0\n ip ad...",
+        "translated": "interface GigabitEthernet1/0/1\n nameif inside\n ip address 198.18.1.1 255.255.255.0\n security-level 85\n no shutdown\n!\ninterface GigabitEthernet2/0/1\n nameif outside\n ip address 198.18.2.1 255.255.255.0\n security-level 5\n no shutdown\n! Source NAT: 10.0.0.0/24 and 10.0.1.0/24 → PAT pool 198.18.10.1-198.18.10.254\nobject network OBJ_INSIDE_SUBNETS\n subnet 10.0.0.0 255.255.255.0\nobject network OBJ_INSIDE_SUBNETS_2\n subnet 10.0.1.0 255.255.255.0\n!\nobject network OBJ_NAT_POOL\n range 198.18.10.1 198.18.10.254\n!\nnat (inside,outside) source dynamic OBJ_INSIDE_SUBNETS OBJ_NAT_POOL\nnat (inside,outside) source dynamic OBJ_INSIDE_SUBNETS_2 OBJ_NAT_POOL\n!\n! Static NAT: outside 198.18.2.100:443 → inside 10.0.0.10:443\nobject network OBJ_STATIC_TCP_443\n host 10.0.0.10\n nat (inside,outside) static 198.18.2.100 service tcp 443 443\naccess-list ACL_TRUST_TO_UNTRUST extended permit ip 10.0.0.0 255.255.255.0 any\naccess-list ACL_TRUST_TO_UNTRUST extended permit ip 10.0.1.0 255.255.255.0 any\n!\naccess-group ACL_TRUST_TO_UNTRUST in interface inside\n! Huawei firewall zones translated to ASA named interfaces:\n! firewall zone trust (priority 85) → interface inside (security-level 85)\n! firewall zone untrust (priority 5) → interface outside (security-level 5)\n! Security-policy: trust-to-untrust permit source 10.0.0.0/24\n! This matches the ACL entry for 10.0.0.0/24 already defined in ACL_TRUST_TO_UNTRUST\n! Applied via access-group on inside interface above",
+        "translated_excerpt": "interface GigabitEthernet1/0/1\n nameif inside\n ip address 198.18.1.1 255.255.255.0\n security-level 85\n no shutdown\n!\ninterface GigabitEthernet2/0/1\n nameif outside\n ip address 198.18.2.1 255.255.255.0\n security-level 5\n no shutdown\n! Source NAT: 10.0.0.0/24 and 10.0.1.0/24 → PAT pool 198.18.10.1-198...",
         "status_code": 200,
-        "elapsed": 0.04386568069458008,
-        "request_id": "133cbe54-2fc7-4b96-be0d-29ec80c02734",
+        "elapsed": 0.041794776916503906,
+        "request_id": "6d0a5b98-cd9e-45c5-9d24-879eaf01e202",
         "api_result": {
           "analyzer_results": [
             {
@@ -1228,21 +1242,11 @@
             }
           ],
           "cache_hit": true,
-          "capability_gap_severity": "info",
+          "capability_gap_severity": "warning",
           "capability_gaps": [
             {
               "details": {},
               "feature": "acl",
-              "severity": "info",
-              "source_lines": [],
-              "source_vendor": "huawei",
-              "status": "supported",
-              "suggestion": "",
-              "target_vendor": "cisco"
-            },
-            {
-              "details": {},
-              "feature": "address_object",
               "severity": "info",
               "source_lines": [],
               "source_vendor": "huawei",
@@ -1271,15 +1275,29 @@
               "status": "supported",
               "suggestion": "",
               "target_vendor": "cisco"
+            },
+            {
+              "details": {
+                "risk": "LLM 自行推测，需人工核查"
+              },
+              "feature": "security_zone",
+              "severity": "warning",
+              "source_lines": [
+                "(feature: security_zone)"
+              ],
+              "source_vendor": "huawei",
+              "status": "unknown",
+              "suggestion": "知识库未确认目标厂商支持状态，建议人工确认",
+              "target_vendor": "cisco"
             }
           ],
           "capability_notes": [
             "acl: supported ()",
-            "address_object: supported ()",
             "interface: supported ()",
-            "nat: supported ()"
+            "nat: supported ()",
+            "security_zone: unknown (知识库未确认目标厂商支持状态，建议人工确认)"
           ],
-          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet2/0/1\n  original: `GigabitEthernet2/0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet1/0/1\n  original: `GigabitEthernet1/0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射",
+          "diff": "## Diff Report\n\n(no major differences)",
           "fallback_reason": "",
           "fallback_used": false,
           "features": [
@@ -1289,31 +1307,31 @@
           ],
           "node_results": [
             {
-              "elapsed_ms": 0.42,
+              "elapsed_ms": 0.85,
               "error": null,
               "node": "parse",
               "status": "success"
             },
             {
-              "elapsed_ms": 23.95,
+              "elapsed_ms": 23.9,
               "error": null,
               "node": "feature_analyzer",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.74,
+              "elapsed_ms": 0.8,
               "error": null,
               "node": "knowledge",
               "status": "success"
             },
             {
-              "elapsed_ms": 4.24,
+              "elapsed_ms": 4.1,
               "error": null,
               "node": "cache",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.01,
+              "elapsed_ms": 0.0,
               "error": null,
               "node": "translate",
               "status": "success"
@@ -1337,13 +1355,13 @@
               "status": "success"
             },
             {
-              "elapsed_ms": 8.85,
+              "elapsed_ms": 6.33,
               "error": null,
               "node": "validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.67,
+              "elapsed_ms": 0.41,
               "error": null,
               "node": "diff",
               "status": "success"
@@ -1355,13 +1373,21 @@
               "status": "skipped"
             },
             {
-              "elapsed_ms": 0.28,
+              "elapsed_ms": 0.22,
               "error": null,
               "node": "memory",
               "status": "success"
             }
           ],
           "risk_signals": [
+            {
+              "deployability_impact": true,
+              "feature": "security_zone",
+              "manual_review_impact": true,
+              "message": "知识库未确认目标厂商支持状态，建议人工确认",
+              "severity": "warning",
+              "source": "capability"
+            },
             {
               "deployability_impact": true,
               "feature": "platform",
@@ -1374,43 +1400,51 @@
               "deployability_impact": true,
               "feature": "platform",
               "manual_review_impact": true,
-              "message": "源厂商残留 — ASA: object-group",
+              "message": "源厂商残留 — ASA: access-group",
               "severity": "warning",
               "source": "platform"
             },
             {
               "deployability_impact": true,
-              "feature": "output",
+              "feature": "platform",
               "manual_review_impact": true,
-              "message": "翻译结果包含 MANUAL_REVIEW 标记",
+              "message": "源厂商残留 — Huawei/H3C: security-policy",
               "severity": "warning",
-              "source": "manual_review"
+              "source": "platform"
+            },
+            {
+              "deployability_impact": false,
+              "feature": "platform",
+              "manual_review_impact": true,
+              "message": "access-list on 在 access-group 中被引用但未找到定义",
+              "severity": "warning",
+              "source": "platform"
             }
           ],
           "route_decision": "success",
           "semantic_validation": {
             "matched_features": [
               "interface",
-              "interface",
-              "address_object",
-              "address_object",
-              "address_object",
-              "address_object",
               "nat",
-              "nat",
+              "acl",
+              "security_zone",
               "acl"
             ],
             "missing_features": [],
-            "notes": [],
-            "score": 0.82,
-            "source_vendor_residue": []
+            "notes": [
+              "source vendor residue detected (1 lines)"
+            ],
+            "score": 0.71,
+            "source_vendor_residue": [
+              "! Huawei firewall zones translated to ASA named interfaces:"
+            ]
           },
           "source_domain": "firewall",
           "source_platform": "usg6600",
           "success": true,
           "target_domain": "firewall",
           "target_platform": "asa",
-          "translated": "interface GigabitEthernet0/0\n nameif inside\n security-level 100\n ip address 198.18.1.1 255.255.255.0\n! MANUAL_REVIEW: Original source interface GigabitEthernet1/0/1 mapped to GigabitEthernet0/0. Verify actual ASA interface naming.\ninterface GigabitEthernet0/1\n nameif outside\n security-level 0\n ip address 198.18.2.1 255.255.255.0\n! MANUAL_REVIEW: Original source interface GigabitEthernet2/0/1 mapped to GigabitEthernet0/1. Verify actual ASA interface naming.\nobject-group network GROUP_LOCAL\n network-object 10.0.0.0 255.255.255.0\n network-object 10.0.1.0 255.255.255.0\nobject network GROUP1_NAT_POOL\n range 198.18.10.1 198.18.10.254\nobject network INSIDE_HOST_10_0_0_10\n host 10.0.0.10\nobject network OUTSIDE_GLOBAL_198_18_2_100\n host 198.18.2.100\nnat (inside,outside) source dynamic GROUP_LOCAL interface\n! MANUAL_REVIEW: Original nat source acl 2000 address-group GROUP1 overload translated. ASA uses interface PAT with object-group. Verify PAT behavior matches requirement.\nstatic (inside,outside) tcp interface 443 INSIDE_HOST_10_0_0_10 443\naccess-list TRUST_TO_UNTRUST extended permit ip object-group GROUP_LOCAL any",
+          "translated": "interface GigabitEthernet1/0/1\n nameif inside\n ip address 198.18.1.1 255.255.255.0\n security-level 85\n no shutdown\n!\ninterface GigabitEthernet2/0/1\n nameif outside\n ip address 198.18.2.1 255.255.255.0\n security-level 5\n no shutdown\n! Source NAT: 10.0.0.0/24 and 10.0.1.0/24 → PAT pool 198.18.10.1-198.18.10.254\nobject network OBJ_INSIDE_SUBNETS\n subnet 10.0.0.0 255.255.255.0\nobject network OBJ_INSIDE_SUBNETS_2\n subnet 10.0.1.0 255.255.255.0\n!\nobject network OBJ_NAT_POOL\n range 198.18.10.1 198.18.10.254\n!\nnat (inside,outside) source dynamic OBJ_INSIDE_SUBNETS OBJ_NAT_POOL\nnat (inside,outside) source dynamic OBJ_INSIDE_SUBNETS_2 OBJ_NAT_POOL\n!\n! Static NAT: outside 198.18.2.100:443 → inside 10.0.0.10:443\nobject network OBJ_STATIC_TCP_443\n host 10.0.0.10\n nat (inside,outside) static 198.18.2.100 service tcp 443 443\naccess-list ACL_TRUST_TO_UNTRUST extended permit ip 10.0.0.0 255.255.255.0 any\naccess-list ACL_TRUST_TO_UNTRUST extended permit ip 10.0.1.0 255.255.255.0 any\n!\naccess-group ACL_TRUST_TO_UNTRUST in interface inside\n! Huawei firewall zones translated to ASA named interfaces:\n! firewall zone trust (priority 85) → interface inside (security-level 85)\n! firewall zone untrust (priority 5) → interface outside (security-level 5)\n! Security-policy: trust-to-untrust permit source 10.0.0.0/24\n! This matches the ACL entry for 10.0.0.0/24 already defined in ACL_TRUST_TO_UNTRUST\n! Applied via access-group on inside interface above",
           "validation": {
             "deployable": false,
             "errors": [],
@@ -1420,7 +1454,9 @@
             "warnings": [
               "建议: 为接口配置 description 描述用途",
               "源厂商残留 — ASA: object network",
-              "源厂商残留 — ASA: object-group"
+              "源厂商残留 — ASA: access-group",
+              "源厂商残留 — Huawei/H3C: security-policy",
+              "access-list on 在 access-group 中被引用但未找到定义"
             ]
           },
           "level": "warning",
@@ -1435,16 +1471,6 @@
             {
               "details": {},
               "feature": "acl",
-              "severity": "info",
-              "source_lines": [],
-              "source_vendor": "huawei",
-              "status": "supported",
-              "suggestion": "",
-              "target_vendor": "cisco"
-            },
-            {
-              "details": {},
-              "feature": "address_object",
               "severity": "info",
               "source_lines": [],
               "source_vendor": "huawei",
@@ -1472,6 +1498,20 @@
               "source_vendor": "huawei",
               "status": "supported",
               "suggestion": "",
+              "target_vendor": "cisco"
+            },
+            {
+              "details": {
+                "risk": "LLM 自行推测，需人工核查"
+              },
+              "feature": "security_zone",
+              "severity": "warning",
+              "source_lines": [
+                "(feature: security_zone)"
+              ],
+              "source_vendor": "huawei",
+              "status": "unknown",
+              "suggestion": "知识库未确认目标厂商支持状态，建议人工确认",
               "target_vendor": "cisco"
             }
           ],
@@ -1622,7 +1662,9 @@
           "warnings": [
             "建议: 为接口配置 description 描述用途",
             "源厂商残留 — ASA: object network",
-            "源厂商残留 — ASA: object-group"
+            "源厂商残留 — ASA: access-group",
+            "源厂商残留 — Huawei/H3C: security-policy",
+            "access-list on 在 access-group 中被引用但未找到定义"
           ]
         },
         "analyzer_results": [
@@ -1774,16 +1816,6 @@
             "target_vendor": "cisco"
           },
           {
-            "details": {},
-            "feature": "address_object",
-            "severity": "info",
-            "source_lines": [],
-            "source_vendor": "huawei",
-            "status": "supported",
-            "suggestion": "",
-            "target_vendor": "cisco"
-          },
-          {
             "details": {
               "has_ip_address": true
             },
@@ -1803,6 +1835,20 @@
             "source_vendor": "huawei",
             "status": "supported",
             "suggestion": "",
+            "target_vendor": "cisco"
+          },
+          {
+            "details": {
+              "risk": "LLM 自行推测，需人工核查"
+            },
+            "feature": "security_zone",
+            "severity": "warning",
+            "source_lines": [
+              "(feature: security_zone)"
+            ],
+            "source_vendor": "huawei",
+            "status": "unknown",
+            "suggestion": "知识库未确认目标厂商支持状态，建议人工确认",
             "target_vendor": "cisco"
           }
         ],
@@ -1825,14 +1871,19 @@
         "interface",
         "static_route"
       ],
-      "status": "pass",
+      "status": "fail",
       "category": "",
-      "failure_reason": "",
-      "elapsed_ms": "40",
-      "errors": [],
-      "deployable": false,
-      "manual_review_required": true,
-      "validation_level": "warning",
+      "failure_reason": "deployable expected=False got=True; expected manual_review_required=True but system returned False",
+      "elapsed_ms": "32",
+      "errors": [
+        "deployable expected=False got=True",
+        "expected manual_review_required=True but system returned False"
+      ],
+      "correctness_pass": false,
+      "clean_deployable": true,
+      "deployable": true,
+      "manual_review_required": false,
+      "validation_level": "info",
       "analyzer_results": [
         {
           "feature": "interface",
@@ -1932,24 +1983,20 @@
         }
       ],
       "validation": {
-        "deployable": false,
+        "deployable": true,
         "errors": [],
-        "level": "warning",
-        "manual_review_required": true,
+        "level": "info",
+        "manual_review_required": false,
         "valid": true,
-        "warnings": [
-          "可能存在源厂商残留：Cisco object-group",
-          "源厂商残留 — Cisco/ASA: object-group",
-          "华为 VRP 使用 acl name 时注意 name 前面无需 number"
-        ]
+        "warnings": []
       },
-      "translated_excerpt": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nobject-group network WEB_SERVER\n network-object host 10.0.0.10\nobject-group network MAIL_SERVER...",
+      "translated_excerpt": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nip address-set WEB_SERVER type object\n address 10.0.0.10 255.255.255.255\nip address-set MAIL_SE...",
       "detail": {
-        "translated": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nobject-group network WEB_SERVER\n network-object host 10.0.0.10\nobject-group network MAIL_SERVER\n network-object host 10.0.0.11\nobject-group network OUTSIDE_IPS\n network-object 198.18.10.100 255.255.255.248\n network-object 198.18.10.108 255.255.255.248\nfirewall zone trust\n add interface GigabitEthernet0/0/0\n quit\nnat server protocol tcp global 198.18.1.1 80 inside 10.0.0.10 80\nnat server protocol tcp global 198.18.1.1 25 inside 10.0.0.11 25\nacl number 2000\n rule 5 permit source 10.0.0.0 0.0.0.255\n quit\nnat address-group 1 198.18.10.100 198.18.10.110\nfirewall zone untrust\n add interface GigabitEthernet0/0/1\n quit\nnat outbound 2000 address-group 1\nacl name OUTSIDE_IN advance\n rule 5 permit tcp source any destination 198.18.1.1 0 destination-port eq 80\n rule 10 permit tcp source any destination 198.18.1.1 0 destination-port eq 25\n rule 15 deny ip\n quit\nfirewall interzone trust untrust\n packet-filter OUTSIDE_IN\n quit\nfirewall interzone local untrust\n packet-filter OUTSIDE_IN inbound\n quit\nip route-static 0.0.0.0 0.0.0.0 198.18.1.254",
-        "translated_excerpt": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nobject-group network WEB_SERVER\n network-object host 10.0.0.10\nobject-group network MAIL_SERVER...",
+        "translated": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nip address-set WEB_SERVER type object\n address 10.0.0.10 255.255.255.255\nip address-set MAIL_SERVER type object\n address 10.0.0.11 255.255.255.255\nip address-set OUTSIDE_IPS type object\n address 198.18.10.100 255.255.255.255\n address 198.18.10.101 255.255.255.255\n address 198.18.10.102 255.255.255.255\n address 198.18.10.103 255.255.255.255\n address 198.18.10.104 255.255.255.255\n address 198.18.10.105 255.255.255.255\n address 198.18.10.106 255.255.255.255\n address 198.18.10.107 255.255.255.255\n address 198.18.10.108 255.255.255.255\n address 198.18.10.109 255.255.255.255\n address 198.18.10.110 255.255.255.255\nacl number 3000\n rule permit tcp source any destination 198.18.1.1 0 destination-port eq www\n rule permit tcp source any destination 198.18.1.1 0 destination-port eq smtp\ninterface GigabitEthernet0/0/1\n nat server protocol tcp global 198.18.1.1 www inside 10.0.0.10 www\n nat server protocol tcp global 198.18.1.1 smtp inside 10.0.0.11 smtp\n nat outbound 3001\nnat address-group 1 198.18.10.100 198.18.10.110\nacl number 3001\n rule permit ip source 10.0.0.0 0.0.0.255\nacl number 3000\n rule 5 permit tcp source any destination 198.18.1.1 0 destination-port eq www\n rule 10 permit tcp source any destination 198.18.1.1 0 destination-port eq smtp\ninterface GigabitEthernet0/0/1\n traffic-filter inbound acl 3000\nip route-static 0.0.0.0 0.0.0.0 198.18.1.254",
+        "translated_excerpt": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nip address-set WEB_SERVER type object\n address 10.0.0.10 255.255.255.255\nip address-set MAIL_SE...",
         "status_code": 200,
-        "elapsed": 0.03951382637023926,
-        "request_id": "a362c967-61fe-40d9-8082-8cd648a85cd7",
+        "elapsed": 0.0319058895111084,
+        "request_id": "2193184b-a1dd-4a6d-8c1d-f722bf4dbe0a",
         "api_result": {
           "analyzer_results": [
             {
@@ -2058,7 +2105,7 @@
             "nat: supported ()",
             "static_route: supported ()"
           ],
-          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet0/1\n  original: `GigabitEthernet0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/0\n  original: `GigabitEthernet0/0`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射",
+          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet0/0\n  original: `GigabitEthernet0/0`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/1\n  original: `GigabitEthernet0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **count_changed** @ interfaces\n  original: `2 个接口`\n  translated: `4 个接口`",
           "fallback_reason": "",
           "fallback_used": false,
           "features": [
@@ -2068,25 +2115,25 @@
           ],
           "node_results": [
             {
-              "elapsed_ms": 0.82,
+              "elapsed_ms": 0.59,
               "error": null,
               "node": "parse",
               "status": "success"
             },
             {
-              "elapsed_ms": 24.88,
+              "elapsed_ms": 19.53,
               "error": null,
               "node": "feature_analyzer",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.69,
+              "elapsed_ms": 0.7,
               "error": null,
               "node": "knowledge",
               "status": "success"
             },
             {
-              "elapsed_ms": 4.98,
+              "elapsed_ms": 3.78,
               "error": null,
               "node": "cache",
               "status": "success"
@@ -2104,25 +2151,25 @@
               "status": "success"
             },
             {
-              "elapsed_ms": 0.04,
+              "elapsed_ms": 0.03,
               "error": null,
               "node": "semantic_validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.56,
+              "elapsed_ms": 0.33,
               "error": null,
               "node": "capability_gap",
               "status": "success"
             },
             {
-              "elapsed_ms": 2.73,
+              "elapsed_ms": 1.94,
               "error": null,
               "node": "validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.51,
+              "elapsed_ms": 0.5,
               "error": null,
               "node": "diff",
               "status": "success"
@@ -2134,55 +2181,25 @@
               "status": "skipped"
             },
             {
-              "elapsed_ms": 0.3,
+              "elapsed_ms": 0.2,
               "error": null,
               "node": "memory",
               "status": "success"
             }
           ],
-          "risk_signals": [
-            {
-              "deployability_impact": false,
-              "feature": "content",
-              "manual_review_impact": true,
-              "message": "可能存在源厂商残留：Cisco object-group",
-              "severity": "warning",
-              "source": "content"
-            },
-            {
-              "deployability_impact": true,
-              "feature": "platform",
-              "manual_review_impact": true,
-              "message": "源厂商残留 — Cisco/ASA: object-group",
-              "severity": "warning",
-              "source": "platform"
-            },
-            {
-              "deployability_impact": false,
-              "feature": "platform",
-              "manual_review_impact": true,
-              "message": "华为 VRP 使用 acl name 时注意 name 前面无需 number",
-              "severity": "warning",
-              "source": "platform"
-            }
-          ],
+          "risk_signals": [],
           "route_decision": "success",
           "semantic_validation": {
             "matched_features": [
               "interface",
-              "interface",
               "address_object",
-              "address_object",
-              "address_object",
-              "nat",
-              "nat",
               "nat",
               "acl",
               "static_route"
             ],
             "missing_features": [],
             "notes": [],
-            "score": 0.83,
+            "score": 0.71,
             "source_vendor_residue": []
           },
           "source_domain": "firewall",
@@ -2190,27 +2207,23 @@
           "success": true,
           "target_domain": "firewall",
           "target_platform": "vrp",
-          "translated": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nobject-group network WEB_SERVER\n network-object host 10.0.0.10\nobject-group network MAIL_SERVER\n network-object host 10.0.0.11\nobject-group network OUTSIDE_IPS\n network-object 198.18.10.100 255.255.255.248\n network-object 198.18.10.108 255.255.255.248\nfirewall zone trust\n add interface GigabitEthernet0/0/0\n quit\nnat server protocol tcp global 198.18.1.1 80 inside 10.0.0.10 80\nnat server protocol tcp global 198.18.1.1 25 inside 10.0.0.11 25\nacl number 2000\n rule 5 permit source 10.0.0.0 0.0.0.255\n quit\nnat address-group 1 198.18.10.100 198.18.10.110\nfirewall zone untrust\n add interface GigabitEthernet0/0/1\n quit\nnat outbound 2000 address-group 1\nacl name OUTSIDE_IN advance\n rule 5 permit tcp source any destination 198.18.1.1 0 destination-port eq 80\n rule 10 permit tcp source any destination 198.18.1.1 0 destination-port eq 25\n rule 15 deny ip\n quit\nfirewall interzone trust untrust\n packet-filter OUTSIDE_IN\n quit\nfirewall interzone local untrust\n packet-filter OUTSIDE_IN inbound\n quit\nip route-static 0.0.0.0 0.0.0.0 198.18.1.254",
+          "translated": "interface GigabitEthernet0/0/0\n description inside\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description outside\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\nip address-set WEB_SERVER type object\n address 10.0.0.10 255.255.255.255\nip address-set MAIL_SERVER type object\n address 10.0.0.11 255.255.255.255\nip address-set OUTSIDE_IPS type object\n address 198.18.10.100 255.255.255.255\n address 198.18.10.101 255.255.255.255\n address 198.18.10.102 255.255.255.255\n address 198.18.10.103 255.255.255.255\n address 198.18.10.104 255.255.255.255\n address 198.18.10.105 255.255.255.255\n address 198.18.10.106 255.255.255.255\n address 198.18.10.107 255.255.255.255\n address 198.18.10.108 255.255.255.255\n address 198.18.10.109 255.255.255.255\n address 198.18.10.110 255.255.255.255\nacl number 3000\n rule permit tcp source any destination 198.18.1.1 0 destination-port eq www\n rule permit tcp source any destination 198.18.1.1 0 destination-port eq smtp\ninterface GigabitEthernet0/0/1\n nat server protocol tcp global 198.18.1.1 www inside 10.0.0.10 www\n nat server protocol tcp global 198.18.1.1 smtp inside 10.0.0.11 smtp\n nat outbound 3001\nnat address-group 1 198.18.10.100 198.18.10.110\nacl number 3001\n rule permit ip source 10.0.0.0 0.0.0.255\nacl number 3000\n rule 5 permit tcp source any destination 198.18.1.1 0 destination-port eq www\n rule 10 permit tcp source any destination 198.18.1.1 0 destination-port eq smtp\ninterface GigabitEthernet0/0/1\n traffic-filter inbound acl 3000\nip route-static 0.0.0.0 0.0.0.0 198.18.1.254",
           "validation": {
-            "deployable": false,
+            "deployable": true,
             "errors": [],
-            "level": "warning",
-            "manual_review_required": true,
+            "level": "info",
+            "manual_review_required": false,
             "valid": true,
-            "warnings": [
-              "可能存在源厂商残留：Cisco object-group",
-              "源厂商残留 — Cisco/ASA: object-group",
-              "华为 VRP 使用 acl name 时注意 name 前面无需 number"
-            ]
+            "warnings": []
           },
-          "level": "warning",
-          "deployable": false,
-          "manual_review_required": true
+          "level": "info",
+          "deployable": true,
+          "manual_review_required": false
         },
         "meta": {
-          "level": "warning",
-          "deployable": false,
-          "manual_review_required": true,
+          "level": "info",
+          "deployable": true,
+          "manual_review_required": false,
           "capability_gaps": [
             {
               "details": {},
@@ -2311,16 +2324,12 @@
           ]
         },
         "validation": {
-          "deployable": false,
+          "deployable": true,
           "errors": [],
-          "level": "warning",
-          "manual_review_required": true,
+          "level": "info",
+          "manual_review_required": false,
           "valid": true,
-          "warnings": [
-            "可能存在源厂商残留：Cisco object-group",
-            "源厂商残留 — Cisco/ASA: object-group",
-            "华为 VRP 使用 acl name 时注意 name 前面无需 number"
-          ]
+          "warnings": []
         },
         "analyzer_results": [
           {
@@ -2440,11 +2449,15 @@
         "address_object",
         "interface"
       ],
-      "status": "pass",
+      "status": "fail",
       "category": "",
-      "failure_reason": "",
-      "elapsed_ms": "35",
-      "errors": [],
+      "failure_reason": "contains forbidden: nat policy",
+      "elapsed_ms": "37",
+      "errors": [
+        "contains forbidden: nat policy"
+      ],
+      "correctness_pass": false,
+      "clean_deployable": false,
       "deployable": false,
       "manual_review_required": true,
       "validation_level": "warning",
@@ -2602,18 +2615,17 @@
         "manual_review_required": true,
         "valid": true,
         "warnings": [
-          "建议: 为接口配置 description 描述用途",
           "源厂商残留 — ASA: object network",
           "源厂商残留 — ASA: access-group"
         ]
       },
-      "translated_excerpt": "hostname FIREWALL_NAT_SP\ninterface GigabitEthernet0/0\n nameif inside\n security-level 100\n ip address 10.0.0.1 255.255.255.0\n no shutdown\ninterface GigabitEthernet0/1\n nameif outside\n security-level 0\n ip address 198.18.1.1 255.255.255.0\n no shutdown\nobject network OBJ_INTERNAL_NET\n subnet 10.0.0.0 2...",
+      "translated_excerpt": "hostname FIREWALL_NAT_SP\ninterface GigabitEthernet0/0/0\n description To-Internal\n nameif inside\n security-level 100\n ip address 10.0.0.1 255.255.255.0\n no shutdown\n! MANUAL_REVIEW: Original zone 'trust' (priority 85) mapped to security-level 100\n\ninterface GigabitEthernet0/0/1\n description To-Intern...",
       "detail": {
-        "translated": "hostname FIREWALL_NAT_SP\ninterface GigabitEthernet0/0\n nameif inside\n security-level 100\n ip address 10.0.0.1 255.255.255.0\n no shutdown\ninterface GigabitEthernet0/1\n nameif outside\n security-level 0\n ip address 198.18.1.1 255.255.255.0\n no shutdown\nobject network OBJ_INTERNAL_NET\n subnet 10.0.0.0 255.255.0.0\nobject network POOL_INTERNET\n range 198.18.10.1 198.18.10.254\nnat (inside,outside) source dynamic OBJ_INTERNAL_NET POOL_INTERNET\naccess-list OUTSIDE_TO_INSIDE extended deny ip any 10.0.0.0 255.255.0.0\naccess-list OUTSIDE_TO_INSIDE extended permit icmp any 10.0.0.0 255.255.0.0 echo-reply\naccess-list OUTSIDE_TO_INSIDE extended permit icmp any 10.0.0.0 255.255.0.0 unreachable\naccess-group OUTSIDE_TO_INSIDE in interface outside\naccess-list INSIDE_TO_OUTSIDE extended permit ip 10.0.0.0 255.255.0.0 any\naccess-group INSIDE_TO_OUTSIDE in interface inside\nroute outside 0.0.0.0 0.0.0.0 198.18.1.254 1",
-        "translated_excerpt": "hostname FIREWALL_NAT_SP\ninterface GigabitEthernet0/0\n nameif inside\n security-level 100\n ip address 10.0.0.1 255.255.255.0\n no shutdown\ninterface GigabitEthernet0/1\n nameif outside\n security-level 0\n ip address 198.18.1.1 255.255.255.0\n no shutdown\nobject network OBJ_INTERNAL_NET\n subnet 10.0.0.0 2...",
+        "translated": "hostname FIREWALL_NAT_SP\ninterface GigabitEthernet0/0/0\n description To-Internal\n nameif inside\n security-level 100\n ip address 10.0.0.1 255.255.255.0\n no shutdown\n! MANUAL_REVIEW: Original zone 'trust' (priority 85) mapped to security-level 100\n\ninterface GigabitEthernet0/0/1\n description To-Internet\n nameif outside\n security-level 0\n ip address 198.18.1.1 255.255.255.0\n no shutdown\n! MANUAL_REVIEW: Original zone 'untrust' (priority 5) mapped to security-level 0\n! NAT address pool definition\nobject network POOL_INTERNET\n subnet 198.18.10.0 255.255.255.0\n! MANUAL_REVIEW: ASA does not support arbitrary port range (198.18.10.1-198.18.10.254); converted to /24 subnet. Verify PAT capacity meets requirements.\n\n! Source NAT policy - inside to outside\nobject network INSIDE_TRAFFIC\n subnet 10.0.0.0 255.255.0.0\n nat (inside,outside) dynamic POOL_INTERNET\n! Security policy - permit outbound from trust to untrust\naccess-list PERMIT_OUTBOUND extended permit ip any any\n\n! Security policy - deny inbound from untrust to trust\naccess-list DENY_INBOUND extended deny ip any any\naccess-list DENY_INBOUND extended permit ip any any\n\n! Apply ACLs to interfaces\naccess-group PERMIT_OUTBOUND in interface inside\naccess-group DENY_INBOUND in interface outside\n! Default route to upstream gateway\nroute outside 0.0.0.0 0.0.0.0 198.18.1.254 1",
+        "translated_excerpt": "hostname FIREWALL_NAT_SP\ninterface GigabitEthernet0/0/0\n description To-Internal\n nameif inside\n security-level 100\n ip address 10.0.0.1 255.255.255.0\n no shutdown\n! MANUAL_REVIEW: Original zone 'trust' (priority 85) mapped to security-level 100\n\ninterface GigabitEthernet0/0/1\n description To-Intern...",
         "status_code": 200,
-        "elapsed": 0.03503537178039551,
-        "request_id": "207ccdf3-cd7c-4439-bfe5-0f7d5ff55384",
+        "elapsed": 0.037488698959350586,
+        "request_id": "401de991-76cf-4ac6-bac5-30aec9c7b332",
         "api_result": {
           "analyzer_results": [
             {
@@ -2771,7 +2783,7 @@
             "static_route: supported ()",
             "system: supported ()"
           ],
-          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet0/0/0\n  original: `GigabitEthernet0/0/0`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/0/1\n  original: `GigabitEthernet0/0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射",
+          "diff": "## Diff Report\n\n(no major differences)",
           "fallback_reason": "",
           "fallback_used": false,
           "features": [
@@ -2782,13 +2794,13 @@
           ],
           "node_results": [
             {
-              "elapsed_ms": 1.0,
+              "elapsed_ms": 1.27,
               "error": null,
               "node": "parse",
               "status": "success"
             },
             {
-              "elapsed_ms": 22.93,
+              "elapsed_ms": 24.27,
               "error": null,
               "node": "feature_analyzer",
               "status": "success"
@@ -2800,7 +2812,7 @@
               "status": "success"
             },
             {
-              "elapsed_ms": 4.05,
+              "elapsed_ms": 3.74,
               "error": null,
               "node": "cache",
               "status": "success"
@@ -2824,19 +2836,19 @@
               "status": "success"
             },
             {
-              "elapsed_ms": 0.41,
+              "elapsed_ms": 0.36,
               "error": null,
               "node": "capability_gap",
               "status": "success"
             },
             {
-              "elapsed_ms": 1.65,
+              "elapsed_ms": 2.07,
               "error": null,
               "node": "validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.53,
+              "elapsed_ms": 0.48,
               "error": null,
               "node": "diff",
               "status": "success"
@@ -2848,7 +2860,7 @@
               "status": "skipped"
             },
             {
-              "elapsed_ms": 0.24,
+              "elapsed_ms": 0.23,
               "error": null,
               "node": "memory",
               "status": "success"
@@ -2870,23 +2882,30 @@
               "message": "源厂商残留 — ASA: access-group",
               "severity": "warning",
               "source": "platform"
+            },
+            {
+              "deployability_impact": true,
+              "feature": "output",
+              "manual_review_impact": true,
+              "message": "翻译结果包含 MANUAL_REVIEW 标记",
+              "severity": "warning",
+              "source": "manual_review"
             }
           ],
           "route_decision": "success",
           "semantic_validation": {
-            "matched_features": [
+            "matched_features": [],
+            "missing_features": [
               "system",
               "interface",
               "nat",
+              "acl",
               "static_route"
             ],
-            "missing_features": [
-              "acl"
-            ],
             "notes": [
-              "keyword overlap low for: acl"
+              "keyword overlap low for: system, interface, nat, acl, static_route"
             ],
-            "score": 0.57,
+            "score": 0.0,
             "source_vendor_residue": []
           },
           "source_domain": "firewall",
@@ -2894,7 +2913,7 @@
           "success": true,
           "target_domain": "firewall",
           "target_platform": "asa",
-          "translated": "hostname FIREWALL_NAT_SP\ninterface GigabitEthernet0/0\n nameif inside\n security-level 100\n ip address 10.0.0.1 255.255.255.0\n no shutdown\ninterface GigabitEthernet0/1\n nameif outside\n security-level 0\n ip address 198.18.1.1 255.255.255.0\n no shutdown\nobject network OBJ_INTERNAL_NET\n subnet 10.0.0.0 255.255.0.0\nobject network POOL_INTERNET\n range 198.18.10.1 198.18.10.254\nnat (inside,outside) source dynamic OBJ_INTERNAL_NET POOL_INTERNET\naccess-list OUTSIDE_TO_INSIDE extended deny ip any 10.0.0.0 255.255.0.0\naccess-list OUTSIDE_TO_INSIDE extended permit icmp any 10.0.0.0 255.255.0.0 echo-reply\naccess-list OUTSIDE_TO_INSIDE extended permit icmp any 10.0.0.0 255.255.0.0 unreachable\naccess-group OUTSIDE_TO_INSIDE in interface outside\naccess-list INSIDE_TO_OUTSIDE extended permit ip 10.0.0.0 255.255.0.0 any\naccess-group INSIDE_TO_OUTSIDE in interface inside\nroute outside 0.0.0.0 0.0.0.0 198.18.1.254 1",
+          "translated": "hostname FIREWALL_NAT_SP\ninterface GigabitEthernet0/0/0\n description To-Internal\n nameif inside\n security-level 100\n ip address 10.0.0.1 255.255.255.0\n no shutdown\n! MANUAL_REVIEW: Original zone 'trust' (priority 85) mapped to security-level 100\n\ninterface GigabitEthernet0/0/1\n description To-Internet\n nameif outside\n security-level 0\n ip address 198.18.1.1 255.255.255.0\n no shutdown\n! MANUAL_REVIEW: Original zone 'untrust' (priority 5) mapped to security-level 0\n! NAT address pool definition\nobject network POOL_INTERNET\n subnet 198.18.10.0 255.255.255.0\n! MANUAL_REVIEW: ASA does not support arbitrary port range (198.18.10.1-198.18.10.254); converted to /24 subnet. Verify PAT capacity meets requirements.\n\n! Source NAT policy - inside to outside\nobject network INSIDE_TRAFFIC\n subnet 10.0.0.0 255.255.0.0\n nat (inside,outside) dynamic POOL_INTERNET\n! Security policy - permit outbound from trust to untrust\naccess-list PERMIT_OUTBOUND extended permit ip any any\n\n! Security policy - deny inbound from untrust to trust\naccess-list DENY_INBOUND extended deny ip any any\naccess-list DENY_INBOUND extended permit ip any any\n\n! Apply ACLs to interfaces\naccess-group PERMIT_OUTBOUND in interface inside\naccess-group DENY_INBOUND in interface outside\n! Default route to upstream gateway\nroute outside 0.0.0.0 0.0.0.0 198.18.1.254 1",
           "validation": {
             "deployable": false,
             "errors": [],
@@ -2902,7 +2921,6 @@
             "manual_review_required": true,
             "valid": true,
             "warnings": [
-              "建议: 为接口配置 description 描述用途",
               "源厂商残留 — ASA: object network",
               "源厂商残留 — ASA: access-group"
             ]
@@ -3070,7 +3088,6 @@
           "manual_review_required": true,
           "valid": true,
           "warnings": [
-            "建议: 为接口配置 description 描述用途",
             "源厂商残留 — ASA: object network",
             "源厂商残留 — ASA: access-group"
           ]
@@ -3245,8 +3262,10 @@
       "status": "pass",
       "category": "",
       "failure_reason": "",
-      "elapsed_ms": "51",
+      "elapsed_ms": "30",
       "errors": [],
+      "correctness_pass": true,
+      "clean_deployable": false,
       "deployable": false,
       "manual_review_required": true,
       "validation_level": "warning",
@@ -3461,17 +3480,18 @@
         "manual_review_required": true,
         "valid": true,
         "warnings": [
+          "建议: 为接口配置 description 描述用途",
           "源厂商残留 — ASA: object-group",
           "源厂商残留 — ASA: access-group"
         ]
       },
-      "translated_excerpt": "hostname FIREWALL_OBJ_POLICY\ninterface GigabitEthernet0/0/0\n description To-LAN\n ip address 10.0.0.1 255.255.255.0\n nameif INSIDE\n security-level 100\n no shutdown\n!\ninterface GigabitEthernet0/0/1\n description To-DMZ\n ip address 10.0.1.1 255.255.255.0\n nameif DMZ\n security-level 50\n no shutdown\n!\nint...",
+      "translated_excerpt": "hostname FIREWALL_OBJ_POLICY\ninterface GigabitEthernet0/0/0\n nameif inside\n ip address 10.0.0.1 255.255.255.0\n security-level 100\n no shutdown\n!\ninterface GigabitEthernet0/0/1\n nameif dmz\n ip address 10.0.1.1 255.255.255.0\n security-level 50\n no shutdown\n!\ninterface GigabitEthernet0/0/2\n nameif outs...",
       "detail": {
-        "translated": "hostname FIREWALL_OBJ_POLICY\ninterface GigabitEthernet0/0/0\n description To-LAN\n ip address 10.0.0.1 255.255.255.0\n nameif INSIDE\n security-level 100\n no shutdown\n!\ninterface GigabitEthernet0/0/1\n description To-DMZ\n ip address 10.0.1.1 255.255.255.0\n nameif DMZ\n security-level 50\n no shutdown\n!\ninterface GigabitEthernet0/0/2\n description To-WAN\n ip address 198.18.1.1 255.255.255.0\n nameif OUTSIDE\n security-level 0\n no shutdown\nobject-group network LAN_SERVERS\n network-object host 10.0.0.10\n network-object host 10.0.0.11\n!\nobject-group network DMZ_SERVERS\n network-object host 10.0.1.10\n network-object host 10.0.1.11\nobject-group service WEB_SERVICES\n service-object tcp destination eq 80\n service-object tcp destination eq 443\naccess-list INSIDE_to_DMZ extended permit tcp object-group LAN_SERVERS object-group DMZ_SERVERS eq 80\naccess-list INSIDE_to_DMZ extended permit tcp object-group LAN_SERVERS object-group DMZ_SERVERS eq 443\n!\naccess-list DMZ_to_OUTSIDE extended permit ip object-group DMZ_SERVERS any\n!\naccess-list OUTSIDE_to_INSIDE extended deny ip any any\n!\naccess-group INSIDE_to_DMZ in interface INSIDE\naccess-group DMZ_to_OUTSIDE in interface DMZ\naccess-group OUTSIDE_to_INSIDE in interface OUTSIDE",
-        "translated_excerpt": "hostname FIREWALL_OBJ_POLICY\ninterface GigabitEthernet0/0/0\n description To-LAN\n ip address 10.0.0.1 255.255.255.0\n nameif INSIDE\n security-level 100\n no shutdown\n!\ninterface GigabitEthernet0/0/1\n description To-DMZ\n ip address 10.0.1.1 255.255.255.0\n nameif DMZ\n security-level 50\n no shutdown\n!\nint...",
+        "translated": "hostname FIREWALL_OBJ_POLICY\ninterface GigabitEthernet0/0/0\n nameif inside\n ip address 10.0.0.1 255.255.255.0\n security-level 100\n no shutdown\n!\ninterface GigabitEthernet0/0/1\n nameif dmz\n ip address 10.0.1.1 255.255.255.0\n security-level 50\n no shutdown\n!\ninterface GigabitEthernet0/0/2\n nameif outside\n ip address 198.18.1.1 255.255.255.0\n security-level 0\n no shutdown\nobject-group network LAN_SERVERS\n network-object host 10.0.0.10\n network-object host 10.0.0.11\n!\nobject-group network DMZ_SERVERS\n network-object host 10.0.1.10\n network-object host 10.0.1.11\nobject-group service WEB_SERVICES\n service-object tcp destination eq 80\n service-object tcp destination eq 443\naccess-list ACL_LAN_TO_DMZ extended permit tcp object-group LAN_SERVERS object-group DMZ_SERVERS eq 80\naccess-list ACL_LAN_TO_DMZ extended permit tcp object-group LAN_SERVERS object-group DMZ_SERVERS eq 443\n!\naccess-list ACL_DMZ_TO_WAN extended permit ip any any\n!\naccess-list ACL_WAN_TO_LAN extended deny ip any any log\naccess-list ACL_WAN_TO_LAN extended permit ip any any\naccess-group ACL_LAN_TO_DMZ in interface inside\naccess-group ACL_DMZ_TO_WAN in interface dmz\naccess-group ACL_WAN_TO_LAN in interface outside",
+        "translated_excerpt": "hostname FIREWALL_OBJ_POLICY\ninterface GigabitEthernet0/0/0\n nameif inside\n ip address 10.0.0.1 255.255.255.0\n security-level 100\n no shutdown\n!\ninterface GigabitEthernet0/0/1\n nameif dmz\n ip address 10.0.1.1 255.255.255.0\n security-level 50\n no shutdown\n!\ninterface GigabitEthernet0/0/2\n nameif outs...",
         "status_code": 200,
-        "elapsed": 0.051438331604003906,
-        "request_id": "57b982b2-920c-4d06-ae0e-f60eb7846de6",
+        "elapsed": 0.030358552932739258,
+        "request_id": "aa38ba3a-09c7-400e-97c5-876c44789343",
         "api_result": {
           "analyzer_results": [
             {
@@ -3697,73 +3717,73 @@
           ],
           "node_results": [
             {
-              "elapsed_ms": 0.81,
+              "elapsed_ms": 0.8,
               "error": null,
               "node": "parse",
               "status": "success"
             },
             {
-              "elapsed_ms": 32.16,
+              "elapsed_ms": 18.05,
               "error": null,
               "node": "feature_analyzer",
               "status": "success"
             },
             {
-              "elapsed_ms": 1.54,
+              "elapsed_ms": 0.8,
               "error": null,
               "node": "knowledge",
               "status": "success"
             },
             {
-              "elapsed_ms": 6.53,
+              "elapsed_ms": 3.77,
               "error": null,
               "node": "cache",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.01,
+              "elapsed_ms": 0.0,
               "error": null,
               "node": "translate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.01,
+              "elapsed_ms": 0.0,
               "error": null,
               "node": "router",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.05,
+              "elapsed_ms": 0.03,
               "error": null,
               "node": "semantic_validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.94,
+              "elapsed_ms": 0.46,
               "error": null,
               "node": "capability_gap",
               "status": "success"
             },
             {
-              "elapsed_ms": 3.98,
+              "elapsed_ms": 2.0,
               "error": null,
               "node": "validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 1.26,
+              "elapsed_ms": 0.62,
               "error": null,
               "node": "diff",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.01,
+              "elapsed_ms": 0.0,
               "error": null,
               "node": "cache_write",
               "status": "skipped"
             },
             {
-              "elapsed_ms": 0.29,
+              "elapsed_ms": 0.19,
               "error": null,
               "node": "memory",
               "status": "success"
@@ -3796,9 +3816,13 @@
               "service_object",
               "acl"
             ],
-            "missing_features": [],
-            "notes": [],
-            "score": 0.71,
+            "missing_features": [
+              "acl"
+            ],
+            "notes": [
+              "keyword overlap low for: acl"
+            ],
+            "score": 0.62,
             "source_vendor_residue": []
           },
           "source_domain": "firewall",
@@ -3806,7 +3830,7 @@
           "success": true,
           "target_domain": "firewall",
           "target_platform": "asa",
-          "translated": "hostname FIREWALL_OBJ_POLICY\ninterface GigabitEthernet0/0/0\n description To-LAN\n ip address 10.0.0.1 255.255.255.0\n nameif INSIDE\n security-level 100\n no shutdown\n!\ninterface GigabitEthernet0/0/1\n description To-DMZ\n ip address 10.0.1.1 255.255.255.0\n nameif DMZ\n security-level 50\n no shutdown\n!\ninterface GigabitEthernet0/0/2\n description To-WAN\n ip address 198.18.1.1 255.255.255.0\n nameif OUTSIDE\n security-level 0\n no shutdown\nobject-group network LAN_SERVERS\n network-object host 10.0.0.10\n network-object host 10.0.0.11\n!\nobject-group network DMZ_SERVERS\n network-object host 10.0.1.10\n network-object host 10.0.1.11\nobject-group service WEB_SERVICES\n service-object tcp destination eq 80\n service-object tcp destination eq 443\naccess-list INSIDE_to_DMZ extended permit tcp object-group LAN_SERVERS object-group DMZ_SERVERS eq 80\naccess-list INSIDE_to_DMZ extended permit tcp object-group LAN_SERVERS object-group DMZ_SERVERS eq 443\n!\naccess-list DMZ_to_OUTSIDE extended permit ip object-group DMZ_SERVERS any\n!\naccess-list OUTSIDE_to_INSIDE extended deny ip any any\n!\naccess-group INSIDE_to_DMZ in interface INSIDE\naccess-group DMZ_to_OUTSIDE in interface DMZ\naccess-group OUTSIDE_to_INSIDE in interface OUTSIDE",
+          "translated": "hostname FIREWALL_OBJ_POLICY\ninterface GigabitEthernet0/0/0\n nameif inside\n ip address 10.0.0.1 255.255.255.0\n security-level 100\n no shutdown\n!\ninterface GigabitEthernet0/0/1\n nameif dmz\n ip address 10.0.1.1 255.255.255.0\n security-level 50\n no shutdown\n!\ninterface GigabitEthernet0/0/2\n nameif outside\n ip address 198.18.1.1 255.255.255.0\n security-level 0\n no shutdown\nobject-group network LAN_SERVERS\n network-object host 10.0.0.10\n network-object host 10.0.0.11\n!\nobject-group network DMZ_SERVERS\n network-object host 10.0.1.10\n network-object host 10.0.1.11\nobject-group service WEB_SERVICES\n service-object tcp destination eq 80\n service-object tcp destination eq 443\naccess-list ACL_LAN_TO_DMZ extended permit tcp object-group LAN_SERVERS object-group DMZ_SERVERS eq 80\naccess-list ACL_LAN_TO_DMZ extended permit tcp object-group LAN_SERVERS object-group DMZ_SERVERS eq 443\n!\naccess-list ACL_DMZ_TO_WAN extended permit ip any any\n!\naccess-list ACL_WAN_TO_LAN extended deny ip any any log\naccess-list ACL_WAN_TO_LAN extended permit ip any any\naccess-group ACL_LAN_TO_DMZ in interface inside\naccess-group ACL_DMZ_TO_WAN in interface dmz\naccess-group ACL_WAN_TO_LAN in interface outside",
           "validation": {
             "deployable": false,
             "errors": [],
@@ -3814,6 +3838,7 @@
             "manual_review_required": true,
             "valid": true,
             "warnings": [
+              "建议: 为接口配置 description 描述用途",
               "源厂商残留 — ASA: object-group",
               "源厂商残留 — ASA: access-group"
             ]
@@ -4038,6 +4063,7 @@
           "manual_review_required": true,
           "valid": true,
           "warnings": [
+            "建议: 为接口配置 description 描述用途",
             "源厂商残留 — ASA: object-group",
             "源厂商残留 — ASA: access-group"
           ]
@@ -4268,8 +4294,10 @@
       "status": "pass",
       "category": "",
       "failure_reason": "",
-      "elapsed_ms": "53",
+      "elapsed_ms": "318",
       "errors": [],
+      "correctness_pass": true,
+      "clean_deployable": true,
       "deployable": true,
       "manual_review_required": false,
       "validation_level": "info",
@@ -4403,6 +4431,16 @@
       ],
       "capability_gaps": [
         {
+          "details": {},
+          "feature": "acl",
+          "severity": "info",
+          "source_lines": [],
+          "source_vendor": "cisco",
+          "status": "supported",
+          "suggestion": "",
+          "target_vendor": "huawei"
+        },
+        {
           "details": {
             "source_as": [
               "65002",
@@ -4458,13 +4496,13 @@
         "valid": true,
         "warnings": []
       },
-      "translated_excerpt": "interface LoopBack0\n description Configured by translation\n ip address 198.18.255.1 255.255.255.255\n undo shutdown\ninterface GigabitEthernet0/0/0\n description To ISP-1\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description To ISP-2\n ip address 198.18.2.1 255....",
+      "translated_excerpt": "interface LoopBack0\n ip address 198.18.255.1 255.255.255.255\n undo shutdown\ninterface GigabitEthernet0/0/0\n description To ISP-1\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description To ISP-2\n ip address 198.18.2.1 255.255.255.0\n undo shutdown\nbgp 65001\n rou...",
       "detail": {
-        "translated": "interface LoopBack0\n description Configured by translation\n ip address 198.18.255.1 255.255.255.255\n undo shutdown\ninterface GigabitEthernet0/0/0\n description To ISP-1\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description To ISP-2\n ip address 198.18.2.1 255.255.255.0\n undo shutdown\nbgp 65001\n router-id 198.18.255.1\n peer 198.18.1.2 as-number 65002\n peer 198.18.1.2 description ISP-1\n peer 198.18.2.2 as-number 65003\n peer 198.18.2.2 description ISP-2\n #\n ipv4-family unicast\n  network 198.18.0.0 255.255.0.0\n  peer 198.18.1.2 enable\n  peer 198.18.1.2 route-policy PREFER_ISP1 import\n  peer 198.18.1.2 ip-prefix CUSTOMER_PREFIXES export\n  peer 198.18.2.2 enable\n  quit\nip ip-prefix CUSTOMER_PREFIXES index 5 permit 198.18.0.0 16\nroute-policy PREFER_ISP1 permit node 10\n if-match ip-address prefix-list CUSTOMER_PREFIXES\n apply local-preference 150\n #\nroute-policy PREFER_ISP1 permit node 20\n apply local-preference 100",
-        "translated_excerpt": "interface LoopBack0\n description Configured by translation\n ip address 198.18.255.1 255.255.255.255\n undo shutdown\ninterface GigabitEthernet0/0/0\n description To ISP-1\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description To ISP-2\n ip address 198.18.2.1 255....",
+        "translated": "interface LoopBack0\n ip address 198.18.255.1 255.255.255.255\n undo shutdown\ninterface GigabitEthernet0/0/0\n description To ISP-1\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description To ISP-2\n ip address 198.18.2.1 255.255.255.0\n undo shutdown\nbgp 65001\n router-id 198.18.255.1\n peer 198.18.1.2 as-number 65002\n peer 198.18.1.2 description ISP-1\n peer 198.18.2.2 as-number 65003\n peer 198.18.2.2 description ISP-2\n ipv4-family unicast\n  peer 198.18.1.2 enable\n  peer 198.18.1.2 route-policy PREFER_ISP1 import\n  peer 198.18.1.2 ip-prefix CUSTOMER_PREFIXES export\n  peer 198.18.2.2 enable\n  network 198.18.0.0 255.255.0.0\nroute-policy PREFER_ISP1 permit node 10\n if-match ip-prefix CUSTOMER_PREFIXES\n apply local-preference 150\nroute-policy PREFER_ISP1 permit node 20\n apply local-preference 100\nip ip-prefix CUSTOMER_PREFIXES index 10 permit 198.18.0.0 16",
+        "translated_excerpt": "interface LoopBack0\n ip address 198.18.255.1 255.255.255.255\n undo shutdown\ninterface GigabitEthernet0/0/0\n description To ISP-1\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description To ISP-2\n ip address 198.18.2.1 255.255.255.0\n undo shutdown\nbgp 65001\n rou...",
         "status_code": 200,
-        "elapsed": 0.05318331718444824,
-        "request_id": "399b2209-1117-4d30-bfb8-9ab18fc3d751",
+        "elapsed": 0.31812477111816406,
+        "request_id": "245ada57-0e25-48df-a6fd-3a7d7ba241c2",
         "api_result": {
           "analyzer_results": [
             {
@@ -4598,6 +4636,16 @@
           "capability_gap_severity": "info",
           "capability_gaps": [
             {
+              "details": {},
+              "feature": "acl",
+              "severity": "info",
+              "source_lines": [],
+              "source_vendor": "cisco",
+              "status": "supported",
+              "suggestion": "",
+              "target_vendor": "huawei"
+            },
+            {
               "details": {
                 "source_as": [
                   "65002",
@@ -4646,6 +4694,7 @@
             }
           ],
           "capability_notes": [
+            "acl: supported ()",
             "bgp: supported ()",
             "interface: supported ()",
             "pbr: supported ()",
@@ -4662,25 +4711,25 @@
           ],
           "node_results": [
             {
-              "elapsed_ms": 0.91,
+              "elapsed_ms": 13.3,
               "error": null,
               "node": "parse",
               "status": "success"
             },
             {
-              "elapsed_ms": 36.75,
+              "elapsed_ms": 169.55,
               "error": null,
               "node": "feature_analyzer",
               "status": "success"
             },
             {
-              "elapsed_ms": 1.22,
+              "elapsed_ms": 51.02,
               "error": null,
               "node": "knowledge",
               "status": "success"
             },
             {
-              "elapsed_ms": 6.38,
+              "elapsed_ms": 5.3,
               "error": null,
               "node": "cache",
               "status": "success"
@@ -4704,31 +4753,31 @@
               "status": "success"
             },
             {
-              "elapsed_ms": 1.0,
+              "elapsed_ms": 0.68,
               "error": null,
               "node": "capability_gap",
               "status": "success"
             },
             {
-              "elapsed_ms": 2.51,
+              "elapsed_ms": 10.16,
               "error": null,
               "node": "validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.76,
+              "elapsed_ms": 0.89,
               "error": null,
               "node": "diff",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.0,
+              "elapsed_ms": 0.01,
               "error": null,
               "node": "cache_write",
               "status": "skipped"
             },
             {
-              "elapsed_ms": 0.24,
+              "elapsed_ms": 0.45,
               "error": null,
               "node": "memory",
               "status": "success"
@@ -4742,8 +4791,8 @@
               "interface",
               "interface",
               "bgp",
-              "bgp",
-              "bgp"
+              "route_policy",
+              "acl"
             ],
             "missing_features": [],
             "notes": [],
@@ -4755,7 +4804,7 @@
           "success": true,
           "target_domain": "routing",
           "target_platform": "vrp",
-          "translated": "interface LoopBack0\n description Configured by translation\n ip address 198.18.255.1 255.255.255.255\n undo shutdown\ninterface GigabitEthernet0/0/0\n description To ISP-1\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description To ISP-2\n ip address 198.18.2.1 255.255.255.0\n undo shutdown\nbgp 65001\n router-id 198.18.255.1\n peer 198.18.1.2 as-number 65002\n peer 198.18.1.2 description ISP-1\n peer 198.18.2.2 as-number 65003\n peer 198.18.2.2 description ISP-2\n #\n ipv4-family unicast\n  network 198.18.0.0 255.255.0.0\n  peer 198.18.1.2 enable\n  peer 198.18.1.2 route-policy PREFER_ISP1 import\n  peer 198.18.1.2 ip-prefix CUSTOMER_PREFIXES export\n  peer 198.18.2.2 enable\n  quit\nip ip-prefix CUSTOMER_PREFIXES index 5 permit 198.18.0.0 16\nroute-policy PREFER_ISP1 permit node 10\n if-match ip-address prefix-list CUSTOMER_PREFIXES\n apply local-preference 150\n #\nroute-policy PREFER_ISP1 permit node 20\n apply local-preference 100",
+          "translated": "interface LoopBack0\n ip address 198.18.255.1 255.255.255.255\n undo shutdown\ninterface GigabitEthernet0/0/0\n description To ISP-1\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description To ISP-2\n ip address 198.18.2.1 255.255.255.0\n undo shutdown\nbgp 65001\n router-id 198.18.255.1\n peer 198.18.1.2 as-number 65002\n peer 198.18.1.2 description ISP-1\n peer 198.18.2.2 as-number 65003\n peer 198.18.2.2 description ISP-2\n ipv4-family unicast\n  peer 198.18.1.2 enable\n  peer 198.18.1.2 route-policy PREFER_ISP1 import\n  peer 198.18.1.2 ip-prefix CUSTOMER_PREFIXES export\n  peer 198.18.2.2 enable\n  network 198.18.0.0 255.255.0.0\nroute-policy PREFER_ISP1 permit node 10\n if-match ip-prefix CUSTOMER_PREFIXES\n apply local-preference 150\nroute-policy PREFER_ISP1 permit node 20\n apply local-preference 100\nip ip-prefix CUSTOMER_PREFIXES index 10 permit 198.18.0.0 16",
           "validation": {
             "deployable": true,
             "errors": [],
@@ -4773,6 +4822,16 @@
           "deployable": true,
           "manual_review_required": false,
           "capability_gaps": [
+            {
+              "details": {},
+              "feature": "acl",
+              "severity": "info",
+              "source_lines": [],
+              "source_vendor": "cisco",
+              "status": "supported",
+              "suggestion": "",
+              "target_vendor": "huawei"
+            },
             {
               "details": {
                 "source_as": [
@@ -5088,6 +5147,16 @@
         ],
         "capability_gaps": [
           {
+            "details": {},
+            "feature": "acl",
+            "severity": "info",
+            "source_lines": [],
+            "source_vendor": "cisco",
+            "status": "supported",
+            "suggestion": "",
+            "target_vendor": "huawei"
+          },
+          {
             "details": {
               "source_as": [
                 "65002",
@@ -5154,14 +5223,13 @@
         "interface",
         "acl"
       ],
-      "status": "fail",
+      "status": "pass",
       "category": "",
-      "failure_reason": "deployable expected=False got=True; expected manual_review_required=True but system returned False",
-      "elapsed_ms": "30",
-      "errors": [
-        "deployable expected=False got=True",
-        "expected manual_review_required=True but system returned False"
-      ],
+      "failure_reason": "",
+      "elapsed_ms": "45",
+      "errors": [],
+      "correctness_pass": true,
+      "clean_deployable": true,
       "deployable": true,
       "manual_review_required": false,
       "validation_level": "info",
@@ -5365,13 +5433,13 @@
         "valid": true,
         "warnings": []
       },
-      "translated_excerpt": "ike proposal 10\n encryption-algorithm aes-256\n authentication-algorithm sha2-256\n dh group14\n sa duration 86400\nike peer SITE2SITE_PEER\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key %^%# __REDACTED__ %^%#\nipsec proposal AES256-SHA\n encapsulation-mode tunnel\n esp encryption-algorithm ...",
+      "translated_excerpt": "ike proposal 10\n encryption-algorithm aes-256\n authentication-algorithm sha2-256\n dh group14\n sa duration 86400\n\nike peer SITE2SITE\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key cipher __REDACTED__\n\nipsec proposal AES256-SHA\n encapsulation-mode tunnel\n esp encryption-algorithm aes-25...",
       "detail": {
-        "translated": "ike proposal 10\n encryption-algorithm aes-256\n authentication-algorithm sha2-256\n dh group14\n sa duration 86400\nike peer SITE2SITE_PEER\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key %^%# __REDACTED__ %^%#\nipsec proposal AES256-SHA\n encapsulation-mode tunnel\n esp encryption-algorithm aes-256\n esp authentication-algorithm sha2-256\nacl number 3000\n rule 5 permit ip source 10.0.0.0 0.0.0.255 destination 198.18.200.0 0.0.0.255\nipsec policy CMAP_SITE2SITE 10 isakmp\n security acl 3000\n ike-peer SITE2SITE_PEER\n proposal AES256-SHA\ninterface GigabitEthernet0/0/0\n description To-Remote-Site\n ip address 198.18.254.1 255.255.255.0\n ipsec policy CMAP_SITE2SITE\n undo shutdown\ninterface Tunnel0\n ip address 198.18.200.1 255.255.255.0\n tunnel-protocol gre\n source GigabitEthernet0/0/0\n destination 198.18.254.2\nip route-static 10.0.0.0 8 198.18.254.2",
-        "translated_excerpt": "ike proposal 10\n encryption-algorithm aes-256\n authentication-algorithm sha2-256\n dh group14\n sa duration 86400\nike peer SITE2SITE_PEER\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key %^%# __REDACTED__ %^%#\nipsec proposal AES256-SHA\n encapsulation-mode tunnel\n esp encryption-algorithm ...",
+        "translated": "ike proposal 10\n encryption-algorithm aes-256\n authentication-algorithm sha2-256\n dh group14\n sa duration 86400\n\nike peer SITE2SITE\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key cipher __REDACTED__\n\nipsec proposal AES256-SHA\n encapsulation-mode tunnel\n esp encryption-algorithm aes-256\n esp authentication-algorithm sha2-256\nacl number 3000\n rule 10 permit ip source 10.0.0.0 0.0.0.255 destination 198.18.200.0 0.0.0.255\nipsec policy TEMPLATE_CMAP 10 isakmp\n security acl 3000\n ike-peer SITE2SITE\n proposal AES256-SHA\ninterface GigabitEthernet0/0/1\n description To-Remote-Site\n ip address 198.18.254.1 255.255.255.0\n ipsec policy TEMPLATE_CMAP\n undo shutdown\ninterface Tunnel0/0/1\n ip address 198.18.200.1 255.255.255.0\n tunnel-protocol gre\n source GigabitEthernet0/0/1\n destination 198.18.254.2\n mtu 1400\n tcp adjust-mss 1360\nip route-static 10.0.0.0 255.0.0.0 198.18.254.2",
+        "translated_excerpt": "ike proposal 10\n encryption-algorithm aes-256\n authentication-algorithm sha2-256\n dh group14\n sa duration 86400\n\nike peer SITE2SITE\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key cipher __REDACTED__\n\nipsec proposal AES256-SHA\n encapsulation-mode tunnel\n esp encryption-algorithm aes-25...",
         "status_code": 200,
-        "elapsed": 0.029946327209472656,
-        "request_id": "5cfe062d-d254-4c3b-ba1f-e495dd50c9bf",
+        "elapsed": 0.04486584663391113,
+        "request_id": "31db5901-5a96-4de2-ae06-eb9c64ad1f1e",
         "api_result": {
           "analyzer_results": [
             {
@@ -5574,7 +5642,7 @@
             "static_route: supported ()",
             "tunnel: supported ()"
           ],
-          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet0/0\n  original: `GigabitEthernet0/0`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射",
+          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet0/0\n  original: `GigabitEthernet0/0`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ Tunnel0\n  original: `Tunnel0`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射",
           "fallback_reason": "",
           "fallback_used": false,
           "features": [
@@ -5586,31 +5654,31 @@
           ],
           "node_results": [
             {
-              "elapsed_ms": 0.44,
+              "elapsed_ms": 0.65,
               "error": null,
               "node": "parse",
               "status": "success"
             },
             {
-              "elapsed_ms": 18.6,
+              "elapsed_ms": 26.84,
               "error": null,
               "node": "feature_analyzer",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.66,
+              "elapsed_ms": 1.42,
               "error": null,
               "node": "knowledge",
               "status": "success"
             },
             {
-              "elapsed_ms": 4.39,
+              "elapsed_ms": 6.35,
               "error": null,
               "node": "cache",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.0,
+              "elapsed_ms": 0.01,
               "error": null,
               "node": "translate",
               "status": "success"
@@ -5622,37 +5690,37 @@
               "status": "success"
             },
             {
-              "elapsed_ms": 0.02,
+              "elapsed_ms": 0.05,
               "error": null,
               "node": "semantic_validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.32,
+              "elapsed_ms": 0.5,
               "error": null,
               "node": "capability_gap",
               "status": "success"
             },
             {
-              "elapsed_ms": 1.43,
+              "elapsed_ms": 2.56,
               "error": null,
               "node": "validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.41,
+              "elapsed_ms": 0.85,
               "error": null,
               "node": "diff",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.0,
+              "elapsed_ms": 0.01,
               "error": null,
               "node": "cache_write",
               "status": "skipped"
             },
             {
-              "elapsed_ms": 0.19,
+              "elapsed_ms": 0.32,
               "error": null,
               "node": "memory",
               "status": "success"
@@ -5663,13 +5731,15 @@
           "semantic_validation": {
             "matched_features": [
               "ipsec",
+              "acl",
+              "ipsec",
               "interface",
               "tunnel",
               "static_route"
             ],
             "missing_features": [],
             "notes": [],
-            "score": 0.67,
+            "score": 0.75,
             "source_vendor_residue": []
           },
           "source_domain": "routing",
@@ -5677,7 +5747,7 @@
           "success": true,
           "target_domain": "routing",
           "target_platform": "vrp",
-          "translated": "ike proposal 10\n encryption-algorithm aes-256\n authentication-algorithm sha2-256\n dh group14\n sa duration 86400\nike peer SITE2SITE_PEER\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key %^%# __REDACTED__ %^%#\nipsec proposal AES256-SHA\n encapsulation-mode tunnel\n esp encryption-algorithm aes-256\n esp authentication-algorithm sha2-256\nacl number 3000\n rule 5 permit ip source 10.0.0.0 0.0.0.255 destination 198.18.200.0 0.0.0.255\nipsec policy CMAP_SITE2SITE 10 isakmp\n security acl 3000\n ike-peer SITE2SITE_PEER\n proposal AES256-SHA\ninterface GigabitEthernet0/0/0\n description To-Remote-Site\n ip address 198.18.254.1 255.255.255.0\n ipsec policy CMAP_SITE2SITE\n undo shutdown\ninterface Tunnel0\n ip address 198.18.200.1 255.255.255.0\n tunnel-protocol gre\n source GigabitEthernet0/0/0\n destination 198.18.254.2\nip route-static 10.0.0.0 8 198.18.254.2",
+          "translated": "ike proposal 10\n encryption-algorithm aes-256\n authentication-algorithm sha2-256\n dh group14\n sa duration 86400\n\nike peer SITE2SITE\n ike-proposal 10\n remote-address 198.18.254.2\n pre-shared-key cipher __REDACTED__\n\nipsec proposal AES256-SHA\n encapsulation-mode tunnel\n esp encryption-algorithm aes-256\n esp authentication-algorithm sha2-256\nacl number 3000\n rule 10 permit ip source 10.0.0.0 0.0.0.255 destination 198.18.200.0 0.0.0.255\nipsec policy TEMPLATE_CMAP 10 isakmp\n security acl 3000\n ike-peer SITE2SITE\n proposal AES256-SHA\ninterface GigabitEthernet0/0/1\n description To-Remote-Site\n ip address 198.18.254.1 255.255.255.0\n ipsec policy TEMPLATE_CMAP\n undo shutdown\ninterface Tunnel0/0/1\n ip address 198.18.200.1 255.255.255.0\n tunnel-protocol gre\n source GigabitEthernet0/0/1\n destination 198.18.254.2\n mtu 1400\n tcp adjust-mss 1360\nip route-static 10.0.0.0 255.0.0.0 198.18.254.2",
           "validation": {
             "deployable": true,
             "errors": [],
@@ -6108,8 +6178,10 @@
       "status": "pass",
       "category": "",
       "failure_reason": "",
-      "elapsed_ms": "27",
+      "elapsed_ms": "33",
       "errors": [],
+      "correctness_pass": true,
+      "clean_deployable": true,
       "deployable": true,
       "manual_review_required": false,
       "validation_level": "info",
@@ -6201,13 +6273,13 @@
           "建议: 为接口配置 description 描述用途"
         ]
       },
-      "translated_excerpt": "interface GigabitEthernet0/0/0\nip address 198.18.1.1 24\nospf enable 1 area 0\nundo shutdown\n# OSPF enabled on interface\ninterface GigabitEthernet0/0/1\nip address 198.18.2.1 24\nospf enable 1 area 0\nundo shutdown\n# OSPF enabled on interface\ninterface LoopBack0\nip address 198.18.255.1 32\nospf enable 1 a...",
+      "translated_excerpt": "interface GigabitEthernet0/0/0\nundo shutdown\nip address 198.18.1.1 255.255.255.0\nospf 1 area 0\ninterface GigabitEthernet0/0/1\nundo shutdown\nip address 198.18.2.1 255.255.255.0\nospf 1 area 0\ninterface LoopBack0\nip address 198.18.255.1 255.255.255.255\nospf 1 area 0\nospf 1 router-id 198.18.255.1\narea 0...",
       "detail": {
-        "translated": "interface GigabitEthernet0/0/0\nip address 198.18.1.1 24\nospf enable 1 area 0\nundo shutdown\n# OSPF enabled on interface\ninterface GigabitEthernet0/0/1\nip address 198.18.2.1 24\nospf enable 1 area 0\nundo shutdown\n# OSPF enabled on interface\ninterface LoopBack0\nip address 198.18.255.1 32\nospf enable 1 area 0\n# Loopback interface for router-id\nospf 1 router-id 198.18.255.1\narea 0\n network 198.18.0.0 0.0.255.255\ndefault-route-advertise always\nip route-static 0.0.0.0 0.0.0.0 198.18.254.1",
-        "translated_excerpt": "interface GigabitEthernet0/0/0\nip address 198.18.1.1 24\nospf enable 1 area 0\nundo shutdown\n# OSPF enabled on interface\ninterface GigabitEthernet0/0/1\nip address 198.18.2.1 24\nospf enable 1 area 0\nundo shutdown\n# OSPF enabled on interface\ninterface LoopBack0\nip address 198.18.255.1 32\nospf enable 1 a...",
+        "translated": "interface GigabitEthernet0/0/0\nundo shutdown\nip address 198.18.1.1 255.255.255.0\nospf 1 area 0\ninterface GigabitEthernet0/0/1\nundo shutdown\nip address 198.18.2.1 255.255.255.0\nospf 1 area 0\ninterface LoopBack0\nip address 198.18.255.1 255.255.255.255\nospf 1 area 0\nospf 1 router-id 198.18.255.1\narea 0.0.0.0\n network 198.18.1.0 0.0.0.255\n network 198.18.2.0 0.0.0.255\ndefault-route-advertise\nip route-static 0.0.0.0 0.0.0.0 198.18.254.1",
+        "translated_excerpt": "interface GigabitEthernet0/0/0\nundo shutdown\nip address 198.18.1.1 255.255.255.0\nospf 1 area 0\ninterface GigabitEthernet0/0/1\nundo shutdown\nip address 198.18.2.1 255.255.255.0\nospf 1 area 0\ninterface LoopBack0\nip address 198.18.255.1 255.255.255.255\nospf 1 area 0\nospf 1 router-id 198.18.255.1\narea 0...",
         "status_code": 200,
-        "elapsed": 0.027338743209838867,
-        "request_id": "10ca91da-2a14-4b05-9177-d9499cad1a7b",
+        "elapsed": 0.03328108787536621,
+        "request_id": "8303564e-c993-42e9-878e-09763602f378",
         "api_result": {
           "analyzer_results": [
             {
@@ -6294,7 +6366,7 @@
             "ospf: supported ()",
             "static_route: supported ()"
           ],
-          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet0/1\n  original: `GigabitEthernet0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/0\n  original: `GigabitEthernet0/0`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ Loopback0\n  original: `Loopback0`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射",
+          "diff": "## Diff Report\n\n- **interface_changed** @ Loopback0\n  original: `Loopback0`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/0\n  original: `GigabitEthernet0/0`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/1\n  original: `GigabitEthernet0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射",
           "fallback_reason": "",
           "fallback_used": false,
           "features": [
@@ -6304,25 +6376,25 @@
           ],
           "node_results": [
             {
-              "elapsed_ms": 0.4,
+              "elapsed_ms": 0.69,
               "error": null,
               "node": "parse",
               "status": "success"
             },
             {
-              "elapsed_ms": 18.17,
+              "elapsed_ms": 21.38,
               "error": null,
               "node": "feature_analyzer",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.57,
+              "elapsed_ms": 0.61,
               "error": null,
               "node": "knowledge",
               "status": "success"
             },
             {
-              "elapsed_ms": 3.67,
+              "elapsed_ms": 4.58,
               "error": null,
               "node": "cache",
               "status": "success"
@@ -6334,31 +6406,31 @@
               "status": "success"
             },
             {
-              "elapsed_ms": 0.0,
+              "elapsed_ms": 0.01,
               "error": null,
               "node": "router",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.02,
+              "elapsed_ms": 0.03,
               "error": null,
               "node": "semantic_validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.22,
+              "elapsed_ms": 0.3,
               "error": null,
               "node": "capability_gap",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.97,
+              "elapsed_ms": 0.96,
               "error": null,
               "node": "validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.29,
+              "elapsed_ms": 0.31,
               "error": null,
               "node": "diff",
               "status": "success"
@@ -6370,7 +6442,7 @@
               "status": "skipped"
             },
             {
-              "elapsed_ms": 0.2,
+              "elapsed_ms": 0.23,
               "error": null,
               "node": "memory",
               "status": "success"
@@ -6396,7 +6468,7 @@
           "success": true,
           "target_domain": "routing",
           "target_platform": "vrp",
-          "translated": "interface GigabitEthernet0/0/0\nip address 198.18.1.1 24\nospf enable 1 area 0\nundo shutdown\n# OSPF enabled on interface\ninterface GigabitEthernet0/0/1\nip address 198.18.2.1 24\nospf enable 1 area 0\nundo shutdown\n# OSPF enabled on interface\ninterface LoopBack0\nip address 198.18.255.1 32\nospf enable 1 area 0\n# Loopback interface for router-id\nospf 1 router-id 198.18.255.1\narea 0\n network 198.18.0.0 0.0.255.255\ndefault-route-advertise always\nip route-static 0.0.0.0 0.0.0.0 198.18.254.1",
+          "translated": "interface GigabitEthernet0/0/0\nundo shutdown\nip address 198.18.1.1 255.255.255.0\nospf 1 area 0\ninterface GigabitEthernet0/0/1\nundo shutdown\nip address 198.18.2.1 255.255.255.0\nospf 1 area 0\ninterface LoopBack0\nip address 198.18.255.1 255.255.255.255\nospf 1 area 0\nospf 1 router-id 198.18.255.1\narea 0.0.0.0\n network 198.18.1.0 0.0.0.255\n network 198.18.2.0 0.0.0.255\ndefault-route-advertise\nip route-static 0.0.0.0 0.0.0.0 198.18.254.1",
           "validation": {
             "deployable": true,
             "errors": [],
@@ -6603,8 +6675,10 @@
       "status": "pass",
       "category": "",
       "failure_reason": "",
-      "elapsed_ms": "28",
+      "elapsed_ms": "55",
       "errors": [],
+      "correctness_pass": true,
+      "clean_deployable": false,
       "deployable": false,
       "manual_review_required": true,
       "validation_level": "warning",
@@ -6722,13 +6796,13 @@
           "[analyzer:bfd] 中风险"
         ]
       },
-      "translated_excerpt": "hostname ROUTER_OSPF_BFD\ninterface GigabitEthernet0/0/0\n description Link-to-Core-1\n ip address 198.18.1.1 255.255.255.0\n ip ospf 1 area 0.0.0.0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface GigabitEthernet0/0/1\n description Link-to-Core-2\n ip address 198.18.2.1 255.255.255.0\n ip ...",
+      "translated_excerpt": "hostname ROUTER_OSPF_BFD\ninterface GigabitEthernet0/1\n description Link-to-Core-1\n ip address 198.18.1.1 255.255.255.0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface GigabitEthernet0/2\n description Link-to-Core-2\n ip address 198.18.2.1 255.255.255.0\n bfd interval 100 min_rx 100 mul...",
       "detail": {
-        "translated": "hostname ROUTER_OSPF_BFD\ninterface GigabitEthernet0/0/0\n description Link-to-Core-1\n ip address 198.18.1.1 255.255.255.0\n ip ospf 1 area 0.0.0.0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface GigabitEthernet0/0/1\n description Link-to-Core-2\n ip address 198.18.2.1 255.255.255.0\n ip ospf 1 area 0.0.0.0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface Loopback0\n ip address 198.18.255.1 255.255.255.255\n ip ospf 1 area 0.0.0.0\nrouter ospf 1\n router-id 198.18.255.1\n network 198.18.0.0 0.0.255.255 area 0.0.0.0\n! BFD is configured per-interface with 'bfd interval' command\n! The OSPF BFD binding is achieved via interface-level BFD configuration",
-        "translated_excerpt": "hostname ROUTER_OSPF_BFD\ninterface GigabitEthernet0/0/0\n description Link-to-Core-1\n ip address 198.18.1.1 255.255.255.0\n ip ospf 1 area 0.0.0.0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface GigabitEthernet0/0/1\n description Link-to-Core-2\n ip address 198.18.2.1 255.255.255.0\n ip ...",
+        "translated": "hostname ROUTER_OSPF_BFD\ninterface GigabitEthernet0/1\n description Link-to-Core-1\n ip address 198.18.1.1 255.255.255.0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface GigabitEthernet0/2\n description Link-to-Core-2\n ip address 198.18.2.1 255.255.255.0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface Loopback0\n ip address 198.18.255.1 255.255.255.255\nrouter ospf 1\n router-id 198.18.255.1\n network 198.18.0.0 0.0.255.255 area 0\n bfd all-interfaces\n! BFD is configured per-interface with bfd interval command\n! and enabled globally under routing protocols with bfd all-interfaces",
+        "translated_excerpt": "hostname ROUTER_OSPF_BFD\ninterface GigabitEthernet0/1\n description Link-to-Core-1\n ip address 198.18.1.1 255.255.255.0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface GigabitEthernet0/2\n description Link-to-Core-2\n ip address 198.18.2.1 255.255.255.0\n bfd interval 100 min_rx 100 mul...",
         "status_code": 200,
-        "elapsed": 0.028374433517456055,
-        "request_id": "90eaaf60-9bb0-4325-9675-37631f486be7",
+        "elapsed": 0.05456686019897461,
+        "request_id": "c3169f0c-d8af-48bf-8ba1-94363022a84f",
         "api_result": {
           "analyzer_results": [
             {
@@ -6843,7 +6917,7 @@
             "system: supported ()",
             "analyzer:bfd: analyzer_risk (分析器检测到风险: warning)"
           ],
-          "diff": "## Diff Report\n\n- **interface_changed** @ LoopBack0\n  original: `LoopBack0`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射",
+          "diff": "## Diff Report\n\n- **interface_changed** @ LoopBack0\n  original: `LoopBack0`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/0/0\n  original: `GigabitEthernet0/0/0`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/0/1\n  original: `GigabitEthernet0/0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射",
           "fallback_reason": "",
           "fallback_used": false,
           "features": [
@@ -6853,73 +6927,73 @@
           ],
           "node_results": [
             {
-              "elapsed_ms": 0.45,
+              "elapsed_ms": 0.52,
               "error": null,
               "node": "parse",
               "status": "success"
             },
             {
-              "elapsed_ms": 18.76,
+              "elapsed_ms": 29.41,
               "error": null,
               "node": "feature_analyzer",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.57,
+              "elapsed_ms": 1.18,
               "error": null,
               "node": "knowledge",
               "status": "success"
             },
             {
-              "elapsed_ms": 3.6,
+              "elapsed_ms": 7.34,
               "error": null,
               "node": "cache",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.0,
+              "elapsed_ms": 0.01,
               "error": null,
               "node": "translate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.0,
+              "elapsed_ms": 0.01,
               "error": null,
               "node": "router",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.02,
+              "elapsed_ms": 0.04,
               "error": null,
               "node": "semantic_validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.26,
+              "elapsed_ms": 0.47,
               "error": null,
               "node": "capability_gap",
               "status": "success"
             },
             {
-              "elapsed_ms": 1.41,
+              "elapsed_ms": 9.38,
               "error": null,
               "node": "validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.39,
+              "elapsed_ms": 0.85,
               "error": null,
               "node": "diff",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.0,
+              "elapsed_ms": 0.01,
               "error": null,
               "node": "cache_write",
               "status": "skipped"
             },
             {
-              "elapsed_ms": 0.19,
+              "elapsed_ms": 0.35,
               "error": null,
               "node": "memory",
               "status": "success"
@@ -6945,8 +7019,7 @@
           ],
           "route_decision": "success",
           "semantic_validation": {
-            "matched_features": [],
-            "missing_features": [
+            "matched_features": [
               "system",
               "interface",
               "interface",
@@ -6954,10 +7027,9 @@
               "ospf",
               "bfd"
             ],
-            "notes": [
-              "keyword overlap low for: system, interface, interface, interface, ospf, bfd"
-            ],
-            "score": 0.0,
+            "missing_features": [],
+            "notes": [],
+            "score": 0.75,
             "source_vendor_residue": []
           },
           "source_domain": "routing",
@@ -6965,7 +7037,7 @@
           "success": true,
           "target_domain": "routing",
           "target_platform": "ios",
-          "translated": "hostname ROUTER_OSPF_BFD\ninterface GigabitEthernet0/0/0\n description Link-to-Core-1\n ip address 198.18.1.1 255.255.255.0\n ip ospf 1 area 0.0.0.0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface GigabitEthernet0/0/1\n description Link-to-Core-2\n ip address 198.18.2.1 255.255.255.0\n ip ospf 1 area 0.0.0.0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface Loopback0\n ip address 198.18.255.1 255.255.255.255\n ip ospf 1 area 0.0.0.0\nrouter ospf 1\n router-id 198.18.255.1\n network 198.18.0.0 0.0.255.255 area 0.0.0.0\n! BFD is configured per-interface with 'bfd interval' command\n! The OSPF BFD binding is achieved via interface-level BFD configuration",
+          "translated": "hostname ROUTER_OSPF_BFD\ninterface GigabitEthernet0/1\n description Link-to-Core-1\n ip address 198.18.1.1 255.255.255.0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface GigabitEthernet0/2\n description Link-to-Core-2\n ip address 198.18.2.1 255.255.255.0\n bfd interval 100 min_rx 100 multiplier 3\n no shutdown\ninterface Loopback0\n ip address 198.18.255.1 255.255.255.255\nrouter ospf 1\n router-id 198.18.255.1\n network 198.18.0.0 0.0.255.255 area 0\n bfd all-interfaces\n! BFD is configured per-interface with bfd interval command\n! and enabled globally under routing protocols with bfd all-interfaces",
           "validation": {
             "deployable": false,
             "errors": [],
@@ -7226,13 +7298,13 @@
         "static_route",
         "interface"
       ],
-      "status": "fail",
+      "status": "pass",
       "category": "",
-      "failure_reason": "missing must_include: ip route-static vpn-instance",
-      "elapsed_ms": "28",
-      "errors": [
-        "missing must_include: ip route-static vpn-instance"
-      ],
+      "failure_reason": "",
+      "elapsed_ms": "44",
+      "errors": [],
+      "correctness_pass": true,
+      "clean_deployable": true,
       "deployable": true,
       "manual_review_required": false,
       "validation_level": "info",
@@ -7322,13 +7394,13 @@
         "valid": true,
         "warnings": []
       },
-      "translated_excerpt": "ip vpn-instance CUSTOMER_A\n ipv4-family\n  route-distinguisher 65001:100\n  vpn-target 65001:100 export-extcommunity\n  vpn-target 65001:100 import-extcommunity\nip vpn-instance CUSTOMER_B\n ipv4-family\n  route-distinguisher 65001:200\n  vpn-target 65001:200 export-extcommunity\n  vpn-target 65001:200 impo...",
+      "translated_excerpt": "ip vpn-instance CUSTOMER_A\n ipv4-family\n  route-distinguisher 65001:100\n  vpn-target 65001:100 export-extcommunity\n  vpn-target 65001:100 import-extcommunity\n!\nip vpn-instance CUSTOMER_B\n ipv4-family\n  route-distinguisher 65001:200\n  vpn-target 65001:200 export-extcommunity\n  vpn-target 65001:200 im...",
       "detail": {
-        "translated": "ip vpn-instance CUSTOMER_A\n ipv4-family\n  route-distinguisher 65001:100\n  vpn-target 65001:100 export-extcommunity\n  vpn-target 65001:100 import-extcommunity\nip vpn-instance CUSTOMER_B\n ipv4-family\n  route-distinguisher 65001:200\n  vpn-target 65001:200 export-extcommunity\n  vpn-target 65001:200 import-extcommunity\ninterface GigabitEthernet0/0/0\n description To-Customer-A\n ip binding vpn-instance CUSTOMER_A\n ip address 198.18.10.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description To-Customer-B\n ip binding vpn-instance CUSTOMER_B\n ip address 198.18.20.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/2\n description To-Upstream\n ip address 198.18.254.1 255.255.255.0\n undo shutdown\nip route-static 0.0.0.0 0.0.0.0 198.18.254.2 vpn-instance CUSTOMER_A\nip route-static 0.0.0.0 0.0.0.0 198.18.254.2 vpn-instance CUSTOMER_B\nip route-static 198.18.254.0 255.255.255.0 198.18.254.2",
-        "translated_excerpt": "ip vpn-instance CUSTOMER_A\n ipv4-family\n  route-distinguisher 65001:100\n  vpn-target 65001:100 export-extcommunity\n  vpn-target 65001:100 import-extcommunity\nip vpn-instance CUSTOMER_B\n ipv4-family\n  route-distinguisher 65001:200\n  vpn-target 65001:200 export-extcommunity\n  vpn-target 65001:200 impo...",
+        "translated": "ip vpn-instance CUSTOMER_A\n ipv4-family\n  route-distinguisher 65001:100\n  vpn-target 65001:100 export-extcommunity\n  vpn-target 65001:100 import-extcommunity\n!\nip vpn-instance CUSTOMER_B\n ipv4-family\n  route-distinguisher 65001:200\n  vpn-target 65001:200 export-extcommunity\n  vpn-target 65001:200 import-extcommunity\ninterface GigabitEthernet0/0/0\n description To-Customer-A\n ip binding vpn-instance CUSTOMER_A\n ip address 198.18.10.1 255.255.255.0\n undo shutdown\n!\ninterface GigabitEthernet0/0/1\n description To-Customer-B\n ip binding vpn-instance CUSTOMER_B\n ip address 198.18.20.1 255.255.255.0\n undo shutdown\n!\ninterface GigabitEthernet0/0/2\n description To-Upstream\n ip address 198.18.254.1 255.255.255.0\n undo shutdown\nip route-static vpn-instance CUSTOMER_A 0.0.0.0 0.0.0.0 198.18.254.2\nip route-static vpn-instance CUSTOMER_B 0.0.0.0 0.0.0.0 198.18.254.2\nip route-static 198.18.254.0 255.255.255.0 198.18.254.2",
+        "translated_excerpt": "ip vpn-instance CUSTOMER_A\n ipv4-family\n  route-distinguisher 65001:100\n  vpn-target 65001:100 export-extcommunity\n  vpn-target 65001:100 import-extcommunity\n!\nip vpn-instance CUSTOMER_B\n ipv4-family\n  route-distinguisher 65001:200\n  vpn-target 65001:200 export-extcommunity\n  vpn-target 65001:200 im...",
         "status_code": 200,
-        "elapsed": 0.028063297271728516,
-        "request_id": "aac96ee5-49f0-4e2a-bcb3-0fefafa0a235",
+        "elapsed": 0.04389214515686035,
+        "request_id": "11922e25-845a-4068-af3d-0613210b5a04",
         "api_result": {
           "analyzer_results": [
             {
@@ -7415,7 +7487,7 @@
             "static_route: supported ()",
             "vrf: supported ()"
           ],
-          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet0/1\n  original: `GigabitEthernet0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/0\n  original: `GigabitEthernet0/0`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/2\n  original: `GigabitEthernet0/2`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射",
+          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet0/0\n  original: `GigabitEthernet0/0`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/2\n  original: `GigabitEthernet0/2`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/1\n  original: `GigabitEthernet0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射",
           "fallback_reason": "",
           "fallback_used": false,
           "features": [
@@ -7425,25 +7497,25 @@
           ],
           "node_results": [
             {
-              "elapsed_ms": 0.46,
+              "elapsed_ms": 0.89,
               "error": null,
               "node": "parse",
               "status": "success"
             },
             {
-              "elapsed_ms": 17.82,
+              "elapsed_ms": 30.09,
               "error": null,
               "node": "feature_analyzer",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.6,
+              "elapsed_ms": 0.71,
               "error": null,
               "node": "knowledge",
               "status": "success"
             },
             {
-              "elapsed_ms": 3.62,
+              "elapsed_ms": 4.0,
               "error": null,
               "node": "cache",
               "status": "success"
@@ -7455,43 +7527,43 @@
               "status": "success"
             },
             {
-              "elapsed_ms": 0.0,
+              "elapsed_ms": 0.01,
               "error": null,
               "node": "router",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.02,
+              "elapsed_ms": 0.05,
               "error": null,
               "node": "semantic_validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.29,
+              "elapsed_ms": 0.33,
               "error": null,
               "node": "capability_gap",
               "status": "success"
             },
             {
-              "elapsed_ms": 1.26,
+              "elapsed_ms": 1.82,
               "error": null,
               "node": "validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.43,
+              "elapsed_ms": 0.84,
               "error": null,
               "node": "diff",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.0,
+              "elapsed_ms": 0.01,
               "error": null,
               "node": "cache_write",
               "status": "skipped"
             },
             {
-              "elapsed_ms": 0.17,
+              "elapsed_ms": 0.32,
               "error": null,
               "node": "memory",
               "status": "success"
@@ -7502,17 +7574,12 @@
           "semantic_validation": {
             "matched_features": [
               "vrf",
-              "vrf",
               "interface",
-              "interface",
-              "interface",
-              "static_route",
-              "static_route",
               "static_route"
             ],
             "missing_features": [],
             "notes": [],
-            "score": 0.8,
+            "score": 0.6,
             "source_vendor_residue": []
           },
           "source_domain": "routing",
@@ -7520,7 +7587,7 @@
           "success": true,
           "target_domain": "routing",
           "target_platform": "vrp",
-          "translated": "ip vpn-instance CUSTOMER_A\n ipv4-family\n  route-distinguisher 65001:100\n  vpn-target 65001:100 export-extcommunity\n  vpn-target 65001:100 import-extcommunity\nip vpn-instance CUSTOMER_B\n ipv4-family\n  route-distinguisher 65001:200\n  vpn-target 65001:200 export-extcommunity\n  vpn-target 65001:200 import-extcommunity\ninterface GigabitEthernet0/0/0\n description To-Customer-A\n ip binding vpn-instance CUSTOMER_A\n ip address 198.18.10.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/1\n description To-Customer-B\n ip binding vpn-instance CUSTOMER_B\n ip address 198.18.20.1 255.255.255.0\n undo shutdown\ninterface GigabitEthernet0/0/2\n description To-Upstream\n ip address 198.18.254.1 255.255.255.0\n undo shutdown\nip route-static 0.0.0.0 0.0.0.0 198.18.254.2 vpn-instance CUSTOMER_A\nip route-static 0.0.0.0 0.0.0.0 198.18.254.2 vpn-instance CUSTOMER_B\nip route-static 198.18.254.0 255.255.255.0 198.18.254.2",
+          "translated": "ip vpn-instance CUSTOMER_A\n ipv4-family\n  route-distinguisher 65001:100\n  vpn-target 65001:100 export-extcommunity\n  vpn-target 65001:100 import-extcommunity\n!\nip vpn-instance CUSTOMER_B\n ipv4-family\n  route-distinguisher 65001:200\n  vpn-target 65001:200 export-extcommunity\n  vpn-target 65001:200 import-extcommunity\ninterface GigabitEthernet0/0/0\n description To-Customer-A\n ip binding vpn-instance CUSTOMER_A\n ip address 198.18.10.1 255.255.255.0\n undo shutdown\n!\ninterface GigabitEthernet0/0/1\n description To-Customer-B\n ip binding vpn-instance CUSTOMER_B\n ip address 198.18.20.1 255.255.255.0\n undo shutdown\n!\ninterface GigabitEthernet0/0/2\n description To-Upstream\n ip address 198.18.254.1 255.255.255.0\n undo shutdown\nip route-static vpn-instance CUSTOMER_A 0.0.0.0 0.0.0.0 198.18.254.2\nip route-static vpn-instance CUSTOMER_B 0.0.0.0 0.0.0.0 198.18.254.2\nip route-static 198.18.254.0 255.255.255.0 198.18.254.2",
           "validation": {
             "deployable": true,
             "errors": [],
@@ -7723,14 +7790,17 @@
       ],
       "status": "fail",
       "category": "",
-      "failure_reason": "missing must_include: dhcp snooping trust",
-      "elapsed_ms": "28",
+      "failure_reason": "deployable expected=False got=True; expected manual_review_required=True but system returned False",
+      "elapsed_ms": "34",
       "errors": [
-        "missing must_include: dhcp snooping trust"
+        "deployable expected=False got=True",
+        "expected manual_review_required=True but system returned False"
       ],
-      "deployable": false,
-      "manual_review_required": true,
-      "validation_level": "warning",
+      "correctness_pass": false,
+      "clean_deployable": true,
+      "deployable": true,
+      "manual_review_required": false,
+      "validation_level": "info",
       "analyzer_results": [
         {
           "feature": "vlan",
@@ -7913,22 +7983,20 @@
         }
       ],
       "validation": {
-        "deployable": false,
+        "deployable": true,
         "errors": [],
-        "level": "warning",
-        "manual_review_required": true,
+        "level": "info",
+        "manual_review_required": false,
         "valid": true,
-        "warnings": [
-          "华为 VRP 使用 acl name 时注意 name 前面无需 number"
-        ]
+        "warnings": []
       },
-      "translated_excerpt": "dhcp snooping enable\nvlan 10\n dhcp snooping enable\nvlan 20\n dhcp snooping enable\nvlan 30\n dhcp snooping enable\ndhcp snooping information option format remote-id\ninterface GigabitEthernet0/0/1\n description Trunk-to-Core\n port link-type trunk\n port trunk allow-pass vlan 10 20 30 100\n undo shutdown\nint...",
+      "translated_excerpt": "dhcp snooping enable\nvlan 10\n dhcp snooping enable\nvlan 20\n dhcp snooping enable\nvlan 30\n dhcp snooping enable\ndhcp snooping information option enable\ninterface GigabitEthernet0/0/1\n description Trunk-to-Core\n port link-type trunk\n port trunk allow-pass vlan 10 20 30 100\n dhcp snooping trust\n undo s...",
       "detail": {
-        "translated": "dhcp snooping enable\nvlan 10\n dhcp snooping enable\nvlan 20\n dhcp snooping enable\nvlan 30\n dhcp snooping enable\ndhcp snooping information option format remote-id\ninterface GigabitEthernet0/0/1\n description Trunk-to-Core\n port link-type trunk\n port trunk allow-pass vlan 10 20 30 100\n undo shutdown\ninterface GigabitEthernet0/0/2\n description Access-VLAN10\n port link-type access\n port default vlan 10\n undo shutdown\ninterface GigabitEthernet0/0/3\n description Access-VLAN20\n port link-type access\n port default vlan 20\n undo shutdown\ninterface Vlanif100\n description Management\n ip address 198.18.100.1 255.255.255.0\n undo shutdown\nacl name BLOCK_P2P advanced\n rule 5 deny tcp destination-port eq 4662\n rule 10 deny tcp destination-port eq 6699\n rule 15 permit ip\ninterface Vlanif10\n traffic-filter inbound acl name BLOCK_P2P",
-        "translated_excerpt": "dhcp snooping enable\nvlan 10\n dhcp snooping enable\nvlan 20\n dhcp snooping enable\nvlan 30\n dhcp snooping enable\ndhcp snooping information option format remote-id\ninterface GigabitEthernet0/0/1\n description Trunk-to-Core\n port link-type trunk\n port trunk allow-pass vlan 10 20 30 100\n undo shutdown\nint...",
+        "translated": "dhcp snooping enable\nvlan 10\n dhcp snooping enable\nvlan 20\n dhcp snooping enable\nvlan 30\n dhcp snooping enable\ndhcp snooping information option enable\ninterface GigabitEthernet0/0/1\n description Trunk-to-Core\n port link-type trunk\n port trunk allow-pass vlan 10 20 30 100\n dhcp snooping trust\n undo shutdown\ninterface GigabitEthernet0/0/2\n description Access-VLAN10\n port link-type access\n port default vlan 10\n undo shutdown\ninterface GigabitEthernet0/0/3\n description Access-VLAN20\n port link-type access\n port default vlan 20\n undo shutdown\ninterface Vlanif100\n description Management\n ip address 198.18.100.1 255.255.255.0\n undo shutdown\nacl number 3000\n rule 5 deny tcp any any destination-port eq 4662\n rule 10 deny tcp any any destination-port eq 6699\n rule 15 permit ip source any destination any\ninterface Vlanif10\n traffic-filter inbound acl 3000",
+        "translated_excerpt": "dhcp snooping enable\nvlan 10\n dhcp snooping enable\nvlan 20\n dhcp snooping enable\nvlan 30\n dhcp snooping enable\ndhcp snooping information option enable\ninterface GigabitEthernet0/0/1\n description Trunk-to-Core\n port link-type trunk\n port trunk allow-pass vlan 10 20 30 100\n dhcp snooping trust\n undo s...",
         "status_code": 200,
-        "elapsed": 0.0281221866607666,
-        "request_id": "45c2fd7a-030c-43d0-b08d-05c57175d2da",
+        "elapsed": 0.03403162956237793,
+        "request_id": "4f7bf491-010e-44f6-a6ec-ed34a4542ce6",
         "api_result": {
           "analyzer_results": [
             {
@@ -8119,7 +8187,7 @@
             "interface: supported ()",
             "vlan: supported ()"
           ],
-          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet0/1\n  original: `GigabitEthernet0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ Vlan10\n  original: `Vlan10`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/3\n  original: `GigabitEthernet0/3`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ Vlan100\n  original: `Vlan100`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/2\n  original: `GigabitEthernet0/2`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **vlan_new** @ vlan 10\n  original: `(新增)`\n  translated: `vlan 10`\n- **vlan_new** @ vlan 20\n  original: `(新增)`\n  translated: `vlan 20`\n- **vlan_new** @ vlan 30\n  original: `(新增)`\n  translated: `vlan 30`",
+          "diff": "## Diff Report\n\n- **interface_changed** @ Vlan100\n  original: `Vlan100`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ Vlan10\n  original: `Vlan10`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/2\n  original: `GigabitEthernet0/2`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/3\n  original: `GigabitEthernet0/3`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/1\n  original: `GigabitEthernet0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **vlan_new** @ vlan 10\n  original: `(新增)`\n  translated: `vlan 10`\n- **vlan_new** @ vlan 20\n  original: `(新增)`\n  translated: `vlan 20`\n- **vlan_new** @ vlan 30\n  original: `(新增)`\n  translated: `vlan 30`",
           "fallback_reason": "",
           "fallback_used": false,
           "features": [
@@ -8130,25 +8198,25 @@
           ],
           "node_results": [
             {
-              "elapsed_ms": 0.51,
+              "elapsed_ms": 0.59,
               "error": null,
               "node": "parse",
               "status": "success"
             },
             {
-              "elapsed_ms": 17.53,
+              "elapsed_ms": 22.39,
               "error": null,
               "node": "feature_analyzer",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.65,
+              "elapsed_ms": 0.7,
               "error": null,
               "node": "knowledge",
               "status": "success"
             },
             {
-              "elapsed_ms": 3.61,
+              "elapsed_ms": 4.05,
               "error": null,
               "node": "cache",
               "status": "success"
@@ -8166,7 +8234,7 @@
               "status": "success"
             },
             {
-              "elapsed_ms": 0.02,
+              "elapsed_ms": 0.03,
               "error": null,
               "node": "semantic_validate",
               "status": "success"
@@ -8178,13 +8246,13 @@
               "status": "success"
             },
             {
-              "elapsed_ms": 1.23,
+              "elapsed_ms": 1.32,
               "error": null,
               "node": "validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.54,
+              "elapsed_ms": 0.53,
               "error": null,
               "node": "diff",
               "status": "success"
@@ -8196,32 +8264,29 @@
               "status": "skipped"
             },
             {
-              "elapsed_ms": 0.18,
+              "elapsed_ms": 0.23,
               "error": null,
               "node": "memory",
               "status": "success"
             }
           ],
-          "risk_signals": [
-            {
-              "deployability_impact": false,
-              "feature": "platform",
-              "manual_review_impact": true,
-              "message": "华为 VRP 使用 acl name 时注意 name 前面无需 number",
-              "severity": "warning",
-              "source": "platform"
-            }
-          ],
+          "risk_signals": [],
           "route_decision": "success",
           "semantic_validation": {
             "matched_features": [
               "dhcp",
               "interface",
-              "vlan",
+              "interface",
+              "interface",
+              "interface",
               "acl"
             ],
-            "missing_features": [],
-            "notes": [],
+            "missing_features": [
+              "interface"
+            ],
+            "notes": [
+              "keyword overlap low for: interface"
+            ],
             "score": 0.67,
             "source_vendor_residue": []
           },
@@ -8230,25 +8295,23 @@
           "success": true,
           "target_domain": "switching",
           "target_platform": "vrp",
-          "translated": "dhcp snooping enable\nvlan 10\n dhcp snooping enable\nvlan 20\n dhcp snooping enable\nvlan 30\n dhcp snooping enable\ndhcp snooping information option format remote-id\ninterface GigabitEthernet0/0/1\n description Trunk-to-Core\n port link-type trunk\n port trunk allow-pass vlan 10 20 30 100\n undo shutdown\ninterface GigabitEthernet0/0/2\n description Access-VLAN10\n port link-type access\n port default vlan 10\n undo shutdown\ninterface GigabitEthernet0/0/3\n description Access-VLAN20\n port link-type access\n port default vlan 20\n undo shutdown\ninterface Vlanif100\n description Management\n ip address 198.18.100.1 255.255.255.0\n undo shutdown\nacl name BLOCK_P2P advanced\n rule 5 deny tcp destination-port eq 4662\n rule 10 deny tcp destination-port eq 6699\n rule 15 permit ip\ninterface Vlanif10\n traffic-filter inbound acl name BLOCK_P2P",
+          "translated": "dhcp snooping enable\nvlan 10\n dhcp snooping enable\nvlan 20\n dhcp snooping enable\nvlan 30\n dhcp snooping enable\ndhcp snooping information option enable\ninterface GigabitEthernet0/0/1\n description Trunk-to-Core\n port link-type trunk\n port trunk allow-pass vlan 10 20 30 100\n dhcp snooping trust\n undo shutdown\ninterface GigabitEthernet0/0/2\n description Access-VLAN10\n port link-type access\n port default vlan 10\n undo shutdown\ninterface GigabitEthernet0/0/3\n description Access-VLAN20\n port link-type access\n port default vlan 20\n undo shutdown\ninterface Vlanif100\n description Management\n ip address 198.18.100.1 255.255.255.0\n undo shutdown\nacl number 3000\n rule 5 deny tcp any any destination-port eq 4662\n rule 10 deny tcp any any destination-port eq 6699\n rule 15 permit ip source any destination any\ninterface Vlanif10\n traffic-filter inbound acl 3000",
           "validation": {
-            "deployable": false,
+            "deployable": true,
             "errors": [],
-            "level": "warning",
-            "manual_review_required": true,
+            "level": "info",
+            "manual_review_required": false,
             "valid": true,
-            "warnings": [
-              "华为 VRP 使用 acl name 时注意 name 前面无需 number"
-            ]
+            "warnings": []
           },
-          "level": "warning",
-          "deployable": false,
-          "manual_review_required": true
+          "level": "info",
+          "deployable": true,
+          "manual_review_required": false
         },
         "meta": {
-          "level": "warning",
-          "deployable": false,
-          "manual_review_required": true,
+          "level": "info",
+          "deployable": true,
+          "manual_review_required": false,
           "capability_gaps": [
             {
               "details": {},
@@ -8432,14 +8495,12 @@
           ]
         },
         "validation": {
-          "deployable": false,
+          "deployable": true,
           "errors": [],
-          "level": "warning",
-          "manual_review_required": true,
+          "level": "info",
+          "manual_review_required": false,
           "valid": true,
-          "warnings": [
-            "华为 VRP 使用 acl name 时注意 name 前面无需 number"
-          ]
+          "warnings": []
         },
         "analyzer_results": [
           {
@@ -8644,8 +8705,10 @@
       "status": "pass",
       "category": "",
       "failure_reason": "",
-      "elapsed_ms": "28",
+      "elapsed_ms": "32",
       "errors": [],
+      "correctness_pass": true,
+      "clean_deployable": true,
       "deployable": true,
       "manual_review_required": false,
       "validation_level": "info",
@@ -8759,13 +8822,13 @@
         "valid": true,
         "warnings": []
       },
-      "translated_excerpt": "hostname SWITCH_LACP\ninterface Port-channel1\n description Aggregated-Uplink\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,100\n no shutdown\ninterface GigabitEthernet0/1\n channel-group 1 mode active\n no shutdown\n!\ninterface GigabitEthernet0/2\n channel-group 1 mode active\n no shutdown\n...",
+      "translated_excerpt": "hostname SWITCH_LACP\nvlan 10\n name Server\nvlan 20\n name Voice\nvlan 30\nvlan 100\ninterface Port-channel1\n description Aggregated-Uplink\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,100\ninterface GigabitEthernet0/1\n channel-group 1 mode active\nint...",
       "detail": {
-        "translated": "hostname SWITCH_LACP\ninterface Port-channel1\n description Aggregated-Uplink\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,100\n no shutdown\ninterface GigabitEthernet0/1\n channel-group 1 mode active\n no shutdown\n!\ninterface GigabitEthernet0/2\n channel-group 1 mode active\n no shutdown\n!\ninterface GigabitEthernet0/3\n channel-group 1 mode active\n no shutdown\ninterface GigabitEthernet0/10\n switchport mode access\n switchport access vlan 10\n no shutdown\n!\ninterface GigabitEthernet0/11\n switchport mode access\n switchport access vlan 20\n no shutdown\ninterface Vlan100\n ip address 198.18.100.1 255.255.255.0\n no shutdown",
-        "translated_excerpt": "hostname SWITCH_LACP\ninterface Port-channel1\n description Aggregated-Uplink\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,100\n no shutdown\ninterface GigabitEthernet0/1\n channel-group 1 mode active\n no shutdown\n!\ninterface GigabitEthernet0/2\n channel-group 1 mode active\n no shutdown\n...",
+        "translated": "hostname SWITCH_LACP\nvlan 10\n name Server\nvlan 20\n name Voice\nvlan 30\nvlan 100\ninterface Port-channel1\n description Aggregated-Uplink\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,100\ninterface GigabitEthernet0/1\n channel-group 1 mode active\ninterface GigabitEthernet0/2\n channel-group 1 mode active\ninterface GigabitEthernet0/3\n channel-group 1 mode active\ninterface GigabitEthernet0/10\n switchport mode access\n switchport access vlan 10\n no shutdown\ninterface GigabitEthernet0/11\n switchport mode access\n switchport access vlan 20\n no shutdown\ninterface Vlan100\n ip address 198.18.100.1 255.255.255.0\n no shutdown",
+        "translated_excerpt": "hostname SWITCH_LACP\nvlan 10\n name Server\nvlan 20\n name Voice\nvlan 30\nvlan 100\ninterface Port-channel1\n description Aggregated-Uplink\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,100\ninterface GigabitEthernet0/1\n channel-group 1 mode active\nint...",
         "status_code": 200,
-        "elapsed": 0.027503490447998047,
-        "request_id": "bd0be12b-100c-4fce-bfd8-0bda9f6ead0a",
+        "elapsed": 0.03193402290344238,
+        "request_id": "ecf8b289-3718-4001-bc51-56e7c8729415",
         "api_result": {
           "analyzer_results": [
             {
@@ -8877,7 +8940,7 @@
             "system: supported ()",
             "vlan: supported ()"
           ],
-          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet0/0/11\n  original: `GigabitEthernet0/0/11`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ Vlanif100\n  original: `Vlanif100`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/0/1\n  original: `GigabitEthernet0/0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/0/10\n  original: `GigabitEthernet0/0/10`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/0/2\n  original: `GigabitEthernet0/0/2`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/0/3\n  original: `GigabitEthernet0/0/3`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ Eth-Trunk1\n  original: `Eth-Trunk1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射",
+          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet0/0/1\n  original: `GigabitEthernet0/0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ Eth-Trunk1\n  original: `Eth-Trunk1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ Vlanif100\n  original: `Vlanif100`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/0/11\n  original: `GigabitEthernet0/0/11`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/0/2\n  original: `GigabitEthernet0/0/2`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/0/10\n  original: `GigabitEthernet0/0/10`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/0/3\n  original: `GigabitEthernet0/0/3`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **vlan_new** @ vlan 100\n  original: `(新增)`\n  translated: `vlan 100`\n- **vlan_new** @ vlan 10\n  original: `(新增)`\n  translated: `vlan 10`\n- **vlan_new** @ vlan 20\n  original: `(新增)`\n  translated: `vlan 20`\n- **vlan_new** @ vlan 30\n  original: `(新增)`\n  translated: `vlan 30`",
           "fallback_reason": "",
           "fallback_used": false,
           "features": [
@@ -8888,25 +8951,25 @@
           ],
           "node_results": [
             {
-              "elapsed_ms": 0.49,
+              "elapsed_ms": 0.57,
               "error": null,
               "node": "parse",
               "status": "success"
             },
             {
-              "elapsed_ms": 17.22,
+              "elapsed_ms": 19.55,
               "error": null,
               "node": "feature_analyzer",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.6,
+              "elapsed_ms": 0.65,
               "error": null,
               "node": "knowledge",
               "status": "success"
             },
             {
-              "elapsed_ms": 3.62,
+              "elapsed_ms": 3.87,
               "error": null,
               "node": "cache",
               "status": "success"
@@ -8930,19 +8993,19 @@
               "status": "success"
             },
             {
-              "elapsed_ms": 0.26,
+              "elapsed_ms": 0.28,
               "error": null,
               "node": "capability_gap",
               "status": "success"
             },
             {
-              "elapsed_ms": 1.23,
+              "elapsed_ms": 1.33,
               "error": null,
               "node": "validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.5,
+              "elapsed_ms": 0.54,
               "error": null,
               "node": "diff",
               "status": "success"
@@ -8954,7 +9017,7 @@
               "status": "skipped"
             },
             {
-              "elapsed_ms": 0.24,
+              "elapsed_ms": 0.2,
               "error": null,
               "node": "memory",
               "status": "success"
@@ -8965,8 +9028,8 @@
           "semantic_validation": {
             "matched_features": [
               "system",
+              "vlan",
               "port_channel",
-              "interface",
               "interface",
               "interface"
             ],
@@ -8980,7 +9043,7 @@
           "success": true,
           "target_domain": "switching",
           "target_platform": "ios",
-          "translated": "hostname SWITCH_LACP\ninterface Port-channel1\n description Aggregated-Uplink\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,100\n no shutdown\ninterface GigabitEthernet0/1\n channel-group 1 mode active\n no shutdown\n!\ninterface GigabitEthernet0/2\n channel-group 1 mode active\n no shutdown\n!\ninterface GigabitEthernet0/3\n channel-group 1 mode active\n no shutdown\ninterface GigabitEthernet0/10\n switchport mode access\n switchport access vlan 10\n no shutdown\n!\ninterface GigabitEthernet0/11\n switchport mode access\n switchport access vlan 20\n no shutdown\ninterface Vlan100\n ip address 198.18.100.1 255.255.255.0\n no shutdown",
+          "translated": "hostname SWITCH_LACP\nvlan 10\n name Server\nvlan 20\n name Voice\nvlan 30\nvlan 100\ninterface Port-channel1\n description Aggregated-Uplink\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 10,20,30,100\ninterface GigabitEthernet0/1\n channel-group 1 mode active\ninterface GigabitEthernet0/2\n channel-group 1 mode active\ninterface GigabitEthernet0/3\n channel-group 1 mode active\ninterface GigabitEthernet0/10\n switchport mode access\n switchport access vlan 10\n no shutdown\ninterface GigabitEthernet0/11\n switchport mode access\n switchport access vlan 20\n no shutdown\ninterface Vlan100\n ip address 198.18.100.1 255.255.255.0\n no shutdown",
           "validation": {
             "deployable": true,
             "errors": [],
@@ -9228,13 +9291,13 @@
         "vlan",
         "interface"
       ],
-      "status": "fail",
+      "status": "pass",
       "category": "",
-      "failure_reason": "missing must_include: stp region-name",
-      "elapsed_ms": "39",
-      "errors": [
-        "missing must_include: stp region-name"
-      ],
+      "failure_reason": "",
+      "elapsed_ms": "28",
+      "errors": [],
+      "correctness_pass": true,
+      "clean_deployable": true,
       "deployable": true,
       "manual_review_required": false,
       "validation_level": "info",
@@ -9372,13 +9435,13 @@
         "valid": true,
         "warnings": []
       },
-      "translated_excerpt": "stp mode mstp\nstp enable\nstp region-configuration\n region-name LAB_MSTP\n revision-level 1\n instance 1 vlan 10 to 20\n instance 2 vlan 30 to 40\n active region-configuration\n quit\nstp instance 1 root primary\nstp instance 2 root secondary\ninterface GigabitEthernet0/0/1\n description Trunk-to-Core\n port l...",
+      "translated_excerpt": "stp mode mstp\nstp region-name LAB_MSTP\nstp region-revision 1\ninstance 1 vlan 10 20\ninstance 2 vlan 30 40\nstp instance 1 root primary\nstp instance 2 root secondary\ninterface GigabitEthernet0/0/1\ndescription Trunk-to-Core\nport link-type trunk\nport trunk allow-pass vlan 10 20 30 40 100\nundo stp edged-p...",
       "detail": {
-        "translated": "stp mode mstp\nstp enable\nstp region-configuration\n region-name LAB_MSTP\n revision-level 1\n instance 1 vlan 10 to 20\n instance 2 vlan 30 to 40\n active region-configuration\n quit\nstp instance 1 root primary\nstp instance 2 root secondary\ninterface GigabitEthernet0/0/1\n description Trunk-to-Core\n port link-type trunk\n port trunk allow-pass vlan 10 20 30 40 100\n undo stp edged-port\n undo shutdown\n stp enable\n quit\ninterface GigabitEthernet0/0/2\n description Access-VLAN10\n port link-type access\n port default vlan 10\n stp edged-port enable\n undo shutdown\n stp enable\n quit\ninterface GigabitEthernet0/0/3\n description Access-VLAN20\n port link-type access\n port default vlan 20\n stp edged-port enable\n undo shutdown\n stp enable\n quit\ninterface Vlanif100\n description Management\n ip address 198.18.100.1 255.255.255.0\n undo shutdown\n quit",
-        "translated_excerpt": "stp mode mstp\nstp enable\nstp region-configuration\n region-name LAB_MSTP\n revision-level 1\n instance 1 vlan 10 to 20\n instance 2 vlan 30 to 40\n active region-configuration\n quit\nstp instance 1 root primary\nstp instance 2 root secondary\ninterface GigabitEthernet0/0/1\n description Trunk-to-Core\n port l...",
+        "translated": "stp mode mstp\nstp region-name LAB_MSTP\nstp region-revision 1\ninstance 1 vlan 10 20\ninstance 2 vlan 30 40\nstp instance 1 root primary\nstp instance 2 root secondary\ninterface GigabitEthernet0/0/1\ndescription Trunk-to-Core\nport link-type trunk\nport trunk allow-pass vlan 10 20 30 40 100\nundo stp edged-port\nundo shutdown\ninterface GigabitEthernet0/0/2\ndescription Access-VLAN10\nport link-type access\nport default vlan 10\nstp edged-port enable\nundo shutdown\ninterface GigabitEthernet0/0/3\ndescription Access-VLAN20\nport link-type access\nport default vlan 20\nstp edged-port enable\nundo shutdown\ninterface Vlanif100\ndescription Management\nip address 198.18.100.1 255.255.255.0\nundo shutdown",
+        "translated_excerpt": "stp mode mstp\nstp region-name LAB_MSTP\nstp region-revision 1\ninstance 1 vlan 10 20\ninstance 2 vlan 30 40\nstp instance 1 root primary\nstp instance 2 root secondary\ninterface GigabitEthernet0/0/1\ndescription Trunk-to-Core\nport link-type trunk\nport trunk allow-pass vlan 10 20 30 40 100\nundo stp edged-p...",
         "status_code": 200,
-        "elapsed": 0.0386357307434082,
-        "request_id": "10d191e6-8ce1-41a6-9c2d-f0731d7062fc",
+        "elapsed": 0.02844691276550293,
+        "request_id": "3f8a8c63-5cee-4bb9-a0c6-d426be731db9",
         "api_result": {
           "analyzer_results": [
             {
@@ -9513,7 +9576,7 @@
             "stp: supported ()",
             "vlan: supported ()"
           ],
-          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet0/1\n  original: `GigabitEthernet0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ Vlan100\n  original: `Vlan100`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/2\n  original: `GigabitEthernet0/2`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/3\n  original: `GigabitEthernet0/3`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射",
+          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet0/2\n  original: `GigabitEthernet0/2`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/3\n  original: `GigabitEthernet0/3`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet0/1\n  original: `GigabitEthernet0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ Vlan100\n  original: `Vlan100`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射",
           "fallback_reason": "",
           "fallback_used": false,
           "features": [
@@ -9523,25 +9586,25 @@
           ],
           "node_results": [
             {
-              "elapsed_ms": 0.55,
+              "elapsed_ms": 0.61,
               "error": null,
               "node": "parse",
               "status": "success"
             },
             {
-              "elapsed_ms": 27.13,
+              "elapsed_ms": 18.06,
               "error": null,
               "node": "feature_analyzer",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.77,
+              "elapsed_ms": 0.69,
               "error": null,
               "node": "knowledge",
               "status": "success"
             },
             {
-              "elapsed_ms": 3.68,
+              "elapsed_ms": 3.74,
               "error": null,
               "node": "cache",
               "status": "success"
@@ -9559,31 +9622,31 @@
               "status": "success"
             },
             {
-              "elapsed_ms": 0.03,
+              "elapsed_ms": 0.02,
               "error": null,
               "node": "semantic_validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.33,
+              "elapsed_ms": 0.34,
               "error": null,
               "node": "capability_gap",
               "status": "success"
             },
             {
-              "elapsed_ms": 1.25,
+              "elapsed_ms": 1.01,
               "error": null,
               "node": "validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.56,
+              "elapsed_ms": 0.43,
               "error": null,
               "node": "diff",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.02,
+              "elapsed_ms": 0.0,
               "error": null,
               "node": "cache_write",
               "status": "skipped"
@@ -9615,7 +9678,7 @@
           "success": true,
           "target_domain": "switching",
           "target_platform": "vrp",
-          "translated": "stp mode mstp\nstp enable\nstp region-configuration\n region-name LAB_MSTP\n revision-level 1\n instance 1 vlan 10 to 20\n instance 2 vlan 30 to 40\n active region-configuration\n quit\nstp instance 1 root primary\nstp instance 2 root secondary\ninterface GigabitEthernet0/0/1\n description Trunk-to-Core\n port link-type trunk\n port trunk allow-pass vlan 10 20 30 40 100\n undo stp edged-port\n undo shutdown\n stp enable\n quit\ninterface GigabitEthernet0/0/2\n description Access-VLAN10\n port link-type access\n port default vlan 10\n stp edged-port enable\n undo shutdown\n stp enable\n quit\ninterface GigabitEthernet0/0/3\n description Access-VLAN20\n port link-type access\n port default vlan 20\n stp edged-port enable\n undo shutdown\n stp enable\n quit\ninterface Vlanif100\n description Management\n ip address 198.18.100.1 255.255.255.0\n undo shutdown\n quit",
+          "translated": "stp mode mstp\nstp region-name LAB_MSTP\nstp region-revision 1\ninstance 1 vlan 10 20\ninstance 2 vlan 30 40\nstp instance 1 root primary\nstp instance 2 root secondary\ninterface GigabitEthernet0/0/1\ndescription Trunk-to-Core\nport link-type trunk\nport trunk allow-pass vlan 10 20 30 40 100\nundo stp edged-port\nundo shutdown\ninterface GigabitEthernet0/0/2\ndescription Access-VLAN10\nport link-type access\nport default vlan 10\nstp edged-port enable\nundo shutdown\ninterface GigabitEthernet0/0/3\ndescription Access-VLAN20\nport link-type access\nport default vlan 20\nstp edged-port enable\nundo shutdown\ninterface Vlanif100\ndescription Management\nip address 198.18.100.1 255.255.255.0\nundo shutdown",
           "validation": {
             "deployable": true,
             "errors": [],
@@ -9910,13 +9973,13 @@
         "interface",
         "irf"
       ],
-      "status": "fail",
+      "status": "pass",
       "category": "",
-      "failure_reason": "fatal capability_gaps: [{'details': {}, 'feature': 'irf', 'severity': 'fatal', 'source_lines': ['! H3C Comware — IRF stacking', 'irf member 1 member-priority 10', 'irf-port 1/1', 'irf-port 1/2', 'irf-port-configuration active'], 'source_vendor': 'h3c', 'status': 'unsupported', 'suggestion': '目标厂商不支持此功能，不自动生成目标配置', 'target_vendor': 'cisco'}]",
-      "elapsed_ms": "12487",
-      "errors": [
-        "fatal capability_gaps: [{'details': {}, 'feature': 'irf', 'severity': 'fatal', 'source_lines': ['! H3C Comware — IRF stacking', 'irf member 1 member-priority 10', 'irf-port 1/1', 'irf-port 1/2', 'irf-port-configuration active'], 'source_vendor': 'h3c', 'status': 'unsupported', 'suggestion': '目标厂商不支持此功能，不自动生成目标配置', 'target_vendor': 'cisco'}]"
-      ],
+      "failure_reason": "",
+      "elapsed_ms": "28025",
+      "errors": [],
+      "correctness_pass": true,
+      "clean_deployable": false,
       "deployable": false,
       "manual_review_required": true,
       "validation_level": "fatal",
@@ -10032,15 +10095,18 @@
         "level": "fatal",
         "manual_review_required": true,
         "valid": true,
-        "warnings": []
+        "warnings": [
+          "VRF RD/route-target 格式异常（缺少冒号）: Cisco",
+          "VRF RD/route-target 格式异常（缺少冒号）: Cisco"
+        ]
       },
-      "translated_excerpt": "hostname MEMBER-1\ninterface GigabitEthernet1/0/10\n description Access-VLAN10\n switchport mode access\n switchport access vlan 10\n spanning-tree portfast\n!\ninterface GigabitEthernet1/0/11\n description Access-VLAN20\n switchport mode access\n switchport access vlan 20\n spanning-tree portfast\nvlan 10\n nam...",
+      "translated_excerpt": "hostname MEMBER-1\n! Interface GigabitEthernet1/0/1 is configured as IRF stack-port in source\n! H3C IRF has no equivalent in standard Cisco IOS\n! MANUAL_REVIEW: This port participates in H3C IRF stacking; no Cisco IOS equivalent\n! Interface GigabitEthernet1/0/2 is configured as IRF stack-port in sour...",
       "detail": {
-        "translated": "hostname MEMBER-1\ninterface GigabitEthernet1/0/10\n description Access-VLAN10\n switchport mode access\n switchport access vlan 10\n spanning-tree portfast\n!\ninterface GigabitEthernet1/0/11\n description Access-VLAN20\n switchport mode access\n switchport access vlan 20\n spanning-tree portfast\nvlan 10\n name VLAN0010\n!\nvlan 20\n name VLAN0020",
-        "translated_excerpt": "hostname MEMBER-1\ninterface GigabitEthernet1/0/10\n description Access-VLAN10\n switchport mode access\n switchport access vlan 10\n spanning-tree portfast\n!\ninterface GigabitEthernet1/0/11\n description Access-VLAN20\n switchport mode access\n switchport access vlan 20\n spanning-tree portfast\nvlan 10\n nam...",
+        "translated": "hostname MEMBER-1\n! Interface GigabitEthernet1/0/1 is configured as IRF stack-port in source\n! H3C IRF has no equivalent in standard Cisco IOS\n! MANUAL_REVIEW: This port participates in H3C IRF stacking; no Cisco IOS equivalent\n! Interface GigabitEthernet1/0/2 is configured as IRF stack-port in source\n! H3C IRF has no equivalent in standard Cisco IOS\n! MANUAL_REVIEW: This port participates in H3C IRF stacking; no Cisco IOS equivalent\ninterface GigabitEthernet1/0/10\n description Access-VLAN10\n switchport mode access\n switchport access vlan 10\n spanning-tree portfast\ninterface GigabitEthernet1/0/11\n description Access-VLAN20\n switchport mode access\n switchport access vlan 20\n spanning-tree portfast",
+        "translated_excerpt": "hostname MEMBER-1\n! Interface GigabitEthernet1/0/1 is configured as IRF stack-port in source\n! H3C IRF has no equivalent in standard Cisco IOS\n! MANUAL_REVIEW: This port participates in H3C IRF stacking; no Cisco IOS equivalent\n! Interface GigabitEthernet1/0/2 is configured as IRF stack-port in sour...",
         "status_code": 200,
-        "elapsed": 12.487337589263916,
-        "request_id": "21f347ee-8362-4449-b47e-61990f340538",
+        "elapsed": 28.02474808692932,
+        "request_id": "36a57688-04d2-4ccb-90a2-e2f83572cb91",
         "api_result": {
           "analyzer_results": [
             {
@@ -10156,7 +10222,7 @@
             "system: supported ()",
             "vlan: supported ()"
           ],
-          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet1/0/2\n  original: `GigabitEthernet1/0/2`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet1/0/1\n  original: `GigabitEthernet1/0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **count_changed** @ interfaces\n  original: `4 个接口`\n  translated: `2 个接口`\n- **vlan_new** @ vlan 10\n  original: `(新增)`\n  translated: `vlan 10`\n- **vlan_new** @ vlan 20\n  original: `(新增)`\n  translated: `vlan 20`",
+          "diff": "## Diff Report\n\n- **interface_changed** @ GigabitEthernet1/0/1\n  original: `GigabitEthernet1/0/1`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **interface_changed** @ GigabitEthernet1/0/2\n  original: `GigabitEthernet1/0/2`\n  translated: `(已映射到目标厂商)`\n  note: 接口名称已根据厂商规范映射\n- **count_changed** @ interfaces\n  original: `4 个接口`\n  translated: `2 个接口`",
           "fallback_reason": "",
           "fallback_used": false,
           "features": [
@@ -10173,31 +10239,31 @@
               "status": "success"
             },
             {
-              "elapsed_ms": 17.93,
+              "elapsed_ms": 24.75,
               "error": null,
               "node": "feature_analyzer",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.76,
+              "elapsed_ms": 1.42,
               "error": null,
               "node": "knowledge",
               "status": "success"
             },
             {
-              "elapsed_ms": 3.52,
+              "elapsed_ms": 5.36,
               "error": null,
               "node": "cache",
               "status": "success"
             },
             {
-              "elapsed_ms": 12458.21,
+              "elapsed_ms": 27985.58,
               "error": null,
               "node": "translate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.02,
+              "elapsed_ms": 0.01,
               "error": null,
               "node": "router",
               "status": "success"
@@ -10209,31 +10275,31 @@
               "status": "success"
             },
             {
-              "elapsed_ms": 0.35,
+              "elapsed_ms": 0.31,
               "error": null,
               "node": "capability_gap",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.96,
+              "elapsed_ms": 1.25,
               "error": null,
               "node": "validate",
               "status": "failed"
             },
             {
-              "elapsed_ms": 0.44,
+              "elapsed_ms": 0.76,
               "error": null,
               "node": "diff",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.02,
+              "elapsed_ms": 0.05,
               "error": null,
               "node": "cache_write",
               "status": "skipped"
             },
             {
-              "elapsed_ms": 0.34,
+              "elapsed_ms": 0.39,
               "error": null,
               "node": "memory",
               "status": "success"
@@ -10247,6 +10313,30 @@
               "message": "目标厂商不支持此功能，不自动生成目标配置",
               "severity": "fatal",
               "source": "capability"
+            },
+            {
+              "deployability_impact": false,
+              "feature": "platform",
+              "manual_review_impact": true,
+              "message": "VRF RD/route-target 格式异常（缺少冒号）: Cisco",
+              "severity": "warning",
+              "source": "platform"
+            },
+            {
+              "deployability_impact": false,
+              "feature": "platform",
+              "manual_review_impact": true,
+              "message": "VRF RD/route-target 格式异常（缺少冒号）: Cisco",
+              "severity": "warning",
+              "source": "platform"
+            },
+            {
+              "deployability_impact": true,
+              "feature": "output",
+              "manual_review_impact": true,
+              "message": "翻译结果包含 MANUAL_REVIEW 标记",
+              "severity": "warning",
+              "source": "manual_review"
             }
           ],
           "route_decision": "success",
@@ -10254,30 +10344,41 @@
             "matched_features": [
               "system",
               "interface",
-              "vlan"
+              "interface",
+              "interface",
+              "interface"
             ],
             "missing_features": [
               "irf"
             ],
             "notes": [
-              "keyword overlap low for: irf"
+              "keyword overlap low for: irf",
+              "source vendor residue detected (4 lines)"
             ],
-            "score": 0.5,
-            "source_vendor_residue": []
+            "score": 0.62,
+            "source_vendor_residue": [
+              "! H3C IRF has no equivalent in standard Cisco IOS",
+              "! MANUAL_REVIEW: This port participates in H3C IRF stacking; no Cisco IOS equivalent",
+              "! H3C IRF has no equivalent in standard Cisco IOS",
+              "! MANUAL_REVIEW: This port participates in H3C IRF stacking; no Cisco IOS equivalent"
+            ]
           },
           "source_domain": "switching",
           "source_platform": "comware",
           "success": false,
           "target_domain": "switching",
           "target_platform": "ios",
-          "translated": "hostname MEMBER-1\ninterface GigabitEthernet1/0/10\n description Access-VLAN10\n switchport mode access\n switchport access vlan 10\n spanning-tree portfast\n!\ninterface GigabitEthernet1/0/11\n description Access-VLAN20\n switchport mode access\n switchport access vlan 20\n spanning-tree portfast\nvlan 10\n name VLAN0010\n!\nvlan 20\n name VLAN0020",
+          "translated": "hostname MEMBER-1\n! Interface GigabitEthernet1/0/1 is configured as IRF stack-port in source\n! H3C IRF has no equivalent in standard Cisco IOS\n! MANUAL_REVIEW: This port participates in H3C IRF stacking; no Cisco IOS equivalent\n! Interface GigabitEthernet1/0/2 is configured as IRF stack-port in source\n! H3C IRF has no equivalent in standard Cisco IOS\n! MANUAL_REVIEW: This port participates in H3C IRF stacking; no Cisco IOS equivalent\ninterface GigabitEthernet1/0/10\n description Access-VLAN10\n switchport mode access\n switchport access vlan 10\n spanning-tree portfast\ninterface GigabitEthernet1/0/11\n description Access-VLAN20\n switchport mode access\n switchport access vlan 20\n spanning-tree portfast",
           "validation": {
             "deployable": false,
             "errors": [],
             "level": "fatal",
             "manual_review_required": true,
             "valid": true,
-            "warnings": []
+            "warnings": [
+              "VRF RD/route-target 格式异常（缺少冒号）: Cisco",
+              "VRF RD/route-target 格式异常（缺少冒号）: Cisco"
+            ]
           },
           "level": "fatal",
           "deployable": false,
@@ -10400,7 +10501,10 @@
           "level": "fatal",
           "manual_review_required": true,
           "valid": true,
-          "warnings": []
+          "warnings": [
+            "VRF RD/route-target 格式异常（缺少冒号）: Cisco",
+            "VRF RD/route-target 格式异常（缺少冒号）: Cisco"
+          ]
         },
         "analyzer_results": [
           {
@@ -10525,16 +10629,16 @@
         "vlan",
         "interface"
       ],
-      "status": "fail",
+      "status": "pass",
       "category": "",
-      "failure_reason": "deployable expected=True got=False",
-      "elapsed_ms": "17724",
-      "errors": [
-        "deployable expected=True got=False"
-      ],
-      "deployable": false,
-      "manual_review_required": true,
-      "validation_level": "warning",
+      "failure_reason": "",
+      "elapsed_ms": "54",
+      "errors": [],
+      "correctness_pass": true,
+      "clean_deployable": true,
+      "deployable": true,
+      "manual_review_required": false,
+      "validation_level": "info",
       "analyzer_results": [
         {
           "feature": "vlan",
@@ -10590,23 +10694,22 @@
         }
       ],
       "validation": {
-        "deployable": false,
+        "deployable": true,
         "errors": [],
-        "level": "warning",
-        "manual_review_required": true,
+        "level": "info",
+        "manual_review_required": false,
         "valid": true,
         "warnings": [
-          "建议: 为接口配置 description 描述用途",
-          "Cisco IOS l2 VLAN 配置需要 switchport"
+          "建议: 为接口配置 description 描述用途"
         ]
       },
-      "translated_excerpt": "vlan 10\nvlan 20\nvlan 30\nvlan 100\ninterface Vlan100\n ip address 198.18.100.1 255.255.255.0\n no shutdown\ninterface GigabitEthernet0/0/1\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 10,20\ninterface GigabitEthernet0/0/2\n switchport trunk encapsulation dot1q...",
+      "translated_excerpt": "vlan 10\nvlan 20\nvlan 30\nvlan 100\ninterface Vlan100\n ip address 198.18.100.1 255.255.255.0\ninterface GigabitEthernet0/0/1\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 10,20\ninterface GigabitEthernet0/0/2\n switchport trunk encapsulation dot1q\n switchport ...",
       "detail": {
-        "translated": "vlan 10\nvlan 20\nvlan 30\nvlan 100\ninterface Vlan100\n ip address 198.18.100.1 255.255.255.0\n no shutdown\ninterface GigabitEthernet0/0/1\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 10,20\ninterface GigabitEthernet0/0/2\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 30\ninterface GigabitEthernet0/0/10\n switchport mode access\n switchport access vlan 10\ninterface GigabitEthernet0/0/11\n switchport mode access\n switchport access vlan 20\ninterface GigabitEthernet0/0/12\n switchport mode access\n switchport access vlan 30",
-        "translated_excerpt": "vlan 10\nvlan 20\nvlan 30\nvlan 100\ninterface Vlan100\n ip address 198.18.100.1 255.255.255.0\n no shutdown\ninterface GigabitEthernet0/0/1\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 10,20\ninterface GigabitEthernet0/0/2\n switchport trunk encapsulation dot1q...",
+        "translated": "vlan 10\nvlan 20\nvlan 30\nvlan 100\ninterface Vlan100\n ip address 198.18.100.1 255.255.255.0\ninterface GigabitEthernet0/0/1\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 10,20\ninterface GigabitEthernet0/0/2\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 30\ninterface GigabitEthernet0/0/10\n switchport mode access\n switchport access vlan 10\ninterface GigabitEthernet0/0/11\n switchport mode access\n switchport access vlan 20\ninterface GigabitEthernet0/0/12\n switchport mode access\n switchport access vlan 30",
+        "translated_excerpt": "vlan 10\nvlan 20\nvlan 30\nvlan 100\ninterface Vlan100\n ip address 198.18.100.1 255.255.255.0\ninterface GigabitEthernet0/0/1\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 10,20\ninterface GigabitEthernet0/0/2\n switchport trunk encapsulation dot1q\n switchport ...",
         "status_code": 200,
-        "elapsed": 17.724430084228516,
-        "request_id": "5a8d9f05-0e83-4d64-a61e-458ab695e19b",
+        "elapsed": 0.054390668869018555,
+        "request_id": "f730856e-a924-4a14-a370-ef39a2ee439f",
         "api_result": {
           "analyzer_results": [
             {
@@ -10638,7 +10741,7 @@
               "status": "skipped"
             }
           ],
-          "cache_hit": false,
+          "cache_hit": true,
           "capability_gap_severity": "info",
           "capability_gaps": [
             {
@@ -10677,31 +10780,31 @@
           ],
           "node_results": [
             {
-              "elapsed_ms": 0.39,
+              "elapsed_ms": 0.81,
               "error": null,
               "node": "parse",
               "status": "success"
             },
             {
-              "elapsed_ms": 19.18,
+              "elapsed_ms": 39.03,
               "error": null,
               "node": "feature_analyzer",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.67,
+              "elapsed_ms": 1.21,
               "error": null,
               "node": "knowledge",
               "status": "success"
             },
             {
-              "elapsed_ms": 3.88,
+              "elapsed_ms": 6.04,
               "error": null,
               "node": "cache",
               "status": "success"
             },
             {
-              "elapsed_ms": 17693.27,
+              "elapsed_ms": 0.01,
               "error": null,
               "node": "translate",
               "status": "success"
@@ -10713,56 +10816,46 @@
               "status": "success"
             },
             {
-              "elapsed_ms": 0.02,
+              "elapsed_ms": 0.03,
               "error": null,
               "node": "semantic_validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.28,
+              "elapsed_ms": 0.23,
               "error": null,
               "node": "capability_gap",
               "status": "success"
             },
             {
-              "elapsed_ms": 1.23,
+              "elapsed_ms": 1.42,
               "error": null,
               "node": "validate",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.4,
+              "elapsed_ms": 0.57,
               "error": null,
               "node": "diff",
               "status": "success"
             },
             {
-              "elapsed_ms": 0.92,
+              "elapsed_ms": 0.0,
               "error": null,
               "node": "cache_write",
-              "status": "success"
+              "status": "skipped"
             },
             {
-              "elapsed_ms": 0.23,
+              "elapsed_ms": 0.27,
               "error": null,
               "node": "memory",
               "status": "success"
             }
           ],
-          "risk_signals": [
-            {
-              "deployability_impact": false,
-              "feature": "platform",
-              "manual_review_impact": true,
-              "message": "Cisco IOS l2 VLAN 配置需要 switchport",
-              "severity": "warning",
-              "source": "platform"
-            }
-          ],
+          "risk_signals": [],
           "route_decision": "success",
           "semantic_validation": {
-            "matched_features": [],
-            "missing_features": [
+            "matched_features": [
               "vlan",
               "interface",
               "interface",
@@ -10771,10 +10864,9 @@
               "interface",
               "interface"
             ],
-            "notes": [
-              "keyword overlap low for: vlan, interface, interface, interface, interface, interface, interface"
-            ],
-            "score": 0.0,
+            "missing_features": [],
+            "notes": [],
+            "score": 0.78,
             "source_vendor_residue": []
           },
           "source_domain": "switching",
@@ -10782,26 +10874,25 @@
           "success": true,
           "target_domain": "switching",
           "target_platform": "ios",
-          "translated": "vlan 10\nvlan 20\nvlan 30\nvlan 100\ninterface Vlan100\n ip address 198.18.100.1 255.255.255.0\n no shutdown\ninterface GigabitEthernet0/0/1\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 10,20\ninterface GigabitEthernet0/0/2\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 30\ninterface GigabitEthernet0/0/10\n switchport mode access\n switchport access vlan 10\ninterface GigabitEthernet0/0/11\n switchport mode access\n switchport access vlan 20\ninterface GigabitEthernet0/0/12\n switchport mode access\n switchport access vlan 30",
+          "translated": "vlan 10\nvlan 20\nvlan 30\nvlan 100\ninterface Vlan100\n ip address 198.18.100.1 255.255.255.0\ninterface GigabitEthernet0/0/1\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 10,20\ninterface GigabitEthernet0/0/2\n switchport trunk encapsulation dot1q\n switchport mode trunk\n switchport trunk allowed vlan 30\ninterface GigabitEthernet0/0/10\n switchport mode access\n switchport access vlan 10\ninterface GigabitEthernet0/0/11\n switchport mode access\n switchport access vlan 20\ninterface GigabitEthernet0/0/12\n switchport mode access\n switchport access vlan 30",
           "validation": {
-            "deployable": false,
+            "deployable": true,
             "errors": [],
-            "level": "warning",
-            "manual_review_required": true,
+            "level": "info",
+            "manual_review_required": false,
             "valid": true,
             "warnings": [
-              "建议: 为接口配置 description 描述用途",
-              "Cisco IOS l2 VLAN 配置需要 switchport"
+              "建议: 为接口配置 description 描述用途"
             ]
           },
-          "level": "warning",
-          "deployable": false,
-          "manual_review_required": true
+          "level": "info",
+          "deployable": true,
+          "manual_review_required": false
         },
         "meta": {
-          "level": "warning",
-          "deployable": false,
-          "manual_review_required": true,
+          "level": "info",
+          "deployable": true,
+          "manual_review_required": false,
           "capability_gaps": [
             {
               "details": {
@@ -10858,14 +10949,13 @@
           ]
         },
         "validation": {
-          "deployable": false,
+          "deployable": true,
           "errors": [],
-          "level": "warning",
-          "manual_review_required": true,
+          "level": "info",
+          "manual_review_required": false,
           "valid": true,
           "warnings": [
-            "建议: 为接口配置 description 描述用途",
-            "Cisco IOS l2 VLAN 配置需要 switchport"
+            "建议: 为接口配置 description 描述用途"
           ]
         },
         "analyzer_results": [
