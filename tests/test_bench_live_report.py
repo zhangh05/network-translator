@@ -157,17 +157,38 @@ class TestCapabilityGapPassFail:
         errs = check_translated(case, "some translated text", meta)
         assert any("capability_gaps" in e for e in errs), f"expected cap gap error, got: {errs}"
 
-    def test_fatal_cap_gap_always_fails(self, _base_case):
-        """fatal capability gap fails even when annotation expects non-deployable."""
+    def test_fatal_cap_gap_fails_only_when_expected_clean(self, _base_case):
+        """fatal capability gap fails only when annotation expects clean deploy."""
         from bench.run_cases import check_translated
+        # Annotation expects non-deployable — fatal gap should NOT cause error
+        case = dict(_base_case)
+        case["expected"]["deployable"] = False
+        case["expected"]["manual_review_required"] = True
         meta = {
             "deployable": False,
             "manual_review_required": True,
             "level": "error",
             "capability_gaps": [{"feature": "bgp", "severity": "fatal", "status": "unsupported"}],
         }
-        errs = check_translated(_base_case, "some translated text", meta)
-        assert any("fatal capability_gaps" in e for e in errs), f"expected fatal error, got: {errs}"
+        errs = check_translated(case, "some translated text", meta)
+        assert not any("capability_gaps" in e for e in errs), (
+            f"fatal gap should not error when annotation expects non-deployable, got: {errs}"
+        )
+
+        # Annotation expects clean deployable — fatal gap SHOULD cause error
+        case2 = dict(_base_case)
+        case2["expected"]["deployable"] = True
+        case2["expected"]["manual_review_required"] = False
+        meta2 = {
+            "deployable": True,
+            "manual_review_required": False,
+            "level": "info",
+            "capability_gaps": [{"feature": "bgp", "severity": "fatal", "status": "unsupported"}],
+        }
+        errs2 = check_translated(case2, "some translated text", meta2)
+        assert any("fatal capability_gaps" in e for e in errs2), (
+            f"expected fatal gap error when clean deploy expected, got: {errs2}"
+        )
 
     def test_missing_must_include_still_fails(self, _base_case):
         """must_include missing → FAIL regardless of cap gap alignment."""

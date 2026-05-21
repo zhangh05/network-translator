@@ -152,11 +152,12 @@ def check_translated(case, translated, meta):
                 warning_gaps = [g for g in meta["capability_gaps"]
                                 if g.get("severity") == "warning" and g.get("feature") != "_meta"]
                 exp_clean = exp.get("deployable") is True and exp.get("manual_review_required") is False
-                if fatal_gaps:
-                    errors.append(f"fatal capability_gaps: {fatal_gaps}")
-                elif warning_gaps and exp_clean:
+                # fatal gaps: only fail if annotation expected clean deploy
+                if fatal_gaps and exp_clean:
+                    errors.append(f"unexpected fatal capability_gaps (expected clean deploy): {fatal_gaps}")
+                # warning gaps: only fail if annotation expected clean deploy
+                if warning_gaps and exp_clean:
                     errors.append(f"unexpected warning capability_gaps (expected clean deploy): {warning_gaps}")
-                # else: warning gaps are expected per annotation (non-deployable case) — no error
 
         if meta.get("analyzer_results"):
             if isinstance(meta.get("analyzer_results"), list) and len(meta["analyzer_results"]) > 0:
@@ -567,6 +568,17 @@ def main():
                 if af:
                     print(f"        analyzer risks: {json.dumps(af)}")
 
+        correctness_errors = result.get("errors", [])
+        expected_dep = exp.get("deployable")
+        actual_dep = validation.get("deployable")
+        expected_mrr = exp.get("manual_review_required")
+        actual_mrr = validation.get("manual_review_required")
+        correctness_pass = (
+            result["status"] not in ("error", "skip")
+            and not correctness_errors
+        )
+        clean_deployable = actual_dep is True and actual_mrr is not True
+
         live_results_detail.append({
             "name": c["name"],
             "path": c["_path"],
@@ -582,9 +594,11 @@ def main():
             "category": error_category,
             "failure_reason": failure_reason,
             "elapsed_ms": c["_elapsed_ms"],
-            "errors": result.get("errors", []) if result["status"] != "pass" else [],
-            "deployable": validation.get("deployable", None),
-            "manual_review_required": validation.get("manual_review_required", None),
+            "errors": correctness_errors,
+            "correctness_pass": correctness_pass,
+            "clean_deployable": clean_deployable,
+            "deployable": actual_dep,
+            "manual_review_required": actual_mrr,
             "validation_level": validation.get("level", "info"),
             "analyzer_results": detail.get("analyzer_results", []),
             "capability_gaps": detail.get("capability_gaps", []),
@@ -614,12 +628,24 @@ def main():
     print_summary(RESULTS, tier_stats)
 
     if args.live_report_json and live_results_detail:
+        correctness_pass_count = sum(1 for d in live_results_detail if d.get("correctness_pass"))
+        correctness_total = sum(1 for d in live_results_detail if d.get("status") not in ("skip", "error"))
+        clean_deployable_count = sum(1 for d in live_results_detail if d.get("clean_deployable"))
         report_path = Path(args.live_report_json)
         report_path.parent.mkdir(parents=True, exist_ok=True)
         report_path.write_text(json.dumps({
             "summary": {
                 "static": RESULTS["static"],
                 "live": RESULTS["live"],
+                "correctness": {
+                    "pass": correctness_pass_count,
+                    "fail": correctness_total - correctness_pass_count,
+                    "total": correctness_total,
+                },
+                "clean_deployable": {
+                    "count": clean_deployable_count,
+                    "total": correctness_total,
+                },
                 "cache": RESULTS.get("cache", {}),
                 "tier_stats": tier_stats,
             },

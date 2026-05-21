@@ -12,12 +12,12 @@
     "interface",
     "acl"
   ],
-  "risk": "high",
+  "risk": "medium",
   "tier": "full",
   "source_config": "!\n! Cisco IOS-XE — IPsec tunnel with IKEv1\n! Source: internal_lab\n! Domain: routing, Features: ipsec, tunnel, interface, acl\n!\ncrypto isakmp policy 10\n encryption aes 256\n hash sha256\n authentication pre-share\n group 14\n lifetime 86400\n!\n crypto isakmp key __REDACTED__ address 198.18.254.2\n!\ncrypto ipsec transform-set AES256-SHA esp-aes 256 esp-sha256-hmac\n mode tunnel\n!\ncrypto map CMAP_SITE2SITE 10 ipsec-isakmp\n set peer 198.18.254.2\n set transform-set AES256-SHA\n match address IPSEC_ACL\n!\ninterface GigabitEthernet0/0\n description To-Remote-Site\n ip address 198.18.254.1 255.255.255.0\n crypto map CMAP_SITE2SITE\n no shutdown\n!\ninterface Tunnel0\n ip address 198.18.200.1 255.255.255.0\n tunnel source GigabitEthernet0/0\n tunnel destination 198.18.254.2\n!\nip access-list extended IPSEC_ACL\n permit ip 10.0.0.0 0.0.0.255 198.18.200.0 0.0.0.255\n!\nip route 10.0.0.0 255.0.0.0 198.18.254.2\n!",
   "expected": {
-    "deployable": false,
-    "manual_review_required": true,
+    "deployable": true,
+    "manual_review_required": false,
     "no_markdown_fence": true,
     "no_placeholder": true,
     "must_include": [

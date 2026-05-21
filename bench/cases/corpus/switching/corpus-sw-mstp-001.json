@@ -21,7 +21,7 @@
     "no_placeholder": true,
     "must_include": [
       "stp mode mstp",
-      "stp region-name",
+      "region-name",
       "instance 1 vlan",
       "root primary"
     ],

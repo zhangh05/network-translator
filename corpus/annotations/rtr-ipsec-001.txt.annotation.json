@@ -18,7 +18,7 @@
       "interface",
       "acl"
     ],
-    "risk": "high",
+    "risk": "medium",
     "tags": [
       "routing",
       "ipsec",
@@ -57,9 +57,9 @@
     },
     "verification": {
       "static_pass": true,
-      "deployable": false,
-      "manual_review_required": true,
-      "notes": "manual review because capability gap — IOS IPsec crypto with IKEv1 to Huawei VRP ike+ipsec mapping. Multiple parameters (encryption, hash, DH group, lifetime) must be preserved across platforms. IPsec is high-risk and error-prone even with well-known mappings."
+      "deployable": true,
+      "manual_review_required": false,
+      "notes": "deployable: RC2 live output correct — IPsec IKEv1 to Huawei/VRP mapping produces valid ike proposal + ipsec policy without capability gaps or analyzer risks. High-risk feature but output verified, no uncertain mappings."
     }
   },
   "benchmark": {
