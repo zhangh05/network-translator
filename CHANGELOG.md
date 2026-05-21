@@ -52,8 +52,6 @@
 
 ## v11-phase6-release-ready (2026-05-19)
 
-## v11-phase6-release-ready (2026-05-19)
-
 Phase 6: Production Hardening — the system is now deployable, observable,
 verifiable, and releasable.
 

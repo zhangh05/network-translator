@@ -1,4 +1,4 @@
-﻿# Network-Translator-Agent v2
+﻿# Network Translator — v11 Phase 7 Production Ready
 
 # 🌐 网络配置翻译助手（Graph/IR Edition）
 
