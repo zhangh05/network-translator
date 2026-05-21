@@ -136,8 +136,19 @@ def _asa_nat_rule(cp: str, target_platform: str) -> str:
     return (
         "7. 目标为 Cisco ASA NAT 约束：禁止使用 IOS 风格 ip nat inside/source/outside/overload/pool 命令；"
         "禁止保留 nat source/nat server 原命令。"
+        "禁止使用华为/H3C 的 security-policy 或 security-zone 命令——ASA 使用 access-group + nameif 实现类似功能。"
         f"NAT 须使用 object network ... nat (...) 或 nat (src,dst) ... 语法。"
         f"缺少 inside/outside 接口映射时以 {cp} MANUAL_REVIEW 标记，不得编造。\n"
+    )
+
+
+def _no_cisco_asa_in_vrp(cp: str, target_platform: str) -> str:
+    if "vrp" not in target_platform.lower():
+        return ""
+    return (
+        "13. 目标为华为 VRP 时，禁止输出 Cisco ASA 特有关键字："
+        "object network、nameif、security-level、access-group 仅存在于 Cisco ASA，"
+        "目标平台无等价命令时应以 {cp} MANUAL_REVIEW 标记，不得直接保留或混入。\n"
     )
 
 
@@ -428,6 +439,7 @@ prompt_version: {PROMPT_VERSION}
 5. 地址组/服务组（address-set / service-set / object-group network / object-group service）必须保持引用语义：源配置多个地址组成一组时，目标必须保留等价的分组结构（如 object-group network），不得将其拆散为单个 object network 条目。
 6. 目标 {to_vendor} ({target_platform or to_vendor}) 是权威平台命令集；禁止混入其他平台（如源或第三方）的命令。
 {_asa_nat_rule(cp, target_platform)}
+{_no_cisco_asa_in_vrp(cp, target_platform)}
 {_bfd_rule(cp, target_platform)}
 {_stp_rule(cp) if features and "stp" in features else ""}
 {_asa_access_group_rule(cp, target_platform)}
