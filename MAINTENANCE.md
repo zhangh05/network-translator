@@ -7,8 +7,9 @@ Cisco ASA ↔ Huawei VRP NAT translations are non-deterministic due to LLM outpu
 
 | Case | Direction | Clean deployable rate | Notes |
 |------|-----------|----------------------|-------|
-| fw-nat-001 | Huawei→Cisco ASA | ≈60% | LLM may omit `nat (inside,outside)` or produce `security-policy` residue. Validator correctly blocks bad output. |
-| fw-nat-server-001 | Cisco ASA→Huawei | ≈40% | LLM may use `ip address-set` instead of `nat server`, or output `Cisco` commands as residue. 100% `manual_review_required` expected. |
+| fw-nat-001 | Huawei→Cisco ASA | ≈85% (3/3 in recent batch) | LLM may add `MANUAL_REVIEW` about interface/syntax mapping. Validator correctly blocks. RC4 prompt fix added positive alternatives for ASA→VRP object-network mapping. |
+| fw-nat-server-001 | Cisco ASA→Huawei | ≈30% (0/3 in recent batch) | LLM adds MANUAL_REVIEW about nameif/security-level mapping + `object network` residue. RC4 prompt/knowledge fix adds nameif→firewall-zone and security-level→priority mapping guidance. |
+| fw-ipsec-vpn-001 | Cisco ASA→Huawei | ≈30% (0/3 in recent batch, passed previously) | LLM outputs `object network` residue in VRP IPsec output. RC4 prompt/knowledge fix adds ACL mapping alternatives for object-network in IPsec context. |
 
 ### Mitigation
 - **Validator**: `has_platform_residue` correctly blocks cross-vendor command leakage (deployability_impact gate ensures style warnings don't trigger false negatives).
@@ -34,15 +35,19 @@ Planned: migrate to LLM-based semantic comparison (`compare_ir()`) as the primar
 ## HTTP 500 / Gunicorn Worker Timeout
 
 ### Problem
-When the LLM API HTTPS connection stalls (TCP/SSL layer hang), the gunicorn worker may exceed the 120s timeout, causing HTTP 500. The LLM timeout is 45s but socket-level stalls may not trigger Python's `urlopen()` timeout.
+When the LLM API HTTPS connection stalls, the gunicorn worker may exceed the 120s timeout, causing HTTP 500.
+
+Root cause: `llmsetting.json` has `"timeout": 180` (180s) which exceeds gunicorn's `--timeout 120`. A slow LLM request at 120s+ triggers gunicorn's worker timeout before the LLM client's 180s timeout fires.
+
+The `requests.post(..., timeout=self.timeout)` in `core/__init__.py:293` does apply explicit timeout, but with `self.timeout=180` the LLM call can hold a worker for up to 180s, while gunicorn kills at 120s.
 
 ### Impact
-Intermittent live bench failures (observed with `rtr-ipsec-001`). Not reproducible on every run — depends on LLM API responsiveness.
+Intermittent live bench failures (observed with `sw-mstp-001` and `rtr-ipsec-001` at 121s+). Not reproducible on every run — depends on LLM API responsiveness.
 
 ### Mitigation
-- Increase gunicorn `--timeout` from 120s to 240s for production.
-- Ensure LLM client uses `requests.post` (which handles timeouts more reliably) instead of `urllib`.
-- Set `LLM_TIMEOUT` environment variable to a reasonable value (default 45s).
+- **Short-term**: Set `LLM_TIMEOUT=100` env var (leaving 20s buffer under gunicorn's 120s). Or increase gunicorn `--timeout` to 240s.
+- **Better**: Increase gunicorn `--timeout` to 240s AND set LLM timeout to 180s (or whatever `llmsetting.json` specifies). The `llmsetting.json` timeout should never exceed gunicorn's `--timeout`.
+- **Long-term**: Use async workers (gevent/uvicorn) or a job queue so slow LLM requests don't block the HTTP worker pool.
 
 ## Backlog Category Definitions
 

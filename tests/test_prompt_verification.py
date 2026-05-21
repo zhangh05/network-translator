@@ -79,6 +79,20 @@ class TestPromptHardConstraints:
         )
         assert "root primary" in llm.last_prompt or "根桥" in llm.last_prompt
 
+    def test_prompt_vrp_forbids_asa_keywords(self):
+        llm = MockLLM('[]')
+        translate_config("hostname R1", "cisco", "huawei", llm, target_platform="vrp")
+        assert "object network" in llm.last_prompt
+        assert "nameif" in llm.last_prompt
+        assert "security-level" in llm.last_prompt
+        assert "access-group" in llm.last_prompt
+        assert "MANUAL_REVIEW" in llm.last_prompt
+
+    def test_prompt_vrp_not_applied_to_cisco_target(self):
+        llm = MockLLM('[]')
+        translate_config("hostname R1", "huawei", "cisco", llm, target_platform="asa")
+        assert "VRP" not in llm.last_prompt
+
     def test_prompt_comment_prefix_for_cisco(self):
         llm = MockLLM('[]')
         translate_config("hostname R1", "huawei", "cisco", llm)

@@ -149,6 +149,11 @@ def _no_cisco_asa_in_vrp(cp: str, target_platform: str) -> str:
         "13. 目标为华为 VRP 时，禁止输出 Cisco ASA 特有关键字："
         "object network、nameif、security-level、access-group 仅存在于 Cisco ASA，"
         "目标平台无等价命令时应以 {cp} MANUAL_REVIEW 标记，不得直接保留或混入。\n"
+        "    替代方案：\n"
+        "    - ASA object network <name> subnet/mask → 华为 ip address-set / acl number 或直接内联到 ACL rule 中。\n"
+        "    - ASA nameif inside/outside → 华为 firewall zone trust/untrust + add interface。\n"
+        "    - ASA security-level <n> → 华为 firewall zone set priority <n>。\n"
+        "    - ASA access-group <name> in/out interface → 华为 packet-filter 或 security-policy。\n"
     )
 
 

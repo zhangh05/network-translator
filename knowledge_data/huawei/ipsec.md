@@ -64,6 +64,35 @@ ipsec profile <name>
  proposal <proposal_name>
 ```
 
+## ACL / Interesting Traffic
+
+Huawei IPsec uses ACL to define interesting traffic (not `object network` or `object-group`).
+
+```
+acl number <3000-3999>
+ rule <seq> permit ip source <net> <wildcard> destination <net> <wildcard>
+```
+
+- ACL must be **numbered** (3000-3999 for IP).
+- ACL is referenced by `ipsec policy <name> <seq> isakmp` via `security acl <acl_id>`.
+- Each `object network <name> subnet <ip> <mask>` from ASA maps to an ACL `rule permit ip source <src> destination <dst>`.
+- Each `object-group network <name>` maps to multiple ACL rules or a broader rule per subnet.
+- **Never** output `object network` or `object-group` in Huawei VRP target — these are Cisco ASA syntax and have no direct equivalent in Huawei IPsec context.
+
+## Interface / Zone
+
+Huawei VRP uses `firewall zone` (USG) to group interfaces, not `nameif`/`security-level`.
+
+```
+firewall zone <name>
+ add interface <interface>
+ quit
+```
+
+- `nameif inside/outside` on ASA → `firewall zone trust/untrust` with `add interface` in Huawei.
+- `security-level <n>` on ASA → `set priority <n>` in Huawei firewall zone.
+- **Never** output `nameif` or `security-level` in Huawei VRP target.
+
 ## Huawei IPsec Commands Reference
 
 | Cisco | Huawei |
@@ -74,3 +103,5 @@ ipsec profile <name>
 | `crypto map <name> <seq> ipsec-isakmp` | `ipsec policy <name> <seq> isakmp` |
 | `crypto map <name> interface` | `ipsec policy <name>` on interface |
 | `crypto ipsec profile` | `ipsec profile` |
+| `object network <name> subnet <ip> <mask>` | `acl number <3000-3999>` + `rule permit ip` |
+| `access-list <id> extended permit ip <src> <dst>` | `acl number <3000-3999>` + `rule permit ip source <src> <dst>` |

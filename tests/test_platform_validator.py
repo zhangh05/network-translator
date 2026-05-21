@@ -600,6 +600,15 @@ class TestPlatformValidatorHuaweiResidue:
         r = _run_validation("object-group network LAN\n network-object 10.0.0.0 255.0.0.0\n", "huawei")
         assert any("object-group" in w for w in r["warnings"])
 
+    def test_asa_nameif_in_vrp(self):
+        r = _run_validation("interface GigabitEthernet0/0\n nameif inside\n security-level 100\n", "huawei")
+        assert not r["deployable"]
+        assert any("nameif" in w.lower() or "security-level" in w.lower() for w in r["warnings"])
+
+    def test_asa_security_level_in_vrp(self):
+        r = _run_validation("security-level 50\n", "huawei")
+        assert any("security-level" in w.lower() for w in r["warnings"])
+
 
 class TestPlatformValidatorH3CResidue:
     """H3C Comware target — new deep residue patterns."""
@@ -810,6 +819,26 @@ class TestPlatformValidatorNoFalsePositives:
         r = _run_validation("acl number 3000\n rule 0 permit ip source 10.0.0.0 0.0.0.255 destination any\n#", "huawei")
         acl_issues = [w for w in r["warnings"] if "ACL number" in w]
         assert len(acl_issues) == 0, f"Valid ACL 3000 flagged: {acl_issues}"
+
+    def test_huawei_ike_proposal_not_residue(self):
+        r = _run_validation("ike proposal 10\n authentication-algorithm sha1\n encryption-algorithm aes-256\n dh group2\n sa duration 86400\n#", "huawei")
+        residues = [w for w in r["warnings"] if "源厂商残留" in w]
+        assert len(residues) == 0, f"Huawei IKE proposal flagged as residue: {residues}"
+
+    def test_huawei_ip_address_set_not_residue(self):
+        r = _run_validation("ip address-set LAN_SERVERS type object\n address 0 10.0.0.10 255.255.255.255\n#", "huawei")
+        residues = [w for w in r["warnings"] if "源厂商残留" in w]
+        assert len(residues) == 0, f"Huawei ip address-set flagged as residue: {residues}"
+
+    def test_huawei_firewall_zone_not_residue(self):
+        r = _run_validation("firewall zone trust\n set priority 85\n add interface GigabitEthernet0/0/0\n#", "huawei")
+        residues = [w for w in r["warnings"] if "源厂商残留" in w]
+        assert len(residues) == 0, f"Huawei firewall zone flagged as residue: {residues}"
+
+    def test_huawei_packet_filter_not_residue(self):
+        r = _run_validation("interface GigabitEthernet0/0/1\n packet-filter 3000 inbound\n#", "huawei")
+        residues = [w for w in r["warnings"] if "源厂商残留" in w]
+        assert len(residues) == 0, f"Huawei packet-filter flagged as residue: {residues}"
 
 
 class TestNewDeployabilityModel:

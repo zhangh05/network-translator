@@ -409,6 +409,9 @@ def main():
                         help="Run cache hit test on N cases (default: 1)")
     parser.add_argument("--live-report-json", type=str, default="",
                         help="Path to write per-case live results as JSON")
+    parser.add_argument("--max-concurrency", type=int, default=1,
+                        help="Max concurrent API calls (default: 1 = serial). "
+                             "WARNING: >1 may overload gunicorn workers and cause cascading timeouts.")
     args = parser.parse_args()
 
     os.environ["BENCH_API_BASE"] = args.api_base
