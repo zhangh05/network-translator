@@ -62,13 +62,14 @@ start_service() {
   env_block="PORT=${PORT} HOST=${HOST} PYTHONPATH=${ROOT_DIR}"
 
   if [[ "${use_gunicorn}" == true ]]; then
-    echo "  using gunicorn (workers=${WORKERS})"
+    GUNICORN_TIMEOUT="${GUNICORN_TIMEOUT:-240}"
+    echo "  using gunicorn (workers=${WORKERS}, timeout=${GUNICORN_TIMEOUT}s)"
     (
       cd "${ROOT_DIR}"
       env ${env_block} "${GUNICORN}" \
         -w "${WORKERS}" \
         -b "${HOST}:${PORT}" \
-        --timeout 120 \
+        --timeout "${GUNICORN_TIMEOUT}" \
         --access-logfile "${LOG_DIR}/access.log" \
         --error-logfile "${LOG_DIR}/error.log" \
         --pid "${PID_FILE}" \
@@ -223,10 +224,13 @@ Subcommands:
   logs      Tail the main log file
 
 Environment variables:
-  PORT         listen port (default: 5008)
-  HOST         listen host (default: 0.0.0.0)
-  WORKERS      gunicorn worker count (default: 4)
-  PYTHON_BIN   python executable (default: venv/bin/python or python3)
+  PORT              listen port (default: 5008)
+  HOST              listen host (default: 0.0.0.0)
+  WORKERS           gunicorn worker count (default: 4)
+  GUNICORN_TIMEOUT  gunicorn worker timeout in seconds (default: 240)
+                    Must be > LLM_TIMEOUT (default 180) + overhead.
+                    240s allows LLM up to 180s + network overhead before worker restart.
+  PYTHON_BIN        python executable (default: venv/bin/python or python3)
 
 Required for LLM translation:
   LLM_API_KEY  API key for the LLM provider

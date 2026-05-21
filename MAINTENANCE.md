@@ -35,19 +35,22 @@ Planned: migrate to LLM-based semantic comparison (`compare_ir()`) as the primar
 ## HTTP 500 / Gunicorn Worker Timeout
 
 ### Problem
-When the LLM API HTTPS connection stalls, the gunicorn worker may exceed the 120s timeout, causing HTTP 500.
+`llmsetting.json` has `"timeout": 180` (LLM client timeout). If gunicorn `--timeout` is less than 180s, a slow LLM request can exceed the gunicorn worker timeout before the LLM client timeout fires, causing HTTP 500.
 
-Root cause: `llmsetting.json` has `"timeout": 180` (180s) which exceeds gunicorn's `--timeout 120`. A slow LLM request at 120s+ triggers gunicorn's worker timeout before the LLM client's 180s timeout fires.
+**RC4 fix**: `scripts/service.sh` now defaults `GUNICORN_TIMEOUT=240`. This gives LLM up to 180s + network overhead before worker restart.
 
-The `requests.post(..., timeout=self.timeout)` in `core/__init__.py:293` does apply explicit timeout, but with `self.timeout=180` the LLM call can hold a worker for up to 180s, while gunicorn kills at 120s.
+### Production Configuration Rules
+1. **GUNICORN_TIMEOUT must be > LLM_TIMEOUT + 30s** (at minimum 30s buffer for network overhead).
+2. **Recommended**: `LLM_TIMEOUT=180` (from `llmsetting.json`), `GUNICORN_TIMEOUT=240` (from `service.sh` default).
+3. Slow/transient LLM responses should result in `manual_review` or `dep=false`, NOT HTTP 500.
+4. If you need to change `llmsetting.json` timeout, increase `GUNICORN_TIMEOUT` accordingly: `GUNICORN_TIMEOUT=$((LLM_TIMEOUT + 60))`.
 
 ### Impact
-Intermittent live bench failures (observed with `sw-mstp-001` and `rtr-ipsec-001` at 121s+). Not reproducible on every run — depends on LLM API responsiveness.
+Before RC4: intermittent HTTP 500 on slow LLM requests (observed `sw-mstp-001`, `rtr-ipsec-001` at 121s+).
+After RC4: gunicorn allows up to 240s before worker restart; LLM timeout (180s) fires first for stalled requests.
 
-### Mitigation
-- **Short-term**: Set `LLM_TIMEOUT=100` env var (leaving 20s buffer under gunicorn's 120s). Or increase gunicorn `--timeout` to 240s.
-- **Better**: Increase gunicorn `--timeout` to 240s AND set LLM timeout to 180s (or whatever `llmsetting.json` specifies). The `llmsetting.json` timeout should never exceed gunicorn's `--timeout`.
-- **Long-term**: Use async workers (gevent/uvicorn) or a job queue so slow LLM requests don't block the HTTP worker pool.
+### Long-term
+Use async workers (gevent/uvicorn) or a job queue so slow LLM requests don't block the HTTP worker pool.
 
 ## Backlog Category Definitions
 

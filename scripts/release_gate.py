@@ -92,6 +92,36 @@ def _check_version_file(root: Path) -> Tuple[bool, str]:
     return passed, f"VERSION file: {vf.read_text().strip()}" if passed else "VERSION file missing"
 
 
+def _check_timeout_alignment(root: Path) -> Tuple[bool, str]:
+    """Check gunicorn timeout is aligned with LLM timeout.
+
+    Warning only (non-blocking in both modes) since misconfiguration
+    is recoverable at runtime.
+    """
+    import os, json
+    llm_timeout = 180
+    try:
+        settings_path = root / "llmsetting.json"
+        if settings_path.exists():
+            settings = json.loads(settings_path.read_text())
+            llm_timeout = int(settings.get("timeout", 180))
+    except Exception:
+        pass
+
+    gunicorn_timeout_env = os.environ.get("GUNICORN_TIMEOUT", "240")
+    try:
+        gunicorn_timeout = int(gunicorn_timeout_env)
+    except ValueError:
+        return True, f"GUNICORN_TIMEOUT={gunicorn_timeout_env} not numeric — check service.sh config"
+
+    buffer = gunicorn_timeout - llm_timeout
+    if buffer < 30:
+        msg = f"WARNING: GUNICORN_TIMEOUT={gunicorn_timeout} - LLM_TIMEOUT={llm_timeout} = {buffer}s buffer (recommended ≥30s). Set GUNICORN_TIMEOUT≥{llm_timeout + 30} in service.sh."
+        print(f"  (warning: {msg})")
+        return True, msg
+    return True, f"GUNICORN_TIMEOUT={gunicorn_timeout} ≥ LLM_TIMEOUT={llm_timeout}+30={llm_timeout + 30} — OK ({buffer}s buffer)"
+
+
 def _check_git_status(root: Path) -> Tuple[bool, str]:
     """Check git status of critical paths.
 
@@ -129,6 +159,7 @@ def main() -> int:
     register("static bench", _check_static_bench)
     register("coverage matrix", _check_coverage_matrix)
     register("VERSION file", _check_version_file)
+    register("timeout alignment", _check_timeout_alignment)
     register("git status (critical paths)", _check_git_status)
 
     all_passed = True
