@@ -55,9 +55,9 @@
     },
     "verification": {
       "static_pass": true,
-      "deployable": false,
-      "manual_review_required": true,
-      "notes": "non-deployable because missing object-group reference — P0-3 tracked. LLM output missing object-group definitions for address-set/service-set mapping. Must NOT be covered by annotation; requires analyzer/knowledge/prompt fix. Keep deployable=false until root cause resolved."
+      "deployable": true,
+      "manual_review_required": false,
+      "notes": "clean deployable — RC3 stable: object-group network/service, access-list, access-group all present. Former P0-3 bug resolved by RC2/RC3 prompt and knowledge improvements (address-set→object-group mapping now reliable). Annotation updated from dep=false to dep=true."
     }
   },
   "benchmark": {

@@ -23,20 +23,34 @@ def categorize_case(case: dict) -> str:
     status = case.get("status", "")
     errors = case.get("errors", [])
     err_str = " ".join(errors).lower()
+    reason = (case.get("failure_reason", "") or "").lower()
+    full_str = f"{err_str} {reason}"
     category = case.get("category", "")
     if category in FAILURE_CATEGORIES and category != "unknown":
         return category
     if status == "unsafe_success":
         return "unsafe_success"
-    if "timeout" in err_str or category == "llm_timeout":
+    if "timeout" in full_str or category == "llm_timeout":
         return "llm_timeout"
-    if "deployable expected" in err_str or "manual_review_required" in err_str:
+    # Specific patterns checked before generic deployable-expected
+    if "missing must_include" in full_str:
+        return "llm_quality_issue"
+    if "contains forbidden" in full_str:
+        return "llm_quality_issue"
+    if "deployable expected" in full_str or "manual_review_required" in full_str:
+        deployable = case.get("deployable")
+        if deployable is True:
+            # System produced clean output but annotation expected failure
+            return "annotation_issue"
+        # System returned deployable=False — check if blocking was correct
+        # If only deployable mismatch (no infra/timeout), the validator
+        # correctly blocked bad LLM output
+        if "500" not in full_str and "timeout" not in full_str:
+            return "llm_quality_issue"
         return "validator_false_negative"
-    if "missing must_include" in err_str:
-        return "llm_quality_issue"
-    if "contains forbidden" in err_str:
-        return "llm_quality_issue"
-    if "connection_error" in category or "500" in err_str:
+    if "connection_error" in category or "500" in full_str:
+        return "infra_issue"
+    if "500" in full_str or "http" in full_str:
         return "infra_issue"
     return "unknown"
 
