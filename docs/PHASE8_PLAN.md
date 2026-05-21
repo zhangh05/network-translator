@@ -30,92 +30,237 @@
 
 ### P0 — Live Stability: fw-nat-001 / fw-nat-server-001 / fw-ipsec-vpn-001
 
-**Objective:** Understand root cause of intermittent NAT/IPsec failures; reduce flakiness rate.
+**Objective:** Characterize and reduce live flakiness with a disciplined metric framework. Accept that some NAT/IPsec cases are inherently hard for LLMs; the goal is honest measurement and risk-appropriate handling.
 
-**Root cause hypothesis (from MAINTENANCE.md):**
-- LLM output non-determinism on platform-specific NAT/IPsec semantics
-- Validator correctly catches MANUAL_REVIEW markers, but cases still fail intermittently
--fw-nat-server-001 and fw-ipsec-vpn-001 have ~30% pass rate
+---
 
-**Scope of changes:**
+#### P0 Metric Definitions
+
+| Metric | Definition |
+|--------|------------|
+| **live correctness pass rate** | Single run: 15/15 clean pass. Or: 3 consecutive runs average ≥ 14/15 |
+| **clean deployable rate** | Output is `deployable: true` AND `manual_review_required: false` AND `validator_fatal_count: 0` |
+| **manual_review accepted pass** | Output is `deployable: false` OR `manual_review_required: true` AND the reason is legitimate (validator correctly identified a hard case) |
+| **false deployable count** | Output is `deployable: true` but the translated config has platform residue, semantic errors, or missing critical config. Target: **0** |
+| **repeated-run stability** | Same case run 3× — all 3 produce consistent deployability decision |
+
+**P0 does NOT pursue:**
+- Forcing all hard NAT/IPsec cases to be `deployable: true`
+- Closing the validator to make scores look better
+- Marking uncertain LLM output as `deployable: true`
+- Using annotation overrides to hide real quality problems (annotation may only document expected `manual_review_required=true` cases)
+
+---
+
+#### P0 Targeted Rerun Targets
+
+| Case | Correctness | Clean Deployable | manual_review accepted | HTTP 500/timeout |
+|------|-------------|-----------------|------------------------|-----------------|
+| `fw-nat-001` | ≥ 90% (3/3) | ≥ 70% | documented as acceptable | 0 |
+| `fw-nat-server-001` | ≥ 80% | ≥ 60% **or** `mr: true` documented | must be legitimate reason | 0 |
+| `fw-ipsec-vpn-001` | ≥ 80% | ≥ 60% **or** `mr: true` documented | must be legitimate reason | 0 |
+| All other 12 corpus cases | **15/15** single run | 100% | always clean | 0 |
+
+**Correctness** means the output is semantically equivalent to source (or correctly flagged as uncertain). **Clean deployable** means it passes all validators with no manual review required.
+
+If `fw-nat-server-001` and `fw-ipsec-vpn-001` cannot reach clean deployable targets, the annotation must be updated to document `manual_review_required: true` as the expected outcome, not treated as a failure.
+
+---
+
+#### P0 Scope of Changes
+
 - `knowledge_data/{huawei,cisco}/nat.md`, `knowledge_data/{huawei,cisco}/ipsec.md` — prompt hardening (more explicit alternatives, fewer ambiguous options)
 - `core/graph/nodes.py` TranslateNode system prompt tweaks only — no logic changes
 - No new validators, no analyzer changes
+- `corpus/annotations/` — update annotation for any case whose expected outcome changes (e.g., `fw-nat-server-001 mr: true` formally documented)
 
 **Risk:** Low — only prompt/knowledge changes, rollback is trivial (git revert)
 
-**Acceptance criteria:**
-- [ ] `fw-nat-001` pass rate ≥ 90% (from ~85%)
-- [ ] `fw-nat-server-001` pass rate ≥ 60% (from ~30%)
-- [ ] `fw-ipsec-vpn-001` pass rate ≥ 60% (from ~30%)
-- [ ] All existing 14/15 cases remain at 100% (no regression)
-- [ ] `MANUAL_REVIEW` is still correctly produced when appropriate (validator still working)
+**P0 Acceptance criteria:**
+- [ ] `fw-nat-001` targeted rerun 3×: ≥ 90% correctness, ≥ 70% clean deployable, 0 HTTP 500/timeout
+- [ ] `fw-nat-server-001` targeted rerun 3×: ≥ 80% correctness, ≥ 60% clean deployable OR `manual_review_required: true` formally annotated and accepted
+- [ ] `fw-ipsec-vpn-001` targeted rerun 3×: ≥ 80% correctness, ≥ 60% clean deployable OR `manual_review_required: true` formally annotated and accepted
+- [ ] All other 12 corpus cases: 15/15 in a single run (no regression)
+- [ ] False deployable count across all targeted runs: **0**
+- [ ] `manual_review` is still correctly produced when appropriate (validator unchanged)
+- [ ] MAINTENANCE.md updated with Phase 8 findings
 
 ---
 
 ### P1 — Async Job Queue / Worker Isolation
 
-**Objective:** LLM requests (up to 180s) must not block gunicorn workers. Slow requests should be handled by a separate async queue.
+**Objective:** LLM requests (up to 180s) must not block gunicorn workers. Slow requests handled by an async queue with polling.
 
-**Scope of changes:**
-- `core/llm_queue.py` (new) — in-process queue with threading; requests submitted, polling for results
-- `web_app.py` — `/api/translate` and `/api/projects/<id>/translate` submit job, return `job_id` immediately
-- `/api/jobs/<job_id>` (new) — poll for job completion
-- `scripts/service.sh` — add `WORKER_POOL_SIZE` env var to separate slow-worker pool (optional P1b)
-- No gevent/uvicorn dependency changes; stay on gunicorn
+**Minimum implementation scope:**
 
-**Risk:** Medium — introduces async state tracking; need to handle job TTL, orphaned jobs, worker crash recovery
+```
+core/llm_queue.py (new):
+  - JobState: queued / running / succeeded / failed / expired
+  - in-memory dict: job_id → {state, request_id, submitted_at, result, error}
+  - submit(request_id, llm_fn) → job_id
+  - get(job_id) → {state, result|error, submitted_at}
+  - TTL: jobs expire from memory after 3600s (1 hour)
 
-**Acceptance criteria:**
+web_app.py:
+  - POST /api/translate  → if LLM needed: submit() → return {job_id} immediately
+  - GET /api/jobs/<job_id> → poll for result {state, result|error, deployability, risk_signals}
+  - Rule-based translations: still synchronous (no job_id)
+  - Timeout/error: propagate LLM timeout as {state: failed, error: "llm_timeout"}
+
+JSONL / log linkage:
+  - Each job logs translation_event with job_id
+  - JSONL entry written on job completion (succeeded/failed)
+  - Frontend can poll /api/jobs/<id> and display result
+
+Frontend (API-ready only, no full UI):
+  - /api/jobs/<job_id> returns {job_id, state, result, error} — frontend polls
+  - Frontend full UX deferred to P2
+```
+
+**What is NOT in P1 async scope:**
+- No Redis or external queue dependency
+- No websocket / Server-Sent Events
+- No separate slow-worker gunicorn pool (defer to P1b)
+- No job result persistence to disk (in-memory only; lost on restart)
+
+**Risk:** Medium — introduces async state; job orphaned on worker restart is acceptable (client retries)
+
+**P1 async acceptance criteria:**
 - [ ] `/api/translate` returns `{job_id: "..."}` within 500ms for LLM requests
-- [ ] `/api/jobs/<id>` returns completed result when ready
-- [ ] `/api/jobs/<id>` returns `{"status": "running"}` while LLM is in progress
+- [ ] `/api/jobs/<id>` returns `{state: "queued"` → `"running"` → `"succeeded"` or `"failed"`}`
 - [ ] Slow LLM (180s) does NOT block any gunicorn worker
+- [ ] LLM timeout propagates as `{state: "failed", error: "llm_timeout"}`
+- [ ] Rule-based translation still synchronous (no job_id in response)
+- [ ] Each completed job has a corresponding JSONL entry with job_id
 - [ ] Job results expire from memory after 1 hour
-- [ ] `/api/translate` still works synchronously for rule-based translations (no job_id)
 
 ---
 
 ### P1 — Production Ops Automation
 
-**Objective:** Self-healing restarts, log rotation, health monitoring, and alerting hooks for production runs.
+**Objective:** Self-healing restarts, health monitoring, log rotation, and a daily smoke test for production runs.
 
 **Scope of changes:**
-- `scripts/service.sh` — add `restart-on-health-fail` daemon mode; add log rotation (`logrotate` config); add `health-check` subcommand
-- `scripts/health_check.sh` (new) — curl healthz/readyz, check disk/memory, alert on failure
-- `logs/translator.log` — rotate when > 100MB
-- `scripts/release_gate.py` — add `--check-live` to gate (optional)
-- No new dependencies (use existing `curl`, `logrotate`, `systemd` timer if available)
 
-**Risk:** Low — operational script only, no core logic
+```
+scripts/health_check.sh (new):
+  - curl /healthz → exit 0 if OK, exit 2 if fail
+  - curl /readyz → exit 0 if ready, exit 2 if not ready
+  - check disk space (logs/ not > 90% full)
+  - check memory (worker not OOM)
+  - LLM connectivity test: OPTIONAL (skip if no LLM_API_KEY set)
+  - Exit codes: 0=healthy, 1=unknown, 2=degraded
 
-**Acceptance criteria:**
-- [ ] `./scripts/service.sh health-check` exits 0 when healthy, exits 2 when degraded
-- [ ] `./scripts/service.sh start` creates logrotate config
-- [ ] Service self-restarts within 30s after healthz goes red (if daemon mode enabled)
-- [ ] Release gate `--check-live` runs a 3-case smoke test against live API
+scripts/service.sh additions:
+  - `health-check` subcommand (calls health_check.sh)
+  - `restart-on-health-fail` mode: if health-check fails 3× in a row,
+    stop service and restart (daemon mode)
+  - logrotate config written to /etc/logrotate.d/translator on start
+
+logrotate:
+  - logs/translator.log       {size > 100MB, rotate 5, compress}
+  - logs/access.log           {size > 100MB, rotate 5, compress}
+  - logs/error.log            {size > 50MB,  rotate 3, compress}
+  - logs/translation.jsonl    {size > 500MB, rotate 10, compress}
+  - translation.jsonl is NOT deleted by logrotate — only rotated
+
+scripts/daily_smoke.sh (new):
+  - Run: bench/run_cases.py smoke tier against live API
+  - Exit 0 if all pass, exit 1 if any fail
+  - Intended for: cron job `0 6 * * *` (daily morning smoke)
+
+scripts/release_gate.py:
+  - `--check-live` flag: runs 3-case smoke test against live API
+  - Non-blocking warning if live smoke fails (does not block release gate)
+```
+
+**What is NOT in P1 ops scope:**
+- PagerDuty / email / webhook alerting integrations
+- Deletion of translation.jsonl logs (rotation only)
+- systemd unit file generation
+- Kubernetes/health-check-probe integration
+
+**Risk:** Low — operational scripts only, no core logic
+
+**P1 ops acceptance criteria:**
+- [ ] `./scripts/health_check.sh` exits 0 when service healthy, exits 2 when degraded
+- [ ] `./scripts/service.sh start` writes logrotate config to `/etc/logrotate.d/translator`
+- [ ] `restart-on-health-fail` mode: service restarts within 30s after 3 consecutive health failures
+- [ ] `logs/translation.jsonl` is rotated but never deleted by logrotate
+- [ ] `./scripts/daily_smoke.sh` smoke tier passes against live service
+- [ ] `scripts/release_gate.py --check-live` runs 3-case smoke and warns on failure (non-blocking)
 
 ---
 
 ### P2 — Frontend Review Workflow
 
-**Objective:** Structured UI for `manual_review_required=true` translations — users can review, approve/reject, and re-translate.
+**Objective:** Structured manual review for `manual_review_required=true` translations — reviewer approves/rejects, with full audit trail. **Does not change backend deployability判断.**
 
-**Scope of changes:**
-- `templates/index.html` (or `static/`) — add review panel for flagged translations
-- `web_app.py` — add `/api/jobs/<job_id>` (if P1 async done), add `/api/reviews` endpoints
-- `project_store.py` — add `review_status` field to translation result (pending/approved/rejected)
-- `logs/translation.jsonl` — add `review_*` fields
-- No changes to graph nodes or translation logic
+**Core principle:** The graph's `deployability` and `manual_review_required` flags are immutable outputs of the translation pipeline. The review workflow records the reviewer's decision but does not override or flip those flags.
 
-**Risk:** Medium — adds stateful review workflow; need to handle review audit trail
+---
 
-**Acceptance criteria:**
-- [ ] UI shows "Manual Review Required" badge for `manual_review_required=true` translations
-- [ ] User can approve (sets `review_status=approved`) or reject (`review_status=rejected`) with optional note
-- [ ] Rejected translation can be re-submitted for re-translation
-- [ ] Review action is logged in JSONL
-- [ ] `/api/projects/<id>` returns `review_status` in project result
+#### Review Data Model
+
+```
+review_id:          UUID
+job_id:             links to translation job (from P1 async)
+translation_id:     stable ID of the translation result
+reviewer:           "human" | "automated"
+reviewed_at:        ISO timestamp
+decision:           approved | rejected | escalated
+
+Original translation output (read-only in review):
+  - risk_signals:       grouped {platform_residue, semantic_warnings, ...}
+  - manual_review_lines: list of line-level MANUAL_REVIEW annotations
+  - deployability:       true | false  (from backend, not mutable)
+  - validator_fatal_count, validator_warning_count
+
+Reviewer action:
+  - decision: approved   → translator accepts output as-is for deployment
+  - decision: rejected   → translator must not be deployed; record reason
+  - decision: escalated  → unresolved; flag for engineering
+
+review_note:        optional free text from reviewer
+review_report:      generated summary of all reviews in date range (export)
+```
+
+---
+
+#### API Endpoints
+
+```
+GET  /api/reviews                    → list reviews (paginated)
+GET  /api/reviews/<review_id>        → get single review
+POST /api/reviews                    → create review {job_id, decision, note}
+GET  /api/reviews/report?from=&to=   → export review report as JSON
+
+POST /api/projects/<id>/translate
+  → if result.manual_review_required: flag for review panel
+  → frontend shows "Manual Review Required" badge
+```
+
+**Note:** If P1 async is not complete, job_id is optional in POST /api/reviews; review can be created from project translate result directly.
+
+---
+
+#### What is NOT in P2 scope:
+- Changing backend `deployability` or `manual_review_required` based on review decision
+- Automatic approval/rejection rules
+- Integration with deployment pipelines (approval does not auto-deploy)
+- Reviewer authentication / authorization (defer to future auth work)
+
+---
+
+**P2 acceptance criteria:**
+- [ ] UI shows "Manual Review Required" badge when `manual_review_required=true`
+- [ ] Reviewer can `approve` / `reject` / `escalate` with optional note
+- [ ] Review decision is persisted and returned in `GET /api/reviews/<id>`
+- [ ] Reviewer can export a date-range review report (`GET /api/reviews/report`)
+- [ ] Review action is written to JSONL with `review_*` fields
+- [ ] Backend `deployability` is **never** overwritten by review decision
+- [ ] `/api/projects/<id>` includes `review_status` in project result (pending/approved/rejected/null)
+- [ ] Rejected translation can be re-submitted (new translation job, not auto-retry)
 
 ---
 
@@ -153,16 +298,20 @@ All must pass before Phase 8 is considered complete:
 
 | Criterion | Target |
 |-----------|--------|
-| Live corpus | ≥ 15/15 (P0 resolved all flaky cases) |
 | Release gate | 8/8 PASS |
 | Pytest | 486/486 passed (no new regressions) |
-| fw-nat-001 pass rate | ≥ 90% |
-| fw-nat-server-001 pass rate | ≥ 60% |
-| fw-ipsec-vpn-001 pass rate | ≥ 60% |
-| Async job queue | Working; slow LLM does not block workers |
-| Ops automation | health_check passes; self-heal confirmed |
-| Frontend review | Manual review workflow functional end-to-end |
-| No code regression | Static bench 50/50; no new `deployable: true` on broken output |
+| Static bench | 50/50 (no regression) |
+| **Live correctness** | 15/15 single run, OR 3-run average ≥ 14/15 |
+| **False deployable count** | **0** across all Phase 8 runs |
+| **fw-nat-001** | ≥ 90% correctness, ≥ 70% clean deployable, 0 infra errors |
+| **fw-nat-server-001** | ≥ 80% correctness, ≥ 60% clean deployable OR `mr: true` annotated+accepted |
+| **fw-ipsec-vpn-001** | ≥ 80% correctness, ≥ 60% clean deployable OR `mr: true` annotated+accepted |
+| **Async job queue smoke** | `/api/translate` returns job_id; `/api/jobs/<id>` returns correct state transitions; LLM does not block worker |
+| **Ops health check** | `health_check.sh` exits 0; `daily_smoke.sh` smoke tier passes; logrotate active |
+| **Review workflow** | approve/reject/escalate functional; review audit trail in JSONL; export report works |
+| **MAINTENANCE.md** | Updated with Phase 8 findings, accepted limitations, and any annotation changes |
+
+**Phase 8 is done when all 11 criteria are met.**
 
 ---
 
