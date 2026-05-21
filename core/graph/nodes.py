@@ -676,10 +676,6 @@ class ValidateNode(Node):
         # These are patterns from a DIFFERENT vendor that leaked into target output.
         residue = {
             'cisco': [
-                # ASA residues in IOS
-                (r'\bobject\s+network\b', 'ASA: object network'),
-                (r'\bobject-group\b', 'ASA: object-group'),
-                (r'\baccess-group\b', 'ASA: access-group'),
                 # Huawei/H3C residues in IOS
                 (r'\bsecurity-zone\b', 'Huawei/H3C: security-zone'),
                 (r'\bsecurity-policy\b', 'Huawei/H3C: security-policy'),
