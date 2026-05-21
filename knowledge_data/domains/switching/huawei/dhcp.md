@@ -16,7 +16,7 @@ DHCP snooping requires trusted ports on uplink interfaces that connect
 to DHCP servers or upstream switches:
 ```
 interface GigabitEthernet0/0/X
- dhcp snooping trusted
+ dhcp snooping trust
 ```
 
 ## Traffic Filter with ACL

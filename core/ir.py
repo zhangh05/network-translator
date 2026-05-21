@@ -158,6 +158,35 @@ def _stp_rule(cp: str) -> str:
     )
 
 
+def _asa_access_group_rule(cp: str, target_platform: str) -> str:
+    if target_platform != "asa":
+        return ""
+    return (
+        "10. 目标为 Cisco ASA 时，所有 ACL 必须通过 access-group 绑定到接口。"
+        "源配置有 zone-to-zone security-policy 或 interface 级别 ACL 绑定时，"
+        "必须根据接口所属 zone 生成 access-group <name> in/out interface <if_name>。"
+        f"无法确定接口命名或绑定时以 {cp} MANUAL_REVIEW 标记，不得省略 access-group。\n"
+    )
+
+
+def _vrf_rule(cp: str) -> str:
+    return (
+        "11. 源配置存在 VRF 静态路由（ip route vrf）时，"
+        "目标必须使用 vpn-instance 参数（ip route-static vpn-instance <name>）。"
+        f"不得省略 vpn-instance 参数或将 VRF 静态路由混入全局路由表。"
+        f"VRF interface 绑定必须为目标平台等价形式（ip binding vpn-instance）。\n"
+    )
+
+
+def _dhcp_snooping_rule(cp: str) -> str:
+    return (
+        "12. 源配置有 DHCP snooping 且 trunk 端口配置了信任时，"
+        "目标 trunk 端口必须配置 dhcp snooping trust（华为 VRP）或等价信任命令。"
+        f"华为 VRP 语法为 interface 下配置 dhcp snooping trust，不是 dhcp snooping trusted。"
+        f"不得遗漏 trunk 端口的信任配置。\n"
+    )
+
+
 _REQUIRED_ITEM_FIELDS = {"type", "translated_lines", "original_lines", "notes", "confidence"}
 _PLACEHOLDER_PATTERNS = re.compile(
     r'(<[^>]+>|TODO|PLACEHOLDER|请替换|请修改|根据实际情况|your\s+\w+|example\.com)',
@@ -401,6 +430,9 @@ prompt_version: {PROMPT_VERSION}
 {_asa_nat_rule(cp, target_platform)}
 {_bfd_rule(cp, target_platform)}
 {_stp_rule(cp) if features and "stp" in features else ""}
+{_asa_access_group_rule(cp, target_platform)}
+{_vrf_rule(cp) if features and "vrf" in features else ""}
+{_dhcp_snooping_rule(cp) if features and "dhcp" in features else ""}
 
 返回**非空** JSON 数组，每条含 type, translated_lines, original_lines, notes, confidence。
 type 选预定义: vlan,interface,ospf,bgp,acl,stp,dhcp,nat,static_route,vrrp,tunnel,ipsec,qos,system,address_object,service_object。
