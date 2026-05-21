@@ -102,6 +102,11 @@ features:
     priority: p0
     risk: low
 
+  security_zone:
+    domains: [firewall]
+    priority: p0
+    risk: low
+
   ipsec:
     domains: [routing, firewall]
     priority: p0
