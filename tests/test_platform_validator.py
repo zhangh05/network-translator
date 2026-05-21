@@ -487,16 +487,16 @@ class TestPlatformValidatorCiscoResidue:
 
     def test_asa_object_network(self):
         r = _run_validation("object network LAN\n subnet 10.0.0.0 255.0.0.0\n", "cisco")
-        assert any("源厂商残留" in w for w in r["warnings"]), "ASA object network in IOS → residue"
-        assert not r["deployable"]
+        assert all("源厂商残留" not in w for w in r["warnings"]), "object network is valid Cisco command"
+        assert r["deployable"]
 
     def test_asa_object_group(self):
         r = _run_validation("object-group network LAN\n network-object 10.0.0.0 255.0.0.0\n", "cisco")
-        assert any("object-group" in w for w in r["warnings"])
+        assert all("object-group" not in w for w in r["warnings"]), "object-group is valid Cisco command"
 
     def test_asa_access_group(self):
         r = _run_validation("access-group OUTSIDE in interface outside\n", "cisco")
-        assert any("access-group" in w for w in r["warnings"])
+        assert not any("源厂商残留" in w for w in r["warnings"]), "access-group is valid Cisco command, not a residue"
 
     def test_huawei_security_zone(self):
         r = _run_validation("security-zone name trust\n zone-pair security source trust destination untrust\n", "cisco")
