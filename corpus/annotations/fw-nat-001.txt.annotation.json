@@ -54,7 +54,7 @@
       "static_pass": true,
       "deployable": true,
       "manual_review_required": false,
-      "notes": "clean deployable — RC3 live verification: security_zone capability now correctly mapped as supported for ASA in capability_map. Output includes nat (inside,outside), access-list, access-group, correct interface naming. Zone-based security policy correctly mapped to security-level + access-group on ASA."
+      "notes": "≈60% clean pass rate. LLM 偶发在 ASA 输出中残留 security-policy（华为概念）或 MANUAL_REVIEW 标记（非确定性），validator 正确处理为 deployable=false。此类失败是 LLM 质量非确定性问题，非 validator 误报。annotation 保持 optimistic（clean path 应 PASS），flakiness profile 见 bench/flakiness_profile.json。"
     }
   },
   "benchmark": {
