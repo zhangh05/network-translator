@@ -102,7 +102,9 @@ def decide_deployability(
     )
     has_manual_review_marker = any(s.source == RiskSource.MANUAL_REVIEW for s in signals)
     has_platform_residue = any(
-        s.source == RiskSource.PLATFORM and s.severity in (RiskSeverity.WARNING, RiskSeverity.FATAL)
+        s.source == RiskSource.PLATFORM
+        and s.severity in (RiskSeverity.WARNING, RiskSeverity.FATAL)
+        and s.deployability_impact
         for s in signals
     )
 
