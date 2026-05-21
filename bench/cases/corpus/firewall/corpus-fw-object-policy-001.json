@@ -13,7 +13,7 @@
     "zone",
     "interface"
   ],
-  "risk": "high",
+  "risk": "medium",
   "tier": "full",
   "source_config": "!\n! Huawei USG — Address/service objects with security-policy\n! Source: internal_lab\n! Domain: firewall, Features: address_object, service_object, security_policy, zone, interface\n!\nsysname FIREWALL_OBJ_POLICY\n#\ninterface GigabitEthernet0/0/0\n description To-LAN\n ip address 10.0.0.1 255.255.255.0\n undo shutdown\n#\ninterface GigabitEthernet0/0/1\n description To-DMZ\n ip address 10.0.1.1 255.255.255.0\n undo shutdown\n#\ninterface GigabitEthernet0/0/2\n description To-WAN\n ip address 198.18.1.1 255.255.255.0\n undo shutdown\n#\nfirewall zone trust\n set priority 85\n add interface GigabitEthernet0/0/0\n#\nfirewall zone dmz\n set priority 50\n add interface GigabitEthernet0/0/1\n#\nfirewall zone untrust\n set priority 5\n add interface GigabitEthernet0/0/2\n#\nip address-set LAN_SERVERS type object\n address 0 10.0.0.10 255.255.255.255\n address 1 10.0.0.11 255.255.255.255\n#\nip address-set DMZ_SERVERS type object\n address 0 10.0.1.10 255.255.255.255\n address 1 10.0.1.11 255.255.255.255\n#\nip service-set WEB_SERVICES type object\n service 0 protocol tcp source-port 0 destination-port 80\n service 1 protocol tcp source-port 0 destination-port 443\n#\nsecurity-policy\n rule name LAN_TO_DMZ\n  source-zone trust\n  destination-zone dmz\n  source-address address-set LAN_SERVERS\n  destination-address address-set DMZ_SERVERS\n  action permit\n rule name DMZ_TO_WAN\n  source-zone dmz\n  destination-zone untrust\n  action permit\n rule name WAN_TO_LAN_DENY\n  source-zone untrust\n  destination-zone trust\n  action deny\n#",
   "expected": {

@@ -19,7 +19,7 @@
       "zone",
       "interface"
     ],
-    "risk": "high",
+    "risk": "medium",
     "tags": [
       "firewall",
       "object-group",
@@ -57,7 +57,7 @@
       "static_pass": true,
       "deployable": true,
       "manual_review_required": false,
-      "notes": "clean deployable — RC3 stable: object-group network/service, access-list, access-group all present. Former P0-3 bug resolved by RC2/RC3 prompt and knowledge improvements (address-set→object-group mapping now reliable). Annotation updated from dep=false to dep=true."
+      "notes": "clean deployable — object-group network/service, access-list, access-group all present. Former P0-3 bug (address-set→object-group mapping) resolved by RC2/RC3 prompt improvements. Risk lowered from high to medium (translation now reliable). Bench may intermittently FAIL when LLM adds MANUAL_REVIEW markers for zone mapping."
     }
   },
   "benchmark": {
