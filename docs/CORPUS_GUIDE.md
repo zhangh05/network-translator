@@ -62,13 +62,13 @@ Create a JSON annotation file following `corpus/schema.json`. Each annotation ca
 
 ```bash
 # Full corpus validation
-python3 tools/corpus_validate.py
+python3 tools/validate_corpus.py
 
 # Single entry
-python3 tools/corpus_validate.py --entry fw-nat-001
+python3 tools/validate_corpus.py --entry fw-nat-001
 
 # Strict mode (verify hashes)
-python3 tools/corpus_validate.py --strict
+python3 tools/validate_corpus.py --strict
 ```
 
 The validator checks:
@@ -170,7 +170,7 @@ python3 tools/corpus_sanitize.py corpus/samples/my-config.txt > corpus/sanitized
 cp corpus/sanitized/fw-nat-001.txt.annotation.json corpus/sanitized/my-config.txt.annotation.json
 
 # 4. Validate
-python3 tools/corpus_validate.py
+python3 tools/validate_corpus.py
 
 # 5. Commit (sanitized + annotation only)
 git add corpus/sanitized/my-config.txt corpus/sanitized/my-config.txt.annotation.json

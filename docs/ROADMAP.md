@@ -99,7 +99,7 @@
 ## Quality Gates (every iteration)
 
 - `pytest` (targeted first, full when feasible)
-- `python tools/corpus_validate.py`
+- `python tools/validate_corpus.py`
 - `python tools/corpus_to_bench.py` (if annotations changed)
 - `python bench/run_cases.py --corpus-only --static-only`
 - `python scripts/release_gate.py` (larger changes)

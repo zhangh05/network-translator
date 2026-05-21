@@ -1,32 +1,56 @@
 # Changelog
 
-## Unreleased — Phase 7 Production Hardening (Step 53)
+## v11-phase7-production-ready (2026-05-21)
+
+**Tag**: `v11-phase7-production-ready` — v11 Phase 7 Production Release
+**Commit chain**: RC3 (`63ccc8f`) → RC4 fixes → production-ready
+
+### Production Quality Summary
+
+| Metric | Value |
+|--------|-------|
+| Live corpus pass | **14/15 (93%)** |
+| Release gates | **ALL PASS (8/8)** |
+| Static bench | 15/15 corpus, 50/50 total |
+| Pytest | 486/486 |
+| Timeout alignment | GUNICORN_TIMEOUT=240, LLM_TIMEOUT=180, 60s buffer |
+
+### Known Limitation
+
+**fw-nat-001**: NAT translation may intermittently require manual review due to LLM output non-determinism. Validator correctly blocks deployability when MANUAL_REVIEW appears. No false deployable observed. Accepted as known limitation.
 
 ### Fixed
 
-- **P0-4**: BGP route-policy/prefix-list validator false negative — `route_policy`
-  feature detection + `HIGH_RISK_CONSISTENCY_FEATURES` forces deployable=false
-- **P1-3**: STP/MSTP root primary/root secondary semantic preservation —
-  `_check_stp_root_role()` in ValidateNode blocks deployable when root role missing
-- **P1-4**: BGP policy cross-reference deployability — `_check_bgp_policy_refs()`
-  verifies route-policy/prefix-list definitions exist in output; critical warning
+- **P0-1 (RC4)**: ASA `object network` residue in Huawei VRP IPsec output — knowledge/prompt fix: `knowledge_data/huawei/ipsec.md` ACL mapping guidance + strengthened `_no_cisco_asa_in_vrp()` prompt with positive alternatives
+- **P0-2 (RC4)**: ASA `nameif`/`security-level` residue in Huawei VRP output — added to `_platform_validation()` residue patterns; knowledge docs updated
+- **P0-4 (RC3)**: BGP route-policy/prefix-list validator false negative
+- **P1-3 (RC3)**: STP/MSTP root role semantic preservation
+- **P1-4 (RC3)**: BGP policy cross-reference validation
+- **fw-nat-server-001 annotation (RC4)**: Corrected `deployable: false, manual_review_required: true` (was logically impossible `deployable: true`)
+- **fw-object-policy-001 annotation (RC4)**: Corrected `risk: medium, mr: false` (was high/mr:true)
+- **gunicorn timeout (RC4)**: `--timeout 120` → `GUNICORN_TIMEOUT=240` (aligned with LLM_TIMEOUT=180)
+- **live_failure_backlog classification (RC3)**: Corrected `validator_false_negative` → `llm_quality_issue` for deployable mismatch cases
 
 ### Added
 
-- **P0-1**: `analyzer_results` + `analyzer_warning_count` + `analyzer_fatal_count`
-  exposed in `/api/translate` response and JSONL log
-- **P0-3**: JSONL logging for `/api/projects/<id>/translate` endpoint
-- **P1-1**: ObjectAnalyzer registered for `address_object` and `service_object`
-  features via registry.yaml → `core.analyzers.object`
-- **P1-2**: CapabilityGapNode handles list-type `analyzer_results` (from
-  FeatureAnalyzerNode); analyzer warnings/fatals appear in `capability_gaps`
-- **P1-5**: VERSION → `v11-phase7-step53-dev`, updated handoff/docs
+- **release_gate.py**: timeout alignment check (warning-only)
+- **tools/targeted_rerun.py**: 3×3 flaky case rerun utility
+- **reports/RELEASE_v11_PHASE7.md**: production release summary
+- **P0-1**: `analyzer_results` + `analyzer_warning_count` + `analyzer_fatal_count` exposed in API/JSONL
+- **P0-3**: JSONL logging for project translate endpoint
+- **P1-1**: ObjectAnalyzer registered for `address_object` / `service_object`
+- **P1-2**: CapabilityGapNode handles list-type `analyzer_results`
+- **P1-5**: VERSION → `v11-phase7-step53-dev`
 
 ### Changed
 
-- **P0-2**: bench live report reads `analyzer_results` from `result["result"]`
-  (nested), not top-level response
+- **P0-2**: bench live report reads nested `analyzer_results` from `result["result"]`
 - `_normalize_analyzer_results()` now used in CapabilityGapNode (was dict-only)
+- **docs/CORPUS_GUIDE.md**, **docs/ITERATION_WORKFLOW.md**, **docs/ROADMAP.md**: `tools/corpus_validate.py` → `tools/validate_corpus.py`
+
+---
+
+## v11-phase6-release-ready (2026-05-19)
 
 ## v11-phase6-release-ready (2026-05-19)
 

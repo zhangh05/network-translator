@@ -21,7 +21,7 @@ corpus/raw/ → corpus/sanitized/
 ```
 - Redact IPs to 198.18.x.x
 - Redact passwords/secrets to __REDACTED__
-- Run: `python tools/corpus_validate.py`
+- Run: `python tools/validate_corpus.py`
 
 ### Phase B: Annotate
 ```
@@ -30,7 +30,7 @@ corpus/sanitized/ → corpus/annotations/*.annotation.json
 - Add classification (vendor/domain/features/risk)
 - Add expected_translation (target vendor, key_lines, must_not_contain)
 - Add verification (deployable/manual_review_required/notes)
-- Run: `python tools/corpus_validate.py`
+- Run: `python tools/validate_corpus.py`
 
 ### Phase C: Generate Bench Cases
 ```
