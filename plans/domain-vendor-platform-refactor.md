@@ -1,3 +1,13 @@
+# [SUPERSEDED] Domain / Vendor / Platform / Feature Refactor
+
+> ⚠️ **此计划已被取代。** 最新设计以 `docs/superpowers/specs/2026-05-22-multi-vendor-ir-platform-design.md` 为准。
+>
+> **Superseded by**: `docs/superpowers/specs/2026-05-22-multi-vendor-ir-platform-design.md`
+> **Superseded at**: 2026-05-22
+> **原因**: 旧计划为 vendor-first 架构，新设计变更为 domain-first 架构 (DeviceDomain: SWITCH/ROUTER/FIREWALL)，核心假设、数据模型、目录结构均有重大差异，不可直接复用。
+>
+> 此文件保留仅用于历史参考，**不要**以它作为实施计划的输入。
+
 # Domain / Vendor / Platform / Feature Refactor
 
 ## Objective
