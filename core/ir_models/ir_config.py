@@ -49,3 +49,4 @@ class IRConfig:
     pbrs: list = field(default_factory=list)
     ipsec_vpns: list = field(default_factory=list)
     unsupported: list = field(default_factory=list)
+    unknown_blocks: list = field(default_factory=list)
