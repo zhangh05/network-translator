@@ -59,15 +59,15 @@ class TestGetParser:
 
 
 class TestSkeletonParser:
-    def test_h3c_skeleton_returns_unknown_blocks(self):
+    def test_h3c_parser_parses_vlan(self):
         init_parsers()
         parser_cls = get_parser(DeviceDomain.SWITCH, "comware")
         p = parser_cls()
         result = p.parse("vlan 10\n port access vlan 10\n")
-        assert result.total_line_count == 2
-        assert result.parsed_line_count == 0
-        assert result.coverage_ratio == 0.0
-        assert len(result.ir.unknown_blocks) >= 1
+        assert result.parsed_line_count >= 2
+        assert result.coverage_ratio == 1.0
+        assert len(result.ir.vlans) == 1
+        assert result.ir.vlans[0].vid == 10
 
     def test_empty_config_no_crash(self):
         init_parsers()

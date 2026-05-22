@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from core.domain import DeviceDomain
@@ -33,14 +33,17 @@ class IRConfig:
     meta: IRConfigMeta
     interfaces: list = field(default_factory=list)
     vlans: list = field(default_factory=list)
-    svils: list = field(default_factory=list)
+    svis: list = field(default_factory=list)
     static_routes: list = field(default_factory=list)
     ospf: list = field(default_factory=list)
     bgp: list = field(default_factory=list)
     acls: list = field(default_factory=list)
     nat_rules: list = field(default_factory=list)
     fhrps: list = field(default_factory=list)
-    stps: list = field(default_factory=list)
+    stp: Any = None
+    lags: list = field(default_factory=list)
+    aaa: Any = None
+    management: Any = None
     zones: list = field(default_factory=list)
     address_objects: list = field(default_factory=list)
     service_objects: list = field(default_factory=list)
