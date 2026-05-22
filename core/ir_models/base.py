@@ -12,11 +12,10 @@ class SourceSpan:
     source_text: list[str] = field(default_factory=list)
 
 
-@dataclass
 class IRModelBase:
-    type: IRType
-    source_span: SourceSpan
-    conversion_status: ConversionStatus = ConversionStatus.EXACT
-    reason: str | None = None
-    risk_level: IRRiskLevel | None = None
-    review_notes: str | None = None
+    """Marker / mixin base for IR model dataclasses.
+
+    Subclasses define their own @dataclass fields independently
+    (type, source_span, conversion_status, reason, risk_level, review_notes)
+    to avoid Python 3.9 dataclass inheritance ordering issues.
+    """

@@ -31,31 +31,12 @@ class TestSourceSpan:
 
 
 class TestIRModelBase:
-    def test_minimal(self):
-        span = SourceSpan(start_line=1, end_line=1)
-        m = IRModelBase(type=IRType.VLAN, source_span=span)
-        assert m.type == IRType.VLAN
-        assert m.conversion_status == ConversionStatus.EXACT
+    def test_is_class(self):
+        assert isinstance(IRModelBase, type)
 
-    def test_with_all_fields(self):
-        span = SourceSpan(start_line=1, end_line=1)
-        m = IRModelBase(
-            type=IRType.BGP,
-            source_span=span,
-            conversion_status=ConversionStatus.APPROXIMATED,
-            reason="different AS format",
-            risk_level=IRRiskLevel.MEDIUM,
-            review_notes="verify AS number",
-        )
-        assert m.conversion_status == ConversionStatus.APPROXIMATED
-        assert m.reason == "different AS format"
-
-    def test_default_fields(self):
-        span = SourceSpan(start_line=1, end_line=1)
-        m = IRModelBase(type=IRType.ACL, source_span=span)
-        assert m.reason is None
-        assert m.risk_level is None
-        assert m.review_notes is None
+    def test_subclass_of_ir_model_base(self):
+        from core.ir_models import IRVlan
+        assert issubclass(IRVlan, IRModelBase)
 
 
 class TestConversionStatus:
