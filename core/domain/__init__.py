@@ -1,5 +1,8 @@
 from __future__ import annotations
+from core.domain.base import DeviceDomain, DomainProfile, FeatureKey
+from core.domain.detector import DomainDetector, DomainDetectionResult
 
-from core.domain.base import DeviceDomain
-
-__all__ = ["DeviceDomain"]
+__all__ = [
+    "DeviceDomain", "DomainProfile", "FeatureKey",
+    "DomainDetector", "DomainDetectionResult",
+]
