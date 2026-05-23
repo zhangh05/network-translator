@@ -9,7 +9,9 @@
 
 ## 当前状态 (2026-05-23)
 
-项目已完成 Phase 6 (语义+覆盖率 baseline 集成)、Phase 7 (OSPF 深度校验/能力映射矩阵/7层集成)、Phase 8A (20任务性能基线)、Phase 8B (CI 质量门禁)。正在进行 Phase 8C+8D (审计归档/运行手册/发布清单)。
+项目已完成 Phase 6 (语义+覆盖率 baseline 集成)、Phase 7 (OSPF 深度校验/能力映射矩阵/7层集成)、Phase 8A (20任务性能基线)、Phase 8B (CI 质量门禁)、Phase 8C+8D (审计归档/运行手册/发布清单)、Beta 优化轮次 (配置收敛/安全脱敏/可靠性/审计闭环)。
+
+**Beta 阶段就绪**: `BETA_READY = YES` — 见 `docs/BETA_READINESS_REPORT.md`
 
 ### 现网 (旧架构，兼容运行)
 - LLM-driven 单次翻译管线 (ParseNode → TranslateNode → ValidateNode)

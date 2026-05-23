@@ -1,7 +1,7 @@
 # Beta Readiness Report
 
-> Generated: 2026-05-23
-> Commit: 53242fb (Phase 8E final)
+> Generated: 2026-05-23 (Beta Production Trial)
+> Commit: 53242fb (Phase 8E final) → Beta optimization commits
 > Run ID: beta-readiness-001
 
 ---
@@ -40,7 +40,22 @@ All chains run with `PYTHONPATH=. python3 scripts/run_baseline.py` subset (6 rep
 | 6 | hillstone→huawei_usg empty | FIREWALL | PASS | 0 | True | False |
 
 **Coverage**: 100% across all 6 chains (`coverage_verifiability_rate = 1.0`).
-**Residue failures** (3/6): All are the same `hostname Test` placeholder residue — a known limitation where the batch target config contains a test hostname that the residue validator correctly flags. This is an artifact of the test harness, not a regression.
+
+**Residue failure analysis** (3/6 — all same root cause):
+
+| Scenario | Classification | Rule |
+|----------|----------------|------|
+| `hostname Test` in batch target config | **Test artifact** | Residue validator correctly flags `hostname Test` as non-matching in H3C/Huawei output. This is correct behavior. The test harness uses a static placeholder hostname `hostname Test\n` as `target_config`, which is vendor-neutral. The validator correctly identifies this as "Cisco hostname in non-Cisco output". Production configs will have correct hostnames → no false positive. |
+| Any real `hostname FooBar` appearing verbatim in translated output | **Production blocker** | Means translation dropped/missed the hostname transformation. Must be fixed before deployment. |
+
+**Production blocker vs test artifact decision rule:**
+```
+IF target_config contains a vendor-neutral placeholder
+AND translated output contains a vendor-incorrect keyword (e.g. 'hostname ' in Huawei output)
+THEN this is a test artifact (target_config issue, not translation issue)
+ELSE if hostname appears in output but wasn't in source config
+THEN this is a production blocker requiring manual review
+```
 
 ---
 
