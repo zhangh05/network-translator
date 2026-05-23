@@ -40,6 +40,33 @@ MANUAL_REVIEW_NO_CHECKER = "unverifiable_checker_missing"
 MANUAL_REVIEW_PARTIAL_SRC = "source_partial"
 MANUAL_REVIEW_PARTIAL_TGT = "target_partial"
 
+# Capability classification → issue category/severity mapping matrix.
+# Each entry defines how a capability status translates to validation output.
+# Used by CompositeValidator._adjust_coverage_against_baseline and other
+# capability-aware issue generation.
+CLASSIFICATION_TO_ISSUE_PARAMS: dict[str, tuple[str, str]] = {
+    # unknown → HIGH manual_review (cannot assess risk)
+    MANUAL_REVIEW_UNKNOWN: ("manual_review", "high"),
+    # checker missing → MEDIUM manual_review (need human eyes)
+    MANUAL_REVIEW_NO_CHECKER: ("manual_review", "medium"),
+    # source side partial → MEDIUM manual_review (may miss features)
+    MANUAL_REVIEW_PARTIAL_SRC: ("manual_review", "medium"),
+    # target side partial → MEDIUM manual_review (may downgrade)
+    MANUAL_REVIEW_PARTIAL_TGT: ("manual_review", "medium"),
+}
+
+
+def get_classification_issue_params(class_name: str) -> tuple[str, str]:
+    """Return (category_literal, severity_literal) for a capability
+    classification reason string.
+
+    The returned strings match ValidationCategory.value and IRRiskLevel.value
+    for direct construction.
+    """
+    return CLASSIFICATION_TO_ISSUE_PARAMS.get(
+        class_name, ("manual_review", "medium"),
+    )
+
 
 @dataclass
 class CapabilityBaseline:

@@ -125,13 +125,22 @@ class CompositeValidator:
                 ))
 
         if baseline is not None:
-            metadata["capability_metrics"] = {
+            cap_metrics: dict[str, int | float | None] = {
                 "total_features_considered": baseline.total_features_considered,
                 "auto_verifiable": baseline.auto_verifiable_count,
                 "manual_review": baseline.manual_review_count,
                 "unsupported": baseline.unsupported_count,
                 "verifiability_rate": round(baseline.verifiability_rate, 4),
             }
+            # overall_verifiability_index = product of coverage and semantic
+            # verifiability rates, when both are available. Ranges 0.0–1.0.
+            c_rate = coverage_metrics.get("coverage_verifiability_rate")
+            s_rate = cap_metrics["verifiability_rate"]
+            if c_rate is not None and s_rate is not None:
+                cap_metrics["overall_verifiability_index"] = round(
+                    float(c_rate) * float(s_rate), 4,
+                )
+            metadata["capability_metrics"] = cap_metrics
             if baseline.unsupported_semantics:
                 metadata["capability_gaps"] = sorted(
                     k.value for k in baseline.unsupported_semantics

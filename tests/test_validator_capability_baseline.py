@@ -2,12 +2,14 @@ from __future__ import annotations
 
 from core.domain import DeviceDomain, FeatureKey
 from core.validator.capability_baseline import (
+    CLASSIFICATION_TO_ISSUE_PARAMS,
     MANUAL_REVIEW_NO_CHECKER,
     MANUAL_REVIEW_PARTIAL_SRC,
     MANUAL_REVIEW_PARTIAL_TGT,
     MANUAL_REVIEW_UNKNOWN,
     VERIFIABLE_FEATURE_REGISTRY,
     CapabilityBaseline,
+    get_classification_issue_params,
 )
 from core.vendor.base import FeatureSupport
 from core.vendor.enums import FeatureSupportStatus
@@ -298,3 +300,113 @@ def unverified_by(self, reason: str) -> list[FeatureKey]:
     return self.manual_review_semantics.get(reason, [])
 
 CapabilityBaseline.unverified_by = unverified_by
+
+
+class TestClassificationMappingMatrix:
+    """Phase 7D: Capability → severity/category mapping consistency."""
+
+    @staticmethod
+    def _resolve(reason: str) -> tuple[str, str]:
+        return get_classification_issue_params(reason)
+
+    def test_unknown_maps_to_high_manual_review(self):
+        cat, sev = self._resolve(MANUAL_REVIEW_UNKNOWN)
+        assert cat == "manual_review"
+        assert sev == "high"
+
+    def test_no_checker_maps_to_medium_manual_review(self):
+        cat, sev = self._resolve(MANUAL_REVIEW_NO_CHECKER)
+        assert cat == "manual_review"
+        assert sev == "medium"
+
+    def test_partial_src_maps_to_medium_manual_review(self):
+        cat, sev = self._resolve(MANUAL_REVIEW_PARTIAL_SRC)
+        assert cat == "manual_review"
+        assert sev == "medium"
+
+    def test_partial_tgt_maps_to_medium_manual_review(self):
+        cat, sev = self._resolve(MANUAL_REVIEW_PARTIAL_TGT)
+        assert cat == "manual_review"
+        assert sev == "medium"
+
+    def test_unknown_reason_falls_back_to_medium_manual_review(self):
+        cat, sev = self._resolve("nonexistent_reason")
+        assert cat == "manual_review"
+        assert sev == "medium"
+
+    def test_all_registry_reasons_have_entries(self):
+        """Every reason in CLASSIFICATION_TO_ISSUE_PARAMS must be defined."""
+        known_reasons = {
+            MANUAL_REVIEW_UNKNOWN,
+            MANUAL_REVIEW_NO_CHECKER,
+            MANUAL_REVIEW_PARTIAL_SRC,
+            MANUAL_REVIEW_PARTIAL_TGT,
+        }
+        assert known_reasons == set(CLASSIFICATION_TO_ISSUE_PARAMS.keys())
+
+
+class TestCompositeVerifiabilityIndex:
+    """Phase 7D: overall_verifiability_index in composite validate metadata."""
+
+    def test_overall_index_product_when_both_rates_available(self):
+        from core.domain import DeviceDomain
+        from core.ir_models import IRConfig, IRConfigMeta
+        from core.ir_models.base import SourceSpan
+        from core.ir_models.enums import IRType
+        from core.ir_models.switch import IRVlan
+        from core.renderer.base import RenderResult
+        from core.validator import CompositeValidator
+        from core.validator.coverage_validator import CoverageValidator
+        from core.validator.semantic_validator import SemanticValidator
+        from core.validator.residue_validator import ResidueValidator
+        from core.vendor import get_profile, init_profiles
+
+        init_profiles()
+        cisco = get_profile("cisco_ios_xe")
+        h3c = get_profile("h3c_comware")
+        meta = IRConfigMeta(
+            source_vendor="h3c", target_vendor="cisco",
+            source_domain=DeviceDomain.SWITCH, target_domain=DeviceDomain.SWITCH,
+            source_platform="comware", target_platform="ios-xe",
+        )
+        ir = IRConfig(meta=meta, vlans=[IRVlan(IRType.VLAN, SourceSpan(1, 1, ["line"]), vid=10)])
+        rr = RenderResult(
+            config_text="!\n", features_rendered=["vlans"],
+        )
+        cv = CompositeValidator(
+            coverage_validator=CoverageValidator(
+                src_domain=DeviceDomain.SWITCH, tgt_domain=DeviceDomain.SWITCH,
+            ),
+            semantic_validator=SemanticValidator(
+                src_domain=DeviceDomain.SWITCH, tgt_domain=DeviceDomain.SWITCH,
+            ),
+            residue_validator=ResidueValidator(profile=cisco),
+        )
+        report = cv.validate(
+            target_config="hostname Test\n",
+            ir=ir, render_result=rr,
+            src_profile=h3c, tgt_profile=cisco,
+            src_domain=DeviceDomain.SWITCH, tgt_domain=DeviceDomain.SWITCH,
+        )
+        cap = report.metadata.get("capability_metrics", {})
+        assert "overall_verifiability_index" in cap
+        ovi = cap["overall_verifiability_index"]
+        assert isinstance(ovi, float)
+        assert 0.0 <= ovi <= 1.0
+
+    def test_overall_index_requires_coverage_rate(self):
+        """When coverage not computed, overall index should not appear."""
+        from core.validator import CompositeValidator
+        from core.vendor import get_profile, init_profiles
+
+        init_profiles()
+        cisco = get_profile("cisco_ios_xe")
+        h3c = get_profile("h3c_comware")
+        cv = CompositeValidator()
+        report = cv.validate(
+            target_config="", ir=None, render_result=None,
+            src_profile=h3c, tgt_profile=cisco,
+            src_domain=DeviceDomain.SWITCH, tgt_domain=DeviceDomain.SWITCH,
+        )
+        cap = report.metadata.get("capability_metrics", {})
+        assert "overall_verifiability_index" not in cap

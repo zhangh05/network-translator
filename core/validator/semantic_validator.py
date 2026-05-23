@@ -259,6 +259,10 @@ class SemanticValidator:
         if not has_router_data:
             return
 
+        # OSPF deep check borrowed from _check_switch
+        if ir.ospf:
+            self._check_ospf(ir, issues, metrics)
+
         for route in ir.static_routes:
             if route.vrf:
                 issues.append(self._make_issue(
