@@ -109,7 +109,7 @@ class ProjectStore:
                 fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
     def _load_index(self):
-        """加载项目索引"""
+        """加载项目索引，并对历史数据进行hydration回填。"""
         self._projects.clear()
         try:
             data = self._locked_read(self.meta_file)
@@ -124,10 +124,31 @@ class ProjectStore:
                     proj.source_domain = p.get("source_domain", "")
                     proj.target_domain = p.get("target_domain", "")
                     proj.target_platform = p.get("target_platform", "")
+                    # 基础字段：直接从index恢复
                     proj.result = p.get("result")
                     proj.request_id = p.get("request_id", "")
                     proj.version = p.get("version", "")
                     proj.model = p.get("model", "")
+
+                    # Backfill: hydrate missing result and metadata from detail file
+                    # for historical projects that predate the request_id/version/model fields.
+                    detail_file = self._get_project_file(proj.id)
+                    if detail_file.exists():
+                        try:
+                            detail_data = self._locked_read(detail_file)
+                            if detail_data:
+                                # Result: backfill only if index result is None but detail has it
+                                if proj.result is None and detail_data.get("result") is not None:
+                                    proj.result = detail_data.get("result")
+                                # Metadata: backfill None or empty fields from detail
+                                for field in ("request_id", "version", "model"):
+                                    idx_val = getattr(proj, field, None) or ""
+                                    detail_val = detail_data.get(field)
+                                    if not idx_val and detail_val:
+                                        setattr(proj, field, detail_val)
+                        except Exception:
+                            pass
+
                     self._projects[p["id"]] = proj
         except Exception:
             logger.exception("Failed to load project index")
@@ -158,33 +179,34 @@ class ProjectStore:
         return project
 
     def get_project(self, project_id: str) -> Optional[Project]:
-        """获取项目"""
+        """获取项目（优先使用内存缓存，只在缓存不存在时从detail文件加载）。"""
         self._ensure_fresh()
         if project_id in self._projects:
-            filepath = self._get_project_file(project_id)
-            try:
-                data = self._locked_read(filepath)
-                if data:
-                    proj = Project(project_id, data.get("name", ""))
-                    proj.created_at = data.get("created_at", proj.created_at)
-                    proj.updated_at = data.get("updated_at", proj.created_at)
-                    proj.config_text = data.get("config_text", "")
-                    proj.from_vendor = data.get("from_vendor", "auto")
-                    proj.to_vendor = data.get("to_vendor", "huawei")
-                    proj.source_domain = data.get("source_domain", "")
-                    proj.source_platform = data.get("source_platform", "")
-                    proj.target_domain = data.get("target_domain", "")
-                    proj.target_platform = data.get("target_platform", "")
-                    proj.result = data.get("result")
-                    proj.request_id = data.get("request_id", "")
-                    proj.version = data.get("version", "")
-                    proj.model = data.get("model", "")
-                    proj.history = data.get("history", [])
-                    self._projects[project_id] = proj
-                    return proj
-            except Exception:
-                logger.exception("Failed to read project %s", project_id)
-        return self._projects.get(project_id)
+            return self._projects[project_id]
+        filepath = self._get_project_file(project_id)
+        try:
+            data = self._locked_read(filepath)
+            if data:
+                proj = Project(project_id, data.get("name", ""))
+                proj.created_at = data.get("created_at", proj.created_at)
+                proj.updated_at = data.get("updated_at", proj.created_at)
+                proj.config_text = data.get("config_text", "")
+                proj.from_vendor = data.get("from_vendor", "auto")
+                proj.to_vendor = data.get("to_vendor", "huawei")
+                proj.source_domain = data.get("source_domain", "")
+                proj.source_platform = data.get("source_platform", "")
+                proj.target_domain = data.get("target_domain", "")
+                proj.target_platform = data.get("target_platform", "")
+                proj.result = data.get("result")
+                proj.request_id = data.get("request_id") or ""
+                proj.version = data.get("version") or ""
+                proj.model = data.get("model") or ""
+                proj.history = data.get("history", [])
+                self._projects[project_id] = proj
+                return proj
+        except Exception:
+            logger.exception("Failed to read project %s", project_id)
+        return None
 
     def _save_project(self, project: Project):
         """保存项目数据"""

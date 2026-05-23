@@ -28,8 +28,10 @@ from typing import TextIO
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # ── Pre-existing failures (known, non-blocking) ──────────────────────────
-# These fail due to missing flask/requests in dev env or deprecated analyzers.
-# They are NOT counted as regression. Updated: 2026-05-23.
+# Taxonomy: 13 known pre-existing + 2 temporary tolerated = 15 total.
+# - Known pre-existing (13): deprecated analyzers (×7), flask missing (×4), requests missing (×2)
+# - Temporary tolerated (2): frozen test files awaiting reconciliation during next beta pass.
+# These are NOT counted as regression. Updated: 2026-05-23.
 PREEXISTING_FAILURES: list[str] = [
     # test_analyzer_object — deprecated FIREWALL object analyzers
     "tests/test_analyzer_object.py::test_registry_has_address_object_analyzer",
@@ -48,7 +50,7 @@ PREEXISTING_FAILURES: list[str] = [
     # test_v9_stability — requires requests for retry mocks
     "tests/test_v9_stability.py::test_llm_retry_on_transient_http_error",
     "tests/test_v9_stability.py::test_llm_max_retries_not_exceeded_on_success",
-    # Untracked frozen test files — not committed, not part of Beta scope
+    # Temporary tolerated (2): frozen test files — resolve in next reconciliation pass
     "tests/test_h3c_to_cisco.py::test_rule_translator_basic",
     "tests/test_packaging_production.py::test_web_app_direct_run_default_port_matches_service",
 ]

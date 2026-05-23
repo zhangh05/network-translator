@@ -33,10 +33,7 @@ git push origin ci-validation-test
 
 # 3. Expected outcomes for a passing run:
 #    - core-gate: PASS (0 failures in 524 core tests)
-#    - full-gate: PASS (Layer 1 PASS + Layer 2: 13 pre-existing, 0 regressions)
-```
-
-If the runner differs from local (e.g., flask/requests available), pre-existing list may shrink from 13 → ~7. This is expected and handled by the superset strategy.
+#    - full-gate: PASS (Layer 1 PASS + Layer 2: 15 tolerated failures, 0 regressions)
 
 Both jobs run in parallel after checkout + dependency install.
 
@@ -187,7 +184,7 @@ The pre-existing failure list (`PREEXISTING_FAILURES` in `scripts/ci_quality_gat
 | Environment | Deps Available | Pre-existing List Size | Expected Matches | Strategy |
 |-------------|---------------|----------------------|------------------|----------|
 | Local dev | no flask/requests | 15 entries | 15 failures tolerated | Superset list covers all scenarios |
-| GitHub Actions | flask+requests via pip install | 15 entries | ~7 failures (test_analyzer_object only) | Extra entries are harmless — absent failures simply don't match |
+| GitHub Actions | flask+requests via pip install | 15 entries | ~7 failures (test_analyzer_object only) | Extra entries (flask/requests) pass in CI — simply absent from actual failure set |
 
 **Why this works safely:**
 

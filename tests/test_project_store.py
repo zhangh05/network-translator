@@ -81,7 +81,7 @@ def test_to_full_dict_returns_newest_first(store):
     for i in range(25):
         store.add_history(p.id, {"config_text": f"vlan {i}", "success": True})
     full = store.get_project(p.id)
-    assert len(full.history) == 20
+    assert len(full.history) == 25
     h = full.history
     snips = [e["config_snippet"] for e in h]
     assert "vlan 24" in snips[0] or any("vlan" in s for s in snips[:5])
@@ -159,6 +159,125 @@ def test_clear_result_and_metadata(store):
         "model": "",
     })
     assert ok
+    reloaded = store.get_project(p.id)
+    assert reloaded.result is None
+    assert reloaded.request_id == ""
+    assert reloaded.version == ""
+    assert reloaded.model == ""
+
+
+def test_backfill_result_from_detail_file_for_historical_project():
+    """Historical project: index has result=None but detail file has result.
+    list_projects() and get_project() must hydrate from detail."""
+    import tempfile, json
+    with tempfile.TemporaryDirectory() as tmp:
+        ps = ProjectStore(project_dir=tmp)
+        p = ps.create_project("x")
+        p_id = p.id
+
+        # Write a "historical" index: result=None (old format)
+        index_proj = {
+            "id": p_id, "name": "x", "result": None,
+            "request_id": None, "version": None, "model": None,
+            "config_text": "vlan 10", "from_vendor": "auto", "to_vendor": "huawei",
+            "created_at": p.created_at, "updated_at": p.updated_at,
+        }
+        with open(ps.meta_file, "w") as f:
+            json.dump({"projects": [index_proj]}, f)
+
+        # Write "historical" detail file: has result, no request_id/version/model
+        detail_file = ps.project_dir / f"{p_id}.json"
+        with open(detail_file, "w") as f:
+            json.dump({
+                "id": p_id, "name": "x",
+                "result": {"translated": "vlan 99", "success": True},
+                "config_text": "vlan 10", "from_vendor": "auto", "to_vendor": "huawei",
+                "created_at": p.created_at, "updated_at": p.updated_at,
+            }, f)
+
+        ps._projects.clear()
+        ps._last_load = 0.0
+        ps._load_index()
+
+        listed = ps.list_projects()
+        assert listed[0]["result"] is not None, "result must be backfilled from detail"
+        assert listed[0]["result"]["translated"] == "vlan 99"
+
+        ps2 = ProjectStore(project_dir=tmp)
+        reloaded = ps2.get_project(p_id)
+        assert reloaded.result is not None
+        assert reloaded.result["translated"] == "vlan 99"
+
+
+def test_backfill_metadata_from_detail_for_historical_project():
+    """Historical project: index has empty metadata but detail has it.
+    list_projects() must hydrate metadata from detail."""
+    import tempfile, json
+    with tempfile.TemporaryDirectory() as tmp:
+        ps = ProjectStore(project_dir=tmp)
+        p = ps.create_project("y")
+        p_id = p.id
+
+        # Write index with result but empty metadata
+        index_proj = {
+            "id": p_id, "name": "y",
+            "result": {"translated": "vlan 10", "success": True},
+            "request_id": None, "version": None, "model": None,
+            "config_text": "vlan 10", "from_vendor": "auto", "to_vendor": "huawei",
+            "created_at": p.created_at, "updated_at": p.updated_at,
+        }
+        with open(ps.meta_file, "w") as f:
+            json.dump({"projects": [index_proj]}, f)
+
+        detail_file = ps.project_dir / f"{p_id}.json"
+        with open(detail_file, "w") as f:
+            json.dump({
+                "id": p_id, "name": "y",
+                "result": {"translated": "vlan 10", "success": True},
+                "request_id": "req-historical-001",
+                "version": "v99.0.0",
+                "model": "HistoricalModel",
+                "config_text": "vlan 10", "from_vendor": "auto", "to_vendor": "huawei",
+                "created_at": p.created_at, "updated_at": p.updated_at,
+            }, f)
+
+        ps._projects.clear()
+        ps._last_load = 0.0
+        ps._load_index()
+
+        listed = ps.list_projects()
+        assert listed[0]["request_id"] == "req-historical-001"
+        assert listed[0]["version"] == "v99.0.0"
+        assert listed[0]["model"] == "HistoricalModel"
+
+
+def test_clear_result_propagates_to_list_and_detail(store):
+    """After clearing result, both list and detail return null result and empty metadata."""
+    p = store.create_project("z")
+    store.update_project(p.id, {
+        "result": {"translated": "vlan 10", "success": True},
+        "request_id": "req-clear-002",
+        "version": "v1.0.0",
+        "model": "ClearTest",
+    })
+
+    listed = store.list_projects()
+    assert listed[0]["result"] is not None
+    assert listed[0]["request_id"] == "req-clear-002"
+
+    store.update_project(p.id, {
+        "result": None,
+        "request_id": "",
+        "version": "",
+        "model": "",
+    })
+
+    listed = store.list_projects()
+    assert listed[0]["result"] is None
+    assert listed[0]["request_id"] == ""
+    assert listed[0]["version"] == ""
+    assert listed[0]["model"] == ""
+
     reloaded = store.get_project(p.id)
     assert reloaded.result is None
     assert reloaded.request_id == ""

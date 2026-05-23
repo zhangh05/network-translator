@@ -64,7 +64,7 @@ THEN this is a production blocker requiring manual review
 | Criterion | Status | Evidence |
 |-----------|--------|----------|
 | Validator core (Layer 1) | ✅ PASS | 524 passed, 0 failures |
-| Full test suite | ✅ PASS | 1049 passed, 15 pre-existing (tolerated; 2 temporary), 0 regressions |
+| Full test suite | ✅ PASS | 1087 passed, 15 tolerated failures (13 known pre-existing + 2 temporary tolerated), 0 regressions |
 | CI quality gates | ✅ PASS | Layer 1 zero-tolerance + Layer 2 regression-check pass |
 | LLM config security | ✅ PASS | `mask_api_key()` never logs full key; tests confirm |
 | Audit schema v1.0 | ✅ PASS | All batch/audit outputs include schema_version, run_id, commit_hash, generated_at |
