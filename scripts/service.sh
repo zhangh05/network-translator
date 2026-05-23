@@ -7,17 +7,32 @@ RUN_DIR="${ROOT_DIR}/.run"
 LOG_DIR="${ROOT_DIR}/logs"
 PID_FILE="${RUN_DIR}/translator.pid"
 LOG_FILE="${LOG_DIR}/translator.log"
+
+if [[ -f "${ROOT_DIR}/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "${ROOT_DIR}/.env"
+  set +a
+fi
+
 PORT="${PORT:-5008}"
 HOST="${HOST:-0.0.0.0}"
 WORKERS="${WORKERS:-4}"
-
-if [[ -x "${ROOT_DIR}/venv/bin/python" ]]; then
-  DEFAULT_PYTHON="${ROOT_DIR}/venv/bin/python"
-  VENV_BIN="${ROOT_DIR}/venv/bin"
+if [[ "${HOST}" == "0.0.0.0" || "${HOST}" == "::" ]]; then
+  PROBE_HOST="${PROBE_HOST:-127.0.0.1}"
 else
-  DEFAULT_PYTHON="python3"
-  VENV_BIN=""
+  PROBE_HOST="${PROBE_HOST:-${HOST}}"
 fi
+
+DEFAULT_PYTHON="python3"
+VENV_BIN=""
+for candidate in "${ROOT_DIR}/.venv-local" "${ROOT_DIR}/venv" "${ROOT_DIR}/.venv"; do
+  if [[ -x "${candidate}/bin/python" ]]; then
+    DEFAULT_PYTHON="${candidate}/bin/python"
+    VENV_BIN="${candidate}/bin"
+    break
+  fi
+done
 PYTHON_BIN="${PYTHON_BIN:-${DEFAULT_PYTHON}}"
 
 mkdir -p "${RUN_DIR}" "${LOG_DIR}" "${ROOT_DIR}/memory_data" "${ROOT_DIR}/cache_data"
@@ -35,7 +50,7 @@ is_running() {
 }
 
 health_check_url() {
-  local url="http://${HOST}:${PORT}/healthz"
+  local url="http://${PROBE_HOST}:${PORT}/healthz"
   curl -sf --noproxy '*' --max-time 3 "${url}" >/dev/null 2>&1
 }
 
@@ -58,15 +73,12 @@ start_service() {
   echo "starting translator service..."
   rm -f "${PID_FILE}"
 
-  local env_block
-  env_block="PORT=${PORT} HOST=${HOST} PYTHONPATH=${ROOT_DIR}"
-
   if [[ "${use_gunicorn}" == true ]]; then
-    GUNICORN_TIMEOUT="${GUNICORN_TIMEOUT:-240}"
+    GUNICORN_TIMEOUT="${GUNICORN_TIMEOUT:-600}"
     echo "  using gunicorn (workers=${WORKERS}, timeout=${GUNICORN_TIMEOUT}s)"
     (
       cd "${ROOT_DIR}"
-      env ${env_block} "${GUNICORN}" \
+      env "PORT=${PORT}" "HOST=${HOST}" "PYTHONPATH=${ROOT_DIR}" "${GUNICORN}" \
         -w "${WORKERS}" \
         -b "${HOST}:${PORT}" \
         --timeout "${GUNICORN_TIMEOUT}" \
@@ -86,7 +98,7 @@ start_service() {
     echo "  using flask dev server (install gunicorn for production)"
     (
       cd "${ROOT_DIR}"
-      nohup env ${env_block} "${PYTHON_BIN}" "${APP_FILE}" >> "${LOG_FILE}" 2>&1 &
+      nohup env "PORT=${PORT}" "HOST=${HOST}" "PYTHONPATH=${ROOT_DIR}" "${PYTHON_BIN}" "${APP_FILE}" >> "${LOG_FILE}" 2>&1 &
       echo $! > "${PID_FILE}"
     )
   fi
@@ -150,6 +162,7 @@ status_service() {
     echo "pid:      ${pid}"
     echo "port:     ${PORT}"
     echo "host:     ${HOST}"
+    echo "probe:    ${PROBE_HOST}"
     echo "workdir:  ${ROOT_DIR}"
     echo "log:      ${LOG_FILE}"
 
@@ -165,7 +178,7 @@ status_service() {
     fi
 
     # healthz
-    local hz_url="http://${HOST}:${PORT}/healthz"
+    local hz_url="http://${PROBE_HOST}:${PORT}/healthz"
     if curl -sf --noproxy '*' --max-time 3 "${hz_url}" >/dev/null 2>&1; then
       echo "healthz:  OK"
     else
@@ -173,7 +186,7 @@ status_service() {
     fi
 
     # readyz
-    local rz_url="http://${HOST}:${PORT}/readyz"
+    local rz_url="http://${PROBE_HOST}:${PORT}/readyz"
     local rz_out
     if rz_out="$(curl -sf --noproxy '*' --max-time 3 "${rz_url}" 2>/dev/null)"; then
       local rz_status
@@ -184,7 +197,7 @@ status_service() {
     fi
 
     # version
-    local ver_url="http://${HOST}:${PORT}/api/version"
+    local ver_url="http://${PROBE_HOST}:${PORT}/api/version"
     local ver_out
     if ver_out="$(curl -sf --noproxy '*' --max-time 3 "${ver_url}" 2>/dev/null)"; then
       local ver_info
@@ -227,9 +240,10 @@ Environment variables:
   PORT              listen port (default: 5008)
   HOST              listen host (default: 0.0.0.0)
   WORKERS           gunicorn worker count (default: 4)
-  GUNICORN_TIMEOUT  gunicorn worker timeout in seconds (default: 240)
-                    Must be > LLM_TIMEOUT (default 180) + overhead.
-                    240s allows LLM up to 180s + network overhead before worker restart.
+  PROBE_HOST        local host used for health checks when HOST binds all interfaces
+  GUNICORN_TIMEOUT  gunicorn worker timeout in seconds (default: 600)
+                    Must cover LLM_TIMEOUT plus retries and network overhead.
+                    600s allows LLM_TIMEOUT=180 with retry headroom.
   PYTHON_BIN        python executable (default: venv/bin/python or python3)
 
 Required for LLM translation:

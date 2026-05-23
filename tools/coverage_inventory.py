@@ -280,7 +280,7 @@ def main():
 
 
 def vendors_for_domain(domain):
-    from core.domain import DOMAIN_VENDORS
+    from core.domain_legacy import DOMAIN_VENDORS
     return DOMAIN_VENDORS.get(domain, [])
 
 

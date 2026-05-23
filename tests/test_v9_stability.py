@@ -61,7 +61,7 @@ def test_knowledge_retrieval_uses_cache_until_cleared(tmp_path, monkeypatch):
     assert km.retrieve_knowledge({"type": "vlan"}, "huawei") == "second"
 
 
-def test_llm_test_route_reports_success(monkeypatch):
+def test_llm_test_route_reports_success(tmp_path, monkeypatch):
     flask = pytest.importorskip("flask")
     import llm_settings
     from web_app import create_app
@@ -71,6 +71,14 @@ def test_llm_test_route_reports_success(monkeypatch):
             return {"content": "OK_CONNECTIVITY_TEST"}
 
     monkeypatch.setattr(llm_settings, "create_llm_from_settings", lambda: FakeLLM())
+    settings_file = tmp_path / "llmsetting.json"
+    settings_file.write_text(json.dumps({
+        "api_key": "test-key",
+        "model": "MiniMax-M2.7",
+        "base_url": "https://api.minimaxi.com/anthropic",
+        "timeout": 45,
+    }), encoding="utf-8")
+    monkeypatch.setenv("LLM_SETTINGS_FILE", str(settings_file))
 
     app = create_app()
     client = app.test_client()

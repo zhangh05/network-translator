@@ -17,6 +17,7 @@
 | Port     | 5008    | `PORT`  |
 | Host     | 0.0.0.0 | `HOST`  |
 | Workers  | 4       | `WORKERS` |
+| Gunicorn timeout | 600s | `GUNICORN_TIMEOUT` |
 
 Override via environment variables:
 
@@ -27,8 +28,14 @@ PORT=8080 WORKERS=2 ./scripts/start.sh
 Or via `.env` file (loaded by the shell before running scripts):
 
 ```bash
-export $(grep -v '^#' .env.example | xargs) && ./scripts/start.sh
+cp .env.example .env
+vim .env
+./scripts/start.sh
 ```
+
+`scripts/service.sh` automatically loads `.env` before starting or checking the
+service. When `HOST=0.0.0.0`, health checks probe `127.0.0.1` by default; set
+`PROBE_HOST` only if the local probe address is different.
 
 ## Health Checks
 
@@ -47,6 +54,17 @@ Check the `warnings` array for details:
 |---------|---------|--------|
 | `LLM_API_KEY not set` | No API key configured | Falls back to rule-based translation (limited coverage) |
 | Other warnings | Optional component unavailable | Varies per component |
+
+The response also includes a `checks` object with machine-readable runtime
+signals such as `llm_configured`, `feature_registry_loaded`, `analyzers_loaded`,
+and `settings_file_private`.
+
+### Long Translation Requests
+
+Large device configs can take several minutes because the service performs a
+single LLM translation call and the LLM client may retry provider requests.
+Keep `GUNICORN_TIMEOUT` at least `LLM_TIMEOUT * 3 + 30`; with the default
+`LLM_TIMEOUT=180`, the service default is `GUNICORN_TIMEOUT=600`.
 
 ## Logging
 

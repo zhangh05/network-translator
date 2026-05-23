@@ -108,18 +108,19 @@ def _check_timeout_alignment(root: Path) -> Tuple[bool, str]:
     except Exception:
         pass
 
-    gunicorn_timeout_env = os.environ.get("GUNICORN_TIMEOUT", "240")
+    gunicorn_timeout_env = os.environ.get("GUNICORN_TIMEOUT", "600")
     try:
         gunicorn_timeout = int(gunicorn_timeout_env)
     except ValueError:
         return True, f"GUNICORN_TIMEOUT={gunicorn_timeout_env} not numeric — check service.sh config"
 
-    buffer = gunicorn_timeout - llm_timeout
-    if buffer < 30:
-        msg = f"WARNING: GUNICORN_TIMEOUT={gunicorn_timeout} - LLM_TIMEOUT={llm_timeout} = {buffer}s buffer (recommended ≥30s). Set GUNICORN_TIMEOUT≥{llm_timeout + 30} in service.sh."
+    required_timeout = (llm_timeout * 3) + 30
+    buffer = gunicorn_timeout - required_timeout
+    if buffer < 0:
+        msg = f"WARNING: GUNICORN_TIMEOUT={gunicorn_timeout} < LLM_TIMEOUT*3+30={required_timeout}. Long translations may be killed during provider retries."
         print(f"  (warning: {msg})")
         return True, msg
-    return True, f"GUNICORN_TIMEOUT={gunicorn_timeout} ≥ LLM_TIMEOUT={llm_timeout}+30={llm_timeout + 30} — OK ({buffer}s buffer)"
+    return True, f"GUNICORN_TIMEOUT={gunicorn_timeout} ≥ LLM_TIMEOUT*3+30={required_timeout} — OK ({buffer}s buffer)"
 
 
 def _check_git_status(root: Path) -> Tuple[bool, str]:
