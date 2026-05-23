@@ -206,11 +206,15 @@ def _adjust_coverage_against_baseline(
         if fk in all_manual:
             issue.category = ValidationCategory.MANUAL_REVIEW
             issue.severity = IRRiskLevel.MEDIUM
+            issue.rule_id = issue.rule_id or f"coverage:manual_review:{fk.value}"
+            issue.source_ref = issue.source_ref or f"ir.{m.group(1)}"
             iss_sug = issue.suggestion or ""
             issue.suggestion = (
                 f"{iss_sug} [capability: manual review required]".strip()
             )
         elif fk in baseline.unsupported_semantics:
+            issue.rule_id = issue.rule_id or f"coverage:unsupported:{fk.value}"
+            issue.source_ref = issue.source_ref or f"ir.{m.group(1)}"
             iss_sug = issue.suggestion or ""
             issue.suggestion = (
                 f"{iss_sug} [capability: unsupported in target]".strip()

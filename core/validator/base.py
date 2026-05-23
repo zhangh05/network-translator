@@ -18,6 +18,8 @@ class ValidationCategory(Enum):
     MANUAL_REVIEW = "manual_review"
 
 
+REPORT_SCHEMA_VERSION = "1.0"
+
 SEVERITY_ORDER = {
     IRRiskLevel.CRITICAL: 0,
     IRRiskLevel.HIGH: 1,
@@ -37,6 +39,9 @@ class ValidationIssue:
     line: int | None = None
     suggestion: str | None = None
     source_text: str | None = None
+    rule_id: str | None = None
+    source_ref: str | None = None
+    rendered_ref: str | None = None
 
     def to_dict(self) -> dict[str, Any]:
         d: dict[str, Any] = {
@@ -52,6 +57,12 @@ class ValidationIssue:
             d["suggestion"] = self.suggestion
         if self.source_text:
             d["source_text"] = self.source_text
+        if self.rule_id:
+            d["rule_id"] = self.rule_id
+        if self.source_ref:
+            d["source_ref"] = self.source_ref
+        if self.rendered_ref:
+            d["rendered_ref"] = self.rendered_ref
         if self.target_span:
             d["target_span"] = {
                 "start_line": self.target_span.start_line,
@@ -148,6 +159,7 @@ class ValidationReport:
 
     def to_dict(self) -> dict[str, Any]:
         return {
+            "schema_version": REPORT_SCHEMA_VERSION,
             "summary": {
                 k.value: v if isinstance(v, int) else v
                 for k, v in self.summary().items()

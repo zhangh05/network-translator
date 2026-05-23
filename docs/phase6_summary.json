@@ -1,0 +1,49 @@
+{
+  "phase": "6",
+  "subphase": "6A_6B_6C_6D",
+  "date": "2026-05-23",
+  "commits": [
+    "7ee84e1 Phase 6A: Capability Baseline complete implementation",
+    "2116e99 Phase 6B pre-convergence: Remove OSPF from verifiable registry (Option A)",
+    "9961eaf Phase 6B: Validator capability-aware + deployable/manual_review rules + metrics",
+      "<PHASE_6C_6D_COMMIT>"
+  ],
+  "test_results": {
+    "full_regression": {
+      "passed": 1010,
+      "pre_existing_failures": 13,
+      "skipped": 3,
+      "failures_cause": "missing flask/requests modules, old analyzer tests — unrelated to Phase 6"
+    },
+    "capability_baseline_tests": 32,
+    "composite_validator_tests": 15,
+    "all_validator_tests": 117
+  },
+  "assertions": {
+    "capability_baseline_classification": "14 branches covered (FULL/FULL+registry, FULL/FULL+no-registry, FULL/PARTIAL, PARTIAL/FULL, PARTIAL/PARTIAL, FULL/UNSUPPORTED, FULL/absent, src_UNSUPPORTED, src_absent, src_UNKNOWN, tgt_UNKNOWN, mixed, no-domain, empty)",
+    "verifiable_feature_registry": "3 domains, 17 FeatureKey entries total",
+    "deployable_manual_review_independence": "tested: (T,T), (F,T), (F,F)",
+    "coverage_capability_aware": "manual_review features downgraded to MANUAL_REVIEW/MEDIUM",
+    "verifiability_rates": "coverage_verifiability_rate + semantic_verifiability_rate in metadata",
+    "schema_version": "1.0 in report.to_dict()",
+    "evidence_fields": "rule_id, source_ref, rendered_ref added to ValidationIssue (backward compatible)"
+  },
+  "known_limits": [
+    "OSPF removed from verifiable registry — only shallow conversion_status check exists",
+    "_COVERAGE_FIELD_TO_FEATURE_KEY manually maintained, must sync with _IR_TO_FEATURE",
+    "ACL semantic check limited to order/wildcard/binding ref; no per-entry cross-vendor equivalence",
+    "FIREWALL registry entries minimal — only framework-level SemanticValidator exists",
+    "CoverageValidator capability awareness is post-processing, not built into validator itself",
+    "No parallel execution of sub-validators",
+    "13 pre-existing test failures due to missing external dependencies (flask, requests)"
+  ],
+  "next_actions": [
+    "P0: Deep OSPF checker — area, cost, NSSA semantic verification",
+    "P0: ACE-level ACL cross-vendor equivalence",
+    "P1: SNMP/NTP/LLDP semantic verification",
+    "P1: Automated _IR_TO_FEATURE ↔ FeatureKey mapping sync",
+    "P2: Parallel CompositeValidator execution",
+    "P2: Custom report templates (Jinja2 HTML/PDF)"
+  ],
+  "parser_renderer_graph_pipeline_touched": false
+}

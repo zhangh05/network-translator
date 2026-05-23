@@ -49,7 +49,10 @@ class SemanticValidator:
         if not check_issues:
             metrics["passed_checks"].append(check_name)
             return
-        max_sev = max(i.severity for i in check_issues)
+        _level = {IRRiskLevel.LOW: 0, IRRiskLevel.MEDIUM: 1,
+                  IRRiskLevel.HIGH: 2, IRRiskLevel.CRITICAL: 3}
+        max_sev = max(check_issues,
+                      key=lambda i: _level.get(i.severity, 0)).severity
         bucket = {
             IRRiskLevel.HIGH: "failed_checks",
             IRRiskLevel.CRITICAL: "failed_checks",
