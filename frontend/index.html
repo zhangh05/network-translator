@@ -408,7 +408,8 @@ async function saveProject(p){
     name:p.name,config_text:p.config,from_vendor:p.from,to_vendor:p.to,
     source_domain:p.sd||"",source_platform:p.sp||"",
     target_domain:p.td||"",target_platform:p.tp||"",
-    result:p.result
+    result:p.result,
+    request_id:p.request_id||"",version:p.version||"",model:p.model||""
   })}catch(_){}
   // localStorage fallback
   try{localStorage.setItem("nt_projects_v2",JSON.stringify(PROJS))}catch(_){}
@@ -702,7 +703,7 @@ async function TL(){
   }
 }
 
-function CL(){R.result=null;R.request_id="";R.version="";R.model="";if(PROJS.find(function(x){return x.id===ACTIVE})){var p=PROJS.find(function(x){return x.id===ACTIVE});p.result=null;saveProject(p)}E("out").innerHTML="";E("cbtn").disabled=true;E("ebtn").disabled=true;E("rtag").textContent="待命";E("rtag").className="tag tag--dim";E("sptag").textContent="-";E("sptag").className="tag tag--dim";E("rm").textContent="";E("bt").textContent="-";E("pphase").textContent="";E("ridr").classList.add("h");bannerClear();_updateRiskSummary(null);renderSidebar()}
+function CL(){R.result=null;R.request_id="";R.version="";R.model="";var p=PROJS.find(function(x){return x.id===ACTIVE});if(p){p.result=null;p.request_id="";p.version="";p.model="";saveProject(p)}E("out").innerHTML="";E("cbtn").disabled=true;E("ebtn").disabled=true;E("rtag").textContent="待命";E("rtag").className="tag tag--dim";E("sptag").textContent="-";E("sptag").className="tag tag--dim";E("rm").textContent="";E("bt").textContent="-";E("pphase").textContent="";E("ridr").classList.add("h");bannerClear();_updateRiskSummary(null);renderSidebar()}
 
 // ── Copy dropdown ──
 function _toggleCopyMenu(e){e.stopPropagation();var m=E("cpmenu");m.classList.toggle("on")}

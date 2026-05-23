@@ -140,3 +140,27 @@ def test_result_not_overwritten_by_partial_update(store):
     assert reloaded.result is not None
     assert reloaded.result["translated"] == "vlan 10"
     assert reloaded.request_id == "req-456"
+
+
+def test_clear_result_and_metadata(store):
+    """Clearing result must also clear request_id/version/model."""
+    p = store.create_project("x")
+    store.update_project(p.id, {
+        "result": {"translated": "vlan 10", "success": True},
+        "request_id": "req-clear-001",
+        "version": "2.0.0",
+        "model": "clear-test-model",
+    })
+    # Clear all translation metadata
+    ok = store.update_project(p.id, {
+        "result": None,
+        "request_id": "",
+        "version": "",
+        "model": "",
+    })
+    assert ok
+    reloaded = store.get_project(p.id)
+    assert reloaded.result is None
+    assert reloaded.request_id == ""
+    assert reloaded.version == ""
+    assert reloaded.model == ""
