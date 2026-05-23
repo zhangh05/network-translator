@@ -28,37 +28,29 @@ All changes in this section are committed (commits `0205591` through `6814416`).
 The following files exist in the working tree but have **never been committed** to any branch.
 They predate the Beta round and are **NOT part of this scope**.
 
-### 2a. Core Validator Replacements (Frozen — Do Not Touch)
+### 2a. Validator Replacements (Committed in Reconciliation Round 1)
 
-These files duplicate functionality already present in committed validator modules and must not be loaded by the test suite or runtime:
+These files were previously uncommitted but are now tracked because active code imports them:
 
 ```
-core/cisco_output_validator.py       # DEPRECATED — functionality merged into core/validator/*
-core/domain_legacy.py                # RENAMED from core/domain.py — core/domain.py deleted intentionally
-core/h3c_to_cisco.py                # RETAINED as fallback wrapper
-core/runtime_config.py               # UTILITY only; core/__init__.py does not import it
-core/validator/capability_gap_validator.py   # UNCOMMITTED duplicate of validator capability gap
-core/validator/conversion_validator.py         # UNCOMMITTED duplicate of validator conversion
-core/validator/report_json.py                 # UNCOMMITTED utility
-core/validator/residue_validator.py           # UNCOMMITTED duplicate of committed ResidueValidator
-core/validator/syntax_validator.py             # UNCOMMITTED duplicate of committed SyntaxValidator
+core/domain_legacy.py                # ✅ COMMITTED — imported by core/domain/__init__.py, web_app, coverage_inventory
+core/runtime_config.py               # ✅ COMMITTED — imported by web_app, llm_settings
+core/validator/capability_gap_validator.py   # ✅ COMMITTED — imported by core/validator/__init__.py
+core/validator/conversion_validator.py       # ✅ COMMITTED — imported by core/validator/__init__.py
+core/validator/report_json.py                 # ✅ COMMITTED — imported by core/validator/__init__.py
+core/validator/residue_validator.py          # ✅ COMMITTED — imported by core/validator/__init__.py, batch/__init__.py
+core/validator/syntax_validator.py          # ✅ COMMITTED — imported by core/validator/__init__.py
 ```
 
-**Known limitation**: Group B uncommitted files ARE still importable via Python's path (because they exist in the working tree). This means `import core.cisco_output_validator` succeeds. However, the committed code paths use `core.validator.*` modules, which take precedence. Group B files should be treated as read-only historical artifacts and not imported.
+### 2b. Deprecated/Deleted Files
 
-```bash
-# Verification shows these ARE importable (known limitation, not a regression):
-#   core.cisco_output_validator       ← uncommitted but importable
-#   core.validator.capability_gap_validator  ← uncommitted but importable
-#   core.validator.conversion_validator      ← uncommitted but importable
-#   core.validator.residue_validator        ← uncommitted but importable
-#   core.validator.syntax_validator         ← uncommitted but importable
-# They are not loaded by any committed import path.
+```
+core/domain.py                       # ✅ DELETED — replaced by core/domain_legacy.py + core/domain/package
+core/cisco_output_validator.py      # ❌ FROZEN — deprecated, not imported by active code
+core/h3c_to_cisco.py                 # ❌ FROZEN — fallback wrapper, only imported by test_h3c_to_cisco.py and cisco_output_validator.py
 ```
 
-**Action**: This is a known limitation. Do not use `import core.cisco_output_validator` or similar. The committed validator modules in `core/validator/` are authoritative.
-
-### 2b. Test Files (Frozen — Do Not Touch)
+### 2c. Test Files (Frozen — Do Not Touch)
 
 ```
 tests/test_h3c_to_cisco.py          # UNCOMMITTED — functionality covered by committed tests
@@ -89,22 +81,27 @@ docs/superpowers/plans/2026-05-22-multi-vendor-ir-platform.md  # UNCOMMITTED des
 |-------|--------|
 | `llm_settings.py` | ✅ Active — continue using |
 | `tests/test_llm_settings_external.py` | ✅ Active — add new tests here |
+| `tests/test_llm_settings_production.py` | ✅ Active — add new tests here |
 | `tests/test_reliability.py` | ✅ Active — add new tests here |
 | `docs/RUNBOOK.md`, `docs/CI_QUALITY_GATES.md` | ✅ Active — keep updated |
 | `docs/audit/INDEX.md` | ✅ Active — add trace records here |
 | `docs/BETA_READINESS_REPORT.md` | ✅ Active — update with each release |
 | `.github/workflows/ci.yml` | ✅ Active — validate on GitHub Actions |
 | `scripts/ci_quality_gates.py` | ✅ Active — CI gate entry point |
+| `core/domain_legacy.py`, `core/runtime_config.py` | ✅ Active — imported by active code |
+| `core/validator/capability_gap_validator.py` etc. | ✅ Active — imported by active code |
 
 ### Group B: Frozen (Pre-existing, Do Not Modify)
 
 | Files | Reason |
 |-------|--------|
-| `core/cisco_output_validator.py` | DEPRECATED; do not import |
-| `core/domain_legacy.py` | RENAMED from `core/domain.py` |
-| `core/validator/*_validator.py` (uncommitted duplicates) | Duplicates of committed validators |
-| `tests/test_*_production.py` (uncommitted) | Covered by committed tests |
-| `tests/test_validator_*.py` (uncommitted) | Covered by committed validator tests |
+| `core/cisco_output_validator.py` | DEPRECATED; not imported by active code |
+| `core/h3c_to_cisco.py` | Fallback wrapper; only test imports |
+| `tests/test_h3c_to_cisco.py` | Frozen; functionality covered elsewhere |
+| `tests/test_packaging_production.py` | Frozen; covered by test_packaging_production.py in staged |
+| `tests/test_readyz_production.py` | Frozen; covered by test_readyz_production.py |
+| `tests/test_runtime_config.py` | Frozen; runtime_config committed |
+| `tests/test_validator_*.py` | Frozen; validators committed |
 
 ### Group C: Deferred (Future Phase)
 
@@ -117,26 +114,22 @@ docs/superpowers/plans/2026-05-22-multi-vendor-ir-platform.md  # UNCOMMITTED des
 
 ---
 
-## 4. Reconciliation Verification
+## 4. Reconciliation Verification (Round 1 Complete)
 
-```bash
-# Verify no Group B files are imported by active code
-PYTHONPATH=. python3 -c "
-import sys, importlib
-group_b = [
-    'core.cisco_output_validator',
-    'core.validator.capability_gap_validator',
-    'core.validator.conversion_validator',
-    'core.validator.residue_validator',
-    'core.validator.syntax_validator',
-]
-for m in group_b:
-    try:
-        importlib.import_module(m)
-        print(f'WARNING: {m} is importable — may conflict with committed version')
-    except ImportError:
-        print(f'OK: {m} not importable (frozen correctly)')
-"
-```
+After Round 1, the following are confirmed committed:
+- `core/domain_legacy.py` ✅
+- `core/runtime_config.py` ✅
+- `core/validator/capability_gap_validator.py` ✅
+- `core/validator/conversion_validator.py` ✅
+- `core/validator/report_json.py` ✅
+- `core/validator/residue_validator.py` ✅
+- `core/validator/syntax_validator.py` ✅
+- `core/domain.py` DELETED ✅
+
+The following remain frozen (not imported by active code):
+- `core/cisco_output_validator.py`
+- `core/h3c_to_cisco.py`
+- `tests/test_h3c_to_cisco.py`
+- `tests/test_validator_*.py` (uncommitted versions)
 
 If any Group B file is found importable, it means an import path was added that shouldn't exist. The committed validator modules take precedence.
