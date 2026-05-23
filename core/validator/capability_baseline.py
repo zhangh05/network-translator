@@ -9,12 +9,14 @@ from core.vendor.enums import FeatureSupportStatus
 
 VERIFIABLE_FEATURE_REGISTRY: dict[DeviceDomain, set[FeatureKey]] = {
     DeviceDomain.SWITCH: {
+        # OSPF removed from registry — current SemanticValidator only checks
+        # conversion_status, not OSPF semantic equivalence (area, cost, NSSA).
+        # Re-add when deep OSPF checker is implemented (Phase 6 P0 candidate).
         FeatureKey.VLAN,
         FeatureKey.SVI,
         FeatureKey.FHRP,
         FeatureKey.ACL,
         FeatureKey.STATIC_ROUTE,
-        FeatureKey.OSPF,
         FeatureKey.LACP,
     },
     DeviceDomain.ROUTER: {

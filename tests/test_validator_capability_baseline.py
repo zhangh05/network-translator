@@ -32,8 +32,9 @@ class TestVerifiableFeatureRegistry:
         assert FeatureKey.FHRP in reg
         assert FeatureKey.ACL in reg
         assert FeatureKey.STATIC_ROUTE in reg
-        assert FeatureKey.OSPF in reg
         assert FeatureKey.LACP in reg
+        # OSPF deliberately removed — shallow checker only, see registry comment
+        assert FeatureKey.OSPF not in reg
 
     def test_router_has_expected_keys(self):
         reg = VERIFIABLE_FEATURE_REGISTRY[DeviceDomain.ROUTER]
@@ -224,7 +225,7 @@ class TestDeriveWithProfiles:
     def test_cisco_to_h3c_switch(self):
         bl = self._bl_from_profile("cisco_ios_xe", "h3c_comware", DeviceDomain.SWITCH)
         assert bl.total_features_considered >= 10
-        assert bl.auto_verifiable_count >= 6
+        assert bl.auto_verifiable_count >= 5
         assert len(bl.unverified_by(MANUAL_REVIEW_PARTIAL_TGT)) >= 0
         d = bl.to_dict()
         import json
