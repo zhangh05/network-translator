@@ -252,6 +252,10 @@ def main() -> int:
         report_path.write_text(json.dumps(json_report, indent=2))
         print(f"\nJSON report written to {report_path}")
 
+    print()
+    print("NOTICE: GitHub runner behavior not yet validated in remote Actions environment.")
+    print("        See docs/CI_QUALITY_GATES.md for workflow definition and expected behavior.")
+
     return exit_code
 
 

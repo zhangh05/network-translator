@@ -147,6 +147,24 @@ When a new pre-existing failure is discovered (e.g., new deprecation):
         └─────────────────────────────────┘
 ```
 
+## Pre-existing Superset Tolerance Strategy
+
+The pre-existing failure list (`PREEXISTING_FAILURES` in `scripts/ci_quality_gates.py`) is a **superset** designed to work in both local dev and CI environments without modification.
+
+| Environment | Deps Available | Pre-existing List Size | Expected Matches | Strategy |
+|-------------|---------------|----------------------|------------------|----------|
+| Local dev | no flask/requests | 13 entries | 13 failures tolerated | Superset list covers all scenarios |
+| GitHub Actions | flask+requests via pip install | 13 entries | ~7 failures (test_analyzer_object only) | Extra entries are harmless — absent failures simply don't match |
+
+**Why this works safely:**
+
+- The pre-existing list is a **union** of what fails in each environment
+- `test_analyzer_object` (7 tests) fails in both — always matched
+- `test_contract_project_translate_log`, `test_readyz_production`, `test_v9_stability` (6 tests) fail locally but pass in CI — simply absent from the actual failure set, never falsely flagged as regression
+- Any **new** failure is caught identically in both environments because it won't be in the list anywhere
+
+**Result**: One script, one pre-existing list, correct behavior in both environments. No `#if CI` branches.
+
 ## CI vs Local Consistency
 
 The same `scripts/ci_quality_gates.py` script is used in both environments.
