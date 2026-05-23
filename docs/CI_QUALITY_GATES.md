@@ -1,6 +1,6 @@
 # CI Quality Gates
 
-> Phase 8B — 2026-05-23
+> Phase 8B — 2026-05-23 | Beta Update — 2026-05-23
 
 ## Overview
 
@@ -18,6 +18,25 @@ Two GitHub Actions jobs implement layered enforcement:
 
 - **Push** to `main` or `develop`
 - **Pull request** targeting `main`
+
+## GitHub Actions Runner Validation
+
+To validate the CI workflow on a GitHub-hosted runner:
+
+```bash
+# 1. Fork the repository or push to a test branch
+git checkout -b ci-validation-test
+git push origin ci-validation-test
+
+# 2. Monitor the Actions run at:
+#    https://github.com/<owner>/<repo>/actions
+
+# 3. Expected outcomes for a passing run:
+#    - core-gate: PASS (0 failures in 524 core tests)
+#    - full-gate: PASS (Layer 1 PASS + Layer 2: 13 pre-existing, 0 regressions)
+```
+
+If the runner differs from local (e.g., flask/requests available), pre-existing list may shrink from 13 → ~7. This is expected and handled by the superset strategy.
 
 Both jobs run in parallel after checkout + dependency install.
 
