@@ -93,6 +93,7 @@
   #body{flex:1;overflow:auto;padding:16px 20px 24px;display:flex;flex-direction:column;gap:16px}
 
   .card{background:var(--s1);border-radius:12px;border:1px solid var(--br);overflow:hidden}
+  #rcard{overflow:visible}
   .card__head{display:flex;align-items:center;padding:0 20px;height:40px;border-bottom:1px solid var(--s2)}
   .card__head .tit{font-size:12px;font-weight:600;color:var(--t3);letter-spacing:.5px}
   .card__head .meta{font-size:12px;color:var(--t3);margin-left:auto}
@@ -131,7 +132,7 @@
   .cp-wrap .cp-btn{background:var(--ac);color:#fff;border:0;height:30px;padding:0 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:4px}
   .cp-wrap .cp-btn:hover{background:#4f46e5}
   .cp-wrap .cp-btn:disabled{opacity:.4;cursor:default}
-  .cp-menu{display:none;position:absolute;bottom:100%;left:0;margin-bottom:4px;min-width:200px;background:var(--s1);border:1px solid var(--br);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:100;overflow:hidden}
+  .cp-menu{display:none;position:absolute;top:100%;right:0;margin-top:4px;min-width:220px;background:var(--s1);border:1px solid var(--br);border-radius:10px;box-shadow:0 8px 24px rgba(0,0,0,.1);z-index:1000;overflow:hidden}
   .cp-menu.on{display:block}
   .cp-menu .cpi{padding:9px 14px;font-size:12px;color:var(--t1);cursor:pointer;display:flex;align-items:center;gap:8px;border:0;background:transparent;width:100%;text-align:left}
   .cp-menu .cpi:hover{background:var(--s2)}
@@ -912,9 +913,27 @@ function CL(){R.result=null;R.request_id="";R.version="";R.model="";var p=PROJS.
 function _toggleCopyMenu(e){e.stopPropagation();var m=E("cpmenu");m.classList.toggle("on")}
 function _closeCopyMenu(){E("cpmenu").classList.remove("on")}
 
-async function _copyAll(){_closeCopyMenu();var t=stripFence(R.result?R.result.translated:"");if(!t.trim())return;try{await navigator.clipboard.writeText(t);_flashCopyBtn()}catch(_){}}
-async function _copyDeployable(){_closeCopyMenu();var t=stripFence(R.result?R.result.translated:"");var lines=t.split("\n");var filtered=lines.filter(function(l){return l.indexOf("MANUAL_REVIEW")===-1}).filter(function(l){return l.trim()}).join("\n");if(!filtered.trim()){_flashCopyBtn("无可用");return};try{await navigator.clipboard.writeText(filtered);_flashCopyBtn()}catch(_){}}
-async function _copyReport(){_closeCopyMenu();var r=R.result;if(!r)return;var v=r.validation||{};var riskSignals=r.risk_signals||[];var lines=["=== 翻译风险报告 ===","","Request ID: "+R.request_id,"Version: "+R.version+(R.model?" ("+R.model+")":""),"","--- 验证 ---","Level: "+(v.level||"info"),"Deployable: "+(v.deployable===false?"否":"是"),"Manual Review: "+(v.manual_review_required?"需复核":"否"),"Errors: "+(v.errors||[]).length,"Warnings: "+(v.warnings||[]).length,"","--- 风险信号 ---"].concat(riskSignals.map(function(s){return"  ["+s.severity+"] "+s.feature+": "+(s.message||"-")})).concat(["","--- 能力缺口 ---"]).concat((r.capability_gaps||[]).map(function(g){return"  ["+g.severity+"] "+g.feature+": "+(g.suggestion||g.status)})).concat(["","--- 分析器发现 ---"]).concat((r.analyzer_results||[]).map(function(a){var rl=a.risk_level||"none";return"  ["+rl+"] "+a.feature+": "+(a.summary||a.notes&&a.notes[0]||"-")})).concat(["","--- 节点耗时 ---"]).concat((r.node_results||[]).map(function(n){return"  "+n.node+": "+(n.elapsed_ms||0).toFixed(1)+"ms "+n.status}));try{await navigator.clipboard.writeText(lines.join("\n"));_flashCopyBtn()}catch(_){}}
+async function _copyText(text){
+  if(!text)return false;
+  try{
+    if(navigator.clipboard&&navigator.clipboard.writeText){
+      await navigator.clipboard.writeText(text);
+      return true
+    }
+  }catch(_){}
+  try{
+    var ta=document.createElement("textarea");
+    ta.value=text;ta.setAttribute("readonly","");
+    ta.style.position="fixed";ta.style.left="-9999px";ta.style.top="0";
+    document.body.appendChild(ta);ta.focus();ta.select();
+    var ok=document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok
+  }catch(_){return false}
+}
+async function _copyAll(){_closeCopyMenu();var t=stripFence(R.result?R.result.translated:"");if(!t.trim())return;if(await _copyText(t)){_flashCopyBtn()}else{_flashCopyBtn("复制失败")}}
+async function _copyDeployable(){_closeCopyMenu();var t=stripFence(R.result?R.result.translated:"");var lines=t.split("\n");var filtered=lines.filter(function(l){return l.indexOf("MANUAL_REVIEW")===-1}).filter(function(l){return l.trim()}).join("\n");if(!filtered.trim()){_flashCopyBtn("无可用");return};if(await _copyText(filtered)){_flashCopyBtn()}else{_flashCopyBtn("复制失败")}}
+async function _copyReport(){_closeCopyMenu();var r=R.result;if(!r)return;var v=r.validation||{};var riskSignals=r.risk_signals||[];var lines=["=== 翻译风险报告 ===","","Request ID: "+R.request_id,"Version: "+R.version+(R.model?" ("+R.model+")":""),"","--- 验证 ---","Level: "+(v.level||"info"),"Deployable: "+(v.deployable===false?"否":"是"),"Manual Review: "+(v.manual_review_required?"需复核":"否"),"Errors: "+(v.errors||[]).length,"Warnings: "+(v.warnings||[]).length,"","--- 风险信号 ---"].concat(riskSignals.map(function(s){return"  ["+s.severity+"] "+s.feature+": "+(s.message||"-")})).concat(["","--- 能力缺口 ---"]).concat((r.capability_gaps||[]).map(function(g){return"  ["+g.severity+"] "+g.feature+": "+(g.suggestion||g.status)})).concat(["","--- 分析器发现 ---"]).concat((r.analyzer_results||[]).map(function(a){var rl=a.risk_level||"none";return"  ["+rl+"] "+a.feature+": "+(a.summary||a.notes&&a.notes[0]||"-")})).concat(["","--- 节点耗时 ---"]).concat((r.node_results||[]).map(function(n){return"  "+n.node+": "+(n.elapsed_ms||0).toFixed(1)+"ms "+n.status}));if(await _copyText(lines.join("\n"))){_flashCopyBtn()}else{_flashCopyBtn("复制失败")}}
 function _flashCopyBtn(msg){var b=E("cbtn");b.textContent=msg||"已复制";setTimeout(function(){b.textContent="复制"},1200)}
 
 // ── Export ──

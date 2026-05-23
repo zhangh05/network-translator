@@ -24,3 +24,23 @@ def test_frontend_index_javascript_is_syntax_valid():
     )
 
     assert result.returncode == 0, result.stderr
+
+
+def test_copy_menu_is_not_clipped_by_result_card():
+    html = Path("frontend/index.html").read_text(encoding="utf-8")
+
+    assert '#rcard{overflow:visible}' in html
+    assert ".cp-menu{display:none;position:absolute;top:100%;right:0;" in html
+    assert 'data-cp="all"' in html
+    assert 'data-cp="deployable"' in html
+    assert 'data-cp="report"' in html
+
+
+def test_copy_uses_clipboard_fallback():
+    html = Path("frontend/index.html").read_text(encoding="utf-8")
+
+    assert "async function _copyText" in html
+    assert "navigator.clipboard.writeText" in html
+    assert "document.execCommand(\"copy\")" in html
+    assert "await _copyText(t)" in html
+    assert html.count("async function _copyAll") == 1
