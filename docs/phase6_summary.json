@@ -1,23 +1,26 @@
 {
   "phase": "6",
-  "subphase": "6A_6B_6C_6D",
+  "subphase": "6A_6B_6C_6D_6E",
   "date": "2026-05-23",
   "commits": [
     "7ee84e1 Phase 6A: Capability Baseline complete implementation",
     "2116e99 Phase 6B pre-convergence: Remove OSPF from verifiable registry (Option A)",
     "9961eaf Phase 6B: Validator capability-aware + deployable/manual_review rules + metrics",
-      "92739bc Phase 6C+6D: Audit evidence + report stabilization + multi-sample integration"
+    "92739bc Phase 6C+6D: Audit evidence + report stabilization + multi-sample integration",
+    "412f217 docs: fill actual commit hash in phase6_summary.json"
   ],
   "test_results": {
     "full_regression": {
+      "collected": 1024,
       "passed": 1010,
       "pre_existing_failures": 13,
       "skipped": 3,
-      "failures_cause": "missing flask/requests modules, old analyzer tests — unrelated to Phase 6"
+      "failures_cause": "missing flask/requests, old analyzer tests — unrelated to Phase 6"
     },
     "capability_baseline_tests": 32,
     "composite_validator_tests": 15,
-    "all_validator_tests": 117
+    "all_validator_tests": 131,
+    "integration_phase6_tests": 18
   },
   "assertions": {
     "capability_baseline_classification": "14 branches covered (FULL/FULL+registry, FULL/FULL+no-registry, FULL/PARTIAL, PARTIAL/FULL, PARTIAL/PARTIAL, FULL/UNSUPPORTED, FULL/absent, src_UNSUPPORTED, src_absent, src_UNKNOWN, tgt_UNKNOWN, mixed, no-domain, empty)",
@@ -26,7 +29,8 @@
     "coverage_capability_aware": "manual_review features downgraded to MANUAL_REVIEW/MEDIUM",
     "verifiability_rates": "coverage_verifiability_rate + semantic_verifiability_rate in metadata",
     "schema_version": "1.0 in report.to_dict()",
-    "evidence_fields": "rule_id, source_ref, rendered_ref added to ValidationIssue (backward compatible)"
+    "evidence_fields": "rule_id, source_ref, rendered_ref added to ValidationIssue (backward compatible)",
+    "integration_chains": "3 chains (H3C→Cisco SWITCH, Cisco→Huawei ROUTER, Huawei→Cisco SWITCH), 18 assertions total"
   },
   "known_limits": [
     "OSPF removed from verifiable registry — only shallow conversion_status check exists",
@@ -34,13 +38,13 @@
     "ACL semantic check limited to order/wildcard/binding ref; no per-entry cross-vendor equivalence",
     "FIREWALL registry entries minimal — only framework-level SemanticValidator exists",
     "CoverageValidator capability awareness is post-processing, not built into validator itself",
-    "No parallel execution of sub-validators",
-    "13 pre-existing test failures due to missing external dependencies (flask, requests)"
+    "No parallel execution of sub-validators"
   ],
   "next_actions": [
     "P0: Deep OSPF checker — area, cost, NSSA semantic verification",
     "P0: ACE-level ACL cross-vendor equivalence",
     "P1: SNMP/NTP/LLDP semantic verification",
+    "P1: FIREWALL deep checker — zone policy / security policy",
     "P1: Automated _IR_TO_FEATURE ↔ FeatureKey mapping sync",
     "P2: Parallel CompositeValidator execution",
     "P2: Custom report templates (Jinja2 HTML/PDF)"
