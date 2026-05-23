@@ -155,13 +155,13 @@ PYTHONPATH=. python3 scripts/ci_quality_gates.py --full
 | Audit traceability | ✅ PASS | 2026-05-23 |
 | Documentation complete | ✅ PASS | 2026-05-23 |
 
-**Verdict**: System is **BETA READY** (`BETA_READY = YES`) for pilot deployment.
+**Verdict**: `BETA_READY = YES (conditional)` for pilot deployment.
 
 CI gate criteria for Beta READY:
 - ✅ CI gate exit 0
 - ✅ 0 regressions
 - ✅ 13 pre-existing failures all in known/tolerated list
-- ⚠️ GitHub Actions runner not yet validated
+- ⚠️ GitHub Actions runner not yet validated (blocking)
 - ⚠️ OSPF and advanced features (NAT/AAA/QoS) require human review
 
 Human review required for: OSPF, NAT/AAA/QoS, BGP route policies.
