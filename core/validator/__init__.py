@@ -16,35 +16,15 @@ from core.validator.base import (
 from core.validator.capability_baseline import CapabilityBaseline
 from core.validator.capability_gap_validator import CapabilityGapValidator
 from core.validator.conversion_validator import ConversionValidator
-from core.validator.coverage_validator import CoverageValidator
+from core.validator.coverage_validator import CoverageValidator, get_feature_mapping
 from core.validator.residue_validator import ResidueValidator
 from core.validator.semantic_validator import SemanticValidator
 from core.validator.syntax_validator import BasicSyntaxValidator
 from core.vendor.base import VendorPlatformProfile
 
-# Maps coverage IR field names (from _IR_TO_FEATURE keys) to FeatureKey enums
-# for capability-aware post-processing of coverage issues.
-_COVERAGE_FIELD_TO_FEATURE_KEY: dict[str, FeatureKey] = {
-    "vlans": FeatureKey.VLAN,
-    "svis": FeatureKey.SVI,
-    "interfaces": FeatureKey.INTERFACE,
-    "lags": FeatureKey.LACP,
-    "static_routes": FeatureKey.STATIC_ROUTE,
-    "ospf": FeatureKey.OSPF,
-    "bgp": FeatureKey.BGP,
-    "acls": FeatureKey.ACL,
-    "vrfs": FeatureKey.VRF,
-    "pbrs": FeatureKey.PBR,
-    "nat_rules": FeatureKey.NAT,
-    "ipsec_vpns": FeatureKey.IPSEC_VPN,
-    "zones": FeatureKey.ZONE,
-    "address_objects": FeatureKey.ADDRESS_OBJECT,
-    "service_objects": FeatureKey.SERVICE_OBJECT,
-    "security_policies": FeatureKey.SECURITY_POLICY,
-    "management": FeatureKey.MANAGEMENT,
-    "aaa": FeatureKey.AAA,
-    "stp": FeatureKey.STP,
-}
+# Single source of truth imported from coverage_validator.
+# Keep this as a module-level reference for performance (dict lookup).
+_COVERAGE_FIELD_TO_FEATURE_KEY: dict[str, FeatureKey] = get_feature_mapping()
 
 _COVERAGE_FIELD_RE = re.compile(r"^coverage:(.+)$")
 

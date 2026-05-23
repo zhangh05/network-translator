@@ -189,6 +189,99 @@ class TestSemanticValidatorSwitch:
         assert len(metrics["failed_checks"]) == 0
 
 
+class TestSemanticValidatorOspf:
+    """Phase 7A: OSPF deep semantic checks."""
+
+    def setup_method(self):
+        self.v = SemanticValidator(
+            src_domain=DeviceDomain.SWITCH,
+            tgt_domain=DeviceDomain.SWITCH,
+        )
+
+    def test_ospf_exact_status_no_deep_data_manual_review(self):
+        """OSPF with EXACT but no networks/areas/passive → manual_review."""
+        ir = _make_ir(
+            ospf=[IROspf(IRType.OSPF, _span(), process_id=1)],
+        )
+        issues, metrics = self.v.validate(ir)
+        ospf_issues = [i for i in issues if "ospf" in i.field]
+        assert len(ospf_issues) >= 1
+        mr = [i for i in ospf_issues
+              if i.category.value == "manual_review"]
+        assert len(mr) >= 1
+        assert "insufficient_info" in (mr[0].rule_id or "")
+
+    def test_ospf_insufficient_info_has_evidence(self):
+        ir = _make_ir(
+            ospf=[IROspf(IRType.OSPF, _span(), process_id=1)],
+        )
+        issues, _ = self.v.validate(ir)
+        ospf_issues = [i for i in issues if i.category.value == "manual_review"]
+        if ospf_issues:
+            assert ospf_issues[0].rule_id is not None
+            assert ospf_issues[0].source_ref is not None
+
+    def test_ospf_network_area_mismatch_detected(self):
+        ir = _make_ir(
+            ospf=[IROspf(
+                IRType.OSPF, _span(), process_id=1,
+                networks=[{"network": "10.0.0.0", "mask": "0.0.0.255",
+                           "area": "99"}],
+                areas=[{"area_id": "0", "type": "normal"}],
+            )],
+        )
+        issues, metrics = self.v.validate(ir)
+        mismatch = [i for i in issues
+                    if i.rule_id == "ospf:network_area_mismatch"]
+        assert len(mismatch) >= 1
+        assert "99" in mismatch[0].message
+        assert "0" in mismatch[0].message
+
+    def test_ospf_area_type_conflict_detected(self):
+        ir = _make_ir(
+            ospf=[IROspf(
+                IRType.OSPF, _span(), process_id=1,
+                areas=[
+                    {"area_id": "0", "type": "normal"},
+                    {"area_id": "0", "type": "nssa"},
+                ],
+            )],
+        )
+        issues, _ = self.v.validate(ir)
+        conflict = [i for i in issues
+                    if i.rule_id == "ospf:area_type_conflict"]
+        assert len(conflict) >= 1
+
+    def test_ospf_full_data_passes(self):
+        ir = _make_ir(
+            ospf=[IROspf(
+                IRType.OSPF, _span(), process_id=1,
+                networks=[{"network": "10.0.0.0", "mask": "0.0.0.255",
+                           "area": "0"}],
+                areas=[{"area_id": "0", "type": "normal"}],
+                passive_interfaces=["G0/1"],
+            )],
+        )
+        issues, metrics = self.v.validate(ir)
+        high_sev = [i for i in issues if i.severity in (
+            IRRiskLevel.HIGH, IRRiskLevel.CRITICAL)]
+        assert len(high_sev) == 0
+
+    def test_ospf_non_exact_status_preserved(self):
+        ir = _make_ir(
+            ospf=[IROspf(
+                IRType.OSPF, _span(), process_id=1,
+                conversion_status=ConversionStatus.APPROXIMATED,
+                reason="Process-id remapped",
+            )],
+        )
+        issues, _ = self.v.validate(ir)
+        conv = [i for i in issues
+                if i.rule_id == "ospf:conversion_status"]
+        assert len(conv) >= 1
+        assert "approximated" in conv[0].message.lower()
+
+
 import inspect
 
 

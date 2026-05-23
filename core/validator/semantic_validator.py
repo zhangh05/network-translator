@@ -8,6 +8,10 @@ from core.ir_models.enums import ConversionStatus, IRRiskLevel
 from core.renderer.base import RenderResult
 from core.validator.base import ValidationCategory, ValidationIssue
 
+# Minimum OSPF data fields that must be populated for auto-verification.
+# If all are empty, the check is insufficient and must be manual_review.
+_OSPF_REQUIRED_FOR_AUTO = ("networks", "areas", "passive_interfaces")
+
 
 @dataclass
 class SemanticValidator:
@@ -172,12 +176,66 @@ class SemanticValidator:
 
     def _check_ospf(self, ir: IRConfig, issues: list, metrics: dict) -> None:
         for proc in ir.ospf:
+            # 1. Conversion status (existing shallow check)
             if proc.conversion_status != ConversionStatus.EXACT:
                 issues.append(self._make_issue(
                     "ospf", IRRiskLevel.HIGH,
                     f"OSPF process {proc.process_id}: {proc.conversion_status.value}"
                     f"{' (' + proc.reason + ')' if proc.reason else ''}",
+                    rule_id="ospf:conversion_status",
+                    source_ref=f"ir.ospf[{proc.process_id}]",
                 ))
+
+            # 2. Info sufficiency: if only process_id exists, flag manual_review
+            has_substance = any(
+                getattr(proc, f, None)
+                for f in _OSPF_REQUIRED_FOR_AUTO
+            )
+            if not has_substance and proc.conversion_status == ConversionStatus.EXACT:
+                issues.append(self._make_issue(
+                    "ospf", IRRiskLevel.MEDIUM,
+                    f"OSPF process {proc.process_id}: only process_id available, "
+                    f"no networks/areas/passive_interfaces — manual review required",
+                    category_override=ValidationCategory.MANUAL_REVIEW,
+                    rule_id="ospf:insufficient_info",
+                    source_ref=f"ir.ospf[{proc.process_id}]",
+                ))
+
+            # 3. Network area references: each network must reference a defined area
+            if proc.networks and proc.areas:
+                area_ids: set[str] = set()
+                for a in proc.areas:
+                    aid = a.get("area_id") or a.get("id") or ""
+                    if aid:
+                        area_ids.add(str(aid))
+                for net in proc.networks:
+                    net_area = str(net.get("area", ""))
+                    if net_area and net_area not in area_ids:
+                        issues.append(self._make_issue(
+                            "ospf", IRRiskLevel.HIGH,
+                            f"OSPF process {proc.process_id}: network area "
+                            f"'{net_area}' not found in defined areas {area_ids}",
+                            rule_id="ospf:network_area_mismatch",
+                            source_ref=f"ir.ospf[{proc.process_id}].networks",
+                        ))
+
+            # 4. Area type conflicts
+            if proc.areas:
+                area_types: dict[str, str] = {}
+                for a in proc.areas:
+                    aid = a.get("area_id") or a.get("id") or ""
+                    atype = a.get("type", "normal")
+                    if aid and aid in area_types and area_types[aid] != atype:
+                        issues.append(self._make_issue(
+                            "ospf", IRRiskLevel.MEDIUM,
+                            f"OSPF process {proc.process_id}: area '{aid}' has "
+                            f"conflicting types ({area_types[aid]} vs {atype})",
+                            rule_id="ospf:area_type_conflict",
+                            source_ref=f"ir.ospf[{proc.process_id}].areas",
+                        ))
+                    elif aid:
+                        area_types[aid] = atype
+
         self._record_check("ospf", issues, metrics, "ospf")
 
     def _check_lag_members(self, ir: IRConfig, issues: list, metrics: dict) -> None:
@@ -279,10 +337,15 @@ class SemanticValidator:
 
     def _make_issue(
         self, field: str, severity: IRRiskLevel, message: str,
+        category_override: ValidationCategory | None = None,
+        rule_id: str | None = None,
+        source_ref: str | None = None,
     ) -> ValidationIssue:
         return ValidationIssue(
-            category=ValidationCategory.SEMANTIC,
+            category=category_override or ValidationCategory.SEMANTIC,
             severity=severity,
             message=message,
             field=f"semantic:{field}",
+            rule_id=rule_id,
+            source_ref=source_ref,
         )
