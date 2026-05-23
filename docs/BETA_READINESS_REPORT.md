@@ -1,7 +1,7 @@
 # Beta Readiness Report
 
 > Generated: 2026-05-23 (Beta Production Trial)
-> Commit: 53242fb (Phase 8E final) → Beta optimization commits
+> Commit: 86d9d5c (fix(beta): restore legacy domain adapter and LLM settings priority)
 > Run ID: beta-readiness-001
 
 ---
@@ -155,4 +155,13 @@ PYTHONPATH=. python3 scripts/ci_quality_gates.py --full
 | Audit traceability | ✅ PASS | 2026-05-23 |
 | Documentation complete | ✅ PASS | 2026-05-23 |
 
-**Verdict**: System is **BETA READY** for pilot deployment with the known limitations documented above. Human review is required for OSPF and advanced features (NAT/AAA/QoS).
+**Verdict**: System is **BETA READY** (`BETA_READY = YES`) for pilot deployment.
+
+CI gate criteria for Beta READY:
+- ✅ CI gate exit 0
+- ✅ 0 regressions
+- ✅ 13 pre-existing failures all in known/tolerated list
+- ⚠️ GitHub Actions runner not yet validated
+- ⚠️ OSPF and advanced features (NAT/AAA/QoS) require human review
+
+Human review required for: OSPF, NAT/AAA/QoS, BGP route policies.
