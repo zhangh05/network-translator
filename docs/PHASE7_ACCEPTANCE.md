@@ -99,7 +99,7 @@ a57f546 Phase 7A+7B+7C: OSPF deep check + coverage single source + schema contra
 37e3927 docs: audit patch for a57f546 — new/legacy code boundary
 3a86872 Phase 7D+7E: Capability mapping matrix + multi-domain integration
 0b8f7b6 fix: sync 7E assertion tables with actual test results
-<PHASE_7F_COMMIT> Phase 7F: Acceptance package & freeze
+53a0900 Phase 7F: Acceptance package & freeze
 ```
 
 ---
