@@ -1,0 +1,721 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-05-23T14:15:54",
+  "commit_hash": "505743ba74a3c83800c49c011239d1240d4e219c",
+  "run_id": "baseline-20260523-141554",
+  "python_version": "3.9.6",
+  "task_count": 20,
+  "performance": {
+    "total_tasks": 20,
+    "total_time_ms": 2.04,
+    "mean_per_task_ms": 0.1,
+    "min_ms": 0.05,
+    "max_ms": 0.48,
+    "mean_validate_ms": 0.09,
+    "throughput_tasks_per_sec": 9803.92
+  },
+  "results": [
+    {
+      "name": "h3c_to_cisco_vlan_svi_acl",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.46,
+        "total": 0.48
+      },
+      "metrics_snapshot": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.3125,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.3125
+      }
+    },
+    {
+      "name": "cisco_to_h3c_vlan",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.25,
+        "total": 0.26
+      },
+      "metrics_snapshot": {
+        "total_issues": 1,
+        "deployable": false,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.2941,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.2941
+      }
+    },
+    {
+      "name": "huawei_to_cisco_stp_lag",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.06,
+        "total": 0.08
+      },
+      "metrics_snapshot": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.3333,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.3333
+      }
+    },
+    {
+      "name": "ruijie_to_cisco_acl",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.06,
+        "total": 0.08
+      },
+      "metrics_snapshot": {
+        "total_issues": 1,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.4615,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.4615
+      }
+    },
+    {
+      "name": "h3c_to_ruijie_vlan_static",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.06,
+        "total": 0.07
+      },
+      "metrics_snapshot": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.3125,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.3125
+      }
+    },
+    {
+      "name": "huawei_to_h3c_basic_vlan",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.06,
+        "total": 0.08
+      },
+      "metrics_snapshot": {
+        "total_issues": 1,
+        "deployable": false,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.3333,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.3333
+      }
+    },
+    {
+      "name": "cisco_to_huawei_svi_static",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.11,
+        "total": 0.13
+      },
+      "metrics_snapshot": {
+        "total_issues": 1,
+        "deployable": false,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.2941,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.2941
+      }
+    },
+    {
+      "name": "ruijie_to_h3c_empty",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.06,
+        "total": 0.07
+      },
+      "metrics_snapshot": {
+        "total_issues": 1,
+        "deployable": false,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.3846,
+        "coverage_verifiability_rate": null,
+        "overall_verifiability_index": null
+      }
+    },
+    {
+      "name": "h3c_to_huawei_ospf_deep",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.05,
+        "total": 0.06
+      },
+      "metrics_snapshot": {
+        "total_issues": 1,
+        "deployable": false,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.5455,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.5455
+      }
+    },
+    {
+      "name": "cisco_to_huawei_bgp_vrf",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.05,
+        "total": 0.06
+      },
+      "metrics_snapshot": {
+        "total_issues": 1,
+        "deployable": false,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.5455,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.5455
+      }
+    },
+    {
+      "name": "huawei_to_cisco_ospf_mismatch",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.07,
+        "total": 0.09
+      },
+      "metrics_snapshot": {
+        "total_issues": 1,
+        "deployable": false,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.5455,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.5455
+      }
+    },
+    {
+      "name": "cisco_to_h3c_ospf_insufficient",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.06,
+        "total": 0.07
+      },
+      "metrics_snapshot": {
+        "total_issues": 2,
+        "deployable": false,
+        "manual_review_required": true,
+        "capability_verifiability_rate": 0.5455,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.5455
+      }
+    },
+    {
+      "name": "h3c_to_cisco_static_route",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.05,
+        "total": 0.06
+      },
+      "metrics_snapshot": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.5455,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.5455
+      }
+    },
+    {
+      "name": "ruijie_to_huawei_route_only",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.04,
+        "total": 0.06
+      },
+      "metrics_snapshot": {
+        "total_issues": 1,
+        "deployable": false,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.6,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.6
+      }
+    },
+    {
+      "name": "huawei_vrp_to_cisco_router_basic",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.05,
+        "total": 0.05
+      },
+      "metrics_snapshot": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.5455,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.5455
+      }
+    },
+    {
+      "name": "huawei_usg_to_hillstone_basic",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.09,
+        "total": 0.1
+      },
+      "metrics_snapshot": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.25,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.25
+      }
+    },
+    {
+      "name": "hillstone_to_huawei_usg_empty",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.06,
+        "total": 0.07
+      },
+      "metrics_snapshot": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.2857,
+        "coverage_verifiability_rate": null,
+        "overall_verifiability_index": null
+      }
+    },
+    {
+      "name": "topsec_to_hillstone_zones",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.04,
+        "total": 0.06
+      },
+      "metrics_snapshot": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.3636,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.3636
+      }
+    },
+    {
+      "name": "dptech_to_usg_policy",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.04,
+        "total": 0.05
+      },
+      "metrics_snapshot": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.4,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.4
+      }
+    },
+    {
+      "name": "usg_to_topsec_objects",
+      "error": null,
+      "timing_ms": {
+        "validate": 0.05,
+        "total": 0.06
+      },
+      "metrics_snapshot": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.25,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.25
+      }
+    }
+  ],
+  "per_task": [
+    {
+      "name": "h3c_to_cisco_vlan_svi_acl",
+      "source": "h3c",
+      "target": "cisco",
+      "domain": "switch",
+      "timing_ms": {
+        "validate": 0.46,
+        "total": 0.48
+      },
+      "metrics": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.3125,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.3125
+      },
+      "error": null
+    },
+    {
+      "name": "cisco_to_h3c_vlan",
+      "source": "cisco",
+      "target": "h3c",
+      "domain": "switch",
+      "timing_ms": {
+        "validate": 0.25,
+        "total": 0.26
+      },
+      "metrics": {
+        "total_issues": 1,
+        "deployable": false,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.2941,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.2941
+      },
+      "error": null
+    },
+    {
+      "name": "huawei_to_cisco_stp_lag",
+      "source": "huawei",
+      "target": "cisco",
+      "domain": "switch",
+      "timing_ms": {
+        "validate": 0.06,
+        "total": 0.08
+      },
+      "metrics": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.3333,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.3333
+      },
+      "error": null
+    },
+    {
+      "name": "ruijie_to_cisco_acl",
+      "source": "ruijie",
+      "target": "cisco",
+      "domain": "switch",
+      "timing_ms": {
+        "validate": 0.06,
+        "total": 0.08
+      },
+      "metrics": {
+        "total_issues": 1,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.4615,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.4615
+      },
+      "error": null
+    },
+    {
+      "name": "h3c_to_ruijie_vlan_static",
+      "source": "h3c",
+      "target": "ruijie",
+      "domain": "switch",
+      "timing_ms": {
+        "validate": 0.06,
+        "total": 0.07
+      },
+      "metrics": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.3125,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.3125
+      },
+      "error": null
+    },
+    {
+      "name": "huawei_to_h3c_basic_vlan",
+      "source": "huawei",
+      "target": "h3c",
+      "domain": "switch",
+      "timing_ms": {
+        "validate": 0.06,
+        "total": 0.08
+      },
+      "metrics": {
+        "total_issues": 1,
+        "deployable": false,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.3333,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.3333
+      },
+      "error": null
+    },
+    {
+      "name": "cisco_to_huawei_svi_static",
+      "source": "cisco",
+      "target": "huawei",
+      "domain": "switch",
+      "timing_ms": {
+        "validate": 0.11,
+        "total": 0.13
+      },
+      "metrics": {
+        "total_issues": 1,
+        "deployable": false,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.2941,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.2941
+      },
+      "error": null
+    },
+    {
+      "name": "ruijie_to_h3c_empty",
+      "source": "ruijie",
+      "target": "h3c",
+      "domain": "switch",
+      "timing_ms": {
+        "validate": 0.06,
+        "total": 0.07
+      },
+      "metrics": {
+        "total_issues": 1,
+        "deployable": false,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.3846,
+        "coverage_verifiability_rate": null,
+        "overall_verifiability_index": null
+      },
+      "error": null
+    },
+    {
+      "name": "h3c_to_huawei_ospf_deep",
+      "source": "h3c",
+      "target": "huawei",
+      "domain": "router",
+      "timing_ms": {
+        "validate": 0.05,
+        "total": 0.06
+      },
+      "metrics": {
+        "total_issues": 1,
+        "deployable": false,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.5455,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.5455
+      },
+      "error": null
+    },
+    {
+      "name": "cisco_to_huawei_bgp_vrf",
+      "source": "cisco",
+      "target": "huawei",
+      "domain": "router",
+      "timing_ms": {
+        "validate": 0.05,
+        "total": 0.06
+      },
+      "metrics": {
+        "total_issues": 1,
+        "deployable": false,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.5455,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.5455
+      },
+      "error": null
+    },
+    {
+      "name": "huawei_to_cisco_ospf_mismatch",
+      "source": "huawei",
+      "target": "cisco",
+      "domain": "router",
+      "timing_ms": {
+        "validate": 0.07,
+        "total": 0.09
+      },
+      "metrics": {
+        "total_issues": 1,
+        "deployable": false,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.5455,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.5455
+      },
+      "error": null
+    },
+    {
+      "name": "cisco_to_h3c_ospf_insufficient",
+      "source": "cisco",
+      "target": "h3c",
+      "domain": "router",
+      "timing_ms": {
+        "validate": 0.06,
+        "total": 0.07
+      },
+      "metrics": {
+        "total_issues": 2,
+        "deployable": false,
+        "manual_review_required": true,
+        "capability_verifiability_rate": 0.5455,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.5455
+      },
+      "error": null
+    },
+    {
+      "name": "h3c_to_cisco_static_route",
+      "source": "h3c",
+      "target": "cisco",
+      "domain": "router",
+      "timing_ms": {
+        "validate": 0.05,
+        "total": 0.06
+      },
+      "metrics": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.5455,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.5455
+      },
+      "error": null
+    },
+    {
+      "name": "ruijie_to_huawei_route_only",
+      "source": "ruijie",
+      "target": "huawei",
+      "domain": "router",
+      "timing_ms": {
+        "validate": 0.04,
+        "total": 0.06
+      },
+      "metrics": {
+        "total_issues": 1,
+        "deployable": false,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.6,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.6
+      },
+      "error": null
+    },
+    {
+      "name": "huawei_vrp_to_cisco_router_basic",
+      "source": "huawei",
+      "target": "cisco",
+      "domain": "router",
+      "timing_ms": {
+        "validate": 0.05,
+        "total": 0.05
+      },
+      "metrics": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.5455,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.5455
+      },
+      "error": null
+    },
+    {
+      "name": "huawei_usg_to_hillstone_basic",
+      "source": "huawei_usg",
+      "target": "hillstone",
+      "domain": "firewall",
+      "timing_ms": {
+        "validate": 0.09,
+        "total": 0.1
+      },
+      "metrics": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.25,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.25
+      },
+      "error": null
+    },
+    {
+      "name": "hillstone_to_huawei_usg_empty",
+      "source": "hillstone",
+      "target": "huawei_usg",
+      "domain": "firewall",
+      "timing_ms": {
+        "validate": 0.06,
+        "total": 0.07
+      },
+      "metrics": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.2857,
+        "coverage_verifiability_rate": null,
+        "overall_verifiability_index": null
+      },
+      "error": null
+    },
+    {
+      "name": "topsec_to_hillstone_zones",
+      "source": "topsec",
+      "target": "hillstone",
+      "domain": "firewall",
+      "timing_ms": {
+        "validate": 0.04,
+        "total": 0.06
+      },
+      "metrics": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.3636,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.3636
+      },
+      "error": null
+    },
+    {
+      "name": "dptech_to_usg_policy",
+      "source": "dptech",
+      "target": "huawei_usg",
+      "domain": "firewall",
+      "timing_ms": {
+        "validate": 0.04,
+        "total": 0.05
+      },
+      "metrics": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.4,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.4
+      },
+      "error": null
+    },
+    {
+      "name": "usg_to_topsec_objects",
+      "source": "huawei_usg",
+      "target": "topsec",
+      "domain": "firewall",
+      "timing_ms": {
+        "validate": 0.05,
+        "total": 0.06
+      },
+      "metrics": {
+        "total_issues": 0,
+        "deployable": true,
+        "manual_review_required": false,
+        "capability_verifiability_rate": 0.25,
+        "coverage_verifiability_rate": 1.0,
+        "overall_verifiability_index": 0.25
+      },
+      "error": null
+    }
+  ]
+}

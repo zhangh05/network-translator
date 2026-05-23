@@ -1,0 +1,69 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-05-23T14:15:00",
+  "commit_hash": "505743ba74a3c83800c49c011239d1240d4e219c",
+  "run_id": "phase8-acceptance-001",
+  "phase": "8",
+  "label": "Engineering Infrastructure & Quality Gates",
+  "commits": [
+    {
+      "hash": "cd17ecb",
+      "phase": "8B",
+      "description": "CI quality gates with layered regression detection",
+      "files": [".github/workflows/ci.yml", "scripts/ci_quality_gates.py", "docs/CI_QUALITY_GATES.md"]
+    },
+    {
+      "hash": "b76dff6",
+      "phase": "8B (patch)",
+      "description": "Superset tolerance strategy doc + GitHub runner notice",
+      "files": ["docs/CI_QUALITY_GATES.md", "scripts/ci_quality_gates.py"]
+    },
+    {
+      "hash": "505743b",
+      "phase": "8C+8D",
+      "description": "Audit archive, runbook, release checklist, AGENTS.md anchor",
+      "files": [
+        "docs/audit/INDEX.md", "docs/audit/* symlinks (9)", "scripts/audit_trace.sh",
+        "scripts/run_baseline.py", "docs/RUNBOOK.md", "docs/RELEASE_CHECKLIST.md", "AGENTS.md"
+      ]
+    },
+    {
+      "hash": "(current)",
+      "phase": "8A+8E",
+      "description": "Phase 8A batch runner + baseline + Phase 8E acceptance",
+      "files": [
+        "core/batch/__init__.py", "core/batch/sample_tasks.py",
+        "docs/PHASE8_PERF_BASELINE.md", "docs/phase8_perf_baseline.json",
+        "docs/PHASE8_ACCEPTANCE.md", "docs/phase8_summary.json"
+      ]
+    }
+  ],
+  "assertions": {
+    "core_gate": {"result": "PASS", "detail": "524 passed, 20 skipped, 0 failures", "command": "pytest tests/test_validator*.py tests/test_domain*.py tests/test_ir*.py tests/test_vendor*.py tests/test_parser*.py tests/test_renderer*.py tests/test_schema_contract.py tests/test_integration_phase*.py"},
+    "full_ci_gate": {"result": "PASS", "detail": "Layer1: PASS, Layer2: 13 pre-existing/0 regressions/PASS", "command": "scripts/ci_quality_gates.py --full"},
+    "full_test_suite": {"result": "PASS", "detail": "1049 passed, 13 failed (pre-existing), 23 skipped, 0 regressions", "command": "pytest tests/ -q"},
+    "performance_baseline": {"result": "PASS", "detail": "20 tasks, 0 errors, ~9500 t/s, 11 PASS/9 expected FAIL", "command": "scripts/run_baseline.py"},
+    "audit_drill": {"result": "PASS", "detail": "Chain1: 18/18, Chain2: 21/21, schema v1.0, docs/audit/trace-*.json", "command": "scripts/audit_trace.sh"}
+  },
+  "known_limits": [
+    "OSPF not in VERIFIABLE_FEATURE_REGISTRY (3 blocking conditions documented in core/validator/capability_baseline.py)",
+    "Rule fallback does not cover NAT/AAA/QoS advanced features",
+    "SemanticMemory uses word matching not embeddings",
+    "Pre-existing uncommitted code (validator/*, tests/*_production.py, etc.) predate Phase 8 — not in scope",
+    "CI workflow grammar verified but not run on GitHub-hosted Actions runner"
+  ],
+  "next_actions": [
+    "Push to GitHub-hosted repo and validate CI workflow end-to-end",
+    "Phase 9 planning: OSPF registry re-evaluation, full pipeline benchmark with LLM",
+    "Reconciliation pass for pre-existing uncommitted code (validator/*, test_*_production.py, etc.)",
+    "Consider SQLite WAL for ProjectStore in high-concurrency scenarios"
+  ],
+  "dod": {
+    "multi_domain_multi_vendor": true,
+    "verifiable_and_auditable": true,
+    "ci_quality_gates": true,
+    "runbook_and_release_docs": true,
+    "compatibility_policy": true,
+    "performance_baseline": true
+  }
+}
