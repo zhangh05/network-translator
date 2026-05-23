@@ -7,11 +7,11 @@
     "2116e99 Phase 6B pre-convergence: Remove OSPF from verifiable registry (Option A)",
     "9961eaf Phase 6B: Validator capability-aware + deployable/manual_review rules + metrics",
     "92739bc Phase 6C+6D: Audit evidence + report stabilization + multi-sample integration",
-    "412f217 docs: fill actual commit hash in phase6_summary.json"
+    "412f217 docs: fill actual commit hash in phase6_summary.json",
+    "90be840 Phase 6E: Acceptance package & freeze"
   ],
   "test_results": {
     "full_regression": {
-      "collected": 1024,
       "passed": 1010,
       "pre_existing_failures": 13,
       "skipped": 3,
