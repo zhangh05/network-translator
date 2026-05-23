@@ -110,6 +110,7 @@
   .tag::before{content:"";display:block;width:6px;height:6px;border-radius:50%}
   .tag--ok{background:rgba(5,150,105,.08);color:var(--gr)}.tag--ok::before{background:var(--gr)}
   .tag--warn{background:rgba(217,119,6,.08);color:var(--am)}.tag--warn::before{background:var(--am)}
+  .tag--fail{background:rgba(220,38,38,.08);color:var(--rd)}.tag--fail::before{background:var(--rd)}
   .tag--dim{background:var(--s2);color:var(--t3)}.tag--dim::before{background:var(--t3)}
 
   .tabs{display:flex;padding:0 10px;height:36px;align-items:center;border-bottom:1px solid var(--s2);gap:2px}
@@ -201,6 +202,55 @@
   .rd .empty{color:var(--t3);font-size:12px;padding:8px 0}
   .rd .acc{font-size:11px;color:var(--t3);display:block;margin-top:2px}
 
+  /* Risk tab — user-friendly grouped view */
+  .risk-root{padding:0 20px 20px}
+  .rs{margin-bottom:14px;border-radius:6px;overflow:hidden;font-size:12px}
+  .rs__hd{padding:6px 12px;font-weight:600;font-size:11px;letter-spacing:.3px}
+  .rs__note{font-weight:400;font-style:italic;opacity:.8}
+  .rs__bd{padding:4px 8px}
+  .risk--fatal .rs__hd{background:rgba(220,38,38,.12);color:var(--rd)}
+  .risk--fatal .rs__bd{background:rgba(220,38,38,.04)}
+  .risk--review .rs__hd{background:rgba(217,119,6,.12);color:var(--am)}
+  .risk--review .rs__bd{background:rgba(217,119,6,.04)}
+  .risk--info .rs__hd{background:rgba(99,102,241,.08);color:var(--ac)}
+  .risk--info .rs__bd{background:rgba(99,102,241,.04)}
+  .ri{margin-bottom:4px;padding:4px 8px;border-radius:4px;background:var(--s2)}
+  .ri__msg{color:var(--t1)}
+  .ri__feat{font-size:11px;color:var(--t3);margin-left:6px;font-weight:400}
+
+  /* Validation tab */
+  .val-root{padding:0 20px 20px;font-size:12px}
+  .val-tbl{width:100%;border-collapse:collapse;margin-bottom:12px}
+  .val-k{color:var(--t3);padding:6px 10px 6px 0;white-space:nowrap;font-weight:400;text-align:left}
+  .val-v{padding:6px 0}
+  .vl{font-weight:600}
+  .vl--ok{color:var(--gr)}
+  .vl--warn{color:var(--am)}
+  .vl--err{color:var(--rd)}
+  .val-sec{margin-top:8px;border-radius:6px;overflow:hidden}
+  .val-sec__hd{padding:4px 10px;font-weight:600;font-size:11px}
+  .val-list{padding:4px 0;margin:0;list-style:none}
+  .val-list li{padding:3px 10px;font-size:12px}
+  .val-list--err{background:rgba(220,38,38,.06)}.val-list--err li{color:var(--rd)}
+  .val-list--warn{background:rgba(217,119,6,.06)}.val-list--warn li{color:var(--am)}
+  .val-raw{margin-top:14px}
+  .val-toggle{background:none;border:none;color:var(--ac);cursor:pointer;font-size:11px;text-decoration:underline;padding:0}
+  .val-raw pre{background:var(--s1);padding:10px;border-radius:6px;font-size:11px;margin-top:6px;overflow:auto;max-height:300px}
+  .empty{color:var(--t3);font-size:12px;padding:8px 0}
+
+  /* Diff tab */
+  .diff-root{padding:0 20px 20px;font-size:12px}
+  .ds{margin-bottom:10px;border-radius:6px;overflow:hidden}
+  .ds__hd{padding:5px 10px;font-weight:600;font-size:11px}
+  .ds__cnt{font-weight:400;opacity:.8;margin-left:4px}
+  .ds__pre{background:var(--s1);padding:8px 10px;margin:0;font-size:11px;overflow:auto;max-height:200px;white-space:pre-wrap;word-break:break-all}
+  .diff--normal .ds__hd{background:rgba(5,150,105,.1);color:var(--gr)}
+  .diff--confirm .ds__hd{background:rgba(217,119,6,.1);color:var(--am)}
+  .diff--risk .ds__hd{background:rgba(220,38,38,.1);color:var(--rd)}
+
+  /* Sub-label in risk summary bar */
+  #rsum .rssub{display:block;font-size:11px;font-weight:400;color:var(--t3);margin-top:2px;margin-bottom:4px}
+
   @media(max-width:720px){
     #sb{width:56px}
     #sb .item .name,#sb .item .del,#sb .sh span,#sb .foot .stat span{display:none}
@@ -290,6 +340,7 @@
       </div>
       <div id="rsum" class="h">
         <span class="rsb rsb--ok" id="rsstatus"></span>
+        <span class="rssub"></span>
         <span class="rsc" id="rscounts"></span>
       </div>
       <div class="tabs">
@@ -500,7 +551,64 @@ E("plist").addEventListener("click",function(e){
 E("addproj").addEventListener("click",function(){saveActive();createProject()});
 E("sbtn").addEventListener("click",function(){E("source").value=S;E("cc").textContent=S.length;saveActive()});
 
-function F(v){if(v==null)return"";if(typeof v==="string")return v;return JSON.stringify(v,null,2)}
+function _renderValidationTab(v){
+  if(!v||typeof v!=="object")return"<pre>"+esc(JSON.stringify(v,null,2))+"</pre>";
+  var errs=v.errors||[];
+  var warns=v.warnings||[];
+  var mrr=v.manual_review_required;
+  var dep=v.deployable;
+  var lv=v.level||"info";
+
+  var statusCls,statusTxt;
+  if(dep===false||lv==="fatal"||errs.length>0){statusCls="err";statusTxt="不建议上线"}else if(mrr){statusCls="warn";statusTxt="需人工复核"}else{statusCls="ok";statusTxt="可部署"}
+  var rows=[
+    ["部署状态",'<span class="vl vl--'+statusCls+'">'+statusTxt+"</span>"],
+    ["需人工复核",mrr?"是":"否"],
+    ["错误数",errs.length||"无"],
+    ["警告数",warns.length||"无"],
+    ["残留检查",v.residue===false?"无残留":"有残留或未检查"],
+    ["覆盖率",v.coverage!=null?v.coverage:"——"],
+  ];
+  var html='<div class="val-root">'+
+    '<table class="val-tbl">'+
+    rows.map(function(r){return'<tr><td class="val-k">'+esc(r[0])+'</td><td class="val-v">'+r[1]+"</td></tr>"}).join("")+
+    "</table>";
+  if(errs.length>0){
+    html+='<div class="val-sec"><div class="val-sec__hd">错误详情</div><ul class="val-list val-list--err">'+
+      errs.map(function(e){return"<li>"+esc(e)+"</li>"}).join("")+"</ul></div>";
+  }
+  if(warns.length>0){
+    html+='<div class="val-sec"><div class="val-sec__hd">警告详情</div><ul class="val-list val-list--warn">'+
+      warns.map(function(w){return"<li>"+esc(w)+"</li>"}).join("")+"</ul></div>";
+  }
+  html+='<div class="val-raw"><button class="val-toggle" onclick="this.nextElementSibling.classList.toggle(\'h\');this.textContent=this.nextElementSibling.classList.contains(\' + "'h'" + ')?\'查看原始 JSON\':\'收起 JSON\'">查看原始 JSON</button><pre class="h">'+esc(JSON.stringify(v,null,2))+"</pre></div>";
+  html+="</div>";
+  return html
+}
+
+function _renderDiffTab(diff){
+  if(!diff||!diff.trim())return'<div class="empty">未发现差异</div>';
+  var lines=diff.split("\n");
+  var normal=[],confirm=[],risk=[];
+  lines.forEach(function(l){
+    var lo=l.toLowerCase();
+    if(lo.indexOf("port-channel")!==-1||lo.indexOf("vlan")!==-1||lo.indexOf("eth-trunk")!==-1||lo.indexOf("vlanif")!==-1||lo.indexOf("ethernet")!==-1){normal.push(l);return}
+    if(lo.indexOf("+vlan")!==-1||lo.indexOf("-vlan")!==-1||lo.indexOf("+acl")!==-1||lo.indexOf("-acl")!==-1||lo.indexOf("+ospf")!==-1||lo.indexOf("-ospf")!==-1){confirm.push(l);return}
+    if(lo.indexOf("duplicate")!==-1||lo.indexOf("conflict")!==-1||lo.indexOf("+ip route")!==-1||lo.indexOf("-ip route")!==-1){risk.push(l);return}
+    if(l.trim())normal.push(l);
+  });
+  function _sec(title,cls,items){
+    if(!items.length)return"";
+    return'<div class="ds"><div class="ds__hd">'+title+' <span class="ds__cnt">'+items.length+'</span></div><pre class="ds__pre">'+
+      items.map(function(l){return esc(l)}).join("\n")+"</pre></div>";
+  }
+  return'<div class="diff-root">'+
+    _sec("正常厂商映射","diff--normal",normal)+
+    _sec("需确认的变化","diff--confirm",confirm)+
+    _sec("潜在风险","diff--risk",risk)+
+    '<div class="val-raw"><button class="val-toggle" onclick="this.nextElementSibling.classList.toggle(\' + "'h'" + '\');this.textContent=this.nextElementSibling.classList.contains(\' + "'h'" + ')?\'查看原始 diff\':\'收起 diff\'">查看原始 diff</button><pre class="h">'+esc(diff)+"</pre></div>"+
+    "</div>";
+}
 
 async function Z(){try{var r=await fetch("/healthz");var d=await r.json();var ok=r.ok&&d.ok;E("sd1").className="sdot "+(ok?"on":"");E("sl").textContent=ok?"已连接":"离线"}catch(_){E("sd1").className="sdot";E("sl").textContent="离线"}}
 async function L(){try{var r=await fetch("/api/llm/settings",{headers:H()});if(!r.ok)return;var s=((await r.json()).settings||{});E("bu").value=s.base_url||"";E("md").value=s.model||"";E("ak").value=s.api_key||"";E("asec").value=localStorage.getItem("api_secret")||"";E("to").value=s.timeout||45;E("bmd").textContent=s.model||"未配置";E("sm").textContent="已加载"}catch(e){}}
@@ -535,12 +643,45 @@ function _updateRiskSummary(r){
   var gaps=(r.capability_gaps||[]).length;
   var ar=(r.analyzer_results||[]).length;
   var rs=(r.risk_signals||[]).length;
-  var cls,label;
-  if(dep===true&&!mrr){cls="ok";label="可部署"}
-  else if(lv==="fatal"||errs>0){cls="fail";label="不建议部署"}
-  else{cls="warn";label="需人工复核"}
-  ss.className="rsb rsb--"+cls;ss.textContent=label;
-  sc.innerHTML="错误 <span class='s'>"+errs+"</span> · 警告 <span class='s'>"+warns+"</span> · 能力缺口 <span class='s'>"+gaps+"</span> · 分析器 <span class='s'>"+ar+"</span> · 风险信号 <span class='s'>"+rs+"</span>";
+  var cls,label,sublabel;
+
+  // Three-state logic:
+  // 1. BLOCK: fatal error OR deployable=false with error OR high-risk residue
+  // 2. REVIEW: manual_review_required OR warnings OR capability gaps
+  // 3. OK: everything clean
+  var hasFatal = (lv === "fatal" || errs > 0);
+  var hasReview = mrr || warns > 0 || gaps > 0;
+  var hasRiskSignal = rs > 0;
+  var hasAnalyzer = ar > 0;
+
+  if (hasFatal || dep === false) {
+    cls = "fail";
+    label = "不建议上线";
+    sublabel = "存在错误或高风险，请修复后重新翻译";
+  } else if (hasReview || hasRiskSignal || hasAnalyzer) {
+    cls = "warn";
+    label = "需人工复核";
+    sublabel = "以下项目需要人工确认后再上线";
+  } else {
+    cls = "ok";
+    label = "可部署";
+    sublabel = "无错误或高风险，但人工复核仍建议执行";
+  }
+
+  ss.className = "rsb rsb--" + cls;
+  ss.textContent = label;
+  var subEl = ss.nextElementSibling;
+  if (subEl && subEl.classList.contains("rssub")) {
+    subEl.textContent = sublabel;
+  }
+
+  sc.innerHTML = [
+    errs > 0 ? "错误 <span class='s'>" + errs + "</span>" : "",
+    warns > 0 ? "警告 <span class='s'>" + warns + "</span>" : "",
+    gaps > 0 ? "能力缺口 <span class='s'>" + gaps + "</span>" : "",
+    ar > 0 ? "分析器发现 <span class='s'>" + ar + "</span>" : "",
+    rs > 0 ? "风险信号 <span class='s'>" + rs + "</span>" : "",
+  ].filter(Boolean).join(" · ") || "无问题发现";
   sb.classList.remove("h")
 }
 function _renderRiskTabGrouped(r){
@@ -550,68 +691,67 @@ function _renderRiskTabGrouped(r){
   var ar=r.analyzer_results||[];
   var riskSignals=r.risk_signals||[];
 
-  // Collect items by feature
-  var groups={};
-  function add(feature,type,html){if(!groups[feature])groups[feature]={gaps:[],analyzer:[],errors:[],warnings:[],risk_signals:[]};groups[feature][type].push(html)}
+  // ── Categorise items ──────────────────────────────────────────────
+  var fatal=[], mustFix=[], review=[], info=[];
+  var _sev=function(s){return s&&(s==="fatal"||s==="critical"?"fatal":s==="warning"||s==="high"?"warn":"info")};
 
-  // Capability gaps by feature
-  gaps.forEach(function(g){add(g.feature||"General","gaps",
-    '<div class="warn-item" style="margin-bottom:6px">⚠ <strong>能力缺口</strong> ['+esc(g.severity)+'] '+(g.suggestion||g.status)+(
-      g.source_lines&&g.source_lines.length?'<span class="gap-lines">'+esc(g.source_lines.join("; "))+'</span>':"")+'</div>')});
-
-  // Analyzer findings by feature
-  ar.forEach(function(a){
-    var rl=a.risk_level||"none";var feat=a.feature||"General";
-    var summary=esc(a.summary||a.notes&&a.notes[0]||"-");
-    var mctx=a.missing_context&&a.missing_context.length?esc(a.missing_context.join("; ")):"";
-    add(feat,"analyzer",
-      '<div class="warn-item" style="margin-bottom:4px">🔍 <strong>分析器</strong> <span class="sev sev--'+rl+'">'+esc(rl)+
-      '</span> '+summary+(mctx?'<span class="acc"> 缺失: '+mctx+'</span>':'')+'</div>')});
-
-  // Validation warnings — extract feature from prefix [consistency:feat] or [analyzer:feat]
-  warnings.forEach(function(w){
-    var m=w.match(/\[(consistency|analyzer):(\w+)\]/);
-    var feat=m?m[2]:"General";
-    add(feat,"warnings",'<div class="warn-item">⚠ '+esc(w)+'</div>')});
-
-  // Validation errors — extract feature from prefix
+  // Errors → mustFix or fatal
   errors.forEach(function(e){
-    var m=e.match(/\[(consistency|analyzer):(\w+)\]/);
-    var feat=m?m[2]:"General";
-    add(feat,"errors",'<div class="err-item">✖ '+esc(e)+'</div>')});
+    if(v.level==="fatal"){fatal.push(e);return}
+    mustFix.push(e)});
 
-  // Risk signals by feature
+  // Warnings → mustFix or review
+  warnings.forEach(function(w){
+    if(w.toLowerCase().indexOf("residue")!==-1||w.toLowerCase().indexOf("high risk")!==-1){mustFix.push(w);return}
+    review.push(w)});
+
+  // Capability gaps → review or info
+  gaps.forEach(function(g){
+    var sv=g.severity||"info";
+    if(sv==="fatal"||sv==="critical"){fatal.push(g.suggestion||g.feature+" 能力缺口");return}
+    if(sv==="warning"||sv==="high"||sv==="medium"){review.push({msg:(g.suggestion||g.status||""),feat:g.feature});return}
+    info.push({msg:(g.suggestion||g.status||""),feat:g.feature})});
+
+  // Analyzer results
+  ar.forEach(function(a){
+    var rl=a.risk_level||"none";
+    var msg=a.summary||(a.notes&&a.notes[0])||"-";
+    if(rl==="critical"||rl==="fatal"){fatal.push(msg);return}
+    if(rl==="warning"||rl==="high"){mustFix.push(msg);return}
+    if(rl==="info"||rl==="low"){review.push({msg:msg,feat:a.feature});return}
+    info.push({msg:msg,feat:a.feature})});
+
+  // Risk signals
   riskSignals.forEach(function(s){
-    var feat=s.feature||"General";
-    var sev=s.severity||"unknown";
     var msg=s.message||"-";
-    var sevCls=sev==="fatal"?"fail":sev==="warning"?"warn":"info";
-    add(feat,"risk_signals",
-      '<div class="warn-item" style="margin-bottom:4px">! <strong>风险信号</strong> <span class="sev sev--'+sevCls+'">'+esc(sev)+
-      '</span> '+esc(msg)+'</div>')});
+    if(s.severity==="fatal"||s.severity==="critical"){fatal.push(msg);return}
+    if(s.severity==="warning"||s.severity==="high"){mustFix.push(msg);return}
+    review.push({msg:msg,feat:s.feature||"General"})});
 
-  // Render grouped HTML
-  var html="";
-  var featOrder=Object.keys(groups).sort(function(a,b){
-    var rank={General:99};return (rank[a]||ar.find(function(x){return x.feature===a})?1:50)-(rank[b]||ar.find(function(x){return x.feature===b})?1:50)});
-  featOrder.forEach(function(feat){
-    var g=groups[feat];
-    if(!g.gaps.length&&!g.analyzer.length&&!g.errors.length&&!g.warnings.length&&!g.risk_signals.length)return;
-    html+='<h4 style="margin-top:16px;border-bottom:1px solid var(--s2);padding-bottom:4px">'+esc(feat)+
-      ' <span style="font-weight:400;color:var(--t3);font-size:11px">'+
-      (g.gaps.length?'缺口 '+g.gaps.length+' ':'')+
-      (g.analyzer.length?'分析器 '+g.analyzer.length+' ':'')+
-      (g.warnings.length?'警告 '+g.warnings.length+' ':'')+
-      (g.errors.length?'错误 '+g.errors.length+' ':'')+
-      (g.risk_signals.length?'风险信号 '+g.risk_signals.length:'')+'</span></h4>';
-    html+=g.gaps.join("");
-    html+=g.analyzer.join("");
-    g.risk_signals.forEach(function(r){html+=r});
-    g.errors.forEach(function(e){html+=e});
-    g.warnings.forEach(function(w){html+=w});
-  });
-  if(!featOrder.length)html+='<div class="empty">无风险发现</div>';
-  return '<div class="rd">'+html+"</div>"
+  // ── Render helpers ──────────────────────────────────────────────────
+  function _item(msg,feat){
+    var f=esc(feat&&feat!=="General"?feat:"");
+    var m=typeof msg==="string"?esc(msg):esc(msg.msg||"-");
+    return'<div class="ri"><div class="ri__msg">'+m+(f?' <span class="ri__feat">'+f+"</span>":"")+"</div></div>";
+  }
+  function _section(title,cls,items,note){
+    if(!items.length)return"";
+    return'<div class="rs '+cls+'"><div class="rs__hd">'+title+
+      (note?' <span class="rs__note">'+note+"</span>":"")+"</div>"+
+      '<div class="rs__bd">'+
+      items.map(function(it){return _item(typeof it==="string"?it:it.msg,it.feat||it.feature)}).join("")+
+      "</div></div>";
+  }
+
+  var html='<div class="risk-root">'+
+    _section("⬆ 必须处理 — 会阻断上线","risk--fatal",fatal)+
+    _section("⚠ 建议复核 — 需要人工确认","risk--review",review)+
+    _section("ℹ 信息提示","risk--info",info)+
+    "</div>";
+  if(!fatal.length&&!review.length&&!info.length){
+    html='<div class="empty">无风险发现，翻译结果可直接用于人工复核。</div>';
+  }
+  return html
 }
 // ── Render output ──
 function _highlightManualReview(text){
@@ -631,8 +771,8 @@ function RN(){
   var views={
     translated:_highlightManualReview(clean)||"",
     risk:_renderRiskTabGrouped(r),
-    validation:F(r.validation||r.semantic_validation||{}),
-    diff:r.diff||"未发现差异。",
+    validation:_renderValidationTab(r.validation||r.semantic_validation||{}),
+    diff:_renderDiffTab(r.diff||""),
   };
   if(tab==="trace"){
     var nr=r.node_results||[];
@@ -678,10 +818,19 @@ async function TL(){
     R.result=res;R.tab="translated";
     document.querySelectorAll(".tabs button").forEach(function(t){t.classList.toggle("on",t.dataset.tab==="translated")});
     setPhase(4);
+    var v=R.result.validation||{};
+    var lv=v.level||"info";
+    var errs=(v.errors||[]).length;
+    var mrr=v.manual_review_required;
+    var dep=v.deployable;
+    var hasFatal=(lv==="fatal"||errs>0||dep===false);
+    var hasReview=(mrr||errs>0);
     E("rtag").textContent=R.result.fallback_used?"规则兜底":"LLM";
     E("rtag").className="tag "+(R.result.fallback_used?"tag--warn":"tag--ok");
-    E("sptag").textContent=R.result.success?"通过":"告警";
-    E("sptag").className="tag "+(R.result.success?"tag--ok":"tag--warn");
+    var statusCls=hasFatal?"tag--fail":hasReview?"tag--warn":"tag--ok";
+    var statusTxt=hasFatal?"不建议上线":hasReview?"需人工复核":"可部署";
+    E("sptag").textContent=statusTxt;
+    E("sptag").className="tag "+statusCls;
     E("rm").textContent=E("fv").value+" \u2192 "+E("tv").value;
     E("cbtn").disabled=false;E("ebtn").disabled=false;
     // show request_id row
