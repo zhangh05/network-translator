@@ -1,0 +1,97 @@
+name: CI Quality Gates
+
+on:
+  push:
+    branches: ["main", "develop"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+
+  # ── Layer 1: Core gate ────────────────────────────────────────────────
+  core-gate:
+    name: Core Gate (zero-tolerance)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Run core tests
+        run: |
+          PYTHONPATH=. python scripts/ci_quality_gates.py --json ci-core-report.json
+        env:
+          PYTHONPATH: "."
+      - name: Attach core report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-core-report
+          path: ci-core-report.json
+      - name: Gate verdict
+        run: |
+          python -c "
+          import json
+          r = json.load(open('ci-core-report.json'))
+          l1 = r['layers'][0]
+          gate = l1['gate_result']
+          print(f'Core Gate: {gate}')
+          print(f'  {l1[\"summary\"]}')
+          if gate != 'PASS':
+              for f in l1['regression_failures']:
+                  print(f'    FAIL: {f}')
+              exit(1)
+          "
+
+  # ── Layer 2: Full regression gate ──────────────────────────────────────
+  full-gate:
+    name: Full Gate (regression-check)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.9"
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+      - name: Run all tests with regression detection
+        run: |
+          PYTHONPATH=. python scripts/ci_quality_gates.py --full --json ci-full-report.json
+        env:
+          PYTHONPATH: "."
+      - name: Attach full report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ci-full-report
+          path: ci-full-report.json
+      - name: Gate verdict
+        run: |
+          python -c "
+          import json, sys
+          r = json.load(open('ci-full-report.json'))
+          ec = r['exit_code']
+          print(f'Verdict: {r[\"verdict\"]}')
+          for layer in r['layers']:
+              print(f'  {layer[\"layer\"]}: {layer[\"gate_result\"]}')
+              print(f'    {layer[\"summary\"]}')
+              if layer['regression_failures']:
+                  print(f'    Regressions ({len(layer[\"regression_failures\"])}):')
+                  for f in layer['regression_failures']:
+                      print(f'      NEW: {f}')
+              if layer['preexisting_failures']:
+                  print(f'    Pre-existing ({len(layer[\"preexisting_failures\"])} known, tolerated):')
+                  for f in layer['preexisting_failures']:
+                      print(f'      (known) {f}')
+          sys.exit(ec)
+          "
