@@ -51,7 +51,10 @@ def mask_api_key_safe(key: str | None) -> str:
 
 
 def _settings_file() -> Path | None:
-    """Return the project-local settings file path, or None if it doesn't exist."""
+    """Return the project-local settings file path, or None if it doesn't exist.
+
+    Only used by save_settings() to write to the right location.
+    """
     override = os.environ.get("LLM_SETTINGS_FILE", "").strip()
     if override:
         return Path(override).expanduser()
@@ -59,39 +62,30 @@ def _settings_file() -> Path | None:
     return local if local.exists() else None
 
 
-def _read_external_settings() -> dict:
-    """Read the external settings file if it exists and is parseable.
+def _read_file_settings(path: Path) -> dict:
+    """Read and parse a JSON settings file at the given path.
 
-    The file should contain JSON with fields:
-      - api_url  (mapped to base_url internally)
-      - api_key
-      - model
-
-    Returns an empty dict if the file is absent or malformed.
-    All errors are logged at WARNING level with sanitized messages only.
+    Returns an empty dict on absence or parse error.
+    All errors are logged with sanitized messages — no key content in logs.
     """
-    path = EXTERNAL_SETTINGS_PATH
     if not path.exists():
         return {}
     try:
         raw = path.read_text(encoding="utf-8").strip()
         if not raw:
-            logger.warning("External settings file is empty: %s", path)
+            logger.warning("Settings file is empty: %s", path)
             return {}
         data = json.loads(raw)
         if not isinstance(data, dict):
-            logger.warning("External settings file is not a JSON object: %s", path)
+            logger.warning("Settings file is not a JSON object: %s", path)
             return {}
         result = {}
-        # api_url -> base_url
         api_url = data.get("api_url") or data.get("api-url")
         if api_url and isinstance(api_url, str):
             result["base_url"] = api_url.strip()
-        # api_key — stored as-is (caller must never log it)
         api_key = data.get("api_key") or data.get("api-key")
         if api_key and isinstance(api_key, str):
             result["api_key"] = api_key
-        # model with normalization (strip whitespace, case-insensitive)
         model = data.get("model")
         if model and isinstance(model, str):
             result["model"] = model.strip()
@@ -100,10 +94,10 @@ def _read_external_settings() -> dict:
             result["timeout"] = _coerce_timeout(timeout)
         return result
     except json.JSONDecodeError:
-        logger.warning("External settings file is not valid JSON: %s", path)
+        logger.warning("Settings file is not valid JSON: %s", path)
         return {}
     except OSError:
-        logger.warning("Cannot read external settings file: %s", path)
+        logger.warning("Cannot read settings file: %s", path)
         return {}
 
 
@@ -151,26 +145,41 @@ def save_settings(data: dict) -> None:
 
 
 def _read_local_settings() -> dict:
-    """Read settings from external file, then project-local file.
+    """Read settings from file sources by priority (lowest to highest).
 
-    Priority:
-        1. External settings file (EXTERNAL_SETTINGS_PATH)
-        2. Project-local llmsetting.json
-        3. Empty dict (env vars will be merged in get_current_settings)
+    Priority (lowest to highest):
+        1. Project-local llmsetting.json
+        2. External settings file (EXTERNAL_SETTINGS_PATH)
+        3. LLM_SETTINGS_FILE env var — explicit path (highest of all file sources)
+
+    Each level only wins if it provides a non-empty value for the key.
+    After merging, env vars (LLM_API_KEY / LLM_MODEL / LLM_BASE_URL / LLM_TIMEOUT)
+    are overlaid as the final override in get_current_settings().
     """
-    # Priority 1: external file
-    ext = _read_external_settings()
-    if ext:
-        return ext
-    # Priority 2: project-local file
-    settings_file = Path(__file__).resolve().parent / "llmsetting.json"
-    if not settings_file.exists():
-        return {}
-    try:
-        return json.loads(settings_file.read_text(encoding="utf-8"))
-    except Exception:
-        logger.warning("Failed to read llmsetting.json")
-        return {}
+    # Collect file-based sources in priority order (lowest first)
+    sources: list[tuple[str, dict]] = []
+
+    # Priority 1: project-local llmsetting.json
+    project_local = Path(__file__).resolve().parent / "llmsetting.json"
+    if project_local.exists():
+        sources.append(("project-local", _read_file_settings(project_local)))
+
+    # Priority 2: external settings file (EXTERNAL_SETTINGS_PATH)
+    if EXTERNAL_SETTINGS_PATH.exists():
+        sources.append(("external", _read_file_settings(EXTERNAL_SETTINGS_PATH)))
+
+    # Priority 3: explicit LLM_SETTINGS_FILE env var (overrides everything else)
+    env_explicit = os.environ.get("LLM_SETTINGS_FILE", "").strip()
+    if env_explicit:
+        explicit_path = Path(env_explicit).expanduser()
+        sources.append(("env-explicit", _read_file_settings(explicit_path)))
+
+    # Merge: higher-priority source overwrites lower
+    merged: dict = {}
+    for _name, data in sources:
+        merged.update(data)
+
+    return merged
 
 
 def create_llm_from_settings() -> LLM:
