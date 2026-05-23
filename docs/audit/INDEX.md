@@ -52,11 +52,51 @@ Every generated JSON report must contain:
 |--------|-------------|-------|
 | `1.0` | Initial audit archive schema | Phase 8C |
 
+### Trace-to-Code Path Examples
+
+This section shows how to trace an audit record back to specific code and rules.
+
+**Example 1: Chain 1 — H3C→Cisco SWITCH**
+
+1. Look at `docs/audit/trace-*.json`, find the chain with `"name": "H3C→Cisco SWITCH"`
+2. Copy the `commit_hash`: e.g. `b76dff6`
+3. Run: `git show b76dff6 --stat | head -20` — shows Phase 8B patch commit files
+4. The chain ran `tests/test_integration_phase6.py::TestIntegrationSwitchH3CtoCisco`
+5. The validator result is from `core/validator/residue_validator.py:ResidueValidator`
+6. The specific residue pattern: `(?i)sysname` → forbidden in Cisco output
+
+**Example 2: Chain 2 — ROUTER OSPF deep**
+
+1. Look at `docs/audit/trace-*.json`, find the chain with `"name": "ROUTER OSPF (deep + mismatch)"`
+2. Copy the `commit_hash` and `generated_at`
+3. Run: `PYTHONPATH=. python3 scripts/audit_trace.sh` to regenerate and compare
+4. The chain ran `tests/test_integration_phase7.py::TestIntegrationRouterOspfMismatch`
+5. OSPF semantic check is in `core/validator/semantic_validator.py`
+6. Known limitation: OSPF not in VERIFIABLE_FEATURE_REGISTRY — manual review required
+
+**From Report → Source Code:**
+
+```bash
+# Given a trace file
+TRACE_FILE="docs/audit/trace-20260523-140927.json"
+
+# Extract commit hash
+COMMIT=$(python3 -c "import json; print(json.load(open('$TRACE_FILE'))['commit_hash'])")
+echo "Commit: $COMMIT"
+
+# Find which files were committed in that phase
+git log --oneline $COMMIT^..$COMMIT
+
+# Find which validator class produced a specific issue
+grep -n "ResidueValidator\|SemanticValidator\|CoverageValidator" \
+    core/validator/*.py | head -20
+```
+
 ## Trace Records
 
 | # | Date | Run ID | Chains | Link |
 |---|------|--------|--------|------|
-| _(populated by audit_trace.sh)_ |
+| 1 | 2026-05-23 | trace-20260523-140927 | 2/2 PASS | `docs/audit/trace-20260523-140927.json` |
 
 ## Phase Summaries (Archive)
 
