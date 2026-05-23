@@ -1,0 +1,33 @@
+{
+  "schema_version": "1.0",
+  "generated_at": "2026-05-23T14:09:27+08:00",
+  "commit_hash": "b76dff66ab8e463b5d28c6adeeec48265513e7b1",
+  "run_id": "trace-20260523-140927",
+  "phase": "8C",
+  "drill": "minimum-traceability",
+  "chains": [
+    {
+      "name": "H3C→Cisco SWITCH",
+      "test_file": "tests/test_integration_phase6.py",
+      "result": "PASS",
+      "passed": 18,
+      "failed": 0,
+      "total": 18,
+      "timing_ms": 362
+    },
+    {
+      "name": "ROUTER OSPF (deep + mismatch)",
+      "test_file": "tests/test_integration_phase7.py",
+      "result": "PASS",
+      "passed": 21,
+      "failed": 0,
+      "total": 21,
+      "timing_ms": 233
+    }
+  ],
+  "summary": {
+    "total_chains": 2,
+    "chains_passed": 2,
+    "chains_failed": 0
+  }
+}

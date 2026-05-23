@@ -1,96 +1,112 @@
 # Release Checklist
 
+> Phase 8D — 2026-05-23
+
 ## Pre-Release Verification
 
-Run these steps in order:
+Run these steps in order.
 
-### 1. Test Suite
+### 1. CI Quality Gates (core + regression)
 
 ```bash
-cd /root/network-translator
-PYTHONPATH=. ./venv/bin/pytest tests/ -v
+PYTHONPATH=. python3 scripts/ci_quality_gates.py --full --json /tmp/ci-report.json
 ```
 
-**Pass criteria**: All tests pass, no unexpected failures.
+**Pass criteria**: Exit code 0 (`ALL GATES PASS`). Layer 1 zero failures. Layer 2 zero regressions (known pre-existing tolerated).
 
-### 2. Knowledge Lint
+### 2. Validator Tests
+
+```bash
+PYTHONPATH=. venv/bin/python3 -m pytest tests/test_validator*.py tests/test_schema_contract.py -v --tb=short
+```
+
+**Pass criteria**: All pass.
+
+### 3. Integration Chains (Phase 6 + Phase 7)
+
+```bash
+PYTHONPATH=. venv/bin/python3 -m pytest tests/test_integration_phase6.py tests/test_integration_phase7.py -v --tb=short
+```
+
+**Pass criteria**: All pass (18 + 21 = 39 tests).
+
+### 4. Audit Traceability Drill
+
+```bash
+PYTHONPATH=. bash scripts/audit_trace.sh
+```
+
+**Pass criteria**: Exit code 0. `docs/audit/trace_*.json` contains both chains with `result: "PASS"`.
+
+### 5. Performance Baseline (Phase 8A)
+
+```bash
+PYTHONPATH=. python3 scripts/run_baseline.py
+```
+
+**Pass criteria**: 0 errors. Baseline written to `docs/phase8_perf_baseline.json`.
+
+### 6. Full Test Suite
+
+```bash
+PYTHONPATH=. venv/bin/python3 -m pytest tests/ -v
+```
+
+**Pass criteria**: 1069+ passed, 13 pre-existing failures tolerated, 0 unexpected regressions.
+
+### 7. Knowledge Lint
 
 ```bash
 PYTHONPATH=. python3 tools/knowledge_lint.py --coverage
 ```
 
-**Pass criteria**: P0 coverage = 100%. Non-blocking warnings allowed.
+**Pass criteria**: P0 coverage = 100%.
 
-### 3. Coverage Inventory
-
-```bash
-PYTHONPATH=. python3 tools/coverage_inventory.py
-```
-
-**Pass criteria**: Generates `docs/coverage/coverage_matrix.json` without errors.
-
-### 4. Static Benchmarks
+### 8. Health Check
 
 ```bash
-PYTHONPATH=. python3 bench/run_cases.py --static
-```
-
-**Pass criteria**: 35/35 cases pass (smoke=12, core=14, full=9).
-
-### 5. Release Gate
-
-```bash
-PYTHONPATH=. python3 scripts/release_gate.py
-```
-
-**Pass criteria**: Output contains `RELEASE_GATE_OK` and `avg_score` ≥ 90.
-
-### 6. Health Check
-
-```bash
-./scripts/status.sh
-curl --noproxy '*' http://localhost:5008/healthz
+./scripts/start.sh
+curl --noproxy '*' http://localhost:5000/healthz
 ```
 
 **Pass criteria**: Service running, `/healthz` returns `{"ok":true,"status":"healthy"}`.
 
-### 7. Readiness Check
+### 9. Readiness Check
 
 ```bash
-curl --noproxy '*' http://localhost:5008/readyz
+curl --noproxy '*' http://localhost:5000/readyz
 ```
 
-**Pass criteria**: `{"ok":true,"status":"ready"}`. `LLM_API_KEY` warnings are acceptable.
+**Pass criteria**: `{"ok":true,"status":"ready"}`.
 
-### 8. Version Endpoint
+### 10. Version Endpoint
 
 ```bash
-curl --noproxy '*' http://localhost:5008/api/version
+curl --noproxy '*' http://localhost:5000/api/version
 ```
 
-**Pass criteria**: Returns `version`, `analyzers` (13+), `features` (44+), `model`, `python`.
+**Pass criteria**: Returns version, analyzers, features, model, python.
 
-### 9. E2E Smoke Test
+### 11. E2E Smoke Test
 
 ```bash
-# Create a project
-curl --noproxy '*' -s -X POST http://localhost:5008/api/projects \
+curl --noproxy '*' -s -X POST http://localhost:5000/api/projects \
   -H "Content-Type: application/json" \
   -d '{"name":"smoke"}' | python3 -c "import sys,json; print(json.load(sys.stdin).get('project',{}).get('id','FAIL'))"
 ```
 
 **Pass criteria**: Returns a project ID.
 
-### 10. API Key Leak Check
+### 12. API Key Leak Check
 
 ```bash
 grep -rn "sk-" logs/ 2>/dev/null || echo "No secrets in logs"
 grep -rn "LLM_API_KEY" logs/ 2>/dev/null || echo "No API key env in logs"
 ```
 
-**Pass criteria**: No API key strings in log output.
+**Pass criteria**: No API key strings in logs.
 
-### 11. VERSION Confirmation
+### 13. VERSION Confirmation
 
 ```bash
 cat VERSION
@@ -102,17 +118,19 @@ cat VERSION
 
 | Step | Command | Pass Criteria |
 |------|---------|---------------|
-| 1 | `pytest` | All pass |
-| 2 | `knowledge_lint --coverage` | P0 = 100% |
-| 3 | `coverage_inventory.py` | No errors |
-| 4 | `bench/run_cases.py --static` | 35/35 |
-| 5 | `release_gate.py` | RELEASE_GATE_OK, score ≥ 90 |
-| 6 | `/healthz` | 200 OK |
-| 7 | `/readyz` | status = ready |
-| 8 | `/api/version` | valid response |
-| 9 | E2E smoke | Project created |
-| 10 | Secret leak | No API keys in logs |
-| 11 | `cat VERSION` | Correct label |
+| 1 | `ci_quality_gates.py --full` | Exit 0, no regressions |
+| 2 | `pytest test_validator* test_schema_contract` | All pass |
+| 3 | `pytest test_integration_phase6 + phase7` | 39/39 pass |
+| 4 | `audit_trace.sh` | Exit 0, both chains PASS |
+| 5 | `run_baseline.py` | 0 errors |
+| 6 | `pytest tests/` | 1069+ pass, 0 regressions |
+| 7 | `knowledge_lint --coverage` | P0 = 100% |
+| 8 | `/healthz` | 200 OK |
+| 9 | `/readyz` | status = ready |
+| 10 | `/api/version` | valid response |
+| 11 | E2E smoke | Project created |
+| 12 | Secret leak | No API keys in logs |
+| 13 | `cat VERSION` | Correct label |
 
 ## Rolling Back
 
@@ -122,3 +140,4 @@ If a release introduces issues:
 2. Revert to previous version: `git checkout <previous-tag>`
 3. Restart: `./scripts/start.sh`
 4. Verify: `./scripts/status.sh`
+5. Run CI quality gates: `PYTHONPATH=. python3 scripts/ci_quality_gates.py --full`
