@@ -37,6 +37,9 @@ class Project:
         self.target_domain = ""
         self.target_platform = ""
         self.result = None
+        self.request_id = ""
+        self.version = ""
+        self.model = ""
         self.history = []
 
     def to_dict(self) -> dict:
@@ -53,6 +56,9 @@ class Project:
             "target_domain": self.target_domain,
             "target_platform": self.target_platform,
             "result": self.result,
+            "request_id": self.request_id,
+            "version": self.version,
+            "model": self.model,
             "history_count": len(self.history),
         }
 
@@ -116,9 +122,12 @@ class ProjectStore:
                     proj.from_vendor = p.get("from_vendor", "auto")
                     proj.to_vendor = p.get("to_vendor", "huawei")
                     proj.source_domain = p.get("source_domain", "")
-                    proj.source_platform = p.get("source_platform", "")
                     proj.target_domain = p.get("target_domain", "")
                     proj.target_platform = p.get("target_platform", "")
+                    proj.result = p.get("result")
+                    proj.request_id = p.get("request_id", "")
+                    proj.version = p.get("version", "")
+                    proj.model = p.get("model", "")
                     self._projects[p["id"]] = proj
         except Exception:
             logger.exception("Failed to load project index")
@@ -167,6 +176,9 @@ class ProjectStore:
                     proj.target_domain = data.get("target_domain", "")
                     proj.target_platform = data.get("target_platform", "")
                     proj.result = data.get("result")
+                    proj.request_id = data.get("request_id", "")
+                    proj.version = data.get("version", "")
+                    proj.model = data.get("model", "")
                     proj.history = data.get("history", [])
                     self._projects[project_id] = proj
                     return proj
@@ -206,6 +218,12 @@ class ProjectStore:
             project.target_platform = updates["target_platform"]
         if "result" in updates:
             project.result = updates["result"]
+        if "request_id" in updates:
+            project.request_id = updates["request_id"]
+        if "version" in updates:
+            project.version = updates["version"]
+        if "model" in updates:
+            project.model = updates["model"]
 
         project.updated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         self._save_project(project)
@@ -493,7 +511,12 @@ def register_project_routes(app):
             )
             return {"ok": False, "error": "Internal translation error", "request_id": request_id}, 500
 
-        store.update_project(project_id, {"result": result_data})
+        store.update_project(project_id, {
+            "result": result_data,
+            "request_id": request_id,
+            "version": _read_version(),
+            "model": _get_model_name(),
+        })
 
         store.add_history(project_id, {
             "config_text": config_text,

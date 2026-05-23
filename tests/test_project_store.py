@@ -85,3 +85,58 @@ def test_to_full_dict_returns_newest_first(store):
     h = full.history
     snips = [e["config_snippet"] for e in h]
     assert "vlan 24" in snips[0] or any("vlan" in s for s in snips[:5])
+
+
+def test_update_project_saves_result_and_metadata(store):
+    """P0: result + request_id/version/model must survive round-trip."""
+    p = store.create_project("x")
+    result_data = {
+        "translated": "vlan 10",
+        "validation": {"level": "info", "errors": [], "warnings": []},
+        "semantic_validation": {},
+        "diff": "-vlan 10\n+vlan 10",
+        "node_results": [],
+        "success": True,
+        "fallback_used": False,
+        "request_id": "req-123",
+        "capability_gaps": [],
+        "analyzer_results": [],
+        "risk_signals": [],
+    }
+    ok = store.update_project(p.id, {
+        "result": result_data,
+        "request_id": "req-123",
+        "version": "1.0.0",
+        "model": "test-model",
+    })
+    assert ok
+    reloaded = store.get_project(p.id)
+    assert reloaded.result is not None
+    assert reloaded.result["translated"] == "vlan 10"
+    assert reloaded.result["success"] is True
+    assert reloaded.request_id == "req-123"
+    assert reloaded.version == "1.0.0"
+    assert reloaded.model == "test-model"
+
+
+def test_to_dict_includes_result_summary(store):
+    """List response must include result so all browsers can show status."""
+    p = store.create_project("x")
+    store.update_project(p.id, {"result": {"translated": "vlan 10", "success": True}})
+    listed = store.list_projects()
+    assert len(listed) == 1
+    assert listed[0]["result"] is not None
+    assert listed[0]["result"]["translated"] == "vlan 10"
+
+
+def test_result_not_overwritten_by_partial_update(store):
+    """Partial update (without result key) must not wipe existing result."""
+    p = store.create_project("x")
+    store.update_project(p.id, {"result": {"translated": "vlan 10", "success": True}, "request_id": "req-456"})
+    # Update only name — no result key
+    ok = store.update_project(p.id, {"name": "renamed"})
+    assert ok
+    reloaded = store.get_project(p.id)
+    assert reloaded.result is not None
+    assert reloaded.result["translated"] == "vlan 10"
+    assert reloaded.request_id == "req-456"
