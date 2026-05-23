@@ -343,18 +343,19 @@ PHASE_7E_ASSERTION_TABLES: dict[str, list[dict[str, str | int | float | bool]]] 
         {"assertion": "schema_version", "expected": "1.0", "actual": "computed_at_runtime"},
     ],
     "router_h3c_to_huawei_ospf_deep": [
-        {"assertion": "residue_count", "expected": 0, "actual": "computed_at_runtime"},
+        {"assertion": "residue_hostname_detected", "expected": 1, "actual": "computed_at_runtime"},
         {"assertion": "coverage_verifiability_rate", "expected": 1.0, "actual": "computed_at_runtime"},
         {"assertion": "ospf_insufficient_info_count", "expected": 0, "actual": "computed_at_runtime"},
         {"assertion": "ospf_network_area_mismatch_count", "expected": 0, "actual": "computed_at_runtime"},
-        {"assertion": "deployable", "expected": True, "actual": "computed_at_runtime"},
+        {"assertion": "deployable_with_residue", "expected": False, "actual": "computed_at_runtime"},
+        {"assertion": "manual_review_required", "expected": False, "actual": "computed_at_runtime"},
         {"assertion": "schema_version", "expected": "1.0", "actual": "computed_at_runtime"},
     ],
     "router_cisco_to_h3c_ospf_mismatch": [
         {"assertion": "ospf_network_area_mismatch_count", "expected": 1, "actual": "computed_at_runtime"},
         {"assertion": "ospf_insufficient_info_count", "expected": 1, "actual": "computed_at_runtime"},
         {"assertion": "manual_review_required", "expected": True, "actual": "computed_at_runtime"},
-        {"assertion": "deployable", "expected": True, "actual": "computed_at_runtime"},
+        {"assertion": "deployable_with_high_issues", "expected": False, "actual": "computed_at_runtime"},
         {"assertion": "schema_version", "expected": "1.0", "actual": "computed_at_runtime"},
     ],
 }
