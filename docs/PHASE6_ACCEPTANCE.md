@@ -80,7 +80,8 @@
 9961eaf Phase 6B: Validator capability-aware + deployable/manual_review rules + metrics
 92739bc Phase 6C+6D: Audit evidence + report stabilization + multi-sample integration
 412f217 docs: fill actual commit hash in phase6_summary.json
-<PHASE_6E_COMMIT> Phase 6E: Acceptance package & freeze
+90be840 Phase 6E: Acceptance package & freeze
+3bb923e docs: add Phase 6E commit to summary, remove redundant collected field
 ```
 
 ---
