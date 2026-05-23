@@ -165,6 +165,19 @@ The pre-existing failure list (`PREEXISTING_FAILURES` in `scripts/ci_quality_gat
 
 **Result**: One script, one pre-existing list, correct behavior in both environments. No `#if CI` branches.
 
+## LLM Configuration Priority
+
+The system supports multiple LLM configuration sources. Priority (highest to lowest):
+
+| # | Source | Path | Override Env |
+|---|--------|------|-------------|
+| 1 | `LLM_SETTINGS_FILE` env var | Any path | `LLM_SETTINGS_FILE` |
+| 2 | External settings file | `/Users/zhangh01/Desktop/codex_net_trans/llm_settings.txt` | — |
+| 3 | Project-local `llmsetting.json` | `network-translator/llmsetting.json` | — |
+| 4 | Environment variable fallbacks | — | `LLM_API_KEY`, `LLM_MODEL`, `LLM_BASE_URL`, `LLM_TIMEOUT` |
+
+For security: API keys are **never logged in plain text** — only `***` or `(not set)` appears in any log output.
+
 ## CI vs Local Consistency
 
 The same `scripts/ci_quality_gates.py` script is used in both environments.

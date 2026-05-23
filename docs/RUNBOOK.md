@@ -69,7 +69,54 @@ PYTHONPATH=. bash scripts/audit_trace.sh
 | `LLM_MODEL` | No | `MiniMax-M2.7` | LLM model name |
 | `LLM_BASE_URL` | No | — | Custom LLM endpoint |
 | `LLM_TIMEOUT` | No | `45` | LLM request timeout (seconds) |
+| `LLM_SETTINGS_FILE` | No | — | Explicit path to a JSON settings file |
 | `API_SECRET` | No | — | If set, all API endpoints require `X-API-Secret` header |
+
+## LLM Configuration Files
+
+Settings are loaded from multiple sources in priority order:
+
+| Priority | Source | Path | Notes |
+|----------|--------|------|-------|
+| 1 (highest) | `LLM_SETTINGS_FILE` env var | Path in env var | Explicit path; supersedes all others |
+| 2 | External settings file | `/Users/zhangh01/Desktop/codex_net_trans/llm_settings.txt` | Developer-machine-local; not committed |
+| 3 | Project-local settings | `network-translator/llmsetting.json` | In-source; tracked in git |
+| 4 (lowest) | Environment variable fallbacks | `LLM_API_KEY`, `LLM_MODEL`, `LLM_BASE_URL`, `LLM_TIMEOUT` | Always honored as final fallback |
+
+### External Settings File Format
+
+The external settings file (`llm_settings.txt`) must contain valid JSON:
+
+```json
+{
+  "api_url": "https://api.minimaxi.com/anthropic",
+  "api_key": "sk-your-key-here",
+  "model": "Minimax M2.7",
+  "timeout": 60
+}
+```
+
+Field mapping:
+- `api_url` → `base_url` internally
+- `api_key` → stored as-is; **never logged in plain text**
+- `model` → whitespace-stripped; case-insensitive
+
+### Security Notes
+
+- API keys are **never printed in logs** — only `***` or `(not set)` is shown
+- The external settings file (`/Users/zhangh01/Desktop/codex_net_trans/llm_settings.txt`) should NOT be committed to source control
+- Use `llm_settings.mask_api_key()` to safely display any key value
+
+### Testing the Configuration
+
+```python
+from llm_settings import get_current_settings, mask_api_key
+
+cfg = get_current_settings()
+print(f"API key (safe): {mask_api_key(cfg['api_key'])}")  # prints ***
+print(f"Model: {cfg['model']}")   # safe to print
+print(f"Base URL: {cfg['base_url']}")  # safe to print
+```
 | `PORT` | No | `5000` | Web server port |
 | `FLASK_DEBUG` | No | — | Enable Flask debug mode |
 
