@@ -42,9 +42,12 @@
   #sb .item .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--t3)}
   #sb .item .dot.has{background:var(--ac)}
   #sb .item .name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #sb .item .rename{opacity:0;background:transparent;border:0;color:var(--t3);font-size:12px;padding:0 2px;cursor:pointer;line-height:1;flex-shrink:0}
   #sb .item .del{opacity:0;background:transparent;border:0;color:var(--t3);font-size:14px;padding:0 2px;cursor:pointer;line-height:1;flex-shrink:0}
-  #sb .item:hover .del{opacity:1}
+  #sb .item:hover .rename,#sb .item:hover .del{opacity:1}
+  #sb .item .rename:hover{color:var(--ac)}
   #sb .item .del:hover{color:var(--rd)}
+  #sb .item .rename-input{flex:1;min-width:0;height:24px;padding:0 6px;border-radius:5px;background:#fff;color:var(--t1);border:1px solid var(--ac);font-size:13px}
   #sb .foot{padding:8px 12px;border-top:1px solid var(--br);flex-shrink:0}
   #sb .foot .stat{font-size:11px;color:var(--t3);display:flex;align-items:center;gap:6px}
   #sb .foot .stat .sdot{width:6px;height:6px;border-radius:50%;background:var(--t3)}
@@ -254,7 +257,7 @@
 
   @media(max-width:720px){
     #sb{width:56px}
-    #sb .item .name,#sb .item .del,#sb .sh span,#sb .foot .stat span{display:none}
+    #sb .item .name,#sb .item .rename,#sb .item .del,#sb .sh span,#sb .foot .stat span{display:none}
     #sb .sh{justify-content:center}
   }
 </style>
@@ -542,15 +545,53 @@ function saveActive(){
 }
 function renderSidebar(){
   var list=E("plist");
-  list.innerHTML=PROJS.map(function(p){var name=p.name.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");return'<div class="item'+(p.id===ACTIVE?' active':'')+'" data-id="'+p.id+'"><span class="dot'+(p.result?' has':'')+'"></span><span class="name">'+name+'</span><button class="del" data-del="'+p.id+'">&times;</button></div>'}).join("")
+  list.innerHTML=PROJS.map(function(p){var name=esc(p.name||"窗口").replace(/"/g,"&quot;");return'<div class="item'+(p.id===ACTIVE?' active':'')+'" data-id="'+p.id+'"><span class="dot'+(p.result?' has':'')+'"></span><span class="name" data-rename="'+p.id+'" title="双击重命名">'+name+'</span><button class="rename" data-rename="'+p.id+'" title="重命名">✎</button><button class="del" data-del="'+p.id+'">&times;</button></div>'}).join("")
 }
+
+function startRenameProject(id){
+  var p=PROJS.find(function(x){return x.id===id});if(!p)return;
+  var item=E("plist").querySelector('[data-id="'+id+'"]');if(!item)return;
+  var current=p.name||"窗口";
+  item.innerHTML='<span class="dot'+(p.result?' has':'')+'"></span><input class="rename-input" data-renaming="'+id+'" value="'+esc(current).replace(/"/g,"&quot;")+'" maxlength="60"><button class="del" data-del="'+id+'">&times;</button>';
+  var input=item.querySelector(".rename-input");input.focus();input.select()
+}
+
+function commitRenameProject(id,value){
+  var p=PROJS.find(function(x){return x.id===id});if(!p)return;
+  var name=(value||"").trim();
+  if(!name)name=p.name||"窗口";
+  if(name.length>60)name=name.slice(0,60);
+  p.name=name;
+  saveProject(p);
+  renderSidebar()
+}
+
+function cancelRenameProject(){renderSidebar()}
 
 // ── Init ──
 initProjects();
 
 E("plist").addEventListener("click",function(e){
   var del=e.target.closest("[data-del]");if(del){e.stopPropagation();var id=del.dataset.del;if(PROJS.length<=1)return;deleteProject(id);return}
+  var nameRen=e.target.closest(".name[data-rename]");if(nameRen&&e.detail>=2){e.stopPropagation();startRenameProject(nameRen.dataset.rename);return}
+  var ren=e.target.closest("button.rename[data-rename]");if(ren){e.stopPropagation();startRenameProject(ren.dataset.rename);return}
   var item=e.target.closest("[data-id]");if(!item)return;saveActive();ACTIVE=item.dataset.id;try{localStorage.setItem("nt_active_v2",ACTIVE)}catch(_){};loadActive();renderSidebar()
+});
+E("plist").addEventListener("mousedown",function(e){
+  var ren=e.target.closest(".name[data-rename]");
+  if(ren&&e.detail>=2){e.preventDefault();e.stopPropagation();startRenameProject(ren.dataset.rename)}
+},true);
+E("plist").addEventListener("dblclick",function(e){
+  var ren=e.target.closest("[data-rename]");if(ren){e.stopPropagation();startRenameProject(ren.dataset.rename)}
+});
+E("plist").addEventListener("keydown",function(e){
+  var input=e.target.closest("[data-renaming]");if(!input)return;
+  if(e.key==="Enter"){e.preventDefault();commitRenameProject(input.dataset.renaming,input.value)}
+  if(e.key==="Escape"){e.preventDefault();cancelRenameProject()}
+});
+E("plist").addEventListener("focusout",function(e){
+  var input=e.target.closest("[data-renaming]");if(!input)return;
+  setTimeout(function(){if(!E("plist").contains(document.activeElement))commitRenameProject(input.dataset.renaming,input.value)},0)
 });
 E("addproj").addEventListener("click",function(){saveActive();createProject()});
 E("sbtn").addEventListener("click",function(){E("source").value=S;E("cc").textContent=S.length;saveActive()});

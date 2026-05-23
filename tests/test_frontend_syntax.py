@@ -44,3 +44,13 @@ def test_copy_uses_clipboard_fallback():
     assert "document.execCommand(\"copy\")" in html
     assert "await _copyText(t)" in html
     assert html.count("async function _copyAll") == 1
+
+
+def test_sidebar_project_rename_controls_exist():
+    html = Path("frontend/index.html").read_text(encoding="utf-8")
+
+    assert "function startRenameProject" in html
+    assert "function commitRenameProject" in html
+    assert "rename-input" in html
+    assert "data-rename" in html
+    assert "dblclick" in html
