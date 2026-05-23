@@ -9,9 +9,14 @@ from core.vendor.enums import FeatureSupportStatus
 
 VERIFIABLE_FEATURE_REGISTRY: dict[DeviceDomain, set[FeatureKey]] = {
     DeviceDomain.SWITCH: {
-        # OSPF removed from registry — current SemanticValidator only checks
-        # conversion_status, not OSPF semantic equivalence (area, cost, NSSA).
-        # Re-add when deep OSPF checker is implemented (Phase 6 P0 candidate).
+        # OSPF NOT re-added (Phase 7 decision): deep OSPF checker now exists
+        # (_check_ospf with 4 dimensions) but only validates target IR internal
+        # consistency — no cross-IR src↔tgt comparison. Also lacks interface
+        # cost/metric verification and network dict key format standardization.
+        # Re-addition conditions (per Phase 7 acceptance):
+        #   1. Cross-IR OSPF semantic comparison implemented
+        #   2. Interface-level cost/metric verification added
+        #   3. Network dict key format standardized across parsers
         FeatureKey.VLAN,
         FeatureKey.SVI,
         FeatureKey.FHRP,

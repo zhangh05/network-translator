@@ -1,0 +1,55 @@
+{
+  "phase": "7",
+  "subphase": "7A_7B_7C_7D_7E_7F",
+  "date": "2026-05-23",
+  "commits": [
+    "a57f546 Phase 7A+7B+7C: OSPF deep check + coverage single source + schema contract",
+    "37e3927 docs: audit patch for a57f546 — new/legacy code boundary",
+    "3a86872 Phase 7D+7E: Capability mapping matrix + multi-domain integration",
+    "0b8f7b6 fix: sync 7E assertion tables with actual test results"
+  ],
+  "test_results": {
+    "full_regression": {
+      "passed": 1069,
+      "pre_existing_failures": 13,
+      "skipped": 3,
+      "failures_cause": "missing flask/requests, old analyzer tests — unrelated to Phase 7"
+    },
+    "ospf_semantic_tests": 6,
+    "mapping_single_source_tests": 3,
+    "schema_contract_tests": 21,
+    "capability_mapping_tests": 8,
+    "integration_phase7_tests": 21,
+    "all_validator_tests": 148
+  },
+  "assertions": {
+    "ospf_deep_check_dimensions": "4 dimensions (conversion_status, info_sufficiency, network_area_ref, area_type_conflict)",
+    "ospf_not_in_registry": "deliberate — missing cross-IR comparison, interface cost/metric, dict key standardization",
+    "ospf_router_domain_coverage": "_check_router now calls _check_ospf (previously switch-only, fixed in Phase 7D)",
+    "mapping_single_source": "get_feature_mapping() in coverage_validator — bidirectional drift detection tested",
+    "classification_mapping_matrix": "4 reasons → (category, severity) — unknown=HIGH, others=MEDIUM",
+    "overall_verifiability_index": "coverage_rate × semantic_rate, ranges 0.0–1.0",
+    "integration_chains": "6 chains total (3 from Phase 6D + 3 from Phase 7E: FIREWALL, ROUTER deep OSPF, ROUTER OSPF mismatch)",
+    "evidence_fields_pervasive": "all OSPF issues carry rule_id + source_ref",
+    "schema_version": "1.0 in report.to_dict(), no changes from Phase 6"
+  },
+  "known_limits": [
+    "OSPF not in VERIFIABLE_FEATURE_REGISTRY — cross-IR comparison missing",
+    "FIREWALL shallow checker only (zones/address/service/security-policy framework, no deep NAT/zone-policy)",
+    "ACL no ACE-level cross-vendor equivalence",
+    "_IR_TO_FEATURE ↔ FeatureKey mapping remains manual (drift detection tests exist but no auto-registration)",
+    "No parallel CompositeValidator execution",
+    "No custom report templates (Jinja2/HTML/PDF)"
+  ],
+  "next_actions": [
+    "P0: Cross-IR OSPF comparison + registry re-addition",
+    "P0: ACE-level ACL cross-vendor equivalence",
+    "P1: FIREWALL deep semantic (NAT, zone policy)",
+    "P1: Interface-level OSPF cost/metric verification",
+    "P1: Network dict key format standardization across parsers",
+    "P2: Parallel CompositeValidator execution",
+    "P2: Custom report templates"
+  ],
+  "parser_renderer_graph_pipeline_touched": false,
+  "schema_version": "1.0"
+}
