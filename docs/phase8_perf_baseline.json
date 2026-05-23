@@ -1,18 +1,18 @@
 {
   "schema_version": "1.0",
-  "generated_at": "2026-05-23T14:15:54",
-  "commit_hash": "505743ba74a3c83800c49c011239d1240d4e219c",
-  "run_id": "baseline-20260523-141554",
+  "generated_at": "2026-05-23T18:47:40",
+  "commit_hash": "826ae9ab78228adb7ddd72371a29ccdf7c85cfd6",
+  "run_id": "baseline-20260523-184740",
   "python_version": "3.9.6",
   "task_count": 20,
   "performance": {
     "total_tasks": 20,
-    "total_time_ms": 2.04,
+    "total_time_ms": 2.08,
     "mean_per_task_ms": 0.1,
     "min_ms": 0.05,
-    "max_ms": 0.48,
+    "max_ms": 0.47,
     "mean_validate_ms": 0.09,
-    "throughput_tasks_per_sec": 9803.92
+    "throughput_tasks_per_sec": 9615.38
   },
   "results": [
     {
@@ -20,7 +20,7 @@
       "error": null,
       "timing_ms": {
         "validate": 0.46,
-        "total": 0.48
+        "total": 0.47
       },
       "metrics_snapshot": {
         "total_issues": 0,
@@ -35,7 +35,7 @@
       "name": "cisco_to_h3c_vlan",
       "error": null,
       "timing_ms": {
-        "validate": 0.25,
+        "validate": 0.24,
         "total": 0.26
       },
       "metrics_snapshot": {
@@ -115,7 +115,7 @@
       "name": "cisco_to_huawei_svi_static",
       "error": null,
       "timing_ms": {
-        "validate": 0.11,
+        "validate": 0.12,
         "total": 0.13
       },
       "metrics_snapshot": {
@@ -132,7 +132,7 @@
       "error": null,
       "timing_ms": {
         "validate": 0.06,
-        "total": 0.07
+        "total": 0.08
       },
       "metrics_snapshot": {
         "total_issues": 1,
@@ -148,7 +148,7 @@
       "error": null,
       "timing_ms": {
         "validate": 0.05,
-        "total": 0.06
+        "total": 0.07
       },
       "metrics_snapshot": {
         "total_issues": 1,
@@ -179,8 +179,8 @@
       "name": "huawei_to_cisco_ospf_mismatch",
       "error": null,
       "timing_ms": {
-        "validate": 0.07,
-        "total": 0.09
+        "validate": 0.06,
+        "total": 0.08
       },
       "metrics_snapshot": {
         "total_issues": 1,
@@ -196,7 +196,7 @@
       "error": null,
       "timing_ms": {
         "validate": 0.06,
-        "total": 0.07
+        "total": 0.08
       },
       "metrics_snapshot": {
         "total_issues": 2,
@@ -227,7 +227,7 @@
       "name": "ruijie_to_huawei_route_only",
       "error": null,
       "timing_ms": {
-        "validate": 0.04,
+        "validate": 0.05,
         "total": 0.06
       },
       "metrics_snapshot": {
@@ -260,7 +260,7 @@
       "error": null,
       "timing_ms": {
         "validate": 0.09,
-        "total": 0.1
+        "total": 0.11
       },
       "metrics_snapshot": {
         "total_issues": 0,
@@ -275,7 +275,7 @@
       "name": "hillstone_to_huawei_usg_empty",
       "error": null,
       "timing_ms": {
-        "validate": 0.06,
+        "validate": 0.05,
         "total": 0.07
       },
       "metrics_snapshot": {
@@ -291,7 +291,7 @@
       "name": "topsec_to_hillstone_zones",
       "error": null,
       "timing_ms": {
-        "validate": 0.04,
+        "validate": 0.05,
         "total": 0.06
       },
       "metrics_snapshot": {
@@ -307,8 +307,8 @@
       "name": "dptech_to_usg_policy",
       "error": null,
       "timing_ms": {
-        "validate": 0.04,
-        "total": 0.05
+        "validate": 0.05,
+        "total": 0.06
       },
       "metrics_snapshot": {
         "total_issues": 0,
@@ -324,7 +324,7 @@
       "error": null,
       "timing_ms": {
         "validate": 0.05,
-        "total": 0.06
+        "total": 0.07
       },
       "metrics_snapshot": {
         "total_issues": 0,
@@ -344,7 +344,7 @@
       "domain": "switch",
       "timing_ms": {
         "validate": 0.46,
-        "total": 0.48
+        "total": 0.47
       },
       "metrics": {
         "total_issues": 0,
@@ -362,7 +362,7 @@
       "target": "h3c",
       "domain": "switch",
       "timing_ms": {
-        "validate": 0.25,
+        "validate": 0.24,
         "total": 0.26
       },
       "metrics": {
@@ -457,7 +457,7 @@
       "target": "huawei",
       "domain": "switch",
       "timing_ms": {
-        "validate": 0.11,
+        "validate": 0.12,
         "total": 0.13
       },
       "metrics": {
@@ -477,7 +477,7 @@
       "domain": "switch",
       "timing_ms": {
         "validate": 0.06,
-        "total": 0.07
+        "total": 0.08
       },
       "metrics": {
         "total_issues": 1,
@@ -496,7 +496,7 @@
       "domain": "router",
       "timing_ms": {
         "validate": 0.05,
-        "total": 0.06
+        "total": 0.07
       },
       "metrics": {
         "total_issues": 1,
@@ -533,8 +533,8 @@
       "target": "cisco",
       "domain": "router",
       "timing_ms": {
-        "validate": 0.07,
-        "total": 0.09
+        "validate": 0.06,
+        "total": 0.08
       },
       "metrics": {
         "total_issues": 1,
@@ -553,7 +553,7 @@
       "domain": "router",
       "timing_ms": {
         "validate": 0.06,
-        "total": 0.07
+        "total": 0.08
       },
       "metrics": {
         "total_issues": 2,
@@ -590,7 +590,7 @@
       "target": "huawei",
       "domain": "router",
       "timing_ms": {
-        "validate": 0.04,
+        "validate": 0.05,
         "total": 0.06
       },
       "metrics": {
@@ -629,7 +629,7 @@
       "domain": "firewall",
       "timing_ms": {
         "validate": 0.09,
-        "total": 0.1
+        "total": 0.11
       },
       "metrics": {
         "total_issues": 0,
@@ -647,7 +647,7 @@
       "target": "huawei_usg",
       "domain": "firewall",
       "timing_ms": {
-        "validate": 0.06,
+        "validate": 0.05,
         "total": 0.07
       },
       "metrics": {
@@ -666,7 +666,7 @@
       "target": "hillstone",
       "domain": "firewall",
       "timing_ms": {
-        "validate": 0.04,
+        "validate": 0.05,
         "total": 0.06
       },
       "metrics": {
@@ -685,8 +685,8 @@
       "target": "huawei_usg",
       "domain": "firewall",
       "timing_ms": {
-        "validate": 0.04,
-        "total": 0.05
+        "validate": 0.05,
+        "total": 0.06
       },
       "metrics": {
         "total_issues": 0,
@@ -705,7 +705,7 @@
       "domain": "firewall",
       "timing_ms": {
         "validate": 0.05,
-        "total": 0.06
+        "total": 0.07
       },
       "metrics": {
         "total_issues": 0,

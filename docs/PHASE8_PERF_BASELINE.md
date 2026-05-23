@@ -1,8 +1,8 @@
 # Phase 8A: Performance Baseline Report
 
-> Generated at 2026-05-23 14:15:54
+> Generated at 2026-05-23 18:47:40
 > Python 3.9.6
-> Commit: 505743ba74a3c83800c49c011239d1240d4e219c
+> Commit: 826ae9ab78228adb7ddd72371a29ccdf7c85cfd6
 
 ## Summary
 
@@ -12,12 +12,12 @@
 | Passed | 11 |
 | Failed (non-deployable) | 9 |
 | Errors | 0 |
-| Total wall time | 2.0ms |
+| Total wall time | 2.1ms |
 | Mean per task | 0.1ms |
 | Min task time | 0.1ms |
 | Max task time | 0.5ms |
 | Mean validate phase | 0.1ms |
-| Throughput | 9803.92 tasks/sec |
+| Throughput | 9615.38 tasks/sec |
 
 ## Task Details
 
