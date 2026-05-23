@@ -283,3 +283,58 @@ def test_clear_result_propagates_to_list_and_detail(store):
     assert reloaded.request_id == ""
     assert reloaded.version == ""
     assert reloaded.model == ""
+
+
+def test_load_index_recovers_orphan_detail_projects():
+    """If projects.json misses a detail file, list_projects() must recover it.
+
+    Real browser refresh relies on /api/projects. Detail files are the durable
+    source of truth, so a stale/truncated index must not hide existing projects.
+    """
+    import json
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        ps = ProjectStore(project_dir=tmp)
+        kept = ps.create_project("kept")
+        orphan = ps.create_project("orphan")
+        ps.update_project(orphan.id, {
+            "config_text": "vlan 10",
+            "result": {"translated": "vlan 10", "success": True},
+            "request_id": "req-orphan",
+            "version": "v-test",
+            "model": "model-test",
+        })
+
+        kept_dict = kept.to_dict()
+        with open(ps.meta_file, "w", encoding="utf-8") as f:
+            json.dump({"projects": [kept_dict]}, f)
+
+        reloaded = ProjectStore(project_dir=tmp)
+        listed = {p["id"]: p for p in reloaded.list_projects()}
+
+        assert kept.id in listed
+        assert orphan.id in listed
+        assert listed[orphan.id]["result"]["translated"] == "vlan 10"
+        assert listed[orphan.id]["request_id"] == "req-orphan"
+
+
+def test_save_index_does_not_drop_orphan_detail_projects_after_create():
+    """Creating a new project must not rewrite index with only in-memory rows."""
+    import json
+    import tempfile
+
+    with tempfile.TemporaryDirectory() as tmp:
+        ps = ProjectStore(project_dir=tmp)
+        orphan = ps.create_project("orphan")
+        ps.update_project(orphan.id, {"result": {"translated": "vlan 20", "success": True}})
+
+        with open(ps.meta_file, "w", encoding="utf-8") as f:
+            json.dump({"projects": []}, f)
+
+        reloaded = ProjectStore(project_dir=tmp)
+        reloaded.create_project("new")
+
+        listed = {p["id"]: p for p in reloaded.list_projects()}
+        assert orphan.id in listed
+        assert listed[orphan.id]["result"]["translated"] == "vlan 20"

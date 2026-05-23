@@ -108,6 +108,26 @@ class ProjectStore:
             finally:
                 fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
+    @staticmethod
+    def _project_from_data(project_id: str, data: Dict[str, Any]) -> Project:
+        """Build a Project from persisted index/detail data."""
+        proj = Project(project_id, data.get("name", ""))
+        proj.created_at = data.get("created_at", proj.created_at)
+        proj.updated_at = data.get("updated_at", proj.created_at)
+        proj.config_text = data.get("config_text", "")
+        proj.from_vendor = data.get("from_vendor", "auto")
+        proj.to_vendor = data.get("to_vendor", "huawei")
+        proj.source_domain = data.get("source_domain", "")
+        proj.source_platform = data.get("source_platform", "")
+        proj.target_domain = data.get("target_domain", "")
+        proj.target_platform = data.get("target_platform", "")
+        proj.result = data.get("result")
+        proj.request_id = data.get("request_id") or ""
+        proj.version = data.get("version") or ""
+        proj.model = data.get("model") or ""
+        proj.history = data.get("history", [])
+        return proj
+
     def _load_index(self):
         """加载项目索引，并对历史数据进行hydration回填。"""
         self._projects.clear()
@@ -115,20 +135,7 @@ class ProjectStore:
             data = self._locked_read(self.meta_file)
             if data:
                 for p in data.get("projects", []):
-                    proj = Project(p["id"], p["name"])
-                    proj.created_at = p.get("created_at", proj.created_at)
-                    proj.updated_at = p.get("updated_at", proj.created_at)
-                    proj.config_text = p.get("config_text", "")
-                    proj.from_vendor = p.get("from_vendor", "auto")
-                    proj.to_vendor = p.get("to_vendor", "huawei")
-                    proj.source_domain = p.get("source_domain", "")
-                    proj.target_domain = p.get("target_domain", "")
-                    proj.target_platform = p.get("target_platform", "")
-                    # 基础字段：直接从index恢复
-                    proj.result = p.get("result")
-                    proj.request_id = p.get("request_id", "")
-                    proj.version = p.get("version", "")
-                    proj.model = p.get("model", "")
+                    proj = self._project_from_data(p["id"], p)
 
                     # Backfill: hydrate missing result and metadata from detail file
                     # for historical projects that predate the request_id/version/model fields.
@@ -150,6 +157,22 @@ class ProjectStore:
                             pass
 
                     self._projects[p["id"]] = proj
+
+            # Recovery: projects.json is an index, not the durable source of truth.
+            # If it is stale/truncated, recover orphan detail files so refresh and
+            # later saves do not hide or drop existing projects.
+            for detail_file in self.project_dir.glob("*.json"):
+                if detail_file.name == self.meta_file.name:
+                    continue
+                project_id = detail_file.stem
+                if project_id in self._projects:
+                    continue
+                try:
+                    detail_data = self._locked_read(detail_file)
+                    if detail_data:
+                        self._projects[project_id] = self._project_from_data(project_id, detail_data)
+                except Exception:
+                    logger.exception("Failed to recover project detail %s", project_id)
         except Exception:
             logger.exception("Failed to load project index")
         self._last_load = time.time()
@@ -187,21 +210,7 @@ class ProjectStore:
         try:
             data = self._locked_read(filepath)
             if data:
-                proj = Project(project_id, data.get("name", ""))
-                proj.created_at = data.get("created_at", proj.created_at)
-                proj.updated_at = data.get("updated_at", proj.created_at)
-                proj.config_text = data.get("config_text", "")
-                proj.from_vendor = data.get("from_vendor", "auto")
-                proj.to_vendor = data.get("to_vendor", "huawei")
-                proj.source_domain = data.get("source_domain", "")
-                proj.source_platform = data.get("source_platform", "")
-                proj.target_domain = data.get("target_domain", "")
-                proj.target_platform = data.get("target_platform", "")
-                proj.result = data.get("result")
-                proj.request_id = data.get("request_id") or ""
-                proj.version = data.get("version") or ""
-                proj.model = data.get("model") or ""
-                proj.history = data.get("history", [])
+                proj = self._project_from_data(project_id, data)
                 self._projects[project_id] = proj
                 return proj
         except Exception:

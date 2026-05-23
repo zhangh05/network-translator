@@ -510,6 +510,7 @@ async function initProjects(){
 function loadActive(){
   var p=PROJS.find(function(x){return x.id===ACTIVE});
   if(!p)return;
+  E("bm").textContent="就绪";
   E("source").value=p.config||p.config_text||"";E("cc").textContent=(p.config||p.config_text||"").length;
   E("fv").value=p.from||"auto";
   E("sd").value=p.sd||"auto";
@@ -521,11 +522,13 @@ function loadActive(){
   bannerClear();
   if(p.result){
     E("rtag").textContent=p.result.fallback_used?"规则兜底":"LLM";E("rtag").className="tag "+(p.result.fallback_used?"tag--warn":"tag--ok");
-    E("sptag").textContent=p.result.success?"通过":"告警";E("sptag").className="tag "+(p.result.success?"tag--ok":"tag--warn");
+    var st=_statusFromResult(p.result);
+    E("sptag").textContent=st.txt;E("sptag").className="tag "+st.cls;
     E("rm").textContent=E("fv").value+" \u2192 "+E("tv").value;
     bannerShow(p.result.success?"ok":"warn",p.result.success?"翻译完成":"翻译完成（有告警）");
-    if(R.request_id){E("rid").textContent=R.request_id;E("ridr").classList.remove("h");E("rvr").textContent="v"+R.version+(R.model?" \u00b7 "+R.model:"")}
-  }else{E("rtag").textContent="待命";E("rtag").className="tag tag--dim";E("sptag").textContent="-";E("sptag").className="tag tag--dim";E("rm").textContent="";E("banner").className="bn"}
+    E("cbtn").disabled=false;E("ebtn").disabled=false;
+    if(R.request_id){E("rid").textContent=R.request_id;E("ridr").classList.remove("h");E("rvr").textContent=_versionLabel(R.version,R.model)}
+  }else{E("rtag").textContent="待命";E("rtag").className="tag tag--dim";E("sptag").textContent="-";E("sptag").className="tag tag--dim";E("rm").textContent="";E("cbtn").disabled=true;E("ebtn").disabled=true;E("banner").className="bn"}
   document.querySelectorAll(".tabs button").forEach(function(t){t.classList.toggle("on",t.dataset.tab===R.tab)});
   RN()
 }
@@ -581,7 +584,7 @@ function _renderValidationTab(v){
     html+='<div class="val-sec"><div class="val-sec__hd">警告详情</div><ul class="val-list val-list--warn">'+
       warns.map(function(w){return"<li>"+esc(w)+"</li>"}).join("")+"</ul></div>";
   }
-  html+='<div class="val-raw"><button class="val-toggle" onclick="this.nextElementSibling.classList.toggle(\'h\');this.textContent=this.nextElementSibling.classList.contains(\' + "'h'" + ')?\'查看原始 JSON\':\'收起 JSON\'">查看原始 JSON</button><pre class="h">'+esc(JSON.stringify(v,null,2))+"</pre></div>";
+  html+='<details class="val-raw"><summary class="val-toggle">查看原始 JSON</summary><pre>'+esc(JSON.stringify(v,null,2))+"</pre></details>";
   html+="</div>";
   return html
 }
@@ -606,7 +609,7 @@ function _renderDiffTab(diff){
     _sec("正常厂商映射","diff--normal",normal)+
     _sec("需确认的变化","diff--confirm",confirm)+
     _sec("潜在风险","diff--risk",risk)+
-    '<div class="val-raw"><button class="val-toggle" onclick="this.nextElementSibling.classList.toggle(\' + "'h'" + '\');this.textContent=this.nextElementSibling.classList.contains(\' + "'h'" + ')?\'查看原始 diff\':\'收起 diff\'">查看原始 diff</button><pre class="h">'+esc(diff)+"</pre></div>"+
+    '<details class="val-raw"><summary class="val-toggle">查看原始 diff</summary><pre>'+esc(diff)+"</pre></details>"+
     "</div>";
 }
 
@@ -632,6 +635,46 @@ function setPhase(idx){
 function stripFence(t){
   return (t||"").replace(/^```[\w-]*\n/,'').replace(/\n```\s*$/,'').trim()
 }
+function _friendlyFeatureName(f){
+  return {vlan:"VLAN",interface:"接口",ospf:"OSPF",static_route:"静态路由",acl:"ACL",stp:"STP",vrrp:"VRRP",system:"系统配置",ntp:"NTP",snmp:"SNMP",port_channel:"链路聚合"}[f]||f||"配置项"
+}
+function _isSupportedGap(g){
+  var status=(g.status||"").toLowerCase();
+  var sev=(g.severity||"info").toLowerCase();
+  return status==="supported"&&(sev==="info"||sev==="low"||!sev)
+}
+function _visibleCapabilityGaps(gaps){
+  return (gaps||[]).filter(function(g){return !_isSupportedGap(g)})
+}
+function _isMissingAnalyzer(a){
+  return (a.status==="skipped")&&((a.notes||[]).join(" ").indexOf("No analyzer registered")!==-1)
+}
+function _actionableAnalyzers(items){
+  return (items||[]).filter(function(a){
+    if(_isMissingAnalyzer(a))return false;
+    var rl=(a.risk_level||"").toLowerCase();
+    if(a.manual_review_required)return true;
+    if(["critical","fatal","warning","high","medium"].indexOf(rl)!==-1)return true;
+    return a.status==="analyzed"&&((a.rules||[]).length>0||(a.notes||[]).length>0)
+  })
+}
+function _statusFromResult(r){
+  var v=(r&&r.validation)||{};
+  var errs=(v.errors||[]).length;
+  var warns=(v.warnings||[]).length;
+  var lv=v.level||"info";
+  var dep=v.deployable;
+  var hasFatal=(lv==="fatal"||errs>0||dep===false);
+  var hasReview=!!(v.manual_review_required||warns>0||_visibleCapabilityGaps((r&&r.capability_gaps)||[]).length>0||_actionableAnalyzers((r&&r.analyzer_results)||[]).length>0||((r&&r.risk_signals)||[]).length>0);
+  if(hasFatal)return {cls:"tag--fail",txt:"不建议上线"};
+  if(hasReview)return {cls:"tag--warn",txt:"需人工复核"};
+  return {cls:"tag--ok",txt:"可部署"}
+}
+function _versionLabel(version,model){
+  var v=version||"";
+  if(v&&v.charAt(0)!=="v")v="v"+v;
+  return v+(model?" \u00b7 "+model:"")
+}
 // ── Risk summary bar ──
 function _updateRiskSummary(r){
   var sb=E("rsum"), ss=E("rsstatus"), sc=E("rscounts");
@@ -640,8 +683,10 @@ function _updateRiskSummary(r){
   var dep=v.deployable, mrr=v.manual_review_required, lv=v.level||"info";
   var errs=(v.errors||[]).length;
   var warns=(v.warnings||[]).length;
-  var gaps=(r.capability_gaps||[]).length;
-  var ar=(r.analyzer_results||[]).length;
+  var visibleGaps=_visibleCapabilityGaps(r.capability_gaps||[]);
+  var actionableAnalyzers=_actionableAnalyzers(r.analyzer_results||[]);
+  var gaps=visibleGaps.length;
+  var ar=actionableAnalyzers.length;
   var rs=(r.risk_signals||[]).length;
   var cls,label,sublabel;
 
@@ -679,7 +724,7 @@ function _updateRiskSummary(r){
     errs > 0 ? "错误 <span class='s'>" + errs + "</span>" : "",
     warns > 0 ? "警告 <span class='s'>" + warns + "</span>" : "",
     gaps > 0 ? "能力缺口 <span class='s'>" + gaps + "</span>" : "",
-    ar > 0 ? "分析器发现 <span class='s'>" + ar + "</span>" : "",
+    ar > 0 ? "审计发现 <span class='s'>" + ar + "</span>" : "",
     rs > 0 ? "风险信号 <span class='s'>" + rs + "</span>" : "",
   ].filter(Boolean).join(" · ") || "无问题发现";
   sb.classList.remove("h")
@@ -687,7 +732,7 @@ function _updateRiskSummary(r){
 function _renderRiskTabGrouped(r){
   var v=r.validation||{};
   var errors=v.errors||[], warnings=v.warnings||[];
-  var gaps=r.capability_gaps||[];
+  var gaps=_visibleCapabilityGaps(r.capability_gaps||[]);
   var ar=r.analyzer_results||[];
   var riskSignals=r.risk_signals||[];
 
@@ -708,27 +753,40 @@ function _renderRiskTabGrouped(r){
   // Capability gaps → review or info
   gaps.forEach(function(g){
     var sv=g.severity||"info";
-    if(sv==="fatal"||sv==="critical"){fatal.push(g.suggestion||g.feature+" 能力缺口");return}
-    if(sv==="warning"||sv==="high"||sv==="medium"){review.push({msg:(g.suggestion||g.status||""),feat:g.feature});return}
-    info.push({msg:(g.suggestion||g.status||""),feat:g.feature})});
+    var msg=g.suggestion||(_friendlyFeatureName(g.feature)+" 在目标平台能力不完全一致，需确认替代实现");
+    if(sv==="fatal"||sv==="critical"){fatal.push(msg);return}
+    if(sv==="warning"||sv==="high"||sv==="medium"){review.push({msg:msg,feat:_friendlyFeatureName(g.feature)});return}
+    info.push({msg:msg,feat:_friendlyFeatureName(g.feature)})});
 
   // Analyzer results
+  var skippedAnalyzerFeatures=[];
   ar.forEach(function(a){
+    if(_isMissingAnalyzer(a)){skippedAnalyzerFeatures.push(_friendlyFeatureName(a.feature));return}
     var rl=a.risk_level||"none";
     var msg=a.summary||(a.notes&&a.notes[0])||"-";
+    if(msg==="-")msg=_friendlyFeatureName(a.feature)+" 已完成基础审计";
     if(rl==="critical"||rl==="fatal"){fatal.push(msg);return}
     if(rl==="warning"||rl==="high"){mustFix.push(msg);return}
-    if(rl==="info"||rl==="low"){review.push({msg:msg,feat:a.feature});return}
-    info.push({msg:msg,feat:a.feature})});
+    if(rl==="info"||rl==="low"){info.push({msg:msg,feat:_friendlyFeatureName(a.feature)});return}
+    info.push({msg:msg,feat:_friendlyFeatureName(a.feature)})});
+  if(skippedAnalyzerFeatures.length){
+    info.push({msg:"以下功能暂未做深度审计，建议按变更单抽查："+skippedAnalyzerFeatures.join("、"),feat:"审计覆盖"})
+  }
 
   // Risk signals
   riskSignals.forEach(function(s){
     var msg=s.message||"-";
     if(s.severity==="fatal"||s.severity==="critical"){fatal.push(msg);return}
-    if(s.severity==="warning"||s.severity==="high"){mustFix.push(msg);return}
+    if(s.severity==="warning"||s.severity==="high"){review.push({msg:msg,feat:s.feature||"General"});return}
     review.push({msg:msg,feat:s.feature||"General"})});
 
   // ── Render helpers ──────────────────────────────────────────────────
+  function _msgOf(it){return typeof it==="string"?it:(it&&it.msg)||""}
+  function _dedupe(items,exclude){
+    var seen={}, blocked={};
+    (exclude||[]).forEach(function(it){blocked[_msgOf(it)]=true});
+    return items.filter(function(it){var m=_msgOf(it);if(!m||blocked[m]||seen[m])return false;seen[m]=true;return true})
+  }
   function _item(msg,feat){
     var f=esc(feat&&feat!=="General"?feat:"");
     var m=typeof msg==="string"?esc(msg):esc(msg.msg||"-");
@@ -743,12 +801,15 @@ function _renderRiskTabGrouped(r){
       "</div></div>";
   }
 
+  var mustHandle=_dedupe(fatal.concat(mustFix));
+  review=_dedupe(review,mustHandle);
+  info=_dedupe(info,mustHandle.concat(review));
   var html='<div class="risk-root">'+
-    _section("⬆ 必须处理 — 会阻断上线","risk--fatal",fatal)+
+    _section("⬆ 必须处理 — 会阻断上线","risk--fatal",mustHandle)+
     _section("⚠ 建议复核 — 需要人工确认","risk--review",review)+
     _section("ℹ 信息提示","risk--info",info)+
     "</div>";
-  if(!fatal.length&&!review.length&&!info.length){
+  if(!mustHandle.length&&!review.length&&!info.length){
     html='<div class="empty">无风险发现，翻译结果可直接用于人工复核。</div>';
   }
   return html
@@ -818,23 +879,15 @@ async function TL(){
     R.result=res;R.tab="translated";
     document.querySelectorAll(".tabs button").forEach(function(t){t.classList.toggle("on",t.dataset.tab==="translated")});
     setPhase(4);
-    var v=R.result.validation||{};
-    var lv=v.level||"info";
-    var errs=(v.errors||[]).length;
-    var mrr=v.manual_review_required;
-    var dep=v.deployable;
-    var hasFatal=(lv==="fatal"||errs>0||dep===false);
-    var hasReview=(mrr||errs>0);
     E("rtag").textContent=R.result.fallback_used?"规则兜底":"LLM";
     E("rtag").className="tag "+(R.result.fallback_used?"tag--warn":"tag--ok");
-    var statusCls=hasFatal?"tag--fail":hasReview?"tag--warn":"tag--ok";
-    var statusTxt=hasFatal?"不建议上线":hasReview?"需人工复核":"可部署";
-    E("sptag").textContent=statusTxt;
-    E("sptag").className="tag "+statusCls;
+    var st=_statusFromResult(R.result);
+    E("sptag").textContent=st.txt;
+    E("sptag").className="tag "+st.cls;
     E("rm").textContent=E("fv").value+" \u2192 "+E("tv").value;
     E("cbtn").disabled=false;E("ebtn").disabled=false;
     // show request_id row
-    if(R.request_id){E("rid").textContent=R.request_id;E("ridr").classList.remove("h");E("rvr").textContent="v"+R.version+(R.model?" \u00b7 "+R.model:"")}
+    if(R.request_id){E("rid").textContent=R.request_id;E("ridr").classList.remove("h");E("rvr").textContent=_versionLabel(R.version,R.model)}
     RN();
     bannerShow(R.result.success?"ok":"warn",R.result.fallback_used?"已使用规则兜底":"翻译成功");
     // Reload project from server so all browsers see the same result
@@ -848,11 +901,12 @@ async function TL(){
     E("tbtn").disabled=false;E("tbtn").textContent="翻译";
     E("bwarn").classList.add("h");
     E("bt").textContent=R.t0?((Date.now()-R.t0)/1000).toFixed(1)+"s":"-";
-    E("pphase").textContent=""
+    E("pphase").textContent="";
+    E("bm").textContent="就绪"
   }
 }
 
-function CL(){R.result=null;R.request_id="";R.version="";R.model="";var p=PROJS.find(function(x){return x.id===ACTIVE});if(p){p.result=null;p.request_id="";p.version="";p.model="";saveProject(p)}E("out").innerHTML="";E("cbtn").disabled=true;E("ebtn").disabled=true;E("rtag").textContent="待命";E("rtag").className="tag tag--dim";E("sptag").textContent="-";E("sptag").className="tag tag--dim";E("rm").textContent="";E("bt").textContent="-";E("pphase").textContent="";E("ridr").classList.add("h");bannerClear();_updateRiskSummary(null);renderSidebar()}
+function CL(){R.result=null;R.request_id="";R.version="";R.model="";var p=PROJS.find(function(x){return x.id===ACTIVE});if(p){p.result=null;p.request_id="";p.version="";p.model="";saveProject(p)}E("out").innerHTML="";E("cbtn").disabled=true;E("ebtn").disabled=true;E("rtag").textContent="待命";E("rtag").className="tag tag--dim";E("sptag").textContent="-";E("sptag").className="tag tag--dim";E("rm").textContent="";E("bt").textContent="-";E("pphase").textContent="";E("bm").textContent="就绪";E("ridr").classList.add("h");bannerClear();_updateRiskSummary(null);renderSidebar()}
 
 // ── Copy dropdown ──
 function _toggleCopyMenu(e){e.stopPropagation();var m=E("cpmenu");m.classList.toggle("on")}
