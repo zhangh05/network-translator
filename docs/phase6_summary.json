@@ -6,7 +6,7 @@
     "7ee84e1 Phase 6A: Capability Baseline complete implementation",
     "2116e99 Phase 6B pre-convergence: Remove OSPF from verifiable registry (Option A)",
     "9961eaf Phase 6B: Validator capability-aware + deployable/manual_review rules + metrics",
-      "<PHASE_6C_6D_COMMIT>"
+      "92739bc Phase 6C+6D: Audit evidence + report stabilization + multi-sample integration"
   ],
   "test_results": {
     "full_regression": {
