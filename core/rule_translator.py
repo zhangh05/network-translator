@@ -258,9 +258,12 @@ class RuleBasedTranslator:
         m = re.match(r"ip route-static\s+vpn-instance\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)", stripped, re.IGNORECASE)
         if m:
             return f"ip route vrf {m.group(1)} {m.group(2)} {m.group(3)} {m.group(4)}"
-        m = re.match(r"ip route-static\s+(\S+)\s+(\S+)\s+(\S+)", stripped, re.IGNORECASE)
+        m = re.match(r"ip route-static\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+(.+))?$", stripped, re.IGNORECASE)
         if m:
-            return f"ip route {m.group(1)} {m.group(2)} {m.group(3)}"
+            route = f"ip route {m.group(1)} {m.group(2)} {m.group(3)}"
+            if m.group(4):
+                return [route, f"! MANUAL_REVIEW route options: {m.group(4)}"]
+            return route
 
         if lower.startswith("port link-type trunk"):
             return indent + "switchport mode trunk"
@@ -277,6 +280,12 @@ class RuleBasedTranslator:
             return indent + f"channel-group {m.group(2)} mode active"
         if lower.startswith("stp edged-port"):
             return indent + "spanning-tree portfast"
+        m = re.match(r"traffic-filter\s+(inbound|outbound)\s+acl(?:\s+name)?\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            return indent + f"ip access-group {m.group(2)} {self._direction_to_cisco(m.group(1))}"
+        m = re.match(r"traffic-policy\s+(\S+)\s+(inbound|outbound)", stripped, re.IGNORECASE)
+        if m:
+            return indent + f"service-policy {self._direction_to_cisco_qos(m.group(2))} {m.group(1)}"
 
         m = re.match(r"acl\s+number\s+(\S+)", stripped, re.IGNORECASE)
         if m:
@@ -288,6 +297,10 @@ class RuleBasedTranslator:
             return f"ip access-list extended {state['acl']}"
         if lower.startswith("rule ") and state.get("acl"):
             return indent + self._translate_vrp_acl_rule_to_cisco(stripped)
+
+        snmp = self._translate_huawei_snmp_to_cisco(stripped)
+        if snmp is not None:
+            return indent + snmp
 
         if from_vendor in ("huawei", "h3c"):
             return self._manual_review_comment(stripped, "cisco", indent)
@@ -389,6 +402,32 @@ class RuleBasedTranslator:
         if wildcard == "0":
             return "host " + value
         return value + " " + wildcard
+
+    def _direction_to_cisco(self, direction: str) -> str:
+        return "in" if direction.lower() == "inbound" else "out"
+
+    def _direction_to_cisco_qos(self, direction: str) -> str:
+        return "input" if direction.lower() == "inbound" else "output"
+
+    def _translate_huawei_snmp_to_cisco(self, stripped: str) -> Optional[str]:
+        lower = stripped.lower()
+        if lower == "snmp-agent trap enable":
+            return "snmp-server enable traps"
+        m = re.match(r"snmp-agent\s+trap\s+source\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            return "snmp-server trap-source " + self._normalize_interface_to_cisco(m.group(1))
+        m = re.match(
+            r"snmp-agent\s+target-host\s+trap\s+address\s+udp-domain\s+(\S+)\s+params\s+securityname\s+(\S+)\s+v3\s+privacy",
+            stripped,
+            re.IGNORECASE,
+        )
+        if m:
+            return f"snmp-server host {m.group(1)} version 3 priv {m.group(2)}"
+        if lower.startswith("snmp-agent community "):
+            return self._manual_review_comment("snmp-agent community <redacted>", "cisco")
+        if lower.startswith("snmp-agent "):
+            return self._manual_review_comment(stripped, "cisco")
+        return None
 
     def _manual_review_comment(self, stripped: str, to_vendor: str, indent: str = "") -> str:
         prefix = "!" if (to_vendor or "").lower() == "cisco" else "#"

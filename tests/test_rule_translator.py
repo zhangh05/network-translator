@@ -201,3 +201,53 @@ interface Vlanif10
     assert "description mgmt" not in executable
     assert "interface Vlan10" in executable
     assert "ip address 10.0.10.1 255.255.255.0" in executable
+
+
+def test_rule_translator_converts_huawei_interface_acl_and_policy_bindings_to_cisco():
+    result = RuleBasedTranslator().translate(
+        """interface Vlanif10
+ traffic-filter outbound acl name D-ACL-OA
+ traffic-filter inbound acl 3000
+ traffic-policy PBR-LAN-OUT inbound
+ traffic-policy SETDSCP outbound
+""",
+        from_vendor="huawei",
+        to_vendor="cisco",
+    )
+
+    assert "interface Vlan10" in result
+    assert "ip access-group D-ACL-OA out" in result
+    assert "ip access-group 3000 in" in result
+    assert "service-policy input PBR-LAN-OUT" in result
+    assert "service-policy output SETDSCP" in result
+
+
+def test_rule_translator_converts_huawei_snmp_trap_source_and_v3_hosts_to_cisco():
+    result = RuleBasedTranslator().translate(
+        """snmp-agent target-host trap address udp-domain 140.4.128.1 params securityname snmp-usagere v3 privacy
+snmp-agent trap source LoopBack0
+snmp-agent trap enable
+snmp-agent community read cipher SECRET acl 2002
+""",
+        from_vendor="huawei",
+        to_vendor="cisco",
+    )
+    executable = "\n".join(_executable_lines(result))
+
+    assert "snmp-server host 140.4.128.1 version 3 priv snmp-usagere" in result
+    assert "snmp-server trap-source Loopback0" in result
+    assert "snmp-server enable traps" in result
+    assert "snmp-agent" not in executable
+    assert "SECRET" not in executable
+    assert "! MANUAL_REVIEW unsupported source command: snmp-agent community" in result
+
+
+def test_rule_translator_preserves_static_route_preference_and_bfd_as_manual_review():
+    result = RuleBasedTranslator().translate(
+        "ip route-static 0.0.0.0 0.0.0.0 140.19.0.246 preference 2 track bfd-session to-dr002\n",
+        from_vendor="huawei",
+        to_vendor="cisco",
+    )
+
+    assert "ip route 0.0.0.0 0.0.0.0 140.19.0.246" in result
+    assert "! MANUAL_REVIEW route options: preference 2 track bfd-session to-dr002" in result
