@@ -39,6 +39,13 @@ class RuleBasedTranslator:
         if not config_text or not to_vendor:
             return ""
         if from_vendor == to_vendor:
+            for line in config_text.splitlines():
+                stripped = line.strip()
+                if not stripped or stripped in ("!", "#"):
+                    continue
+                lower = stripped.lower()
+                if re.search(r"(?<![a-zA-Z0-9_-])(nat|source-nat|destination-nat|ipsec|ike|vpn(?![\w-])|tunnel|url-filter|antivirus|av-profile|intrusion|ips|time-range)\b", lower):
+                    return self._wrap(f"# MANUAL_REVIEW {stripped}", to_vendor)
             return self._wrap(config_text.strip(), to_vendor)
 
         output: List[str] = []
@@ -84,9 +91,19 @@ class RuleBasedTranslator:
             rv = self._to_ruijie(stripped, lower, indent, from_vendor, state)
         elif to_vendor == "hillstone":
             rv = fw.translate_to_hillstone_firewall(stripped, lower, indent, from_vendor, state)
+        elif to_vendor == "topsec":
+            if from_vendor == "topsec":
+                rv = fw.translate_topsec_to_topsec(stripped, lower, indent, from_vendor, state)
+            elif from_vendor == "hillstone":
+                rv = fw.translate_hillstone_to_topsec(stripped, lower, indent, from_vendor, state)
+            else:
+                rv = fw.translate_to_topsec_manual_review(stripped, lower, indent, from_vendor)
         elif to_vendor == "huawei_usg":
-            rv = fw.translate_to_huawei_usg_firewall(stripped, lower, indent, from_vendor, state)
-        elif to_vendor in ("topsec", "dptech"):
+            if from_vendor == "topsec":
+                rv = fw.translate_topsec_to_huawei_usg(stripped, lower, indent, from_vendor, state)
+            else:
+                rv = fw.translate_to_huawei_usg_firewall(stripped, lower, indent, from_vendor, state)
+        elif to_vendor == "dptech":
             rv = fw.translate_firewall_manual_review(stripped, indent, to_vendor, from_vendor)
         else:
             rv = line

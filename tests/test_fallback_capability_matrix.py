@@ -140,11 +140,11 @@ def test_matrix_does_not_claim_service_policy_to_traffic_filter_auto_translation
 
 
 def test_matrix_firewall_future_work_not_in_auto_translate():
-    """Topsec→Huawei USG and Hillstone→Topsec address/service/policy are MANUAL_REVIEW.
+    """Capabilities that are not implemented must NOT appear in the Auto-translate table.
 
-    These must NOT appear in the Auto-translate table as if they are auto-translatable.
-    Only zone translation is auto for Topsec→Huawei USG.
-    Hillstone→Topsec is fully MANUAL_REVIEW.
+    Implemented capabilities (Topsec→Huawei USG zone/address/policy, Hillstone→Topsec
+    zone/address/policy) should appear in auto-translate.
+    Unimplemented dangerous features (NAT/IPSec/VPN/URL/AV/time-range etc.) must NOT.
     """
     text = _read_matrix()
     lines = text.splitlines()
@@ -160,12 +160,18 @@ def test_matrix_firewall_future_work_not_in_auto_translate():
 
     auto_text = "\n".join(auto_block)
 
-    assert "topsec → huawei usg" not in auto_text or \
-           ("topsec → huawei usg" in auto_text and "zone only" in auto_text), \
-        "Topsec→Huawei USG address/service/policy must not be listed as auto-translate (only zone)"
+    assert "topsec → huawei usg" in auto_text and "zone" in auto_text, \
+        "Topsec→Huawei USG zone should be in auto-translate table"
+    assert "hillstone → topsec" in auto_text and "zone" in auto_text, \
+        "Hillstone→Topsec zone should be in auto-translate table"
 
-    assert "hillstone → topsec" not in auto_text, \
-        "Hillstone→Topsec must not be listed as auto-translate (fully MANUAL_REVIEW)"
+    import re
+    assert not re.search(r"(?<![a-z])nat(?![a-z])", auto_text), \
+        "NAT should not appear in auto-translate table"
+    assert not re.search(r"(?<![a-z])ipsec(?![a-z])", auto_text), \
+        "IPSec should not appear in auto-translate table"
+    assert not re.search(r"(?<![a-z])vpn\s+(tunnel|policy|profile)", auto_text), \
+        "VPN tunnel/policy/profile should not appear in auto-translate table"
 
 
 def test_matrix_no_trailing_whitespace():

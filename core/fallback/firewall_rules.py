@@ -36,6 +36,10 @@ def prefixlen_to_netmask(prefixlen: str) -> str:
 def translate_to_hillstone_firewall(stripped: str, lower: str, indent: str, from_vendor: str, state: dict) -> Optional[Union[str, list]]:
     if re.search(r"(cipher|password)\s+\S+", lower):
         return "# MANUAL_REVIEW <redacted> (secret/cipher)"
+
+    if re.search(r"\b(add\s+interface|bind\s+interface|interface\s+bind)\b", lower):
+        return manual_review_comment(stripped, "hillstone", indent)
+
     if (from_vendor or "").lower() == "hillstone":
         return stripped
 
@@ -300,6 +304,8 @@ def translate_to_huawei_usg_firewall(stripped: str, lower: str, indent: str, fro
     m = re.match(r"object\s+address\s+(\S+)\s+(\S+)\s+(\S+)", stripped, re.IGNORECASE)
     if m:
         name, ip, mask = m.groups()
+        if re.match(r"start$", ip) or re.match(r"end$", ip):
+            return manual_review_comment(stripped, "huawei_usg")
         prefix = netmask_to_prefixlen(mask)
         return [f"ip address-set {name} type object", f" address 0 {ip} mask {prefix}"]
 
@@ -399,7 +405,146 @@ def translate_to_huawei_usg_firewall(stripped: str, lower: str, indent: str, fro
     return manual_review_comment(stripped, "huawei_usg", indent)
 
 
-def translate_firewall_manual_review(stripped: str, indent: str, to_vendor: str, from_vendor: str) -> str:
-    if (from_vendor or "").lower() == (to_vendor or "").lower():
-        return indent + stripped
-    return manual_review_comment(stripped, to_vendor, indent)
+def translate_topsec_to_huawei_usg(stripped: str, lower: str, indent: str, from_vendor: str, state: dict) -> Optional[Union[str, list]]:
+    if re.search(r"(cipher|password)\s+\S+", lower):
+        return "# MANUAL_REVIEW <redacted> (secret/cipher)"
+    if (from_vendor or "").lower() == "topsec" and (from_vendor or "").lower() == "huawei_usg":
+        return stripped
+
+    if re.search(r"\b(nat|source-nat|destination-nat|ipsec|ike|vpn|tunnel|url-filter|antivirus|av-profile|intrusion|ips|time-range|log\b|session\b|profile\b|application\b|user\b)", lower):
+        return manual_review_comment(stripped, "huawei_usg", indent)
+
+    if lower.startswith("zone name "):
+        zone_name = re.sub(r"^zone\s+name\s+", "", stripped, flags=re.IGNORECASE)
+        return f"security-zone name {zone_name}"
+
+    if lower.startswith("address name "):
+        m = re.match(r"address\s+name\s+(\S+)\s+ip\s+(\S+)\s+mask\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            name, ip, mask = m.groups()
+            return [f"ip address-set {name} type object", f" address 0 {ip} mask {mask}"]
+        return manual_review_comment(stripped, "huawei_usg", indent)
+
+    if lower.startswith("policy name "):
+        m = re.match(
+            r"policy\s+name\s+(\S+)\s+"
+            r"source-zone\s+(\S+)\s+"
+            r"destination-zone\s+(\S+)\s+"
+            r"source-address\s+(\S+)\s+"
+            r"destination-address\s+(\S+)\s+"
+            r"service\s+(\S+)\s+"
+            r"action\s+(permit|deny)",
+            stripped, re.IGNORECASE,
+        )
+        if m:
+            name, src_zone, dst_zone, src_addr, dst_addr, svc, action = m.groups()
+            return [
+                "security-policy",
+                f" rule name {name}",
+                f"  source-zone {src_zone}",
+                f"  destination-zone {dst_zone}",
+                f"  source-address {src_addr}",
+                f"  destination-address {dst_addr}",
+                f"  service {svc}",
+                f"  action {action}",
+            ]
+        if re.search(r"source-zone\s+\S+\s+destination-zone\s+\S+", lower):
+            missing = []
+            if not re.search(r"source-address\s+\S+", lower):
+                missing.append("source-address")
+            if not re.search(r"destination-address\s+\S+", lower):
+                missing.append("destination-address")
+            if not re.search(r"service\s+\S+", lower):
+                missing.append("service")
+            if not re.search(r"action\s+(permit|deny)", lower):
+                missing.append("action")
+            if missing:
+                m2 = re.match(r"policy\s+name\s+(\S+)", stripped, re.IGNORECASE)
+                polname = m2.group(1) if m2 else "UNNAMED"
+                return manual_review_comment(
+                    f"policy name={polname}: missing {', '.join(missing)} (no implicit defaults)",
+                    "huawei_usg", indent,
+                )
+    return manual_review_comment(stripped, "huawei_usg", indent)
+
+
+def translate_hillstone_to_topsec(stripped: str, lower: str, indent: str, from_vendor: str, state: dict) -> Optional[Union[str, list]]:
+    if re.search(r"(cipher|password)\s+\S+", lower):
+        return "# MANUAL_REVIEW <redacted> (secret/cipher)"
+    if (from_vendor or "").lower() == "topsec":
+        return stripped
+
+    if re.search(r"\b(nat|source-nat|destination-nat|ipsec|ike|vpn|tunnel|url-filter|antivirus|av-profile|intrusion|ips|time-range|log\b|session\b|profile\b|application\b|user\b)", lower):
+        return manual_review_comment(stripped, "topsec", indent)
+
+    if re.match(r"zone\s+(\S+)", lower):
+        m = re.match(r"zone\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            return f"zone name {m.group(1)}"
+        return manual_review_comment(stripped, "topsec", indent)
+
+    if lower.startswith("address "):
+        m = re.match(r"address\s+(\S+)\s+(\S+)\s+host", stripped, re.IGNORECASE)
+        if m:
+            name, ip = m.groups()
+            return f"address name {name} ip {ip} mask 255.255.255.255"
+        m = re.match(r"address\s+(\S+)\s+(\S+)\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            name, ip, mask = m.groups()
+            return f"address name {name} ip {ip} mask {mask}"
+        return manual_review_comment(stripped, "topsec", indent)
+
+    m = re.match(
+        r"policy\s+(?:name\s+)?(\S+)\s+"
+        r"from\s+(\S+)\s+to\s+(\S+)\s+"
+        r"(?:src|source)\s+(\S+)\s+"
+        r"(?:dst|destination)\s+(\S+)\s+"
+        r"service\s+(\S+)\s+"
+        r"action\s+(permit|deny)",
+        stripped, re.IGNORECASE,
+    )
+    if m:
+        name, src_zone, dst_zone, src_addr, dst_addr, svc, action = m.groups()
+        return (
+            f"policy name {name} "
+            f"source-zone {src_zone} destination-zone {dst_zone} "
+            f"source-address {src_addr} destination-address {dst_addr} "
+            f"service {svc} action {action}"
+        )
+
+    if re.search(r"from\s+\S+\s+to\s+\S+", lower):
+        missing = []
+        if not re.search(r"(?:src|source)\s+\S+", lower):
+            missing.append("source")
+        if not re.search(r"(?:dst|destination)\s+\S+", lower):
+            missing.append("destination")
+        if not re.search(r"service\s+\S+", lower):
+            missing.append("service")
+        if not re.search(r"action\s+(permit|deny)", lower):
+            missing.append("action")
+        if missing:
+            m2 = re.match(r"policy\s+(?:name\s+)?(\S+)", stripped, re.IGNORECASE)
+            polname = m2.group(1) if m2 else "UNNAMED"
+            return manual_review_comment(
+                f"policy name={polname}: missing {', '.join(missing)} (no implicit defaults)",
+                "topsec", indent,
+            )
+
+    return manual_review_comment(stripped, "topsec", indent)
+
+
+def translate_topsec_to_topsec(stripped: str, lower: str, indent: str, from_vendor: str, state: dict) -> Optional[Union[str, list]]:
+    if re.search(r"(cipher|password)\s+\S+", lower):
+        return "# MANUAL_REVIEW <redacted> (secret/cipher)"
+
+    if re.search(r"\b(nat|source-nat|destination-nat|ipsec|ike|vpn|tunnel|url-filter|antivirus|av-profile|intrusion|ips|time-range|log\b|session\b|profile\b|application\b|user\b)", lower):
+        return manual_review_comment(stripped, "topsec", indent)
+
+    if (from_vendor or "").lower() == "topsec":
+        return stripped
+
+    return manual_review_comment(stripped, "topsec", indent)
+
+
+def translate_to_topsec_manual_review(stripped: str, lower: str, indent: str, from_vendor: str) -> str:
+    return manual_review_comment(stripped, "topsec", indent)

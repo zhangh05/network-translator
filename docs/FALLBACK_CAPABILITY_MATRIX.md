@@ -214,52 +214,60 @@ Test file: `tests/test_rule_translator_firewall.py`, `tests/test_rule_translator
 
 ### Auto-translate
 
-| Source | Target | Feature |
-|--------|--------|---------|
-| Huawei USG | Hillstone | Zone (`security-zone name Z` → `zone Z`) |
-| Huawei USG | Hillstone | Address object (`ip address-set NAME type object` → `address NAME IP MASK`) |
-| Huawei USG | Hillstone | Service object (`ip service-set NAME type object` → `service NAME proto PORT`) |
-| Huawei USG | Hillstone | Security policy header + multi-line rule (rule name → policy, action/source/destination/service) |
-| Hillstone | Huawei USG | Zone / address / service / policy (reverse of above) |
-| Topsec → Hillstone | Zone only (address/service/policy → MANUAL_REVIEW) |
-| Topsec → Huawei USG | Zone only (address/service/policy → MANUAL_REVIEW) |
-| DPtech → Huawei USG | Zone / address / service |
-| DPtech → Hillstone | Policy with **complete fields** (`source-address` required) | policy translation |
+| Source | Target | Feature | Conditions |
+|--------|--------|---------|------------|
+| Huawei USG | Hillstone | Zone / address / service / policy | Complete multi-line security-policy block |
+| Hillstone | Huawei USG | Zone / address / service / policy | Complete flat policy with all required fields |
+| Topsec | Huawei USG | Zone | `zone name <zone>` |
+| Topsec | Huawei USG | Address object | `address name NAME ip A.B.C.D mask MMM.MMM.MMM.MMM` → `ip address-set NAME type object` + `address 0 A.B.C.D mask MMM.MMM.MMM.MMM` |
+| Topsec | Huawei USG | Policy | Only when **all 6 fields present**: source-zone, destination-zone, source-address, destination-address, service, action. Output: `security-policy` + `rule name ...` block |
+| Hillstone | Topsec | Zone | `zone <zone>` → `zone name <zone>` |
+| Hillstone | Topsec | Address object | `address NAME IP MASK` / `address NAME IP host` → `address name NAME ip IP mask MASK` |
+| Hillstone | Topsec | Policy | Only when **all required fields present**: from, to, source, destination, service, action. Output: Topsec `policy name ...` format |
+| DPtech | Huawei USG | Zone / address / policy | Complete policy with all required fields |
+| DPtech | Hillstone | Zone / policy | Complete policy with all required fields |
+| Topsec | Topsec | Passthrough | Same-vendor; non-dangerous commands pass through unchanged |
 
-### Firewall rules requiring explicit fields — NO implicit defaults
+### Firewall policy fields — NO implicit defaults
 
-All firewall policy translations require:
-- `source-zone`
-- `destination-zone`
-- `destination-address`
-- `service`
-- `action`
-- **`source-address` (required — DPtech policies without this field → MANUAL_REVIEW)**
+All firewall policy translations require explicit fields. **Implicit "any" is not permitted.**
 
-Implicit "any" is **not** permitted. Missing fields → MANUAL_REVIEW.
+Required fields per direction:
+
+| Direction | Required Fields |
+|-----------|-----------------|
+| Topsec → Huawei USG | `source-zone`, `destination-zone`, `source-address`, `destination-address`, `service`, `action` |
+| Hillstone → Topsec | `from`, `to`, `source`, `destination`, `service`, `action` |
+| DPtech → Huawei USG / Hillstone | `source-zone`, `destination-zone`, `source-address`, `destination-address`, `service`, `action` |
+
+**Missing any required field → MANUAL_REVIEW**. Output must not contain an executable policy block if fields are missing.
 
 ### MANUAL_REVIEW
 
-| Source | MANUAL_REVIEW Items |
-|--------|---------------------|
-| Huawei USG → Hillstone | Zone interface binding, address-set range, service-set source-port, multi-value source/destination/service (first value preserved, rest flagged), time-range, log, session, user, application, profile policy sub-commands |
-| Hillstone → Huawei USG | NAT, IPSec, ALG blocks |
-| Topsec → Hillstone | NAT, IPSec, ALG blocks |
-| DPtech → Huawei USG | NAT, IPSec, ALG blocks |
-| All firewall → any | Policy attributes beyond basic source/destination/service/action |
-| All → Hillstone | Zone add interface (interface binding not portable) |
-| All → Huawei USG | Zone add interface |
-| Topsec → Huawei USG | Zone (auto); address/service/policy → MANUAL_REVIEW |
-| Hillstone → Topsec | **MANUAL_REVIEW** (all features) |
-| DPtech → any | address range, NAT, IPSec, URL filter, AV profile |
+| Source | Target | MANUAL_REVIEW Items |
+|--------|--------|---------------------|
+| Huawei USG | Hillstone | Zone add interface, address-set range, service-set source-port, multi-value fields, time-range, log, session, user, application, profile sub-commands |
+| Hillstone | Huawei USG | NAT, IPSec, VPN, URL filter, AV, time-range, log, session, profile, application, user |
+| Topsec | Huawei USG | Address range/special types, service objects, policy with missing fields |
+| Topsec | Hillstone | Address range/special types, service objects, policy with missing fields |
+| Hillstone | Topsec | Service objects (if not implementable as flat service) |
+| DPtech | Huawei USG / Hillstone | NAT, IPSec, VPN, URL filter, AV, address range (`start...end`), policy with missing source-address |
+| Topsec | Topsec | Dangerous features (see below) |
+| All → Topsec (non-Topsec/Hillstone source) | Any non-Topsec/Hillstone source to Topsec | All features — Topsec-specific commands required; Huawei USG/DPtech/cisco/huawei/h3c commands cannot be auto-translated to Topsec |
+| All → Topsec | Zone add interface / bind interface | Interface binding to zone always requires manual review |
+| All → Hillstone | Zone add interface | Interface binding not portable |
+| All → Huawei USG | Zone add interface | Interface binding not portable |
+
+### Dangerous features — always MANUAL_REVIEW (all directions)
+
+`nat`, `source-nat`, `destination-nat`, `ipsec`, `ike`, `vpn`, `tunnel`, `url-filter`, `antivirus`, `av-profile`, `intrusion`, `ips`, `time-range`, `log`, `session`, `profile`, `application`, `user`
 
 ### Not Supported
 
 - Firewall policy order merging (outputs line-by-line, first-match semantics not reordered)
-- NAT overload / PAT equivalence across vendors
-- IPSec tunnel parameter mapping
+- NAT / PAT equivalence across vendors
+- IPSec / VPN tunnel parameter mapping
 - Deep policy inspection rules
-- VPN configuration (L2TP, IPsec, SSL VPN)
 - User/group-based access rules
 
 ## Test Coverage Summary
@@ -268,7 +276,7 @@ Implicit "any" is **not** permitted. Missing fields → MANUAL_REVIEW.
 |------|-------|
 | `tests/test_rule_translator.py` | SWITCH + ROUTER + FIREWALL — 19 tests |
 | `tests/test_rule_translator_firewall.py` | FIREWALL (Hillstone ↔ Huawei USG ↔ Topsec ↔ DPtech) — 28 tests |
-| `tests/test_rule_translator_firewall_objects.py` | Firewall object/policy details — 73 tests |
+| `tests/test_rule_translator_firewall_objects.py` | Firewall object/policy details — 84 tests |
 | `tests/test_safe_fallback_and_block_splitter.py` | Infrastructure (safe fallback guard, splitter) |
 | `tests/test_rule_translator_switch_multivendor.py` | SWITCH (12 direction pairs + negatives) |
 | `tests/test_rule_translator_router_multivendor.py` | ROUTER (static/OSPF/BGP/VRF multi-direction) |
@@ -276,6 +284,7 @@ Implicit "any" is **not** permitted. Missing fields → MANUAL_REVIEW.
 | `tests/test_rule_translator_acl_binding.py` | ACL and interface binding — 59 tests |
 | `tests/test_realistic_fallback_report.py` | Fallback report structure and redaction — 27 tests |
 | `tests/test_rule_translator_realistic_samples.py` | 6 end-to-end realistic samples |
+| `tests/test_fallback_capability_matrix.py` | Capability matrix — 13 tests |
 
 ## Version History
 
@@ -285,3 +294,4 @@ Implicit "any" is **not** permitted. Missing fields → MANUAL_REVIEW.
 | 2026-05-24 Batch I | Added MANAGEMENT section, ACL/QoS section, updated firewall source-path table, clarified AAA/password rules and no-implicit-any policy |
 | 2026-05-24 Batch I-B | MANAGEMENT: NTP source-interface (H3C/Ruijie), logging facility/manual_review, radius/tacacs key redaction, 37 new tests (79 total) |
 | 2026-05-24 Batch I-C | ACL/QoS: H3C→Huawei packet-filter, Cisco named ACL header, Huawei ACL rule→Cisco, object-group/manual_review guards, 32 new tests (59 total) |
+| 2026-05-25 Batch I-D | FIREWALL: Topsec→Huawei USG (zone/address/policy), Hillstone→Topsec (zone/address/policy), DPtech completeness, dangerous feature guards, address mask netmask format, Topsec routing fix (non-Topsec/Hillstone sources to Topsec → MANUAL_REVIEW), 84 firewall tests |

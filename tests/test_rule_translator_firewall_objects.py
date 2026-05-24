@@ -356,24 +356,25 @@ def test_topsec_policy_to_huawei_usg_is_manual_review():
 # Hillstone → Topsec (new cross-vendor path)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def test_hillstone_zone_to_topsec_is_manual_review():
-    """Hillstone -> Topsec zone is not yet supported; expect MANUAL_REVIEW."""
+def test_hillstone_zone_to_topsec_auto():
+    """Hillstone -> Topsec zone is auto-translated."""
     result = RuleBasedTranslator().translate(
         "zone trust\nzone untrust\n",
         from_vendor="hillstone",
         to_vendor="topsec",
     )
-    assert "MANUAL_REVIEW" in result
+    assert "zone name trust" in result
+    assert "zone name untrust" in result
 
 
-def test_hillstone_address_to_topsec_is_manual_review():
-    """Hillstone -> Topsec address object is not yet supported; expect MANUAL_REVIEW."""
+def test_hillstone_address_to_topsec_auto():
+    """Hillstone -> Topsec address object is auto-translated."""
     result = RuleBasedTranslator().translate(
         "address SRV1 192.168.1.10 255.255.255.255\n",
         from_vendor="hillstone",
         to_vendor="topsec",
     )
-    assert "MANUAL_REVIEW" in result
+    assert "address name SRV1 ip 192.168.1.10 mask 255.255.255.255" in result
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -694,4 +695,530 @@ def test_dptech_policy_action_deny_to_hillstone():
         to_vendor="hillstone",
     )
     assert "policy deny-ping" in result
+    assert "action deny" in result
+
+
+def test_no_nat_auto_translate():
+    for nat_cmd in (
+        "nat policy NAME",
+        "source-nat POLICY",
+        "destination-nat POLICY",
+        "nat pool POOL",
+    ):
+        result = RuleBasedTranslator().translate(nat_cmd + "\n", "topsec", "huawei_usg")
+        assert "MANUAL_REVIEW" in result, f"NAT should be MANUAL_REVIEW: {nat_cmd}"
+        result2 = RuleBasedTranslator().translate(nat_cmd + "\n", "hillstone", "topsec")
+        assert "MANUAL_REVIEW" in result2, f"NAT should be MANUAL_REVIEW: {nat_cmd}"
+
+
+def test_no_ipsec_auto_translate():
+    for ipsec_cmd in (
+        "ipsec tunnel TUNNEL",
+        "ike profile PROFILE",
+        "ipsec policy POLICY",
+    ):
+        result = RuleBasedTranslator().translate(ipsec_cmd + "\n", "topsec", "huawei_usg")
+        assert "MANUAL_REVIEW" in result, f"IPSec should be MANUAL_REVIEW: {ipsec_cmd}"
+        result2 = RuleBasedTranslator().translate(ipsec_cmd + "\n", "hillstone", "topsec")
+        assert "MANUAL_REVIEW" in result2, f"IPSec should be MANUAL_REVIEW: {ipsec_cmd}"
+
+
+def test_no_zone_interface_binding_auto_translate():
+    for cmd in (
+        "add interface GigabitEthernet0/0/1",
+        "zone trust add interface Vlanif10",
+    ):
+        result = RuleBasedTranslator().translate(cmd + "\n", "topsec", "huawei_usg")
+        assert "MANUAL_REVIEW" in result, f"Zone interface binding should be MANUAL_REVIEW: {cmd}"
+        result2 = RuleBasedTranslator().translate(cmd + "\n", "huawei_usg", "hillstone")
+        assert "MANUAL_REVIEW" in result2, f"Zone interface binding should be MANUAL_REVIEW: {cmd}"
+
+
+def test_no_time_range_log_application_auto_translate():
+    for cmd in (
+        "time-range WORK-HOURS",
+        "log enable",
+        "application APP-NAME",
+        "user USER-NAME",
+    ):
+        result = RuleBasedTranslator().translate(cmd + "\n", "topsec", "huawei_usg")
+        assert "MANUAL_REVIEW" in result, f"Should be MANUAL_REVIEW: {cmd}"
+        result2 = RuleBasedTranslator().translate(cmd + "\n", "hillstone", "topsec")
+        assert "MANUAL_REVIEW" in result2, f"Should be MANUAL_REVIEW: {cmd}"
+
+
+def test_topsec_zone_to_huawei_usg_auto():
+    result = RuleBasedTranslator().translate("zone name trust\n", "topsec", "huawei_usg")
+    assert "security-zone name trust" in result
+
+
+def test_topsec_address_to_huawei_usg_auto():
+    result = RuleBasedTranslator().translate(
+        "address name WEB ip 10.1.1.10 mask 255.255.255.255\n", "topsec", "huawei_usg",
+    )
+    assert "ip address-set WEB type object" in result
+    assert "10.1.1.10" in result
+    assert "address 0" in result
+
+
+def test_topsec_policy_complete_permit_to_huawei_usg_auto():
+    result = RuleBasedTranslator().translate(
+        "policy name P1 source-zone trust destination-zone untrust "
+        "source-address SRC destination-address DST service HTTPS action permit\n",
+        "topsec", "huawei_usg",
+    )
+    assert "security-policy" in result
+    assert "rule name P1" in result
+    assert "source-zone trust" in result
+    assert "destination-zone untrust" in result
+    assert "source-address SRC" in result
+    assert "destination-address DST" in result
+    assert "service HTTPS" in result
+    assert "action permit" in result
+
+
+def test_topsec_policy_complete_deny_to_huawei_usg_auto():
+    result = RuleBasedTranslator().translate(
+        "policy name P1 source-zone trust destination-zone untrust "
+        "source-address SRC destination-address DST service HTTPS action deny\n",
+        "topsec", "huawei_usg",
+    )
+    assert "security-policy" in result
+    assert "action deny" in result
+
+
+def test_topsec_policy_missing_source_address_to_huawei_usg_manual_review():
+    result = RuleBasedTranslator().translate(
+        "policy name P1 source-zone trust destination-zone untrust "
+        "destination-address DST service HTTPS action permit\n",
+        "topsec", "huawei_usg",
+    )
+    assert "MANUAL_REVIEW" in result
+    executable = "\n".join(_executable_lines(result))
+    assert "security-policy" not in executable
+
+
+def test_topsec_policy_missing_destination_address_to_huawei_usg_manual_review():
+    result = RuleBasedTranslator().translate(
+        "policy name P1 source-zone trust destination-zone untrust "
+        "source-address SRC service HTTPS action permit\n",
+        "topsec", "huawei_usg",
+    )
+    assert "MANUAL_REVIEW" in result
+
+
+def test_topsec_policy_missing_service_to_huawei_usg_manual_review():
+    result = RuleBasedTranslator().translate(
+        "policy name P1 source-zone trust destination-zone untrust "
+        "source-address SRC destination-address DST action permit\n",
+        "topsec", "huawei_usg",
+    )
+    assert "MANUAL_REVIEW" in result
+
+
+def test_topsec_policy_missing_action_to_huawei_usg_manual_review():
+    result = RuleBasedTranslator().translate(
+        "policy name P1 source-zone trust destination-zone untrust "
+        "source-address SRC destination-address DST service HTTPS\n",
+        "topsec", "huawei_usg",
+    )
+    assert "MANUAL_REVIEW" in result
+
+
+def test_hillstone_zone_to_topsec_auto():
+    result = RuleBasedTranslator().translate("zone trust\n", "hillstone", "topsec")
+    assert "zone name trust" in result
+
+
+def test_hillstone_address_mask_to_topsec_auto():
+    result = RuleBasedTranslator().translate(
+        "address WEB-SRV 10.1.1.10 255.255.255.255\n", "hillstone", "topsec",
+    )
+    assert "address name WEB-SRV ip 10.1.1.10 mask 255.255.255.255" in result
+
+
+def test_hillstone_address_host_to_topsec_auto():
+    result = RuleBasedTranslator().translate(
+        "address WEB-SRV 10.1.1.10 host\n", "hillstone", "topsec",
+    )
+    assert "address name WEB-SRV ip 10.1.1.10 mask 255.255.255.255" in result
+
+
+def test_hillstone_policy_complete_permit_to_topsec_auto():
+    result = RuleBasedTranslator().translate(
+        "policy P1 from trust to untrust source SRC destination DST service HTTPS action permit\n",
+        "hillstone", "topsec",
+    )
+    assert "policy name P1" in result
+    assert "source-zone trust" in result
+    assert "destination-zone untrust" in result
+    assert "source-address SRC" in result
+    assert "destination-address DST" in result
+    assert "service HTTPS" in result
+    assert "action permit" in result
+
+
+def test_hillstone_policy_complete_deny_to_topsec_auto():
+    result = RuleBasedTranslator().translate(
+        "policy P1 from trust to untrust source SRC destination DST service HTTPS action deny\n",
+        "hillstone", "topsec",
+    )
+    assert "action deny" in result
+
+
+def test_hillstone_policy_missing_source_to_topsec_manual_review():
+    result = RuleBasedTranslator().translate(
+        "policy P1 from trust to untrust destination DST service HTTPS action permit\n",
+        "hillstone", "topsec",
+    )
+    assert "MANUAL_REVIEW" in result
+    executable = "\n".join(_executable_lines(result))
+    assert "policy" not in executable or "MANUAL_REVIEW" in executable
+
+
+def test_hillstone_policy_missing_destination_to_topsec_manual_review():
+    result = RuleBasedTranslator().translate(
+        "policy P1 from trust to untrust source SRC service HTTPS action permit\n",
+        "hillstone", "topsec",
+    )
+    assert "MANUAL_REVIEW" in result
+
+
+def test_hillstone_policy_missing_service_to_topsec_manual_review():
+    result = RuleBasedTranslator().translate(
+        "policy P1 from trust to untrust source SRC destination DST action permit\n",
+        "hillstone", "topsec",
+    )
+    assert "MANUAL_REVIEW" in result
+
+
+def test_dptech_policy_complete_to_huawei_usg_auto():
+    result = RuleBasedTranslator().translate(
+        "security-policy name P1 source-zone trust destination-zone untrust "
+        "source-address SRC destination-address DST service HTTPS action permit\n",
+        "dptech", "huawei_usg",
+    )
+    assert "security-policy" in result
+    assert "rule name P1" in result
+    assert "action permit" in result
+
+
+def test_dptech_policy_complete_to_hillstone_auto():
+    result = RuleBasedTranslator().translate(
+        "security-policy name P1 source-zone trust destination-zone untrust "
+        "source-address SRC destination-address DST service HTTPS action permit\n",
+        "dptech", "hillstone",
+    )
+    assert "policy P1" in result
+    assert "from trust to untrust" in result
+    assert "action permit" in result
+
+
+def test_dptech_policy_missing_source_address_manual_review():
+    result = RuleBasedTranslator().translate(
+        "security-policy name P1 source-zone trust destination-zone untrust "
+        "destination-address DST service HTTPS action permit\n",
+        "dptech", "huawei_usg",
+    )
+    assert "MANUAL_REVIEW" in result
+
+
+def test_dptech_policy_missing_destination_address_manual_review():
+    result = RuleBasedTranslator().translate(
+        "security-policy name P1 source-zone trust destination-zone untrust "
+        "source-address SRC service HTTPS action permit\n",
+        "dptech", "huawei_usg",
+    )
+    assert "MANUAL_REVIEW" in result
+
+
+def test_dptech_policy_missing_service_manual_review():
+    result = RuleBasedTranslator().translate(
+        "security-policy name P1 source-zone trust destination-zone untrust "
+        "source-address SRC destination-address DST action permit\n",
+        "dptech", "huawei_usg",
+    )
+    assert "MANUAL_REVIEW" in result
+
+
+def test_dptech_address_range_manual_review():
+    result = RuleBasedTranslator().translate(
+        "object address RANGE start 10.0.0.1 end 10.0.0.10\n", "dptech", "huawei_usg",
+    )
+    assert "MANUAL_REVIEW" in result
+
+
+def test_no_dangerous_features_leak_in_manual_review_output():
+    dangerous = [
+        "nat policy NAT",
+        "ipsec tunnel TUN",
+        "url-filter URLF",
+        "antivirus AV",
+        "time-range TR",
+    ]
+    for cmd in dangerous:
+        for to_v in ("huawei_usg", "hillstone", "topsec"):
+            result = RuleBasedTranslator().translate(cmd + "\n", "topsec", to_v)
+            assert cmd.split()[0] not in result.lower() or "MANUAL_REVIEW" in result, \
+                f"Source command should not appear as executable: {cmd} → {to_v}"
+
+
+def test_policy_deny_preserved():
+    for cfg, fv, tv in [
+        ("policy name P1 source-zone trust destination-zone untrust source-address SRC destination-address DST service HTTPS action deny", "topsec", "huawei_usg"),
+        ("policy P1 from trust to untrust source SRC destination DST service HTTPS action deny", "hillstone", "topsec"),
+    ]:
+        result = RuleBasedTranslator().translate(cfg + "\n", fv, tv)
+        assert "action deny" in result
+        executable = "\n".join(_executable_lines(result))
+        assert executable == "" or "deny" in executable
+
+
+def test_topsec_policy_no_implicit_any_in_manual_review():
+    result = RuleBasedTranslator().translate(
+        "policy name P1 source-zone trust destination-zone untrust source-address SRC\n",
+        "topsec", "huawei_usg",
+    )
+    assert "MANUAL_REVIEW" in result
+    assert "any" not in result.lower() or "MANUAL_REVIEW" in result
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Blocking 1 fix: to_vendor=topsec routing — non-Topsec/Hillstone sources
+# must MANUAL_REVIEW, not output Huawei USG syntax
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_dptech_address_to_topsec_manual_review_no_usg_syntax():
+    result = RuleBasedTranslator().translate(
+        "address name WEB ip 10.1.1.10 mask 255.255.255.255\n",
+        "dptech", "topsec",
+    )
+    assert "MANUAL_REVIEW" in result
+    assert "ip address-set" not in result
+    assert "security-zone" not in result
+
+
+def test_huawei_usg_zone_to_topsec_manual_review_no_usg_syntax():
+    result = RuleBasedTranslator().translate(
+        "security-zone name trust\n",
+        "huawei_usg", "topsec",
+    )
+    assert "MANUAL_REVIEW" in result
+    assert "security-zone" not in result or "MANUAL_REVIEW" in result
+
+
+def test_huawei_usg_address_to_topsec_manual_review_no_usg_syntax():
+    result = RuleBasedTranslator().translate(
+        "ip address-set WEB type object\n address 0 10.1.1.10 mask 32\n",
+        "huawei_usg", "topsec",
+    )
+    assert "MANUAL_REVIEW" in result
+    executable = "\n".join(_executable_lines(result))
+    assert "ip address-set" not in executable
+
+
+def test_huawei_usg_security_policy_to_topsec_manual_review_no_usg_syntax():
+    result = RuleBasedTranslator().translate(
+        "security-policy name P1 source-zone trust destination-zone untrust "
+        "source-address SRC destination-address DST service HTTPS action permit\n",
+        "huawei_usg", "topsec",
+    )
+    assert "MANUAL_REVIEW" in result
+    assert "security-policy" not in result or "MANUAL_REVIEW" in result
+
+
+def test_cisco_acl_to_topsec_manual_review():
+    result = RuleBasedTranslator().translate(
+        "ip access-list extended ACL01\n",
+        "cisco", "topsec",
+    )
+    assert "MANUAL_REVIEW" in result
+    assert "security-zone" not in result
+
+
+def test_huawei_vrp_to_topsec_manual_review():
+    result = RuleBasedTranslator().translate(
+        "acl number 3000\n",
+        "huawei", "topsec",
+    )
+    assert "MANUAL_REVIEW" in result
+
+
+def test_h3c_to_topsec_manual_review():
+    result = RuleBasedTranslator().translate(
+        "acl number 3000\n",
+        "h3c", "topsec",
+    )
+    assert "MANUAL_REVIEW" in result
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Topsec→Huawei USG address: netmask format (not prefixlen)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_topsec_address_to_huawei_usg_uses_netmask():
+    result = RuleBasedTranslator().translate(
+        "address name WEB ip 10.1.1.10 mask 255.255.255.255\n",
+        "topsec", "huawei_usg",
+    )
+    assert "ip address-set WEB type object" in result
+    assert "255.255.255.255" in result
+    assert "mask 32" not in result
+
+
+def test_topsec_address_to_huawei_usg_slash24():
+    result = RuleBasedTranslator().translate(
+        "address name LAN ip 192.168.1.0 mask 255.255.255.0\n",
+        "topsec", "huawei_usg",
+    )
+    assert "255.255.255.0" in result
+    assert "mask 24" not in result
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Topsec→Huawei USG complete policy: no implicit any
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_topsec_policy_complete_permit_to_huawei_usg_no_any():
+    result = RuleBasedTranslator().translate(
+        "policy name P1 source-zone trust destination-zone untrust "
+        "source-address SRC destination-address DST service HTTPS action permit\n",
+        "topsec", "huawei_usg",
+    )
+    assert "security-policy" in result
+    assert "rule name P1" in result
+    executable = "\n".join(_executable_lines(result))
+    assert "any" not in executable.lower()
+
+
+def test_topsec_policy_complete_deny_to_huawei_usg_no_any():
+    result = RuleBasedTranslator().translate(
+        "policy name P1 source-zone trust destination-zone untrust "
+        "source-address SRC destination-address DST service HTTPS action deny\n",
+        "topsec", "huawei_usg",
+    )
+    assert "action deny" in result
+    executable = "\n".join(_executable_lines(result))
+    assert "any" not in executable.lower()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Hillstone→Topsec complete policy: no implicit any
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_hillstone_policy_complete_permit_to_topsec_no_any():
+    result = RuleBasedTranslator().translate(
+        "policy P1 from trust to untrust source SRC destination DST service HTTPS action permit\n",
+        "hillstone", "topsec",
+    )
+    assert "policy name P1" in result
+    assert "action permit" in result
+    executable = "\n".join(_executable_lines(result))
+    assert "any" not in executable.lower()
+
+
+def test_hillstone_policy_complete_deny_to_topsec_no_any():
+    result = RuleBasedTranslator().translate(
+        "policy P1 from trust to untrust source SRC destination DST service HTTPS action deny\n",
+        "hillstone", "topsec",
+    )
+    assert "action deny" in result
+    executable = "\n".join(_executable_lines(result))
+    assert "any" not in executable.lower()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Missing-field policies: no executable policy block in output
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_topsec_policy_missing_source_zone_no_executable_policy():
+    result = RuleBasedTranslator().translate(
+        "policy name P1 destination-zone untrust "
+        "source-address SRC destination-address DST service HTTPS action permit\n",
+        "topsec", "huawei_usg",
+    )
+    assert "MANUAL_REVIEW" in result
+    executable = "\n".join(_executable_lines(result))
+    assert "security-policy" not in executable
+
+
+def test_hillstone_policy_missing_service_no_executable_policy():
+    result = RuleBasedTranslator().translate(
+        "policy P1 from trust to untrust source SRC destination DST action permit\n",
+        "hillstone", "topsec",
+    )
+    assert "MANUAL_REVIEW" in result
+    executable = "\n".join(_executable_lines(result))
+    assert "policy" not in executable or "MANUAL_REVIEW" in executable
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Topsec→Huawei USG zone/address/policy auto-translate summary
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_topsec_zone_to_huawei_usg_auto():
+    result = RuleBasedTranslator().translate("zone name trust\n", "topsec", "huawei_usg")
+    assert "security-zone name trust" in result
+
+
+def test_topsec_address_netmask_to_huawei_usg():
+    result = RuleBasedTranslator().translate(
+        "address name WEB ip 10.1.1.10 mask 255.255.255.255\n",
+        "topsec", "huawei_usg",
+    )
+    assert "ip address-set WEB type object" in result
+    assert "10.1.1.10" in result
+    assert "address 0" in result
+
+
+def test_topsec_policy_permit_to_huawei_usg_auto():
+    result = RuleBasedTranslator().translate(
+        "policy name P1 source-zone trust destination-zone untrust "
+        "source-address SRC destination-address DST service HTTPS action permit\n",
+        "topsec", "huawei_usg",
+    )
+    assert "security-policy" in result
+    assert "rule name P1" in result
+    assert "source-zone trust" in result
+    assert "destination-zone untrust" in result
+    assert "action permit" in result
+
+
+def test_topsec_policy_deny_to_huawei_usg_auto():
+    result = RuleBasedTranslator().translate(
+        "policy name P1 source-zone trust destination-zone untrust "
+        "source-address SRC destination-address DST service HTTPS action deny\n",
+        "topsec", "huawei_usg",
+    )
+    assert "action deny" in result
+
+
+def test_hillstone_zone_to_topsec_auto():
+    result = RuleBasedTranslator().translate("zone trust\n", "hillstone", "topsec")
+    assert "zone name trust" in result
+
+
+def test_hillstone_address_mask_to_topsec_auto():
+    result = RuleBasedTranslator().translate(
+        "address WEB-SRV 10.1.1.10 255.255.255.255\n", "hillstone", "topsec",
+    )
+    assert "address name WEB-SRV ip 10.1.1.10 mask 255.255.255.255" in result
+
+
+def test_hillstone_policy_permit_to_topsec_auto():
+    result = RuleBasedTranslator().translate(
+        "policy P1 from trust to untrust source SRC destination DST service HTTPS action permit\n",
+        "hillstone", "topsec",
+    )
+    assert "policy name P1" in result
+    assert "source-zone trust" in result
+    assert "destination-zone untrust" in result
+    assert "action permit" in result
+
+
+def test_hillstone_policy_deny_to_topsec_auto():
+    result = RuleBasedTranslator().translate(
+        "policy P1 from trust to untrust source SRC destination DST service HTTPS action deny\n",
+        "hillstone", "topsec",
+    )
     assert "action deny" in result
