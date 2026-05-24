@@ -242,7 +242,12 @@ def translate_to_huawei_usg_firewall(stripped: str, lower: str, indent: str, fro
     if (from_vendor or "").lower() == "huawei_usg":
         return stripped
 
-    # Zone (Hillstone, DPtech)
+    # Topsec zone (zone name <zone>)
+    m = re.match(r"zone\s+name\s+(\S+)", stripped, re.IGNORECASE)
+    if m:
+        return f"security-zone name {m.group(1)}"
+
+    # Zone (Hillstone, DPtech plain zone <zone>)
     m = re.match(r"zone\s+(\S+)", stripped, re.IGNORECASE)
     if m:
         return f"security-zone name {m.group(1)}"
