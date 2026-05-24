@@ -1548,6 +1548,12 @@ class FallbackNode(Node):
         if summary:
             parts = [f"{feature}:{count}" for feature, count in sorted(summary.items())]
             lines.append(f"{prefix} feature_summary={', '.join(parts)}")
+        deterministic = RuleBasedTranslator().translate(config_text, from_vendor, to_vendor)
+        deterministic_body = extract_config_block(deterministic).strip()
+        if deterministic_body:
+            lines.append(f"{prefix} BEGIN_DETERMINISTIC_FALLBACK")
+            lines.extend(deterministic_body.splitlines())
+            lines.append(f"{prefix} END_DETERMINISTIC_FALLBACK")
         lines.append(f"{prefix} next_step=请按下列 block 逐项人工复核或补齐对应 parser/renderer 规则。")
         for index, block in enumerate(blocks, start=1):
             lines.append(

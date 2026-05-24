@@ -169,3 +169,34 @@ interface Vlanif10
     assert "traffic classifier" not in executable
     assert "local-user" not in executable
     assert "interface Vlanif10" not in executable
+
+
+def test_safe_fallback_emits_deterministic_translation_for_known_huawei_blocks():
+    state = State()
+    state.set("from_vendor", "huawei")
+    state.set("to_vendor", "cisco")
+    state.set("translate_error", "LLM 输出校验失败: 第 0 项不是对象")
+    state.set(
+        "config_text",
+        """sysname HW-SW
+vlan batch 10 20
+interface Vlanif10
+ ip address 10.0.10.1 255.255.255.0
+ip route-static 0.0.0.0 0.0.0.0 10.0.10.254
+traffic classifier TC operator and
+ if-match acl 3000
+""",
+    )
+
+    FallbackNode().execute(state)
+    translated = state.get("translated_config")
+    executable = "\n".join(_executable_lines(translated))
+
+    assert "hostname HW-SW" in executable
+    assert "vlan 10,20" in executable
+    assert "interface Vlan10" in executable
+    assert "ip address 10.0.10.1 255.255.255.0" in executable
+    assert "ip route 0.0.0.0 0.0.0.0 10.0.10.254" in executable
+    assert "! MANUAL_REVIEW unsupported source command: traffic classifier" in translated
+    assert "traffic classifier TC" not in executable
+    assert "if-match acl" not in executable

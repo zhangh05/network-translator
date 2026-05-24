@@ -208,13 +208,26 @@ class RuleBasedTranslator:
             return "hostname " + stripped.split(maxsplit=1)[1]
         if lower.startswith("hostname "):
             return stripped
+        if lower.startswith("vlan batch "):
+            state["unsupported_interface"] = False
+            return "vlan " + self._normalize_vlan_list_cisco(stripped.split(maxsplit=2)[2])
+        if re.match(r"^vlan\s+\d+", lower):
+            state["unsupported_interface"] = False
+            return "vlan " + self._normalize_vlan_list_cisco(stripped.split(maxsplit=1)[1])
         if lower.startswith("interface "):
             name = stripped.split(maxsplit=1)[1]
-            if name.lower().startswith("xgigabitethernet"):
-                name = "GigabitEthernet" + name[len("XGigabitEthernet") :]
+            name = self._normalize_interface_to_cisco(name)
+            if name is None:
+                state["unsupported_interface"] = True
+                return self._manual_review_comment(stripped, "cisco", indent)
+            state["unsupported_interface"] = False
             return f"interface {name}"
+        if state.get("unsupported_interface") and indent:
+            return self._manual_review_comment(stripped, "cisco", indent)
         if lower.startswith("description "):
             return indent + stripped
+        if lower.startswith("ip address ") and lower.endswith(" sub"):
+            return indent + stripped[:-4] + " secondary"
         if lower.startswith("ip address "):
             return indent + stripped
         if lower == "undo shutdown":
@@ -242,7 +255,10 @@ class RuleBasedTranslator:
             return f" neighbor {m.group(1)} remote-as {m.group(2)}"
         if lower.startswith("ipv4-family unicast"):
             return None
-        m = re.match(r"ip route-static\s+(\S+)\s+(\S+)\s+(\S+)", lower)
+        m = re.match(r"ip route-static\s+vpn-instance\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            return f"ip route vrf {m.group(1)} {m.group(2)} {m.group(3)} {m.group(4)}"
+        m = re.match(r"ip route-static\s+(\S+)\s+(\S+)\s+(\S+)", stripped, re.IGNORECASE)
         if m:
             return f"ip route {m.group(1)} {m.group(2)} {m.group(3)}"
 
@@ -255,47 +271,125 @@ class RuleBasedTranslator:
             return indent + "switchport access vlan " + self._normalize_vlan_list(m.group(1))
         m = re.match(r"port trunk (allow-pass|permit) vlan\s+(.+)", lower)
         if m:
-            return indent + "switchport trunk allowed vlan " + self._normalize_vlan_list(m.group(2))
+            return indent + "switchport trunk allowed vlan " + self._normalize_vlan_list_cisco(m.group(2))
+        m = re.match(r"(eth-trunk|port link-aggregation group)\s+(\d+)", lower)
+        if m:
+            return indent + f"channel-group {m.group(2)} mode active"
         if lower.startswith("stp edged-port"):
             return indent + "spanning-tree portfast"
 
-        if lower.startswith("acl number "):
-            state["acl"] = lower.split()[-1]
-            return None
-        m = re.match(r"rule\s+(permit|deny)\s+(\S+)\s+source\s+(.+)$", lower)
-        if m and state.get("acl"):
-            action, protocol, rest = m.groups()
-            tokens = rest.split()
-            src = tokens[0] if tokens else "any"
-            idx = 1
-            src_wc = None
-            if src != "any" and len(tokens) > idx:
-                src_wc = tokens[idx]
-                idx += 1
-            if len(tokens) > idx and tokens[idx] == "destination":
-                idx += 1
-            dst = tokens[idx] if len(tokens) > idx else "any"
-            idx += 1
-            dst_wc = None
-            if dst != "any" and len(tokens) > idx:
-                dst_wc = tokens[idx]
-                idx += 1
-            port = None
-            if "destination-port" in tokens:
-                p = tokens.index("destination-port")
-                if len(tokens) > p + 2 and tokens[p + 1] == "eq":
-                    port = tokens[p + 2]
-            parts = [f"access-list {state['acl']} {action} {protocol}", src]
-            if src_wc:
-                parts.append(src_wc)
-            parts.append(dst)
-            if dst_wc:
-                parts.append(dst_wc)
-            if port:
-                parts.extend(["eq", port])
-            return " ".join(parts)
+        m = re.match(r"acl\s+number\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            state["acl"] = m.group(1)
+            return f"ip access-list extended {state['acl']}"
+        m = re.match(r"acl\s+name\s+(\S+)(?:\s+\S+)?", stripped, re.IGNORECASE)
+        if m:
+            state["acl"] = m.group(1)
+            return f"ip access-list extended {state['acl']}"
+        if lower.startswith("rule ") and state.get("acl"):
+            return indent + self._translate_vrp_acl_rule_to_cisco(stripped)
 
-        return indent + stripped if from_vendor in ("huawei", "h3c") else stripped
+        if from_vendor in ("huawei", "h3c"):
+            return self._manual_review_comment(stripped, "cisco", indent)
+        return stripped
 
     def _normalize_vlan_list(self, value: str) -> str:
         return value.replace(",", " ")
+
+    def _normalize_vlan_list_cisco(self, value: str) -> str:
+        normalized = re.sub(r"(?i)\b(\d+)\s+to\s+(\d+)\b", r"\1-\2", value)
+        return ",".join(part for part in re.split(r"[\s,]+", normalized.strip()) if part)
+
+    def _normalize_interface_to_cisco(self, name: str) -> str:
+        normalized = re.sub(r"(?i)^Vlan-interface(\d+)$", r"Vlan\1", name)
+        normalized = re.sub(r"(?i)^Vlanif(\d+)$", r"Vlan\1", normalized)
+        normalized = re.sub(r"(?i)^Bridge-Aggregation(\d+)$", r"Port-channel\1", normalized)
+        normalized = re.sub(r"(?i)^Eth-Trunk(\d+)$", r"Port-channel\1", normalized)
+        normalized = re.sub(r"(?i)^XGigabitEthernet", "GigabitEthernet", normalized)
+        normalized = re.sub(r"(?i)^LoopBack(\d+)$", r"Loopback\1", normalized)
+        normalized = re.sub(r"(?i)^NULL(\d+)$", r"Null\1", normalized)
+        if re.match(r"(?i)^MEth", normalized):
+            return None
+        return normalized
+
+    def _translate_vrp_acl_rule_to_cisco(self, stripped: str) -> str:
+        tokens = stripped.split()
+        if not tokens or tokens[0].lower() != "rule":
+            return self._manual_review_comment(stripped, "cisco")
+        tokens = tokens[1:]
+
+        sequence = None
+        if tokens and tokens[0].isdigit():
+            sequence = tokens.pop(0)
+        if not tokens:
+            return self._manual_review_comment(stripped, "cisco")
+
+        action = tokens.pop(0).lower()
+        protocol = "ip"
+        if tokens and tokens[0].lower() not in ("source", "destination", "time-range", "vpn-instance"):
+            protocol = tokens.pop(0).lower()
+
+        source, source_wc = "any", None
+        destination, destination_wc = "any", None
+        destination_port = None
+
+        idx = 0
+        while idx < len(tokens):
+            key = tokens[idx].lower()
+            if key == "source" and idx + 1 < len(tokens):
+                source = tokens[idx + 1]
+                idx += 2
+                if source.lower() != "any" and idx < len(tokens) and not self._is_acl_keyword(tokens[idx]):
+                    source_wc = tokens[idx]
+                    idx += 1
+                continue
+            if key == "destination" and idx + 1 < len(tokens):
+                destination = tokens[idx + 1]
+                idx += 2
+                if destination.lower() != "any" and idx < len(tokens) and not self._is_acl_keyword(tokens[idx]):
+                    destination_wc = tokens[idx]
+                    idx += 1
+                continue
+            if key in ("destination-port", "source-port") and idx + 2 < len(tokens):
+                if tokens[idx + 1].lower() == "eq":
+                    destination_port = tokens[idx + 2]
+                idx += 3
+                continue
+            idx += 1
+
+        parts = []
+        if sequence is not None:
+            parts.append(sequence)
+        parts.extend([
+            action,
+            protocol,
+            self._format_cisco_acl_endpoint(source, source_wc),
+            self._format_cisco_acl_endpoint(destination, destination_wc),
+        ])
+        if destination_port:
+            parts.extend(["eq", destination_port])
+        return " ".join(parts)
+
+    def _is_acl_keyword(self, token: str) -> bool:
+        return token.lower() in {
+            "source",
+            "destination",
+            "source-port",
+            "destination-port",
+            "time-range",
+            "vpn-instance",
+            "logging",
+        }
+
+    def _format_cisco_acl_endpoint(self, value: str, wildcard: Optional[str]) -> str:
+        if not value or value.lower() == "any":
+            return "any"
+        if wildcard in (None, ""):
+            return value
+        if wildcard == "0":
+            return "host " + value
+        return value + " " + wildcard
+
+    def _manual_review_comment(self, stripped: str, to_vendor: str, indent: str = "") -> str:
+        prefix = "!" if (to_vendor or "").lower() == "cisco" else "#"
+        return indent + f"{prefix} MANUAL_REVIEW unsupported source command: {stripped}"

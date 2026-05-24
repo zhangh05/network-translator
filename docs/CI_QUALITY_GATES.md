@@ -33,7 +33,7 @@ git push origin ci-validation-test
 
 # 3. Expected outcomes for a passing run:
 #    - core-gate: PASS (0 failures in 524 core tests)
-#    - full-gate: PASS (Layer 1 PASS + Layer 2: 15 tolerated failures, 0 regressions)
+#    - full-gate: PASS (Layer 1 PASS + Layer 2: 14 tolerated failures, 0 regressions)
 
 Both jobs run in parallel after checkout + dependency install.
 
@@ -70,7 +70,7 @@ If a non-core test file is already known to fail, its failures are tracked in th
 
 ### Pre-existing Failures
 
-As of 2026-05-23, these 13 tests are known to fail in this development environment.
+As of 2026-05-24, these 14 failures are tolerated in this development environment.
 They are tolerated by Layer 2 and do not block CI.
 
 | # | Test | Root Cause |
@@ -79,20 +79,18 @@ They are tolerated by Layer 2 and do not block CI.
 | 8–9 | `test_contract_project_translate_log.py::test_project_translate_*` | Requires `flask` runtime — not installed in dev env |
 | 10–11 | `test_readyz_production.py::test_readyz_reports_*` | Requires `flask` to import `web_app` |
 | 12–13 | `test_v9_stability.py::test_llm_retry*` / `test_llm_max_retries*` | Requires `requests` for HTTP retry mocking |
-| 14 | `test_h3c_to_cisco.py::test_rule_translator_basic` | **Temporary tolerated** — untracked frozen test; H3C→Cisco rules are legacy fallback not in Beta cleanup scope |
-| 15 | `test_packaging_production.py::test_web_app_direct_run_default_port_matches_service` | **Temporary tolerated** — untracked frozen test; direct-run port (5000) vs service.sh default (5008) calibration needed |
+| 14 | `test_packaging_production.py::test_web_app_direct_run_default_port_matches_service` | **Temporary tolerated** — direct-run port (5000) vs service.sh default (5008) calibration needed |
 
 In GitHub Actions (where `flask` and `requests` are installed), items 8–13 may pass.
 The pre-existing list remains valid either way — tolerated entries that pass are simply absent from the failure set.
 
 ### Temporary Tolerated Items
 
-Items 14–15 are **temporary** — they exist in untracked frozen test files and will be resolved during a future reconciliation pass:
+Item 14 is **temporary** and will be resolved during a future packaging reconciliation pass:
 
 | # | Test | Resolution Condition |
 |---|------|---------------------|
-| 14 | `test_h3c_to_cisco.py::test_rule_translator_basic` | H3C→Cisco rules are legacy fallback. Fix the failing assertion or move the test to a clearly deprecated section |
-| 15 | `test_packaging_production.py::test_web_app_direct_run_default_port_matches_service` | Calibrate `web_app.py` direct-run port with `service.sh` default (5000 vs 5008) during next packaging reconciliation |
+| 14 | `test_packaging_production.py::test_web_app_direct_run_default_port_matches_service` | Calibrate `web_app.py` direct-run port with `service.sh` default (5000 vs 5008) during next packaging reconciliation |
 
 ## How to Detect Regression Locally
 
@@ -120,7 +118,7 @@ PYTHONPATH=. python3 scripts/ci_quality_gates.py --full --json ci-report.json
 
 ```
 Layer 1: 524 passed, 20 skipped in 0.88s  → PASS (zero-tolerance, no failures)
-Layer 2: 15 failed, 525 passed, 3 skipped in 1.68s  → PASS (all 15 failures in pre-existing list, 0 regressions)
+Layer 2: 14 failed, 583 passed, 4 skipped in 1.76s  → PASS (all 14 failures in pre-existing list, 0 regressions)
 ```
 
 ## Sample Run Output
@@ -133,12 +131,11 @@ Running Layer 1 (core) — 28 files, zero-tolerance...
 
 Running Layer 2 (extended) — 42 files, regression-tolerant...
   *** GATE PASS: no regressions ***
-  Pre-existing (15 known, tolerated):
+  Pre-existing (14 known, tolerated):
     (known) tests/test_analyzer_object.py::test_registry_has_address_object_analyzer
     (known) tests/test_analyzer_object.py::test_registry_has_service_object_analyzer
     (known) tests/test_analyzer_object.py::test_registry_...
-    ... (15 total)
-    (temporary) tests/test_h3c_to_cisco.py::test_rule_translator_basic
+    ... (14 total)
     (temporary) tests/test_packaging_production.py::test_web_app_direct_run_default_port_matches_service
 
 JSON report written to ci-report.json
@@ -171,9 +168,9 @@ When a new pre-existing failure is discovered (e.g., new deprecation):
         │  Layer 2 — Extended (42 files)    │
         │  Regression-check vs pre-existing │
         │                                   │
-        │  Pre-existing (15 tests)          │
+        │  Pre-existing (14 tests)          │
         │  Known failures, tolerated        │
-        │  (2 temporary — see notes below)  │
+        │  (1 temporary — see notes below)  │
         └─────────────────────────────────┘
 ```
 
@@ -183,8 +180,8 @@ The pre-existing failure list (`PREEXISTING_FAILURES` in `scripts/ci_quality_gat
 
 | Environment | Deps Available | Pre-existing List Size | Expected Matches | Strategy |
 |-------------|---------------|----------------------|------------------|----------|
-| Local dev | no flask/requests | 15 entries | 15 failures tolerated | Superset list covers all scenarios |
-| GitHub Actions | flask+requests via pip install | 15 entries | ~7 failures (test_analyzer_object only) | Extra entries (flask/requests) pass in CI — simply absent from actual failure set |
+| Local dev | no flask/requests | 14 entries | 14 failures tolerated | Superset list covers all scenarios |
+| GitHub Actions | flask+requests via pip install | 14 entries | ~7 failures (test_analyzer_object only) | Extra entries (flask/requests) pass in CI — simply absent from actual failure set |
 
 **Why this works safely:**
 
@@ -212,7 +209,7 @@ For security: API keys are **never logged in plain text** — only `***` or `(no
 
 The same `scripts/ci_quality_gates.py` script is used in both environments.
 The only difference is available dependencies:
-- **Local dev**: may lack `flask`, `requests` → pre-existing list includes 13 entries
+- **Local dev**: may lack `flask`, `requests` → pre-existing list includes 14 tolerated entries
 - **GitHub Actions**: `pip install -r requirements.txt` runs first, so `flask` and `requests` are available → pre-existing list effectively contains 7 entries (the `test_analyzer_object` ones only)
 
 This is consistent because:
