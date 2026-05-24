@@ -281,6 +281,17 @@ def translate_h3c_packet_filter_to_huawei(
     return None
 
 
+def translate_huawei_traffic_filter_to_h3c(
+    stripped: str, lower: str, indent: str, from_vendor: str
+) -> Optional[str]:
+    if from_vendor.lower() not in ("huawei",):
+        return None
+    m = re.match(r"traffic-filter\s+(inbound|outbound)\s+acl(?:\s+name)?\s+(\S+)", stripped, re.IGNORECASE)
+    if m:
+        return indent + f"packet-filter {m.group(2)} {m.group(1)}"
+    return None
+
+
 def translate_cisco_named_acl_header_to_huawei(stripped: str) -> Optional[str]:
     m = re.match(r"ip\s+access-list\s+(extended|standard)\s+(\S+)", stripped, re.IGNORECASE)
     if m:

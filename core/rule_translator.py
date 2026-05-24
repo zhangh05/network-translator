@@ -220,7 +220,7 @@ class RuleBasedTranslator:
         rv = acl.translate_cisco_numbered_acl(stripped)
         if rv is not None:
             if "object-group" in lower:
-                return indent + manual_review_comment(stripped, "huawei", indent)
+                return indent + manual_review_comment(stripped, "cisco", indent)
             return rv
 
         rv = sw.translate_to_cisco_switch(stripped, lower, indent, from_vendor, state)
@@ -385,6 +385,10 @@ class RuleBasedTranslator:
             return rv
 
         rv = mgmt.translate_snmp_to_h3c(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = acl.translate_huawei_traffic_filter_to_h3c(stripped, lower, indent, from_vendor)
         if rv is not None:
             return rv
 

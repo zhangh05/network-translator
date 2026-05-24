@@ -503,3 +503,36 @@ def test_no_time_range_leaks_to_cisco_output():
     result = RuleBasedTranslator().translate("rule 5 permit ip source any destination any time-range WORK-HOURS\n", "huawei", "cisco")
     executable = "\n".join(_executable_lines(result))
     assert "time-range" not in executable.lower()
+
+
+def test_huawei_traffic_filter_inbound_to_h3c():
+    result = RuleBasedTranslator().translate(
+        "interface GigabitEthernet0/0/1\n traffic-filter inbound acl 3000\n",
+        "huawei", "h3c",
+    )
+    assert "packet-filter 3000 inbound" in result
+
+
+def test_huawei_traffic_filter_outbound_to_h3c():
+    result = RuleBasedTranslator().translate(
+        "interface GigabitEthernet0/0/1\n traffic-filter outbound acl 3000\n",
+        "huawei", "h3c",
+    )
+    assert "packet-filter 3000 outbound" in result
+
+
+def test_huawei_traffic_filter_to_h3c_no_cisco_syntax():
+    result = RuleBasedTranslator().translate(
+        "interface GigabitEthernet0/0/1\n traffic-filter inbound acl 3000\n",
+        "huawei", "h3c",
+    )
+    executable = "\n".join(_executable_lines(result))
+    assert "ip access-group" not in executable
+
+
+def test_cisco_object_group_to_huawei_uses_cisco_prefix():
+    result = RuleBasedTranslator().translate(
+        "access-list 101 permit tcp any object-group WEB-SERVERS eq 80\n",
+        "huawei", "cisco",
+    )
+    assert "! MANUAL_REVIEW" in result

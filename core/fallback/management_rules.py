@@ -89,20 +89,18 @@ def translate_ntp_to_huawei(stripped: str, lower: str, indent: str, from_vendor:
     """Cisco/Ruijie NTP → Huawei NTP."""
     if from_vendor.lower() == "huawei":
         return None
-    m = re.match(r"ntp server vrf (\S+) (\S+)", lower)
-    if m:
-        return [f"ntp-service unicast-server {m.group(2)} vrf {m.group(1)}"]
-    m = re.match(r"ntp server (\S+)", lower)
-    if m:
-        if re.search(r"\b(key|authenticate|trusted-key)\b", lower):
+    if lower.startswith("ntp server vrf ") or lower.startswith("ntp server ") or lower.startswith("ntp source-interface ") or lower.startswith("ntp "):
+        if re.search(r"\b(vrf|vpn-instance|key|authenticate|trusted-key)\b", lower):
             return indent + manual_review_comment(stripped, "huawei", indent)
-        return [f"ntp-service unicast-server {m.group(1)}"]
-    m = re.match(r"ntp source-interface (\S+)", lower)
-    if m:
-        iface = _normalize_interface_to_huawei(m.group(1))
-        return [f"ntp-service source-interface {iface}"]
-    if lower.startswith("ntp "):
-        return indent + manual_review_comment(stripped, "huawei", indent)
+        m = re.match(r"ntp server (\S+)", lower)
+        if m:
+            return [f"ntp-service unicast-server {m.group(1)}"]
+        m = re.match(r"ntp source-interface (\S+)", lower)
+        if m:
+            iface = _normalize_interface_to_huawei(m.group(1))
+            return [f"ntp-service source-interface {iface}"]
+        if lower.startswith("ntp "):
+            return indent + manual_review_comment(stripped, "huawei", indent)
     return None
 
 
@@ -110,23 +108,20 @@ def translate_ntp_to_cisco(stripped: str, lower: str, indent: str, from_vendor: 
     """Huawei/Ruijie NTP → Cisco NTP."""
     if from_vendor.lower() == "cisco":
         return None
-    m = re.match(r"ntp-service unicast-server (\S+) vrf (\S+)", lower)
-    if m:
-        return [
-            f"ntp server {m.group(1)}",
-            f"! MANUAL_REVIEW NTP vrf {m.group(2)} not supported in flat Cisco NTP model",
-        ]
-    m = re.match(r"ntp-service unicast-server (\S+)", lower)
-    if m:
-        return [f"ntp server {m.group(1)}"]
-    m = re.match(r"ntp-service source-interface (\S+)", lower)
-    if m:
-        iface = _normalize_interface_to_cisco(m.group(1))
-        if iface:
-            return [f"ntp source-interface {iface}"]
-        return indent + manual_review_comment(stripped, "cisco", indent)
-    if lower.startswith("ntp ") and not lower.startswith("ntp server"):
-        return indent + manual_review_comment(stripped, "cisco", indent)
+    if lower.startswith("ntp-service ") or lower.startswith("ntp "):
+        if re.search(r"\b(vrf|vpn-instance)\b", lower):
+            return indent + manual_review_comment(stripped, "cisco", indent)
+        m = re.match(r"ntp-service unicast-server (\S+)", lower)
+        if m:
+            return [f"ntp server {m.group(1)}"]
+        m = re.match(r"ntp-service source-interface (\S+)", lower)
+        if m:
+            iface = _normalize_interface_to_cisco(m.group(1))
+            if iface:
+                return [f"ntp source-interface {iface}"]
+            return indent + manual_review_comment(stripped, "cisco", indent)
+        if lower.startswith("ntp ") or lower.startswith("ntp-service "):
+            return indent + manual_review_comment(stripped, "cisco", indent)
     return None
 
 

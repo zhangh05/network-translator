@@ -103,7 +103,10 @@ Test file: `tests/test_rule_translator_acl_binding.py`
 | `rule N permit udp source S D destination Dst` | all | Auto |
 | `access-list N permit ip S D` (Cisco) | Huawei/H3C | Auto |
 | `access-list N permit tcp S D Dst dst-port eq PORT` | Huawei/H3C | Auto |
-| `ip access-group NAME in` / `out` | Huawei/H3C | `traffic-filter inbound acl NAME` / `outbound acl NAME` |
+| `ip access-group NAME in` / `out` | Huawei | `traffic-filter inbound acl NAME` / `outbound acl NAME` |
+| `ip access-group NAME in` / `out` | H3C | `packet-filter NAME inbound` / `outbound` |
+| `traffic-filter inbound acl NAME` (Huawei) | H3C | `packet-filter NAME inbound` |
+| `traffic-filter outbound acl NAME` (Huawei) | H3C | `packet-filter NAME outbound` |
 | `packet-filter NUM inbound` / `outbound` (H3C) | Huawei | `traffic-filter inbound acl NUM` / `outbound acl NUM` |
 
 ### MANUAL_REVIEW: ACL rules

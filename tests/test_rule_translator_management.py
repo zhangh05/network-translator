@@ -56,20 +56,23 @@ def test_cisco_ntp_server_to_huawei():
     assert "ntp-service unicast-server 10.0.0.1" in result
 
 
-def test_cisco_ntp_server_with_vrf_to_huawei():
+def test_cisco_ntp_server_with_vrf_to_huawei_manual_review():
     result = RuleBasedTranslator().translate("ntp server vrf MGMT 10.0.0.2\n", "cisco", "huawei")
-    assert "ntp-service unicast-server 10.0.0.2 vrf mgmt" in result
+    assert "MANUAL_REVIEW" in result
+    executable = "\n".join(_executable_lines(result))
+    assert "ntp-service unicast-server 10.0.0.2 vrf" not in executable
+
+
+def test_huawei_ntp_vrf_to_cisco_manual_review():
+    result = RuleBasedTranslator().translate("ntp-service unicast-server 10.0.0.1 vrf MGMT\n", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in result
+    executable = "\n".join(_executable_lines(result))
+    assert executable == "" or "ntp server" not in executable
 
 
 def test_huawei_ntp_to_cisco():
     result = RuleBasedTranslator().translate("ntp-service unicast-server 10.0.0.1\n", "huawei", "cisco")
     assert "ntp server 10.0.0.1" in result
-
-
-def test_huawei_ntp_vrf_to_cisco_becomes_manual_review():
-    result = RuleBasedTranslator().translate("ntp-service unicast-server 10.0.0.1 vrf MGMT\n", "huawei", "cisco")
-    assert "ntp server 10.0.0.1" in result
-    assert "MANUAL_REVIEW" in result
 
 
 def test_cisco_ntp_source_interface_to_huawei():
