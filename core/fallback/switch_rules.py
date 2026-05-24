@@ -80,6 +80,16 @@ def translate_to_huawei_switch(stripped: str, lower: str, indent: str, from_vend
         return indent + stripped
     if lower.startswith("undo "):
         return indent + stripped
+    if re.match(r"stp\s+(?:instance\s+\d+|mode\s+|priority\s+\d+|bpdu-protection|root-protection|bpduguard)", lower):
+        return indent + manual_review_comment(stripped, "huawei", indent)
+    if lower.startswith("loopdetect"):
+        return indent + manual_review_comment(stripped, "huawei", indent)
+    if lower.startswith("mad "):
+        return indent + manual_review_comment(stripped, "huawei", indent)
+    if lower.startswith("mode lacp"):
+        return indent + stripped
+    if re.match(r"port trunk pvid vlan", lower):
+        return indent + manual_review_comment(stripped, "huawei", indent)
     return None
 
 
@@ -176,6 +186,16 @@ def translate_to_cisco_switch(stripped: str, lower: str, indent: str, from_vendo
         return indent + f"channel-group {m.group(1)} mode active"
     if lower.startswith("stp edged-port"):
         return indent + "spanning-tree portfast"
+    if re.match(r"stp\s+(?:instance\s+\d+|mode\s+\S+|priority\s+\d+|bpdu-protection|root-protection|bpduguard)", lower):
+        return manual_review_comment(stripped, "cisco", indent)
+    if lower.startswith("loopdetect"):
+        return manual_review_comment(stripped, "cisco", indent)
+    if lower.startswith("mad "):
+        return manual_review_comment(stripped, "cisco", indent)
+    if lower.startswith("mode lacp"):
+        return manual_review_comment(stripped, "cisco", indent)
+    if re.match(r"port trunk pvid vlan", lower):
+        return manual_review_comment(stripped, "cisco", indent)
     if lower.startswith("undo "):
         return manual_review_comment(stripped, "cisco", indent)
     return None
@@ -279,24 +299,25 @@ def translate_to_ruijie_switch(stripped: str, lower: str, indent: str, from_vend
         return indent + "switchport mode trunk"
     if lower.startswith("port link-type access"):
         return indent + "switchport mode access"
-    m = re.match(r"port trunk (allow-pass|permit) vlan\s+(.+)", stripped, re.IGNORECASE)
-    if m:
-        return indent + "switchport trunk allowed vlan " + normalize_vlan_list_cisco(m.group(2))
-    m = re.match(r"port default vlan\s+(.+)", stripped, re.IGNORECASE)
-    if m:
-        return indent + "switchport access vlan " + normalize_vlan_list_cisco(m.group(1))
-    m = re.match(r"(eth-trunk|port link-aggregation group|bridge-aggregation)\s+(\d+)", stripped, re.IGNORECASE)
-    if m:
+    if re.match(r"port trunk (allow-pass|permit) vlan\s+(.+)", stripped, re.IGNORECASE):
+        vlans = re.match(r"port trunk (?:allow-pass|permit) vlan\s+(.+)", stripped, re.IGNORECASE).group(1)
+        return indent + "switchport trunk allowed vlan " + normalize_vlan_list_cisco(vlans)
+    if re.match(r"port default vlan\s+(.+)", stripped, re.IGNORECASE):
+        vlan = re.match(r"port default vlan\s+(.+)", stripped, re.IGNORECASE).group(1)
+        return indent + "switchport access vlan " + normalize_vlan_list_cisco(vlan)
+    if lower in ("stp edged-port", "stp edged-port enable"):
+        return indent + "spanning-tree portfast"
+    if lower.startswith("spanning-tree "):
+        if lower in ("spanning-tree portfast",):
+            return indent + "spanning-tree portfast"
+        return indent + manual_review_comment(stripped, "ruijie", indent)
+    if re.match(r"(channel-group|eth-trunk|port-group|bridge-aggregation)\s+(\d+)(?:\s+mode\s+\S+)?", stripped, re.IGNORECASE):
+        m = re.match(r"(channel-group|eth-trunk|port-group|bridge-aggregation)\s+(\d+)", stripped, re.IGNORECASE)
         return indent + f"port-group {m.group(2)} mode active"
-    m = re.match(r"channel-group\s+(\d+)(?:\s+mode\s+\S+)?", stripped, re.IGNORECASE)
-    if m:
-        return indent + f"port-group {m.group(1)} mode active"
-    if lower in ("spanning-tree portfast", "stp edged-port"):
-        return indent + "spanning-tree portfast"
-    if lower.startswith("stp edged-port enable"):
-        return indent + "spanning-tree portfast"
     if lower.startswith("switchport "):
         return indent + stripped
     if lower.startswith("undo "):
+        if from_vendor in ("huawei", "h3c"):
+            return indent + manual_review_comment(stripped, "ruijie", indent)
         return indent + stripped
     return None

@@ -365,3 +365,259 @@ def test_huawei_undo_portswitch_to_cisco_no_switchport():
     exec_lines = _executable_lines(r)
     assert any(line == "no switchport" for line in exec_lines), exec_lines
     assert not any("undo portswitch" in line for line in exec_lines), exec_lines
+
+
+# ── Batch F: VLAN batch/range/single + SVI + trunk/access + LAG + STP + MAD + LACP + QoS ──
+
+def test_vlan_batch_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("vlan batch 10 to 20", "huawei", "cisco")
+    assert "vlan 10,20" in r or "vlan 10" in r
+    _check_no_source_residue(r, HUAWEI_KW)
+
+
+def test_vlan_comma_list_h3c_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("vlan 10,20,30", "h3c", "cisco")
+    assert "vlan 10" in r
+    _check_no_source_residue(r, H3C_KW)
+
+
+def test_vlan_hyphen_range_h3c_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("vlan 10-20", "h3c", "cisco")
+    assert "vlan 10-20" in r
+    _check_no_source_residue(r, H3C_KW)
+
+
+def test_svi_secondary_ip_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate(
+        "interface Vlanif10\n ip address 1.1.1.1 255.255.255.0 sub\n",
+        "huawei", "cisco",
+    )
+    assert "interface Vlan10" in r
+    assert "secondary" in r
+    assert "sub" not in r
+
+
+def test_svi_interface_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("interface Vlanif10\n ip address 1.1.1.1 255.255.255.0\n", "huawei", "cisco")
+    assert "interface Vlan10" in r
+    assert "ip address 1.1.1.1" in r
+
+
+def test_svi_vlan_interface_h3c_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("interface Vlan-interface10\n ip address 1.1.1.1 255.255.255.0\n", "h3c", "cisco")
+    assert "interface Vlan10" in r
+
+
+def test_trunk_allow_pass_vlan_range_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate(
+        "interface GigabitEthernet0/0/1\n port link-type trunk\n port trunk allow-pass vlan 2 to 4094\n",
+        "huawei", "cisco",
+    )
+    assert "switchport mode trunk" in r
+    assert "switchport trunk allowed vlan" in r
+
+
+def test_trunk_allow_pass_vlan_list_huawei_to_ruijie():
+    t = RuleBasedTranslator()
+    r = t.translate(
+        "interface GigabitEthernet0/0/1\n port trunk allow-pass vlan 10 20 30\n",
+        "huawei", "ruijie",
+    )
+    assert "switchport trunk allowed vlan" in r
+
+
+def test_access_port_default_vlan_huawei_to_ruijie():
+    t = RuleBasedTranslator()
+    r = t.translate(
+        "interface GigabitEthernet0/0/1\n port default vlan 100\n",
+        "huawei", "ruijie",
+    )
+    assert "switchport access vlan 100" in r
+
+
+def test_eth_trunk_member_cisco_to_huawei():
+    t = RuleBasedTranslator()
+    r = t.translate(
+        "interface GigabitEthernet0/0/1\n channel-group 1 mode active\n",
+        "cisco", "huawei",
+    )
+    assert "eth-trunk 1" in r
+    _check_no_source_residue(r, CISCO_KW)
+
+
+def test_eth_trunk_member_huawei_to_h3c():
+    t = RuleBasedTranslator()
+    r = t.translate(
+        "interface GigabitEthernet0/0/1\n eth-trunk 1\n",
+        "huawei", "h3c",
+    )
+    assert "port link-aggregation group 1" in r
+
+
+def test_eth_trunk_member_huawei_to_ruijie():
+    t = RuleBasedTranslator()
+    r = t.translate(
+        "interface GigabitEthernet0/0/1\n eth-trunk 1\n",
+        "huawei", "ruijie",
+    )
+    assert "port-group 1 mode active" in r
+
+
+def test_mode_lacp_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("interface Eth-Trunk1\n mode lacp\n", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+    assert "mode lacp" not in r.lower() or "MANUAL_REVIEW" in r
+
+
+def test_stp_instance_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("stp instance 0 root primary", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+    _check_no_source_residue(r, HUAWEI_KW)
+
+
+def test_stp_mode_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("stp mode mstp", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_stp_priority_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("stp priority 4096", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_stp_bpdu_protection_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("stp bpdu-protection", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_loopdetect_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("loopdetect enable", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_mad_detect_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("mad detect mode direct", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_trust_dscp_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("trust dscp", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_traffic_classifier_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("traffic classifier PBR-LAN-OUT operator or", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_traffic_behavior_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("traffic behavior PBR-LAN-OUT\n redirect ip-nexthop 1.1.1.1\n", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_traffic_policy_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("traffic policy PBR-LAN-OUT match-order config", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_stp_edged_port_huawei_to_ruijie():
+    t = RuleBasedTranslator()
+    r = t.translate("stp edged-port enable", "huawei", "ruijie")
+    assert "spanning-tree portfast" in r
+    _check_no_source_residue(r, HUAWEI_KW)
+
+
+def test_interface_range_huawei_to_ruijie():
+    t = RuleBasedTranslator()
+    r = t.translate(
+        "interface range GigabitEthernet0/0/1-4\n switchport mode access\n",
+        "huawei", "ruijie",
+    )
+    assert "interface range GigabitEthernet0/0/1-4" in r
+    assert "switchport mode access" in r
+
+
+def test_port_default_vlan_huawei_to_h3c():
+    t = RuleBasedTranslator()
+    r = t.translate(
+        "interface GigabitEthernet0/0/1\n port default vlan 100\n",
+        "huawei", "h3c",
+    )
+    assert "port default vlan 100" in r
+
+
+def test_port_trunk_pvid_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("port trunk pvid vlan 10", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_native_vlan_trunk_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("port trunk pvid vlan 10", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_undo_portswitch_huawei_to_ruijie_manual_review():
+    t = RuleBasedTranslator()
+    r = t.translate("undo portswitch", "huawei", "ruijie")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_undo_portswitch_huawei_to_h3c_passthrough():
+    t = RuleBasedTranslator()
+    r = t.translate("undo portswitch", "huawei", "h3c")
+    assert "undo portswitch" in r
+    assert "MANUAL_REVIEW" not in r
+
+
+def test_undo_portswitch_huawei_to_huawei_passthrough():
+    t = RuleBasedTranslator()
+    r = t.translate("undo portswitch", "huawei", "huawei")
+    assert "undo portswitch" in r
+    assert "MANUAL_REVIEW" not in r
+
+
+def test_eth_trunk_interface_with_mode_lacp_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate(
+        "interface Eth-Trunk1\n port link-type trunk\n port trunk allow-pass vlan 10 20\n mode lacp\n",
+        "huawei", "cisco",
+    )
+    assert "interface Port-channel1" in r
+    assert "switchport mode trunk" in r
+    assert "switchport trunk allowed vlan" in r
+
+
+def test_sysname_preserved_huawei_to_huawei():
+    t = RuleBasedTranslator()
+    r = t.translate("sysname SW-CORE", "huawei", "huawei")
+    assert "sysname SW-CORE" in r
+
+
+def test_trunk_vlan_2_to_4094_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate(
+        "interface GigabitEthernet0/0/1\n port link-type trunk\n port trunk allow-pass vlan 2 to 4094\n",
+        "huawei", "cisco",
+    )
+    assert "switchport mode trunk" in r
+    assert "switchport trunk allowed vlan" in r
