@@ -318,7 +318,8 @@ security-policy
     )
     executable = "\n".join(_executable_lines(result))
 
-    assert "# MANUAL_REVIEW unsupported source command: security-zone name trust" in result
+    assert "zone trust" in result
+    assert "policy allow-http from trust to untrust" in result
     assert "security-zone" not in executable
     assert "security-policy" not in executable
     assert "source-zone" not in executable

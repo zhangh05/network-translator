@@ -2,7 +2,7 @@
 """Deterministic rule-based fallback translator for common network commands."""
 
 import re
-from typing import List, Optional
+from typing import List, Optional, Union
 
 
 class RuleBasedTranslator:
@@ -55,7 +55,11 @@ class RuleBasedTranslator:
             return self._to_cisco(stripped, lower, indent, from_vendor, state)
         if to_vendor == "ruijie":
             return self._to_ruijie(stripped, lower, indent, from_vendor, state)
-        if to_vendor in ("hillstone", "topsec", "dptech", "huawei_usg"):
+        if to_vendor == "hillstone":
+            return self._to_hillstone_firewall(stripped, lower, indent, from_vendor, state)
+        if to_vendor == "huawei_usg":
+            return self._to_huawei_usg_firewall(stripped, lower, indent, from_vendor, state)
+        if to_vendor in ("topsec", "dptech"):
             return self._to_firewall_manual_review(stripped, indent, to_vendor, from_vendor)
         return line
 
@@ -532,6 +536,256 @@ class RuleBasedTranslator:
         if (from_vendor or "").lower() == (to_vendor or "").lower():
             return indent + stripped
         return self._manual_review_comment(stripped, to_vendor, indent)
+
+    def _to_hillstone_firewall(self, stripped: str, lower: str, indent: str, from_vendor: str, state: dict) -> Optional[Union[str, list]]:
+        # Redact secrets
+        if re.search(r"(cipher|password)\s+\S+", lower):
+            return "# MANUAL_REVIEW <redacted> (secret/cipher)"
+        if (from_vendor or "").lower() == "hillstone":
+            return stripped
+
+        # Flush pending Huawei USG security-policy multi-line block
+        secpol = state.get("_secpol")
+        if secpol is not None:
+            if indent:
+                m = re.match(r"rule\s+name\s+(\S+)", stripped, re.IGNORECASE)
+                if m:
+                    secpol["name"] = m.group(1)
+                    return None
+                for key, pat in (
+                    ("src_zone", r"source-zone\s+(\S+)"),
+                    ("dst_zone", r"destination-zone\s+(\S+)"),
+                    ("src_addr", r"source-address\s+(\S+)"),
+                    ("dst_addr", r"destination-address\s+(\S+)"),
+                    ("service", r"service\s+(\S+)"),
+                ):
+                    m = re.match(pat, stripped, re.IGNORECASE)
+                    if m:
+                        secpol[key] = m.group(1)
+                        return None
+                m = re.match(r"action\s+(permit|deny)", stripped, re.IGNORECASE)
+                if m:
+                    secpol["action"] = m.group(1)
+                    state["_secpol"] = None
+                    name = secpol.get("name", "UNNAMED")
+                    src_zone = secpol.get("src_zone", "any")
+                    dst_zone = secpol.get("dst_zone", "any")
+                    src_addr = secpol.get("src_addr", "any")
+                    dst_addr = secpol.get("dst_addr", "any")
+                    svc = secpol.get("service", "any")
+                    action = secpol.get("action", "permit")
+                    return f"policy {name} from {src_zone} to {dst_zone} source {src_addr} destination {dst_addr} service {svc} action {action}"
+                return None
+            else:
+                state["_secpol"] = None
+                return self._manual_review_comment(
+                    f"security-policy name={secpol.get('name', 'UNKNOWN')} (incomplete, no action)", "hillstone"
+                )
+
+        # Huawei USG zone
+        m = re.match(r"security-zone\s+name\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            state["_last_zone"] = m.group(1)
+            return f"zone {m.group(1)}"
+
+        if indent and state.get("_last_zone"):
+            m = re.match(r"add\s+interface\s+(\S+)", stripped, re.IGNORECASE)
+            if m:
+                return None
+            state["_last_zone"] = None
+
+        # Topsec zone
+        m = re.match(r"zone\s+name\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            state["_last_zone"] = m.group(1)
+            return f"zone {m.group(1)}"
+
+        # Plain zone (Hillstone/DPtech passthrough)
+        m = re.match(r"zone\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            state["_last_zone"] = m.group(1)
+            return stripped
+
+        # Huawei USG address object (multi-line)
+        m = re.match(r"ip\s+address-set\s+(\S+)\s+type\s+object", stripped, re.IGNORECASE)
+        if m:
+            state["_addr_set"] = m.group(1)
+            return None
+
+        m = re.match(r"address\s+(\d+)\s+(\S+)\s+mask\s+(\d+)", stripped, re.IGNORECASE)
+        if state.get("_addr_set") and m:
+            name = state.pop("_addr_set")
+            ip = m.group(2)
+            mask = self._prefixlen_to_netmask(m.group(3))
+            return f"address {name} {ip} {mask}"
+
+        # Topsec address object
+        m = re.match(r"address\s+name\s+(\S+)\s+ip\s+(\S+)\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            return f"address {m.group(1)} {m.group(2)} {m.group(3)}"
+
+        # DPtech address object
+        m = re.match(r"object\s+address\s+(\S+)\s+(\S+)\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            return f"address {m.group(1)} {m.group(2)} {m.group(3)}"
+
+        # Hillstone address object (passthrough)
+        m = re.match(r"address\s+(\S+)\s+(\S+)\s+(\S+)", lower)
+        if m and from_vendor == "hillstone":
+            return stripped
+
+        # Huawei USG service object (multi-line)
+        m = re.match(r"ip\s+service-set\s+(\S+)\s+type\s+object", stripped, re.IGNORECASE)
+        if m:
+            state["_svc_set"] = m.group(1)
+            return None
+
+        m = re.match(r"service\s+(\d+)\s+protocol\s+(\S+)\s+destination-port\s+(\S+)", stripped, re.IGNORECASE)
+        if state.get("_svc_set") and m:
+            name = state.pop("_svc_set")
+            proto = m.group(2)
+            port = m.group(3)
+            return f"service {name} {proto} dst-port {port}"
+
+        # Hillstone service object (passthrough)
+        m = re.match(r"service\s+(\S+)\s+(\S+)\s+dst-port\s+(\S+)", lower)
+        if m and from_vendor == "hillstone":
+            return stripped
+
+        # Flat policy (Hillstone, Topsec)
+        m = re.match(
+            r"policy\s+(?:name\s+)?(\S+)\s+from\s+(\S+)\s+to\s+(\S+)\s+(?:src|source)\s+(\S+)\s+(?:dst|destination)\s+(\S+)\s+service\s+(\S+)\s+action\s+(permit|deny)",
+            stripped,
+            re.IGNORECASE,
+        )
+        if m:
+            name, src_zone, dst_zone, src_addr, dst_addr, svc, action = m.groups()
+            return [f"policy {name} from {src_zone} to {dst_zone} source {src_addr} destination {dst_addr} service {svc} action {action}",
+                    f"# MANUAL_REVIEW service {svc}: verify Hillstone service object definition"]
+
+        # Huawei USG security-policy header
+        if lower.startswith("security-policy") and not lower.startswith("security-policy name"):
+            state["_secpol"] = {}
+            return None
+
+        return self._manual_review_comment(stripped, "hillstone", indent)
+
+    def _to_huawei_usg_firewall(self, stripped: str, lower: str, indent: str, from_vendor: str, state: dict) -> Optional[Union[str, list]]:
+        if re.search(r"(cipher|password)\s+\S+", lower):
+            return "# MANUAL_REVIEW <redacted> (secret/cipher)"
+        if (from_vendor or "").lower() == "huawei_usg":
+            return stripped
+
+        # Zone (Hillstone, DPtech)
+        m = re.match(r"zone\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            return f"security-zone name {m.group(1)}"
+
+        # Huawei USG zone (passthrough)
+        m = re.match(r"security-zone\s+name\s+(\S+)", lower)
+        if m and from_vendor == "huawei_usg":
+            return stripped
+
+        # Address object (Hillstone flat -> Huawei USG multi-line)
+        m = re.match(r"address\s+(\S+)\s+(\S+)\s+(\S+)", stripped, re.IGNORECASE)
+        if m and from_vendor == "hillstone":
+            name, ip, mask = m.groups()
+            prefix = self._netmask_to_prefixlen(mask)
+            return [f"ip address-set {name} type object", f" address 0 {ip} mask {prefix}"]
+
+        # Address object (DPtech -> Huawei USG multi-line)
+        m = re.match(r"object\s+address\s+(\S+)\s+(\S+)\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            name, ip, mask = m.groups()
+            prefix = self._netmask_to_prefixlen(mask)
+            return [f"ip address-set {name} type object", f" address 0 {ip} mask {prefix}"]
+
+        # Huawei USG address object multi-line (passthrough)
+        m = re.match(r"ip\s+address-set\s+(\S+)\s+type\s+object", stripped, re.IGNORECASE)
+        if m:
+            state["_addr_set"] = m.group(1)
+            return None
+
+        m = re.match(r"address\s+(\d+)\s+(\S+)\s+mask\s+(\d+)", stripped, re.IGNORECASE)
+        if state.get("_addr_set") and m:
+            state.pop("_addr_set")
+            return stripped
+
+        # Service object (Hillstone flat -> Huawei USG multi-line)
+        m = re.match(r"service\s+(\S+)\s+(\S+)\s+dst-port\s+(\S+)", stripped, re.IGNORECASE)
+        if m and from_vendor == "hillstone":
+            name, proto, port = m.groups()
+            return [f"ip service-set {name} type object", f" service 0 protocol {proto} destination-port {port}"]
+
+        # Huawei USG service object multi-line (passthrough)
+        m = re.match(r"ip\s+service-set\s+(\S+)\s+type\s+object", stripped, re.IGNORECASE)
+        if m:
+            state["_svc_set"] = m.group(1)
+            return None
+
+        m = re.match(r"service\s+(\d+)\s+protocol\s+(\S+)\s+destination-port\s+(\S+)", stripped, re.IGNORECASE)
+        if state.get("_svc_set") and m:
+            state.pop("_svc_set")
+            return stripped
+
+        # Policy (Hillstone flat -> Huawei USG multi-line)
+        m = re.match(
+            r"policy\s+(\S+)\s+from\s+(\S+)\s+to\s+(\S+)\s+source\s+(\S+)\s+destination\s+(\S+)\s+service\s+(\S+)\s+action\s+(permit|deny)",
+            stripped,
+            re.IGNORECASE,
+        )
+        if m:
+            name, src_zone, dst_zone, src_addr, dst_addr, svc, action = m.groups()
+            return [
+                "security-policy",
+                f" rule name {name}",
+                f"  source-zone {src_zone}",
+                f"  destination-zone {dst_zone}",
+                f"  destination-address {dst_addr}",
+                f"  service {svc}",
+                f"  action {action}",
+            ]
+
+        # Policy (DPtech single-line -> Huawei USG multi-line)
+        m = re.match(
+            r"security-policy\s+name\s+(\S+)\s+source-zone\s+(\S+)\s+destination-zone\s+(\S+)\s+destination-address\s+(\S+)\s+service\s+(\S+)\s+action\s+(permit|deny)",
+            stripped,
+            re.IGNORECASE,
+        )
+        if m:
+            name, src_zone, dst_zone, dst_addr, svc, action = m.groups()
+            return [
+                "security-policy",
+                f" rule name {name}",
+                f"  source-zone {src_zone}",
+                f"  destination-zone {dst_zone}",
+                f"  destination-address {dst_addr}",
+                f"  service {svc}",
+                f"  action {action}",
+            ]
+
+        return self._manual_review_comment(stripped, "huawei_usg", indent)
+
+    def _prefixlen_to_netmask(self, prefixlen: str) -> str:
+        try:
+            n = int(prefixlen)
+            if n < 0 or n > 32:
+                return prefixlen
+            mask = ((1 << n) - 1) << (32 - n) if n > 0 else 0
+            return ".".join(str((mask >> (24 - i * 8)) & 0xFF) for i in range(4))
+        except (ValueError, TypeError):
+            return str(prefixlen)
+
+    def _netmask_to_prefixlen(self, netmask: str) -> str:
+        parts = netmask.split(".")
+        if len(parts) != 4:
+            return netmask
+        try:
+            binary = "".join(f"{int(p):08b}" for p in parts)
+            cnt = binary.count("1")
+            return str(cnt)
+        except (ValueError, TypeError):
+            return netmask
 
     def _manual_review_comment(self, stripped: str, to_vendor: str, indent: str = "") -> str:
         prefix = "!" if (to_vendor or "").lower() in ("cisco", "ruijie") else "#"
