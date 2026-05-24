@@ -21,3 +21,16 @@ def test_web_app_direct_run_default_port_matches_service():
     web_app = (Path(__file__).resolve().parent.parent / "web_app.py").read_text(encoding="utf-8")
 
     assert 'get_int_setting("PORT", 5008' in web_app
+
+
+def test_web_app_direct_run_default_host_is_all_interfaces():
+    web_app = (Path(__file__).resolve().parent.parent / "web_app.py").read_text(encoding="utf-8")
+
+    assert 'get_str_setting("HOST", "0.0.0.0"' in web_app
+    assert "app.run(host=host, port=port" in web_app
+
+
+def test_web_app_direct_run_does_not_hardcode_localhost_only():
+    web_app = (Path(__file__).resolve().parent.parent / "web_app.py").read_text(encoding="utf-8")
+
+    assert 'app.run(host="127.0.0.1"' not in web_app

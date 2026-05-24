@@ -24,7 +24,12 @@
 ./scripts/clean_runtime_artifacts.sh
 ```
 
-**Port**: 5000 (configurable via `PORT` env variable)
+**Listen address**: `0.0.0.0:5008` by default.
+
+- Local access: `http://127.0.0.1:5008`
+- LAN access: `http://<this-mac-ip>:5008`
+- Local-only mode: `HOST=127.0.0.1 ./scripts/service.sh start`
+- Trusted intranet deployments can leave `HOST=0.0.0.0`; set `API_SECRET` if the service is exposed beyond a trusted network.
 
 ## Running Tests
 
@@ -106,6 +111,9 @@ Field mapping:
 - API keys are **never printed in logs** — only `***` or `(not set)` is shown
 - The external settings file (`/Users/zhangh01/Desktop/codex_net_trans/llm_settings.txt`) should NOT be committed to source control
 - Use `llm_settings.mask_api_key()` to safely display any key value
+- The web service listens on `0.0.0.0` by default for intranet access; use `HOST=127.0.0.1` when you only want local access
+- If exposing the service outside a trusted intranet, set `API_SECRET` and put it behind an authenticated reverse proxy
+- Do not add any download/static route for `llm_settings.txt`, `llmsetting.json`, or other secret files
 
 ### Testing the Configuration
 
@@ -117,7 +125,8 @@ print(f"API key (safe): {mask_api_key(cfg['api_key'])}")  # prints ***
 print(f"Model: {cfg['model']}")   # safe to print
 print(f"Base URL: {cfg['base_url']}")  # safe to print
 ```
-| `PORT` | No | `5000` | Web server port |
+| `PORT` | No | `5008` | Web server port |
+| `HOST` | No | `0.0.0.0` | Web server listen address; use `127.0.0.1` for local-only access |
 | `FLASK_DEBUG` | No | — | Enable Flask debug mode |
 
 ## Directory Layout
@@ -153,29 +162,29 @@ As of 2026-05-23:
 
 ### Check service health
 ```bash
-curl --noproxy '*' http://localhost:5000/healthz
+curl --noproxy '*' http://localhost:5008/healthz
 ```
 
 ### Check readiness
 ```bash
-curl --noproxy '*' http://localhost:5000/readyz
+curl --noproxy '*' http://localhost:5008/readyz
 ```
 
 ### Check version
 ```bash
-curl --noproxy '*' http://localhost:5000/api/version
+curl --noproxy '*' http://localhost:5008/api/version
 ```
 
 ### Create a translation project
 ```bash
-curl --noproxy '*' -s -X POST http://localhost:5000/api/projects \
+curl --noproxy '*' -s -X POST http://localhost:5008/api/projects \
   -H "Content-Type: application/json" \
   -d '{"name":"my-project"}'
 ```
 
 ### Run translation
 ```bash
-curl --noproxy '*' -s -X POST http://localhost:5000/api/projects/<pid>/translate \
+curl --noproxy '*' -s -X POST http://localhost:5008/api/projects/<pid>/translate \
   -H "Content-Type: application/json" \
   -d '{"source_config":"...","source_vendor":"h3c","target_vendor":"cisco"}'
 ```

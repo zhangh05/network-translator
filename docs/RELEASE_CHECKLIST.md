@@ -66,7 +66,7 @@ PYTHONPATH=. python3 tools/knowledge_lint.py --coverage
 
 ```bash
 ./scripts/start.sh
-curl --noproxy '*' http://localhost:5000/healthz
+curl --noproxy '*' http://localhost:5008/healthz
 ```
 
 **Pass criteria**: Service running, `/healthz` returns `{"ok":true,"status":"healthy"}`.
@@ -74,7 +74,7 @@ curl --noproxy '*' http://localhost:5000/healthz
 ### 9. Readiness Check
 
 ```bash
-curl --noproxy '*' http://localhost:5000/readyz
+curl --noproxy '*' http://localhost:5008/readyz
 ```
 
 **Pass criteria**: `{"ok":true,"status":"ready"}`.
@@ -82,7 +82,7 @@ curl --noproxy '*' http://localhost:5000/readyz
 ### 10. Version Endpoint
 
 ```bash
-curl --noproxy '*' http://localhost:5000/api/version
+curl --noproxy '*' http://localhost:5008/api/version
 ```
 
 **Pass criteria**: Returns version, analyzers, features, model, python.
@@ -90,7 +90,7 @@ curl --noproxy '*' http://localhost:5000/api/version
 ### 11. E2E Smoke Test
 
 ```bash
-curl --noproxy '*' -s -X POST http://localhost:5000/api/projects \
+curl --noproxy '*' -s -X POST http://localhost:5008/api/projects \
   -H "Content-Type: application/json" \
   -d '{"name":"smoke"}' | python3 -c "import sys,json; print(json.load(sys.stdin).get('project',{}).get('id','FAIL'))"
 ```

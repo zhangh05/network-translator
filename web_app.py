@@ -56,6 +56,20 @@ def _read_version() -> str:
 VERSION = _read_version()
 
 
+def get_int_setting(name: str, default: int) -> int:
+    """Read an integer environment setting with a safe fallback."""
+    try:
+        return int(os.environ.get(name, default))
+    except (TypeError, ValueError):
+        return default
+
+
+def get_str_setting(name: str, default: str) -> str:
+    """Read a string environment setting with a safe fallback."""
+    value = os.environ.get(name)
+    return value if value else default
+
+
 def _get_model_name() -> str:
     name = os.environ.get("LLM_MODEL")
     if name:
@@ -361,6 +375,7 @@ def _cleanup():
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
+    host = get_str_setting("HOST", "0.0.0.0")
+    port = get_int_setting("PORT", 5008)
     debug = os.environ.get("FLASK_DEBUG", "").lower() in ("1", "true", "yes")
-    app.run(host="127.0.0.1", port=port, debug=debug)
+    app.run(host=host, port=port, debug=debug)
