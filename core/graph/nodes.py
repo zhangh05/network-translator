@@ -1509,6 +1509,55 @@ class FallbackNode(Node):
         super().__init__(node_id, "fallback")
         self.knowledge = KnowledgeRetriever(knowledge_dir)
 
+    @staticmethod
+    def _comment_prefix(to_vendor: str) -> str:
+        if (to_vendor or "").lower() == "cisco":
+            return "!"
+        return "#"
+
+    @staticmethod
+    def _requires_safe_fallback(error: str, config_text: str) -> bool:
+        error_text = str(error or "").lower()
+        validation_markers = (
+            "invalid translation result",
+            "not valid translation",
+            "第 0 项不是对象",
+            "不是对象",
+        )
+        if any(marker.lower() in error_text for marker in validation_markers):
+            return True
+        executable_lines = [
+            line for line in (config_text or "").splitlines()
+            if line.strip() and not line.strip().startswith(("!", "#"))
+        ]
+        return len(executable_lines) >= 300
+
+    def _manual_review_fallback(self, config_text: str, from_vendor: str, to_vendor: str, error: str) -> str:
+        from core.parser.block_splitter import split_config_by_feature, summarize_feature_blocks
+
+        prefix = self._comment_prefix(to_vendor)
+        blocks = split_config_by_feature(config_text, vendor=from_vendor)
+        summary = summarize_feature_blocks(blocks)
+        language = "cisco" if (to_vendor or "").lower() == "cisco" else (to_vendor or "text")
+
+        lines = [f"```{language}"]
+        lines.append(f"{prefix} MANUAL_REVIEW: 自动翻译未生成可验证结果，已阻止源厂商命令进入可执行配置。")
+        lines.append(f"{prefix} source_vendor={from_vendor} target_vendor={to_vendor}")
+        lines.append(f"{prefix} fallback_reason={str(error or 'unknown error')[:180]}")
+        lines.append(f"{prefix} block_count={len(blocks)}")
+        if summary:
+            parts = [f"{feature}:{count}" for feature, count in sorted(summary.items())]
+            lines.append(f"{prefix} feature_summary={', '.join(parts)}")
+        lines.append(f"{prefix} next_step=请按下列 block 逐项人工复核或补齐对应 parser/renderer 规则。")
+        for index, block in enumerate(blocks, start=1):
+            lines.append(
+                f"{prefix} MANUAL_REVIEW_BLOCK {index}: "
+                f"feature={block.feature} lines={block.start_line}-{block.end_line} "
+                f"source_line_count={len(block.lines)}"
+            )
+        lines.append("```")
+        return "\n".join(lines)
+
     def execute(self, state: State) -> NodeResult:
         from_vendor = state.get("from_vendor", "unknown")
         to_vendor = state.get("to_vendor", "unknown")
@@ -1521,9 +1570,23 @@ class FallbackNode(Node):
         else:
             config_text = state.get("config_text", "")
 
-        translated = RuleBasedTranslator().translate(config_text, from_vendor, to_vendor)
         state.set("fallback_used", True)
         state.set("fallback_reason", error)
+
+        if self._requires_safe_fallback(error, config_text):
+            translated = self._manual_review_fallback(config_text, from_vendor, to_vendor, error)
+            state.set("translated_config", translated)
+            state.set("safe_fallback", True)
+            state.set("manual_review_required", True)
+            state.set("_route_outcome", "fallback_manual_review")
+            return NodeResult(
+                self.node_id,
+                NodeStatus.SUCCESS,
+                output=translated,
+                metadata={"safe_fallback": True},
+            )
+
+        translated = RuleBasedTranslator().translate(config_text, from_vendor, to_vendor)
         if translated:
             state.set("translated_config", translated)
             state.set("_route_outcome", "fallback_success")
