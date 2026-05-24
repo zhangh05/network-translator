@@ -157,10 +157,16 @@ def translate_huawei_acl_rule_to_cisco(
     if not m:
         return None
 
+    rest = m.group(4)
+    lower_rest = rest.lower()
+
+    if any(kw in lower_rest for kw in ("time-range", "vpn-instance", "source-port",
+                                          "gt ", "lt ", "neq ")):
+        return indent + manual_review_comment(stripped, "cisco", indent)
+
     seq = m.group(1) or ""
     action = m.group(2).lower()
     protocol = m.group(3).lower()
-    rest = m.group(4)
 
     if protocol == "any":
         protocol = "ip"
@@ -227,11 +233,15 @@ def _build_acl_rest(action: str, protocol: str, rest: str) -> str:
 
     if tokens:
         source = tokens.pop(0)
-    if source != "any" and tokens:
+    if source.lower() == "host" and tokens:
+        source = tokens.pop(0)
+    elif source != "any" and tokens:
         source_wc = tokens.pop(0)
     if tokens:
         destination = tokens.pop(0)
-    if destination != "any" and tokens:
+    if destination.lower() == "host" and tokens:
+        destination = tokens.pop(0)
+    elif destination != "any" and tokens:
         destination_wc = tokens.pop(0)
     if len(tokens) >= 2 and tokens[0].lower() == "eq":
         port = tokens[1]
@@ -257,3 +267,49 @@ def translate_cisco_numbered_acl(
     acl_id, action, protocol, rest = m.groups()
     out = [f"acl number {acl_id}", " " + _build_acl_rest(action, protocol, rest)]
     return out
+
+
+def translate_h3c_packet_filter_to_huawei(
+    stripped: str, lower: str, indent: str, from_vendor: str
+) -> Optional[str]:
+    if from_vendor.lower() != "h3c":
+        return None
+    m = re.match(r"packet-filter\s+(\S+)\s+(inbound|outbound)", stripped, re.IGNORECASE)
+    if m:
+        direction = "inbound" if m.group(2).lower() == "inbound" else "outbound"
+        return indent + f"traffic-filter {direction} acl {m.group(1)}"
+    return None
+
+
+def translate_cisco_named_acl_header_to_huawei(stripped: str) -> Optional[str]:
+    m = re.match(r"ip\s+access-list\s+(extended|standard)\s+(\S+)", stripped, re.IGNORECASE)
+    if m:
+        acl_type = "advanced" if m.group(1).lower() == "extended" else "basic"
+        return f"acl name {m.group(2)} {acl_type}"
+    return None
+
+
+def translate_cisco_named_acl_header_to_h3c(stripped: str) -> Optional[str]:
+    m = re.match(r"ip\s+access-list\s+(extended|standard)\s+(\S+)", stripped, re.IGNORECASE)
+    if m:
+        acl_type = "advanced" if m.group(1).lower() == "extended" else "basic"
+        return f"acl name {m.group(2)} {acl_type}"
+    return None
+
+
+def translate_cisco_named_acl_header_to_cisco(stripped: str) -> Optional[str]:
+    m = re.match(r"ip\s+access-list\s+(extended|standard)\s+(\S+)", stripped, re.IGNORECASE)
+    if m:
+        return stripped
+    return None
+
+
+def translate_ruijie_access_group_to_cisco(
+    stripped: str, lower: str, indent: str, from_vendor: str
+) -> Optional[str]:
+    if from_vendor.lower() != "ruijie":
+        return None
+    m = re.match(r"ip\s+access-group\s+(\S+)\s+(in|out)\b", stripped, re.IGNORECASE)
+    if m:
+        return indent + f"ip access-group {m.group(1)} {m.group(2)}"
+    return None

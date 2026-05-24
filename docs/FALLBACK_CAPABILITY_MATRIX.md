@@ -104,7 +104,7 @@ Test file: `tests/test_rule_translator_acl_binding.py`
 | `access-list N permit ip S D` (Cisco) | Huawei/H3C | Auto |
 | `access-list N permit tcp S D Dst dst-port eq PORT` | Huawei/H3C | Auto |
 | `ip access-group NAME in` / `out` | Huawei/H3C | `traffic-filter inbound acl NAME` / `outbound acl NAME` |
-| `packet-filter NUM inbound` / `outbound` | Huawei | `traffic-filter inbound acl NUM` / `outbound acl NUM` |
+| `packet-filter NUM inbound` / `outbound` (H3C) | Huawei | `traffic-filter inbound acl NUM` / `outbound acl NUM` |
 
 ### MANUAL_REVIEW: ACL rules
 
@@ -269,8 +269,8 @@ Implicit "any" is **not** permitted. Missing fields → MANUAL_REVIEW.
 | `tests/test_safe_fallback_and_block_splitter.py` | Infrastructure (safe fallback guard, splitter) |
 | `tests/test_rule_translator_switch_multivendor.py` | SWITCH (12 direction pairs + negatives) |
 | `tests/test_rule_translator_router_multivendor.py` | ROUTER (static/OSPF/BGP/VRF multi-direction) |
-| `tests/test_rule_translator_management.py` | MANAGEMENT (NTP/logging/SNMP/AAA/hostname) — 42 tests |
-| `tests/test_rule_translator_acl_binding.py` | ACL and interface binding — 27 tests |
+| `tests/test_rule_translator_management.py` | MANAGEMENT (NTP/logging/SNMP/AAA/hostname) — 79 tests |
+| `tests/test_rule_translator_acl_binding.py` | ACL and interface binding — 59 tests |
 | `tests/test_realistic_fallback_report.py` | Fallback report structure and redaction — 27 tests |
 | `tests/test_rule_translator_realistic_samples.py` | 6 end-to-end realistic samples |
 
@@ -280,3 +280,5 @@ Implicit "any" is **not** permitted. Missing fields → MANUAL_REVIEW.
 |------|--------|
 | 2026-05-24 | Initial matrix — covers Batch A-D fallback enhancements |
 | 2026-05-24 Batch I | Added MANAGEMENT section, ACL/QoS section, updated firewall source-path table, clarified AAA/password rules and no-implicit-any policy |
+| 2026-05-24 Batch I-B | MANAGEMENT: NTP source-interface (H3C/Ruijie), logging facility/manual_review, radius/tacacs key redaction, 37 new tests (79 total) |
+| 2026-05-24 Batch I-C | ACL/QoS: H3C→Huawei packet-filter, Cisco named ACL header, Huawei ACL rule→Cisco, object-group/manual_review guards, 32 new tests (59 total) |

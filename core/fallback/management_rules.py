@@ -94,6 +94,8 @@ def translate_ntp_to_huawei(stripped: str, lower: str, indent: str, from_vendor:
         return [f"ntp-service unicast-server {m.group(2)} vrf {m.group(1)}"]
     m = re.match(r"ntp server (\S+)", lower)
     if m:
+        if re.search(r"\b(key|authenticate|trusted-key)\b", lower):
+            return indent + manual_review_comment(stripped, "huawei", indent)
         return [f"ntp-service unicast-server {m.group(1)}"]
     m = re.match(r"ntp source-interface (\S+)", lower)
     if m:
@@ -129,7 +131,7 @@ def translate_ntp_to_cisco(stripped: str, lower: str, indent: str, from_vendor: 
 
 
 def translate_ntp_to_h3c(stripped: str, lower: str, indent: str, from_vendor: str) -> Optional[Union[str, List[str]]]:
-    """Cisco/Ruijie NTP → H3C NTP; also handles Huawei NTP unicast-server."""
+    """Cisco/Ruijie/Huawei NTP → H3C NTP; also handles Huawei NTP unicast-server."""
     if from_vendor.lower() == "h3c":
         return None
     m = re.match(r"ntp server (\S+)", lower)
@@ -141,7 +143,10 @@ def translate_ntp_to_h3c(stripped: str, lower: str, indent: str, from_vendor: st
     m = re.match(r"ntp source-interface (\S+)", lower)
     if m:
         return [f"ntp source {m.group(1)}"]
-    if lower.startswith("ntp ") and not lower.startswith("ntp server"):
+    m = re.match(r"ntp-service source-interface (\S+)", lower)
+    if m:
+        return [f"ntp source {m.group(1)}"]
+    if lower.startswith("ntp ") or lower.startswith("ntp-service "):
         return indent + manual_review_comment(stripped, "h3c", indent)
     return None
 
@@ -159,7 +164,10 @@ def translate_ntp_to_ruijie(stripped: str, lower: str, indent: str, from_vendor:
     m = re.match(r"ntp-service source-interface (\S+)", lower)
     if m:
         return [f"ntp source {m.group(1)}"]
-    if lower.startswith("ntp "):
+    m = re.match(r"ntp source-interface (\S+)", lower)
+    if m:
+        return [f"ntp source {m.group(1)}"]
+    if lower.startswith("ntp ") or lower.startswith("ntp-service "):
         return indent + manual_review_comment(stripped, "ruijie", indent)
     return None
 
@@ -182,9 +190,6 @@ def translate_logging_to_huawei(stripped: str, lower: str, indent: str, from_ven
         return [f"info-center source {iface}"]
     m = re.match(r"logging (\S+) (\S+)", lower)
     if m:
-        facility, level = m.group(1), m.group(2)
-        if facility == "facility" and level in ("local0", "local1", "local2", "local3", "local4", "local5", "local6", "local7"):
-            return [f"info-center loghost {m.group(2)}"]  # best-effort
         return indent + manual_review_comment(stripped, "huawei", indent)
     if lower.startswith("logging "):
         return indent + manual_review_comment(stripped, "huawei", indent)
@@ -268,6 +273,8 @@ def translate_aaa_to_huawei(stripped: str, lower: str, indent: str, from_vendor:
     if lower.startswith("aaa accounting"):
         return indent + manual_review_comment(stripped, "huawei", indent)
     if lower.startswith("aaa "):
+        return indent + manual_review_comment(stripped, "huawei", indent)
+    if lower.startswith("radius-server ") or lower.startswith("tacacs-server "):
         return indent + manual_review_comment(stripped, "huawei", indent)
     return None
 

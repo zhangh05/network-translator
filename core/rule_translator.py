@@ -148,9 +148,22 @@ class RuleBasedTranslator:
         if rv is not None:
             return rv
 
-        rv = acl.translate_cisco_numbered_acl(stripped)
+        rv = acl.translate_h3c_packet_filter_to_huawei(stripped, lower, indent, from_vendor)
         if rv is not None:
             return rv
+
+        rv = acl.translate_cisco_named_acl_header_to_huawei(stripped)
+        if rv is not None:
+            return rv
+
+        rv = acl.translate_cisco_numbered_acl(stripped)
+        if rv is not None:
+            if "object-group" in lower:
+                return indent + manual_review_comment(stripped, "huawei", indent)
+            return rv
+
+        if lower.startswith("service-policy "):
+            return indent + manual_review_comment(stripped, "huawei", indent)
 
         if lower.startswith(("route-map ", "route-policy ", "ip prefix-list ", "prefix-list ")):
             return indent + manual_review_comment(stripped, "huawei", indent)
@@ -192,12 +205,22 @@ class RuleBasedTranslator:
         if rv is not None:
             return rv
 
-        rv = acl.translate_ruijie_access_group_to_huawei(stripped, lower, indent, from_vendor)
+        rv = acl.translate_ruijie_access_group_to_cisco(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = acl.translate_cisco_named_acl_header_to_cisco(stripped)
+        if rv is not None:
+            return rv
+
+        rv = acl.translate_huawei_acl_rule_to_cisco(stripped, lower, indent)
         if rv is not None:
             return rv
 
         rv = acl.translate_cisco_numbered_acl(stripped)
         if rv is not None:
+            if "object-group" in lower:
+                return indent + manual_review_comment(stripped, "huawei", indent)
             return rv
 
         rv = sw.translate_to_cisco_switch(stripped, lower, indent, from_vendor, state)
@@ -232,6 +255,8 @@ class RuleBasedTranslator:
         return stripped
 
     def _translate_acl_and_huawei_cisco_misc(self, stripped: str, lower: str, indent: str, from_vendor: str, state: Dict):
+        if "object-group" in lower:
+            return indent + manual_review_comment(stripped, "huawei", indent)
         m = re.match(r"acl\s+number\s+(\S+)", stripped, re.IGNORECASE)
         if m:
             state["acl"] = m.group(1)
@@ -379,6 +404,10 @@ class RuleBasedTranslator:
         if rv is not None:
             return rv
 
+        rv = acl.translate_cisco_named_acl_header_to_h3c(stripped)
+        if rv is not None:
+            return rv
+
         rv = acl.translate_cisco_numbered_acl(stripped)
         if rv is not None:
             return rv
@@ -464,6 +493,9 @@ class RuleBasedTranslator:
         if not m:
             return None
 
+        if "object-group" in lower:
+            return [manual_review_comment(stripped, "huawei")]
+
         acl_id, action, protocol, rest = m.groups()
         out = []
         if state.get("acl") != acl_id:
@@ -483,11 +515,15 @@ class RuleBasedTranslator:
 
         if tokens:
             source = tokens.pop(0)
-        if source != "any" and tokens:
+        if source.lower() == "host" and tokens:
+            source = tokens.pop(0)
+        elif source != "any" and tokens:
             source_wildcard = tokens.pop(0)
         if tokens:
             destination = tokens.pop(0)
-        if destination != "any" and tokens:
+        if destination.lower() == "host" and tokens:
+            destination = tokens.pop(0)
+        elif destination != "any" and tokens:
             destination_wildcard = tokens.pop(0)
         if len(tokens) >= 2 and tokens[0] == "eq":
             port = tokens[1]

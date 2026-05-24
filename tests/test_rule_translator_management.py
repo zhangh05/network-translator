@@ -290,3 +290,224 @@ def test_unknown_huawei_management_command_to_cisco_manual_review():
     executable = "\n".join(_executable_lines(result))
     assert "aaa authentication" not in executable
     assert "MANUAL_REVIEW" in result
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# NTP — additional coverage
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_cisco_ntp_server_to_h3c():
+    result = RuleBasedTranslator().translate("ntp server 10.0.0.1\n", "cisco", "h3c")
+    assert "ntp server 10.0.0.1" in result
+
+
+def test_cisco_ntp_server_to_ruijie():
+    result = RuleBasedTranslator().translate("ntp server 10.0.0.1\n", "cisco", "ruijie")
+    assert "ntp server 10.0.0.1" in result
+
+
+def test_cisco_ntp_source_interface_to_h3c():
+    result = RuleBasedTranslator().translate("ntp source-interface Loopback0\n", "cisco", "h3c")
+    assert "ntp source" in result.lower()
+    assert "source-interface" not in result.lower()
+
+
+def test_cisco_ntp_source_interface_to_ruijie():
+    result = RuleBasedTranslator().translate("ntp source-interface Loopback0\n", "cisco", "ruijie")
+    assert "ntp source" in result.lower()
+    assert "source-interface" not in result.lower()
+
+
+def test_huawei_ntp_source_interface_to_cisco():
+    result = RuleBasedTranslator().translate("ntp-service source-interface LoopBack0\n", "huawei", "cisco")
+    assert "ntp source-interface loopback0" in result.lower()
+
+
+def test_huawei_ntp_source_interface_to_h3c():
+    result = RuleBasedTranslator().translate("ntp-service source-interface LoopBack0\n", "huawei", "h3c")
+    assert "ntp source" in result.lower()
+    assert "source-interface" not in result.lower()
+
+
+def test_huawei_ntp_source_interface_to_ruijie():
+    result = RuleBasedTranslator().translate("ntp-service source-interface LoopBack0\n", "huawei", "ruijie")
+    assert "ntp source" in result.lower()
+    assert "source-interface" not in result.lower()
+
+
+def test_ntp_authentication_key_to_huawei_manual_review():
+    result = RuleBasedTranslator().translate("ntp server 10.0.0.1 key 10\n", "cisco", "huawei")
+    assert "MANUAL_REVIEW" in result
+
+
+def test_ntp_trusted_key_to_huawei_manual_review():
+    result = RuleBasedTranslator().translate("ntp trusted-key 10\n", "cisco", "huawei")
+    assert "MANUAL_REVIEW" in result
+
+
+def test_cisco_ntp_server_to_ruijie_multicast():
+    result = RuleBasedTranslator().translate("ntp server 239.255.255.254\n", "cisco", "ruijie")
+    assert "ntp server 239.255.255.254" in result
+
+
+def test_huawei_ntp_to_huawei_passthrough():
+    result = RuleBasedTranslator().translate("ntp-service unicast-server 10.0.0.1\n", "huawei", "huawei")
+    assert "ntp-service unicast-server 10.0.0.1" in result
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Logging — additional coverage
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_cisco_logging_host_to_h3c():
+    result = RuleBasedTranslator().translate("logging host 10.0.0.1\n", "cisco", "h3c")
+    assert "logging 10.0.0.1" in result
+
+
+def test_cisco_logging_host_to_ruijie():
+    result = RuleBasedTranslator().translate("logging host 10.0.0.1\n", "cisco", "ruijie")
+    assert "logging 10.0.0.1" in result
+
+
+def test_cisco_logging_source_interface_to_h3c():
+    result = RuleBasedTranslator().translate("logging source-interface GigabitEthernet0/1\n", "cisco", "h3c")
+    assert "MANUAL_REVIEW" in result
+
+
+def test_cisco_logging_source_interface_to_ruijie():
+    result = RuleBasedTranslator().translate("logging source-interface GigabitEthernet0/1\n", "cisco", "ruijie")
+    assert "MANUAL_REVIEW" in result
+
+
+def test_huawei_info_center_source_interface_to_cisco():
+    result = RuleBasedTranslator().translate("info-center source LoopBack0\n", "huawei", "cisco")
+    assert "logging source-interface Loopback0" in result
+
+
+def test_logging_facility_to_huawei_manual_review():
+    result = RuleBasedTranslator().translate("logging facility local0\n", "cisco", "huawei")
+    assert "MANUAL_REVIEW" in result
+
+
+def test_logging_level_to_huawei_manual_review():
+    result = RuleBasedTranslator().translate("logging trap warnings\n", "cisco", "huawei")
+    assert "MANUAL_REVIEW" in result
+
+
+def test_huawei_info_center_channel_to_cisco_manual_review():
+    result = RuleBasedTranslator().translate("info-center channel 3 loghost 10.0.0.1\n", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in result
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# SNMP — additional coverage
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_huawei_snmp_community_read_to_cisco_redacted():
+    result = RuleBasedTranslator().translate("snmp-agent community read PUBLIC\n", "huawei", "cisco")
+    executable = "\n".join(_executable_lines(result))
+    assert "PUBLIC" not in executable
+    assert "MANUAL_REVIEW" in result
+
+
+def test_huawei_snmp_community_write_to_cisco_redacted():
+    result = RuleBasedTranslator().translate("snmp-agent community write PRIVATE\n", "huawei", "cisco")
+    executable = "\n".join(_executable_lines(result))
+    assert "PRIVATE" not in executable
+    assert "MANUAL_REVIEW" in result
+
+
+def test_cisco_snmp_server_host_to_huawei_manual_review():
+    result = RuleBasedTranslator().translate("snmp-server host 10.0.0.1 version 2c public\n", "cisco", "huawei")
+    executable = "\n".join(_executable_lines(result))
+    assert "public" not in executable or "MANUAL_REVIEW" in result
+
+
+def test_cisco_snmp_server_location_to_huawei_manual_review():
+    result = RuleBasedTranslator().translate("snmp-server location DC-Floor3\n", "cisco", "huawei")
+    assert "MANUAL_REVIEW" in result
+
+
+def test_cisco_snmp_server_contact_to_huawei_manual_review():
+    result = RuleBasedTranslator().translate("snmp-server contact netadmin@example.com\n", "cisco", "huawei")
+    assert "MANUAL_REVIEW" in result
+
+
+def test_huawei_snmp_sys_info_to_cisco_manual_review():
+    result = RuleBasedTranslator().translate("snmp-agent sys-info location HQ\n", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in result
+
+
+def test_cisco_snmp_community_read_to_huawei_redacted():
+    result = RuleBasedTranslator().translate("snmp-server community ro ROUSER\n", "cisco", "huawei")
+    executable = "\n".join(_executable_lines(result))
+    assert "ROUSER" not in executable
+
+
+def test_huawei_snmp_trap_source_loopback_to_cisco():
+    result = RuleBasedTranslator().translate("snmp-agent trap source LoopBack0\n", "huawei", "cisco")
+    assert "snmp-server trap-source Loopback0" in result
+
+
+def test_cisco_snmp_enable_traps_to_huawei():
+    result = RuleBasedTranslator().translate("snmp-server enable traps\n", "cisco", "huawei")
+    assert "snmp-agent trap enable" in result
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# AAA — additional coverage (conservative, passwords always MANUAL_REVIEW)
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_cisco_aaa_authentication_to_huawei_manual_review():
+    result = RuleBasedTranslator().translate("aaa authentication login default group radius\n", "cisco", "huawei")
+    executable = "\n".join(_executable_lines(result))
+    assert "radius" not in executable
+    assert "MANUAL_REVIEW" in result
+
+
+def test_cisco_aaa_authorization_to_huawei_manual_review():
+    result = RuleBasedTranslator().translate("aaa authorization exec default group tacacs+\n", "cisco", "huawei")
+    assert "MANUAL_REVIEW" in result
+
+
+def test_cisco_aaa_accounting_to_huawei_manual_review():
+    result = RuleBasedTranslator().translate("aaa accounting exec default start-stop group radius\n", "cisco", "huawei")
+    assert "MANUAL_REVIEW" in result
+
+
+def test_huawei_aaa_to_cisco_manual_review():
+    result = RuleBasedTranslator().translate("aaa authentication login default group radius\n", "huawei", "cisco")
+    executable = "\n".join(_executable_lines(result))
+    assert "radius" not in executable
+    assert "MANUAL_REVIEW" in result
+
+
+def test_ruijie_local_user_with_cipher_to_cisco_redacted():
+    result = RuleBasedTranslator().translate("local-user admin password cipher $secret$\n", "ruijie", "cisco")
+    executable = "\n".join(_executable_lines(result))
+    assert "$secret$" not in executable
+    assert "MANUAL_REVIEW" in result
+
+
+def test_huawei_aaa_to_h3c_manual_review():
+    result = RuleBasedTranslator().translate("aaa authentication login default group local\n", "huawei", "h3c")
+    assert "MANUAL_REVIEW" in result
+
+
+def test_ruijie_aaa_to_huawei_manual_review():
+    result = RuleBasedTranslator().translate("aaa new-model\n", "ruijie", "huawei")
+    assert "aaa new-model" in result
+
+
+def test_cisco_radius_key_to_huawei_manual_review():
+    result = RuleBasedTranslator().translate("radius-server key Ciph3r!\n", "cisco", "huawei")
+    executable = "\n".join(_executable_lines(result))
+    assert "Ciph3r!" not in executable
+    assert "MANUAL_REVIEW" in result
+
+
+def test_cisco_tacacs_key_to_huawei_manual_review():
+    result = RuleBasedTranslator().translate("tacacs-server key TacKey!\n", "cisco", "huawei")
+    executable = "\n".join(_executable_lines(result))
+    assert "TacKey!" not in executable
+    assert "MANUAL_REVIEW" in result
