@@ -435,17 +435,18 @@ class ValidateNode(Node):
     def _content_quality_checks(self, config_content: str, to_vendor: str, source_config: str = "") -> tuple:
         content_warnings = []
         content_errors = []
+        scan_content = self._executable_config_content(config_content)
 
         if not config_content.strip():
             content_errors.append("翻译结果为空")
             return content_errors, content_warnings
 
-        if re.search(r'<[^>]+>', config_content):
+        if re.search(r'<[^>]+>', scan_content):
             content_warnings.append("包含未替换的占位符 <...>，请人工确认")
 
         placeholder_kws = ['todo', 'placeholder', '请替换', '请修改', '根据实际情况', 'your', 'example.com']
         for kw in placeholder_kws:
-            if kw in config_content.lower():
+            if kw in scan_content.lower():
                 content_warnings.append(f"包含待填充标记「{kw}」")
                 break
 
@@ -525,7 +526,7 @@ class ValidateNode(Node):
 
         patterns = residue_patterns.get(to_vendor.lower(), [])
         for pat, desc in patterns:
-            if re.search(pat, config_content):
+            if re.search(pat, scan_content):
                 content_warnings.append(f"可能存在源厂商残留：{desc}")
 
         # BGP redistribute 缺少 AS 号
@@ -638,6 +639,11 @@ class ValidateNode(Node):
             defined_acls = set(re.findall(
                 r'^access-list\s+(\S+)', config_content, re.IGNORECASE | re.MULTILINE
             ))
+            defined_acls |= set(re.findall(
+                r'^ip\s+access-list\s+(?:standard|extended)\s+(\S+)',
+                config_content,
+                re.IGNORECASE | re.MULTILINE,
+            ))
             referenced_acls = set(re.findall(
                 r'access-group\s+(\S+)', config_content, re.IGNORECASE
             ))
@@ -671,6 +677,7 @@ class ValidateNode(Node):
     def _platform_validation(self, config_content: str, to_vendor: str, source_vendor: str = "") -> list:
         warnings = []
         tl = to_vendor.lower()
+        scan_content = self._executable_config_content(config_content)
 
         # ── Layer 1: Source-vendor residues (critical → deployable=false) ──
         # These are patterns from a DIFFERENT vendor that leaked into target output.
@@ -752,7 +759,7 @@ class ValidateNode(Node):
         }
 
         for pat, desc in residue.get(tl, []):
-            if re.search(pat, config_content, re.IGNORECASE):
+            if re.search(pat, scan_content, re.IGNORECASE):
                 warnings.append(f"源厂商残留 — {desc}")
 
         # ── Layer 2: Style / lint patterns (non-critical) ──
@@ -785,21 +792,24 @@ class ValidateNode(Node):
             ],
         }
         for pat, desc in style.get(tl, []):
-            if re.search(pat, config_content, re.IGNORECASE):
+            if re.search(pat, scan_content, re.IGNORECASE):
                 warnings.append(desc)
 
         # ── Layer 3: Structure checks (known error-prone formats) ──
         # VRF route-target / rd format (Cisco IOS)
         if tl == 'cisco':
-            rts = re.findall(r'^\s*(rd|route-target)\s+(export|import|both)?\s*\S+', config_content, re.IGNORECASE | re.MULTILINE)
-            for rt in re.finditer(r'(rd|route-target)\s+(export\s+|import\s+|both\s+)?(\S+)', config_content, re.IGNORECASE):
-                val = rt.group(3)
+            for rt in re.finditer(
+                r'^\s*(?:rd\s+(\S+)|route-target\s+(?:export\s+|import\s+|both\s+)?(\S+))',
+                scan_content,
+                re.IGNORECASE | re.MULTILINE,
+            ):
+                val = rt.group(1) or rt.group(2)
                 if ':' not in val:
                     warnings.append(f"VRF RD/route-target 格式异常（缺少冒号）: {val}")
 
         # ACL number range (Huawei/H3C)
         if tl in ('huawei', 'h3c'):
-            for m in re.finditer(r'acl\s+number\s+(\d+)', config_content, re.IGNORECASE):
+            for m in re.finditer(r'acl\s+number\s+(\d+)', scan_content, re.IGNORECASE):
                 num = int(m.group(1))
                 if 2000 <= num <= 2999:
                     pass  # basic ACL — valid
@@ -810,28 +820,45 @@ class ValidateNode(Node):
 
         # IP prefix name format (Cisco)
         if tl == 'cisco':
-            for m in re.finditer(r'ip\s+prefix-list\s+(\S+)', config_content, re.IGNORECASE):
+            for m in re.finditer(r'ip\s+prefix-list\s+(\S+)', scan_content, re.IGNORECASE):
                 name = m.group(1)
                 if len(name) > 64:
                     warnings.append(f"prefix-list 名称 '{name}' 超长（最大 64 字符）")
 
         # Interface name format consistency (Huawei)
         if tl == 'huawei':
-            gigs = re.findall(r'interface\s+GigabitEthernet(\d+/\d+/\d+)', config_content)
-            eths = re.findall(r'interface\s+Ethernet(\d+/\d+/\d+)', config_content)
+            gigs = re.findall(r'interface\s+GigabitEthernet(\d+/\d+/\d+)', scan_content)
+            eths = re.findall(r'interface\s+Ethernet(\d+/\d+/\d+)', scan_content)
             if gigs and eths:
                 warnings.append("华为 VRP 接口类型混用（GigabitEthernet + Ethernet），建议统一")
 
         # OSPF area format check: Cisco-style "network <ip> <wildcard> area <id>" in Huawei/H3C target
         if tl in ('huawei', 'h3c'):
-            for m in re.finditer(r'(?:^|\n)\s*network\s+\S+\s+\S+\s+area\s+\d', config_content):
+            for m in re.finditer(r'(?:^|\n)\s*network\s+\S+\s+\S+\s+area\s+\d', scan_content):
                 warnings.append(f"OSPF area 格式异常 — 检测到 Cisco 风格 'network <ip> <wildcard> area <id>'，华为/华三应使用 area <id> 视图下的 network 命令")
 
         # Reference checks
-        ref_warnings = self._resolve_references(config_content, to_vendor)
+        ref_warnings = self._resolve_references(scan_content, to_vendor)
         warnings.extend(ref_warnings)
 
         return warnings
+
+    @staticmethod
+    def _executable_config_content(config_content: str) -> str:
+        """Return only executable config lines for residue/style checks.
+
+        Fallback output intentionally stores source commands in comments such as
+        ``! MANUAL_REVIEW unsupported source command: ...``. Those comments are
+        audit evidence, not executable residue, so platform validation should
+        not treat them as leaked target configuration.
+        """
+        lines = []
+        for raw in (config_content or "").splitlines():
+            stripped = raw.strip()
+            if not stripped or stripped.startswith(("!", "#", "//")):
+                continue
+            lines.append(raw)
+        return "\n".join(lines)
 
     # ── Feature → expected output patterns for consistency check ──
     # Each entry: (pattern_regex, label)
@@ -1523,6 +1550,8 @@ class FallbackNode(Node):
             "not valid translation",
             "第 0 项不是对象",
             "不是对象",
+            "不包含 JSON 数组",
+            "LLM 输出校验失败",
         )
         if any(marker.lower() in error_text for marker in validation_markers):
             return True
@@ -1531,6 +1560,26 @@ class FallbackNode(Node):
             if line.strip() and not line.strip().startswith(("!", "#"))
         ]
         return len(executable_lines) >= 300
+
+    @staticmethod
+    def _friendly_fallback_reason(error: str) -> str:
+        error_text = str(error or "")
+        lower = error_text.lower()
+        if (
+            "LLM 输出校验失败" in error_text
+            or "不是对象" in error_text
+            or "不包含 JSON 数组" in error_text
+            or "not valid translation" in lower
+            or "invalid translation result" in lower
+        ):
+            return "LLM 输出不是结构化翻译结果，已切换到规则兜底"
+        if "timeout" in lower or "timed out" in lower:
+            return "LLM 请求超时，已切换到规则兜底"
+        if "rate limit" in lower or "429" in lower:
+            return "LLM 服务限流，已切换到规则兜底"
+        if not error_text:
+            return "未知原因，已切换到规则兜底"
+        return error_text[:180]
 
     def _manual_review_fallback(self, config_text: str, from_vendor: str, to_vendor: str, error: str) -> str:
         from core.parser.block_splitter import split_config_by_feature, summarize_feature_blocks
@@ -1543,7 +1592,7 @@ class FallbackNode(Node):
         lines = [f"```{language}"]
         lines.append(f"{prefix} MANUAL_REVIEW: 自动翻译未生成可验证结果，已阻止源厂商命令进入可执行配置。")
         lines.append(f"{prefix} source_vendor={from_vendor} target_vendor={to_vendor}")
-        lines.append(f"{prefix} fallback_reason={str(error or 'unknown error')[:180]}")
+        lines.append(f"{prefix} fallback_reason={self._friendly_fallback_reason(error)}")
         lines.append(f"{prefix} block_count={len(blocks)}")
         if summary:
             parts = [f"{feature}:{count}" for feature, count in sorted(summary.items())]

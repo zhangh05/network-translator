@@ -108,6 +108,22 @@ interface Vlanif10
     assert "traffic behavior" not in executable
     assert "local-user" not in executable
     assert "interface Vlanif10" not in executable
+    assert "fallback_reason=LLM 输出不是结构化翻译结果，已切换到规则兜底" in translated
+    assert "第 0 项不是对象" not in translated
+
+
+def test_safe_fallback_summarizes_non_json_array_error_for_users():
+    state = State()
+    state.set("from_vendor", "huawei")
+    state.set("to_vendor", "cisco")
+    state.set("translate_error", "LLM 输出校验失败: LLM 输出不包含 JSON 数组")
+    state.set("config_text", "sysname HW1\nvlan batch 10 20\n")
+
+    FallbackNode().execute(state)
+    translated = state.get("translated_config")
+
+    assert "fallback_reason=LLM 输出不是结构化翻译结果，已切换到规则兜底" in translated
+    assert "不包含 JSON 数组" not in translated
 
 
 def test_small_non_validation_error_keeps_rule_based_fallback_behavior():

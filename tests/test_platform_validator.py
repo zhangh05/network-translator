@@ -815,6 +815,31 @@ class TestPlatformValidatorNoFalsePositives:
         rd_issues = [w for w in r["warnings"] if "缺少冒号" in w]
         assert len(rd_issues) == 0, f"Valid RD/RT flagged: {rd_issues}"
 
+    def test_cisco_vrf_format_check_only_matches_executable_vrf_lines(self):
+        config = """! MANUAL_REVIEW unsupported source command: password history record number 0
+! MANUAL_REVIEW unsupported source command: local-user admin password irreversible-cipher x
+hostname SW1
+"""
+        r = _run_validation(config, "cisco")
+        rd_issues = [w for w in r["warnings"] if "VRF RD/route-target 格式异常" in w]
+        residues = [w for w in r["warnings"] if "源厂商残留" in w]
+        assert rd_issues == [], f"Comment text should not trigger VRF RD/RT warnings: {rd_issues}"
+        assert residues == [], f"MANUAL_REVIEW comments should not count as executable residue: {residues}"
+
+    def test_cisco_executable_vrf_rd_without_colon_still_warns(self):
+        r = _run_validation("vrf definition CUSTOMER\n rd 1001001\n", "cisco")
+        assert any("VRF RD/route-target 格式异常" in w for w in r["warnings"])
+
+    def test_cisco_named_ip_access_list_satisfies_access_group_reference(self):
+        config = """ip access-list extended D-ACL-OA
+ 10 permit ip any any
+interface Vlan10
+ ip access-group D-ACL-OA out
+"""
+        r = _run_validation(config, "cisco")
+        ref_issues = [w for w in r["warnings"] if "access-list D-ACL-OA 在 access-group 中被引用但未找到定义" in w]
+        assert ref_issues == [], f"Named ACL definition should satisfy access-group reference: {ref_issues}"
+
     def test_huawei_valid_acl_range(self):
         r = _run_validation("acl number 3000\n rule 0 permit ip source 10.0.0.0 0.0.0.255 destination any\n#", "huawei")
         acl_issues = [w for w in r["warnings"] if "ACL number" in w]

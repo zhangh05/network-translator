@@ -154,6 +154,8 @@ def translate_to_cisco_switch(stripped: str, lower: str, indent: str, from_vendo
         return indent + stripped
     if lower == "undo shutdown":
         return indent + "no shutdown"
+    if lower == "undo portswitch":
+        return indent + "no switchport"
     if lower == "shutdown":
         return indent + "shutdown"
     if lower.startswith("port link-type trunk"):
@@ -175,7 +177,7 @@ def translate_to_cisco_switch(stripped: str, lower: str, indent: str, from_vendo
     if lower.startswith("stp edged-port"):
         return indent + "spanning-tree portfast"
     if lower.startswith("undo "):
-        return indent + stripped
+        return manual_review_comment(stripped, "cisco", indent)
     return None
 
 

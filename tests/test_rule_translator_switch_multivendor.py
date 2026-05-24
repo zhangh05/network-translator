@@ -353,3 +353,15 @@ def test_cisco_trunk_allowed_to_h3c_uses_permit_not_allow_pass():
     assert not any("port trunk allow-pass vlan" in line for line in exec_lines), (
         f"Should NOT contain 'port trunk allow-pass vlan' in executable lines: {exec_lines}"
     )
+
+
+def test_huawei_undo_portswitch_to_cisco_no_switchport():
+    t = RuleBasedTranslator()
+    r = t.translate(
+        "interface XGigabitEthernet0/0/1\n undo portswitch\n ip address 10.0.0.1 255.255.255.0\n",
+        "huawei",
+        "cisco",
+    )
+    exec_lines = _executable_lines(r)
+    assert any(line == "no switchport" for line in exec_lines), exec_lines
+    assert not any("undo portswitch" in line for line in exec_lines), exec_lines
