@@ -4,7 +4,7 @@
 import pytest
 from core.rule_translator import RuleBasedTranslator
 
-CISCO_KW = ["switchport", "channel-group", "router ospf", "router bgp"]
+CISCO_KW = ["switchport", "channel-group"]
 HUAWEI_KW = ["undo ", "vlan batch", "eth-trunk"]
 H3C_KW = ["undo ", "bridge-aggregation"]
 RUIJIE_KW = ["port-group", "aggregateport"]
@@ -222,3 +222,181 @@ def test_router_residue_checker_catches_source_aggregateport():
     fake_output = "```ruijie\nport-group 1 mode active\n```"
     with pytest.raises(AssertionError):
         _check_no_source_residue(fake_output, RUIJIE_KW)
+
+
+# ── Batch G: Static route options + OSPF redistribution + VPN binding + BGP more ──
+
+def test_static_route_with_description_manual_review():
+    t = RuleBasedTranslator()
+    r = t.translate("ip route-static 0.0.0.0 0.0.0.0 1.1.1.1 description 'default route'\n", "huawei", "cisco")
+    assert "ip route 0.0.0.0 0.0.0.0 1.1.1.1" in r
+    assert "MANUAL_REVIEW" in r
+    _check_no_source_residue(r, HUAWEI_KW)
+
+
+def test_static_route_with_tag_manual_review():
+    t = RuleBasedTranslator()
+    r = t.translate("ip route-static 10.0.0.0 255.0.0.0 1.1.1.1 tag 100\n", "huawei", "cisco")
+    assert "ip route 10.0.0.0 255.0.0.0 1.1.1.1" in r
+    assert "MANUAL_REVIEW" in r
+    _check_no_source_residue(r, HUAWEI_KW)
+
+
+def test_static_route_vpn_instance_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("ip route-static 0.0.0.0 0.0.0.0 1.1.1.1 vpn-instance CUST-A\n", "huawei", "cisco")
+    assert "vrf" in r.lower() or "MANUAL_REVIEW" in r
+    _check_no_source_residue(r, HUAWEI_KW)
+
+
+def test_ospf_default_route_advertise_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("ospf 10\n default-route-advertise\n", "huawei", "cisco")
+    assert "router ospf 10" in r
+    assert "MANUAL_REVIEW" in r
+
+
+def test_ospf_import_route_static_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("ospf 10\n import-route static\n", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_ospf_import_route_bgp_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("ospf 10\n import-route bgp\n", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_ospf_redistribute_connected_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("ospf 10\n redistribute connected\n", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_ip_binding_vpn_instance_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("ip binding vpn-instance BLACKHOLE\n", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_ip_vpn_instance_only_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("ip vpn-instance BLACKHOLE\n ipv4-family\n", "huawei", "cisco")
+    assert "vrf definition BLACKHOLE" in r
+    _check_no_source_residue(r, HUAWEI_KW)
+
+
+def test_ospf_stub_area_manual_review_cisco_to_huawei():
+    t = RuleBasedTranslator()
+    r = t.translate("router ospf 10\n area 0 stub\n", "cisco", "huawei")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_ospf_nssa_area_manual_review_cisco_to_huawei():
+    t = RuleBasedTranslator()
+    r = t.translate("router ospf 10\n area 0 nssa\n", "cisco", "huawei")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_ospf_virtual_link_manual_review_cisco_to_huawei():
+    t = RuleBasedTranslator()
+    r = t.translate("router ospf 10\n area 0 virtual-link 1.1.1.1\n", "cisco", "huawei")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_bgp_router_id_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("bgp 65001\n peer 10.1.1.2 as-number 65002\n", "huawei", "cisco")
+    assert "router bgp 65001" in r
+    assert "neighbor 10.1.1.2 remote-as 65002" in r
+    _check_no_source_residue(r, HUAWEI_KW)
+
+
+def test_bgp_peer_password_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("peer 10.1.1.2 password cipher TEST123\n", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_bgp_peer_update_source_manual_review_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("peer 10.1.1.2 update-source LoopBack0\n", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_bgp_route_policy_manual_review():
+    t = RuleBasedTranslator()
+    r = t.translate(" peer 10.1.1.2 route-policy RM-IN import\n", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_vrf_route_target_both_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("ip vpn-instance CUST-A\n route-distinguisher 65001:100\n vpn-target 65001:100 both\n", "huawei", "cisco")
+    assert "vrf definition CUST-A" in r
+    assert "rd 65001:100" in r
+    assert "route-target 65001:100" in r
+
+
+def test_vrf_import_export_rt_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("ip vpn-instance CUST-A\n route-distinguisher 65001:100\n vpn-target 65001:100 export-extcommunity\n vpn-target 65001:200 import-extcommunity\n", "huawei", "cisco")
+    assert "vrf definition CUST-A" in r
+    assert "rd 65001:100" in r
+    assert "route-target" in r
+
+
+def test_bgp_address_family_vpnv4_manual_review():
+    t = RuleBasedTranslator()
+    r = t.translate("ipv4-family vpnv4\n", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r
+
+
+def test_ospf_area_normal_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("ospf 10\n area 0.0.0.0\n", "huawei", "cisco")
+    assert "router ospf 10" in r
+    assert "area 0.0.0.0" in r
+
+
+def test_static_route_cisco_to_h3c():
+    t = RuleBasedTranslator()
+    r = t.translate("ip route 10.0.0.0 255.0.0.0 1.1.1.1\n", "cisco", "h3c")
+    assert "ip route-static 10.0.0.0 255.0.0.0 1.1.1.1" in r
+    _check_no_source_residue(r, CISCO_KW)
+
+
+def test_static_route_cisco_to_ruijie():
+    t = RuleBasedTranslator()
+    r = t.translate("ip route 10.0.0.0 255.0.0.0 1.1.1.1\n", "cisco", "ruijie")
+    assert "ip route 10.0.0.0 255.0.0.0 1.1.1.1" in r
+    _check_no_source_residue(r, CISCO_KW)
+
+
+def test_ospf_passive_interface_default_cisco_to_huawei():
+    t = RuleBasedTranslator()
+    r = t.translate("router ospf 10\n passive-interface default\n", "cisco", "huawei")
+    assert "silent-interface default" in r
+
+
+def test_ospf_no_passive_interface_cisco_to_huawei():
+    t = RuleBasedTranslator()
+    r = t.translate("router ospf 10\n no passive-interface GigabitEthernet0/1\n", "cisco", "huawei")
+    assert "undo silent-interface gigabitethernet0/1" in r
+
+
+def test_bgp_cisco_to_ruijie():
+    t = RuleBasedTranslator()
+    r = t.translate("router bgp 65001\n neighbor 10.0.0.2 remote-as 65002\n", "cisco", "ruijie")
+    assert "router bgp 65001" in r
+    assert "neighbor 10.0.0.2 remote-as 65002" in r
+    _check_no_source_residue(r, CISCO_KW)
+
+
+def test_ospf_huawei_to_ruijie():
+    t = RuleBasedTranslator()
+    r = t.translate("ospf 10\n area 0.0.0.0\n silent-interface GigabitEthernet1/0/1\n", "huawei", "ruijie")
+    assert "router ospf 10" in r
+    assert "area 0.0.0.0" in r
+    assert "passive-interface" in r

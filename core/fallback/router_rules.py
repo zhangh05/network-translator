@@ -117,6 +117,10 @@ def translate_routing_to_cisco(stripped: str, lower: str, indent: str, state: di
     if lower.startswith("undo silent-interface"):
         return indent + "no passive-interface " + stripped.split(maxsplit=2)[2]
 
+    # OSPF redistribution/opts — must MANUAL_REVIEW
+    if re.match(r"(default-route-advertise|import-route|redistribute)", lower):
+        return indent + manual_review_comment(stripped, "cisco", indent)
+
     # BGP
     if lower.startswith("bgp "):
         m = re.match(r"bgp\s+(\S+)", lower)
