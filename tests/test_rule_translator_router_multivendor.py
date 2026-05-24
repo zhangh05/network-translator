@@ -181,6 +181,35 @@ def test_vrf_huawei_to_cisco():
     _check_no_source_residue(r, HUAWEI_KW)
 
 
+def test_default_route_cisco_to_huawei():
+    t = RuleBasedTranslator()
+    r = t.translate("ip route 0.0.0.0 0.0.0.0 10.0.0.254\n", "cisco", "huawei")
+    assert "ip route-static 0.0.0.0 0.0.0.0 10.0.0.254" in r
+    _check_no_source_residue(r, CISCO_KW)
+
+
+def test_default_route_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("ip route-static 0.0.0.0 0.0.0.0 10.0.0.254\n", "huawei", "cisco")
+    assert "ip route 0.0.0.0 0.0.0.0 10.0.0.254" in r
+    _check_no_source_residue(r, HUAWEI_KW)
+
+
+def test_ospf_stub_area_manual_review():
+    t = RuleBasedTranslator()
+    r = t.translate("ospf 10\n area 0.0.0.1 stub\n", "huawei", "cisco")
+    assert "area 0.0.0.1 stub" in r
+    assert "MANUAL_REVIEW" in r, "stub area must produce MANUAL_REVIEW"
+
+
+def test_bgp_password_manual_review():
+    t = RuleBasedTranslator()
+    r = t.translate("peer 10.1.1.2 password cipher TEST123\n", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r, "BGP password must produce MANUAL_REVIEW"
+    exe = _executable_lines(r)
+    assert not any("password" in x.lower() and "TEST123" in x for x in exe), "BGP password must not leak"
+
+
 # ── Negative tests: residue checker must reject source residue ──
 
 def test_router_residue_checker_catches_source_eth_trunk():

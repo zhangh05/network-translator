@@ -174,13 +174,14 @@ Test file: `tests/test_rule_translator_firewall.py`, `tests/test_rule_translator
 
 ## Test Coverage Summary
 
-| File | Tests | Domains |
-|------|-------|---------|
-| `tests/test_rule_translator.py` | 49 | SWITCH (portable templates) + ROUTER (static route, OSPF, BGP basic) + FIREWALL (Huawei USG ↔ Hillstone basic) |
-| `tests/test_rule_translator_firewall.py` | 2 | FIREWALL (Hillstone ↔ Huawei USG service/address/policy round-trip) |
-| `tests/test_safe_fallback_and_block_splitter.py` | 2 | Infrastructure (safe fallback guard, splitter pipe) |
-| `tests/test_rule_translator_switch_multivendor.py` | 16 | SWITCH (12 direction pairs + 4 negative/manual tests) |
-| `tests/test_rule_translator_router_multivendor.py` | 12 | ROUTER (static route, OSPF, BGP, VRF multi-direction) |
+| File | Domains |
+|------|---------|
+| `tests/test_rule_translator.py` | SWITCH + ROUTER (static/BGP/OSPF) + FIREWALL (Huawei USG ↔ Hillstone) — covered by 49 unit tests |
+| `tests/test_rule_translator_firewall.py` | FIREWALL (Hillstone ↔ Huawei USG ↔ Topsec ↔ DPtech) — covered by unit tests |
+| `tests/test_safe_fallback_and_block_splitter.py` | Infrastructure (safe fallback guard, splitter pipe) |
+| `tests/test_rule_translator_switch_multivendor.py` | SWITCH (12 direction pairs + 4 negative/manual tests + 3 Batch C tests) |
+| `tests/test_rule_translator_router_multivendor.py` | ROUTER (static/OSPF/BGP/VRF multi-direction + 4 Batch C tests) |
+| `tests/test_rule_translator_realistic_samples.py` | **New** — 6 end-to-end realistic configuration samples exercising full translation path |
 
 ## Version History
 

@@ -303,3 +303,53 @@ def test_switch_residue_checker_catches_source_bridge_aggregation():
     fake_output = "```h3c\nbridge-aggregation 1\n```"
     with pytest.raises(AssertionError):
         _check_no_source_residue(fake_output, H3C_KW)
+
+
+# ── Batch C: interface range / native vlan / shutdown cycle ──
+
+def test_interface_range_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("interface range GigabitEthernet0/0/1-4\n switchport mode access\n", "huawei", "cisco")
+    assert "interface range GigabitEthernet0/0/1-4" in r
+    assert "switchport mode access" in r
+    _check_no_source_residue(r, HUAWEI_KW)
+
+
+def test_native_vlan_huawei_to_cisco():
+    t = RuleBasedTranslator()
+    r = t.translate("port trunk pvid vlan 10\n", "huawei", "cisco")
+    assert "MANUAL_REVIEW" in r, "port trunk pvid vlan must produce MANUAL_REVIEW"
+
+
+def test_shutdown_cycle_cisco_to_huawei():
+    t = RuleBasedTranslator()
+    r = t.translate("interface GigabitEthernet0/1\n shutdown\n", "cisco", "huawei")
+    assert "shutdown" in r
+    _check_no_source_residue(r, CISCO_KW)
+
+
+TRUNK_ALLOWED_INPUT = "interface GigabitEthernet1/0/1\n switchport mode trunk\n switchport trunk allowed vlan 20,30\n"
+
+
+def test_cisco_trunk_allowed_to_huawei_uses_allow_pass_not_permit():
+    t = RuleBasedTranslator()
+    r = t.translate(TRUNK_ALLOWED_INPUT, "cisco", "huawei")
+    exec_lines = _executable_lines(r)
+    assert any("port trunk allow-pass vlan 20 30" in line for line in exec_lines), (
+        f"Expected 'port trunk allow-pass vlan 20 30' in executable lines: {exec_lines}"
+    )
+    assert not any("port trunk permit vlan" in line for line in exec_lines), (
+        f"Should NOT contain 'port trunk permit vlan' in executable lines: {exec_lines}"
+    )
+
+
+def test_cisco_trunk_allowed_to_h3c_uses_permit_not_allow_pass():
+    t = RuleBasedTranslator()
+    r = t.translate(TRUNK_ALLOWED_INPUT, "cisco", "h3c")
+    exec_lines = _executable_lines(r)
+    assert any("port trunk permit vlan 20 30" in line for line in exec_lines), (
+        f"Expected 'port trunk permit vlan 20 30' in executable lines: {exec_lines}"
+    )
+    assert not any("port trunk allow-pass vlan" in line for line in exec_lines), (
+        f"Should NOT contain 'port trunk allow-pass vlan' in executable lines: {exec_lines}"
+    )
