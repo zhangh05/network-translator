@@ -399,7 +399,8 @@ def test_dptech_policy_to_hillstone_is_manual_review():
         from_vendor="dptech",
         to_vendor="hillstone",
     )
-    assert "MANUAL_REVIEW" in result
+    assert "policy allow-web" in result
+    assert "source any" in result
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -423,3 +424,250 @@ def test_dptech_policy_missing_action_to_hillstone():
         to_vendor="hillstone",
     )
     assert "MANUAL_REVIEW" in result
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Batch H: Extended firewall object/policy coverage
+# ─────────────────────────────────────────────────────────────────────────────
+
+def test_dptech_policy_to_hillstone_supported():
+    result = RuleBasedTranslator().translate(
+        "security-policy name allow-web source-zone inside destination-zone outside "
+        "destination-address SRV1 service HTTP action permit\n",
+        from_vendor="dptech",
+        to_vendor="hillstone",
+    )
+    assert "policy allow-web" in result
+    assert "action permit" in result
+    _check_no_source_residue(result, DPTECH_KW)
+
+
+def test_dptech_policy_with_source_address_to_hillstone():
+    result = RuleBasedTranslator().translate(
+        "security-policy name allow-web source-zone inside destination-zone outside "
+        "source-address 10.0.0.0 destination-address SRV1 service HTTP action permit\n",
+        from_vendor="dptech",
+        to_vendor="hillstone",
+    )
+    assert "policy allow-web" in result
+    assert "source 10.0.0.0" in result
+
+
+def test_dptech_policy_to_huawei_usg_supported():
+    result = RuleBasedTranslator().translate(
+        "security-policy name allow-web source-zone inside destination-zone outside "
+        "destination-address SRV1 service HTTP action permit\n",
+        from_vendor="dptech",
+        to_vendor="huawei_usg",
+    )
+    assert "security-policy" in result
+    assert "rule name allow-web" in result
+    _check_no_source_residue(result, DPTECH_KW)
+
+
+def test_dptech_policy_with_source_address_to_huawei_usg():
+    result = RuleBasedTranslator().translate(
+        "security-policy name allow-web source-zone inside destination-zone outside "
+        "source-address 10.0.0.0 destination-address SRV1 service HTTP action permit\n",
+        from_vendor="dptech",
+        to_vendor="huawei_usg",
+    )
+    assert "security-policy" in result
+    assert "source-address 10.0.0.0" in result
+    _check_no_source_residue(result, DPTECH_KW)
+
+
+def test_hillstone_address_host_to_huawei_usg():
+    result = RuleBasedTranslator().translate(
+        "address HOST1 10.1.1.1 host\n",
+        from_vendor="hillstone",
+        to_vendor="huawei_usg",
+    )
+    assert "ip address-set HOST1 type object" in result
+    assert "10.1.1.1" in result
+    _check_no_source_residue(result, HILLSTONE_KW)
+
+
+def test_hillstone_address_range_to_huawei_usg():
+    result = RuleBasedTranslator().translate(
+        "address RANGE1 10.0.0.0 255.255.255.0\n",
+        from_vendor="hillstone",
+        to_vendor="huawei_usg",
+    )
+    assert "ip address-set RANGE1 type object" in result
+    assert "10.0.0.0" in result
+    _check_no_source_residue(result, HILLSTONE_KW)
+
+
+def test_hillstone_service_tcp_to_huawei_usg():
+    result = RuleBasedTranslator().translate(
+        "service HTTP tcp dst-port 80\n",
+        from_vendor="hillstone",
+        to_vendor="huawei_usg",
+    )
+    assert "ip service-set HTTP type object" in result
+    assert "protocol tcp" in result
+    assert "destination-port 80" in result
+
+
+def test_hillstone_service_udp_to_huawei_usg():
+    result = RuleBasedTranslator().translate(
+        "service DNS udp dst-port 53\n",
+        from_vendor="hillstone",
+        to_vendor="huawei_usg",
+    )
+    assert "ip service-set DNS type object" in result
+    assert "protocol udp" in result
+    assert "destination-port 53" in result
+
+
+def test_hillstone_service_any_to_huawei_usg():
+    result = RuleBasedTranslator().translate(
+        "service ANY ip\n",
+        from_vendor="hillstone",
+        to_vendor="huawei_usg",
+    )
+    assert "ip service-set" in result and "type object" in result
+    assert "protocol ip" in result
+
+
+def test_huawei_usg_address_host_to_hillstone():
+    result = RuleBasedTranslator().translate(
+        "ip address-set HOST1 type object\n address 0 10.1.1.1 mask host\n",
+        from_vendor="huawei_usg",
+        to_vendor="hillstone",
+    )
+    assert "address HOST1 10.1.1.1 host" in result
+
+
+def test_huawei_usg_address_range_to_hillstone():
+    result = RuleBasedTranslator().translate(
+        "ip address-set RANGE1 type object\n address 0 10.0.0.0 mask 24\n",
+        from_vendor="huawei_usg",
+        to_vendor="hillstone",
+    )
+    assert "address RANGE1 10.0.0.0" in result
+    assert "255.255.255.0" in result
+
+
+def test_huawei_usg_service_tcp_to_hillstone():
+    result = RuleBasedTranslator().translate(
+        "ip service-set HTTP type object\n service 0 protocol tcp destination-port 80\n",
+        from_vendor="huawei_usg",
+        to_vendor="hillstone",
+    )
+    assert "service HTTP tcp dst-port 80" in result
+
+
+def test_huawei_usg_service_udp_to_hillstone():
+    result = RuleBasedTranslator().translate(
+        "ip service-set DNS type object\n service 0 protocol udp destination-port 53\n",
+        from_vendor="huawei_usg",
+        to_vendor="hillstone",
+    )
+    assert "service DNS udp dst-port 53" in result
+
+
+def test_huawei_usg_service_icmp_to_hillstone():
+    result = RuleBasedTranslator().translate(
+        "ip service-set PING type object\n service 0 protocol icmp\n",
+        from_vendor="huawei_usg",
+        to_vendor="hillstone",
+    )
+    assert "service PING icmp" in result
+
+
+def test_dptech_object_address_to_hillstone():
+    result = RuleBasedTranslator().translate(
+        "object address SRV1 10.0.0.10 255.255.255.255\n",
+        from_vendor="dptech",
+        to_vendor="hillstone",
+    )
+    assert "address SRV1 10.0.0.10 255.255.255.255" in result
+    _check_no_source_residue(result, DPTECH_KW)
+
+
+def test_dptech_object_address_network_to_hillstone():
+    result = RuleBasedTranslator().translate(
+        "object address LAN 10.0.0.0 255.255.255.0\n",
+        from_vendor="dptech",
+        to_vendor="hillstone",
+    )
+    assert "address LAN 10.0.0.0 255.255.255.0" in result
+    _check_no_source_residue(result, DPTECH_KW)
+
+
+def test_dptech_zone_to_huawei_usg():
+    result = RuleBasedTranslator().translate(
+        "zone inside\n",
+        from_vendor="dptech",
+        to_vendor="huawei_usg",
+    )
+    assert "security-zone name inside" in result
+    _check_no_source_residue(result, DPTECH_KW)
+
+
+def test_dptech_service_tcp_to_hillstone():
+    result = RuleBasedTranslator().translate(
+        "object service HTTP protocol tcp destination-port 80\n",
+        from_vendor="dptech",
+        to_vendor="hillstone",
+    )
+    assert "MANUAL_REVIEW" in result
+
+
+def test_topsec_address_object_to_hillstone():
+    result = RuleBasedTranslator().translate(
+        "address name SRV1 ip 192.168.1.10 255.255.255.255\n",
+        from_vendor="topsec",
+        to_vendor="hillstone",
+    )
+    assert "MANUAL_REVIEW" not in result
+    assert "address SRV1" in result
+
+
+def test_topsec_service_object_to_hillstone():
+    result = RuleBasedTranslator().translate(
+        "service name HTTP protocol tcp port 80\n",
+        from_vendor="topsec",
+        to_vendor="hillstone",
+    )
+    assert "MANUAL_REVIEW" in result
+
+
+def test_huawei_usg_security_policy_enable_log_manual_review():
+    result = RuleBasedTranslator().translate(
+        "security-policy\n rule name POL-LOG\n  source-zone wan\n  destination-zone trust\n  action permit\n enable log\n",
+        from_vendor="huawei_usg",
+        to_vendor="hillstone",
+    )
+    assert "MANUAL_REVIEW" in result
+
+
+def test_huawei_usg_incomplete_policy_at_eof_manual_review():
+    result = RuleBasedTranslator().translate(
+        "security-policy\n rule name POL-EOF\n  source-zone wan\n  destination-zone trust\n  source-address any\n",
+        from_vendor="huawei_usg",
+        to_vendor="hillstone",
+    )
+    assert "MANUAL_REVIEW" in result
+
+
+def test_hillstone_policy_to_hillstone_same_vendor():
+    result = RuleBasedTranslator().translate(
+        "policy allow-http from trust to untrust source any destination WEB service HTTP action permit\n",
+        from_vendor="hillstone",
+        to_vendor="hillstone",
+    )
+    assert "policy allow-http" in result
+
+
+def test_dptech_policy_action_deny_to_hillstone():
+    result = RuleBasedTranslator().translate(
+        "security-policy name deny-ping source-zone wan destination-zone trust "
+        "destination-address SERVER service PING action deny\n",
+        from_vendor="dptech",
+        to_vendor="hillstone",
+    )
+    assert "policy deny-ping" in result
+    assert "action deny" in result

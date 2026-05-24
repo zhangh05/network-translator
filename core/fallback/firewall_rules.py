@@ -135,6 +135,11 @@ def translate_to_hillstone_firewall(stripped: str, lower: str, indent: str, from
                 return manual_review_comment(
                     f"ip address-set {name} range {ip} {third}", "hillstone",
                 )
+        m = re.match(r"address\s+(\d+)\s+(\S+)\s+mask\s+host", stripped, re.IGNORECASE)
+        if m:
+            name = state.pop("_addr_set")
+            ip = m.group(2)
+            return f"address {name} {ip} host"
         name = state.pop("_addr_set")
         return manual_review_comment(
             f"ip address-set {name} sub-command: {stripped}", "hillstone",
@@ -168,6 +173,11 @@ def translate_to_hillstone_firewall(stripped: str, lower: str, indent: str, from
             proto = m.group(2)
             port = m.group(3)
             return f"service {name} {proto} dst-port {port}"
+        m = re.match(r"service\s+(\d+)\s+protocol\s+(\S+)\s*$", stripped, re.IGNORECASE)
+        if m:
+            name = state.pop("_svc_set")
+            proto = m.group(2)
+            return f"service {name} {proto}"
         name = state.pop("_svc_set")
         return manual_review_comment(
             f"ip service-set {name} sub-command: {stripped}", "hillstone",
@@ -177,6 +187,16 @@ def translate_to_hillstone_firewall(stripped: str, lower: str, indent: str, from
     m = re.match(r"service\s+(\S+)\s+(\S+)\s+dst-port\s+(\S+)", lower)
     if m and from_vendor == "hillstone":
         return stripped
+
+    # DPtech single-line policy -> Hillstone
+    m = re.match(
+        r"security-policy\s+name\s+(\S+)\s+source-zone\s+(\S+)\s+destination-zone\s+(\S+)\s+(?:source-address\s+(\S+)\s+)?destination-address\s+(\S+)\s+service\s+(\S+)\s+action\s+(permit|deny)",
+        stripped,
+        re.IGNORECASE,
+    )
+    if m:
+        name, src_zone, dst_zone, src_addr, dst_addr, svc, action = m.groups()
+        return f"policy {name} from {src_zone} to {dst_zone} source {src_addr or 'any'} destination {dst_addr} service {svc} action {action}"
 
     # Flat policy (Hillstone, Topsec)
     m = re.match(
@@ -292,6 +312,12 @@ def translate_to_huawei_usg_firewall(stripped: str, lower: str, indent: str, fro
     if m and from_vendor == "hillstone":
         name, proto, port = m.groups()
         return [f"ip service-set {name} type object", f" service 0 protocol {proto} destination-port {port}"]
+
+    # Service ANY ip (Hillstone -> Huawei USG: protocol ip with no port = any)
+    m = re.match(r"service\s+(\S+)\s+ip\s*$", lower)
+    if m and from_vendor == "hillstone":
+        name = m.group(1)
+        return [f"ip service-set {name} type object", f" service 0 protocol ip"]
 
     # Huawei USG service object multi-line (passthrough)
     m = re.match(r"ip\s+service-set\s+(\S+)\s+type\s+object", stripped, re.IGNORECASE)
