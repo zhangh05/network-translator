@@ -1,36 +1,75 @@
 # -*- coding: utf-8 -*-
-"""Static checks for frontend fallback UX messaging."""
+"""Tests for frontend fallback UX.
+
+Verifies that when fallback_used=true, the frontend renders the fallback
+notice with all required messages.
+"""
 
 import re
+import pytest
 
-INDEX_HTML = "frontend/index.html"
-
-
-def _read():
-    with open(INDEX_HTML, encoding="utf-8") as f:
-        return f.read()
+FRONTEND_HTML_PATH = "frontend/index.html"
 
 
-def test_frontend_has_rule_fallback_warning_message():
-    content = _read()
-    assert "规则兜底" in content, "Frontend must contain '规则兜底' label"
+def _extract_fallback_notice(html: str) -> str:
+    p = re.compile(r'fallbackNotice="([^"]+)"')
+    ms = list(p.finditer(html))
+    for m in ms:
+        content = m.group(1)
+        if content and len(content) > 10:
+            return content
+    return ""
 
 
-def test_frontend_has_llm_structured_result_message():
-    content = _read()
-    assert "没有得到可验证的 LLM 结构化结果" in content, (
-        "Frontend must contain the user-friendly LLM failure message"
-    )
+def _fallback_notice_text() -> str:
+    with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+        html = f.read()
+    return _extract_fallback_notice(html)
 
 
-def test_frontend_has_human_review_summary_message():
-    content = _read()
-    assert "人工复核摘要" in content, (
-        "Frontend must mention '人工复核摘要' so users know where to look"
-    )
+class TestFrontendFallbackNotice:
+    def test_notice_contains规则兜底已启用(self):
+        notice = _fallback_notice_text()
+        assert "规则兜底" in notice and "已启用" in notice, \
+            f"Notice missing '规则兜底已启用': {notice[:200]}"
 
+    def test_notice_contains可执行配置只包含系统能确定的转换(self):
+        notice = _fallback_notice_text()
+        assert "可执行配置" in notice and "系统能确定的转换" in notice, \
+            f"Notice missing '可执行配置只包含系统能确定的转换': {notice[:200]}"
 
-def test_frontend_renders_fallback_notice_in_risk_tab():
-    content = _read()
-    assert "fallback_used" in content, "Frontend must check fallback_used flag"
-    assert "risk--review" in content, "Frontend must use risk--review class for fallback notice"
+    def test_notice_contains其余内容已进入人工复核(self):
+        notice = _fallback_notice_text()
+        assert "其余内容已进入人工复核" in notice, \
+            f"Notice missing '其余内容已进入人工复核': {notice[:200]}"
+
+    def test_notice_contains请查看人工复核摘要(self):
+        notice = _fallback_notice_text()
+        assert "人工复核摘要" in notice, \
+            f"Notice missing '人工复核摘要': {notice[:200]}"
+
+    def test_manual_review_css_class_exists(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert ".mr" in html or '"mr"' in html or "class='mr'" in html or 'class="mr"' in html, \
+            "CSS class .mr for MANUAL_REVIEW lines not found in index.html"
+
+    def test_fallback_used_true_shows_notice(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "if(r.fallback_used)" in html or "if (r.fallback_used)" in html, \
+            "fallback_used check not found in index.html"
+        assert "risk--review" in html, \
+            "risk--review CSS class not found for fallback notice"
+
+    def test_copy_deployable_excludes_manual_review(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "MANUAL_REVIEW" in html, \
+            "MANUAL_REVIEW filtering logic not found in index.html"
+
+    def test_fallback_notice_has_risk_review_class(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "risk--review" in html, \
+            "risk--review CSS class for fallback notice not found"

@@ -1581,61 +1581,211 @@ class FallbackNode(Node):
             return "未知原因，已切换到规则兜底"
         return error_text[:180]
 
-    FEATURE_LABELS = {
-        "aaa": "AAA/认证",
-        "qos": "QoS/PBR",
-        "interface": "接口配置",
-        "acl": "ACL/访问控制",
-        "snmp": "SNMP/网管",
-        "nqa": "NQA/探测",
-        "bfd": "BFD/快速检测",
-        "stp": "STP/生成树",
-        "vrf": "VRF/VPN instance",
-        "route": "路由",
-        "vlan": "VLAN/二层",
-        "system": "系统/日志/NTP/PKI",
-        "unknown": "未分类",
+    _COMMENT_MARKERS = ("!", "#", "*")
+
+    _SENSITIVE_PATTERNS = [
+        (re.compile(r"(password\s+)irreversible-cipher\s+\S+", re.IGNORECASE), r"\1irreversible-cipher <redacted>"),
+        (re.compile(r"(password\s+)cipher\s+\S+", re.IGNORECASE), r"\1cipher <redacted>"),
+        (re.compile(r"(password\s+(?!irreversible-cipher|cipher)\S+)", re.IGNORECASE), r"\1<redacted>"),
+        (re.compile(r"(shared-key\s+)cipher\s+\S+", re.IGNORECASE), r"\1cipher <redacted>"),
+        (re.compile(r"(shared-key\s+(?!cipher)\S+)", re.IGNORECASE), r"\1<redacted>"),
+        (re.compile(r"(secret\s+)cipher\s+\S+", re.IGNORECASE), r"\1cipher <redacted>"),
+        (re.compile(r"(secret\s+(?!cipher)\S+)", re.IGNORECASE), r"\1<redacted>"),
+        (re.compile(r"(community\s+)read\s+cipher\s+\S+", re.IGNORECASE), r"\1read cipher <redacted>"),
+        (re.compile(r"(community\s+)write\s+cipher\s+\S+", re.IGNORECASE), r"\1write cipher <redacted>"),
+        (re.compile(r"(community\s+(?!read\s+cipher|write\s+cipher)\S+)", re.IGNORECASE), r"\1<redacted>"),
+        (re.compile(r"(key\s+)cipher\s+\S+", re.IGNORECASE), r"\1cipher <redacted>"),
+        (re.compile(r"(key\s+(?!cipher)\S+)", re.IGNORECASE), r"\1<redacted>"),
+        (re.compile(r"(auth-type\s+)\S+", re.IGNORECASE), r"\1<redacted>"),
+        (re.compile(r"(encrypt-key\s+)\S+", re.IGNORECASE), r"\1<redacted>"),
+        (re.compile(r"(<redacted>)\s+\S+", re.IGNORECASE), r"\1"),
+        (re.compile(r"(radius\s+shared-key\s+)cipher\s+\S+", re.IGNORECASE), r"\1cipher <redacted>"),
+        (re.compile(r"(radius\s+shared-key\s+(?!cipher)\S+)", re.IGNORECASE), r"\1<redacted>"),
+        (re.compile(r"(pre-shared-key\s+)cipher\s+\S+", re.IGNORECASE), r"\1cipher <redacted>"),
+        (re.compile(r"(pre-shared-key\s+(?!cipher)\S+)", re.IGNORECASE), r"\1<redacted>"),
+        (re.compile(r"(snmp-server\s+community\s+)\S+", re.IGNORECASE), r"\1<redacted>"),
+        (re.compile(r"(snmp-agent\s+community\s+)read\s+cipher\s+\S+", re.IGNORECASE), r"\1read cipher <redacted>"),
+        (re.compile(r"(snmp-agent\s+community\s+)write\s+cipher\s+\S+", re.IGNORECASE), r"\1write cipher <redacted>"),
+        (re.compile(r"(snmp-agent\s+community\s+)(?!read\s+cipher|write\s+cipher)\S+", re.IGNORECASE), r"\1<redacted>"),
+        (re.compile(r"(password\s+)\d+\s+\S+", re.IGNORECASE), r"\1<redacted>"),
+        (re.compile(r"(secret\s+)\d+\s+\S+", re.IGNORECASE), r"\1<redacted>"),
+    ]
+
+    _CATEGORY_GROUPS = {
+        "管理面": {"aaa", "system"},
+        "接口与 VLAN": {"interface", "vlan", "stp", "二层"},
+        "ACL 与安全策略": {"acl", "firewall-object", "security-policy", "qos"},
+        "路由协议": {"ospf", "bgp", "static-route", "route-policy", "route", "vrf", "rip", "is-is"},
+        "防火墙对象": {"address-set", "service-set", "address-object", "service-object", "nat", "firewall"},
+        "未支持能力": set(),
     }
+
+    _UNKNOWN_KEYWORD_CATEGORY_MAP = {
+        "ospf": "路由协议",
+        "bgp": "路由协议",
+        "rip": "路由协议",
+        "is-is": "路由协议",
+        "route-policy": "路由协议",
+        "address-set": "防火墙对象",
+        "service-set": "防火墙对象",
+        "address-object": "防火墙对象",
+        "service-object": "防火墙对象",
+        "security-policy": "ACL 与安全策略",
+        "firewall": "ACL 与安全策略",
+        "nat": "防火墙对象",
+        "radius": "管理面",
+        "tacacs": "管理面",
+        "ntp": "管理面",
+        "snmp": "管理面",
+        "logger": "管理面",
+        "info-center": "管理面",
+        "stelnet": "管理面",
+        "ssh": "管理面",
+        "pki": "管理面",
+        "vrrp": "接口与 VLAN",
+        "lacp": "接口与 VLAN",
+    }
+
+    _RISK_LEVELS = {
+        "aaa": "高",
+        "system": "中",
+        "interface": "中",
+        "vlan": "低",
+        "stp": "低",
+        "acl": "中",
+        "firewall-object": "中",
+        "security-policy": "中",
+        "qos": "中",
+        "ospf": "中",
+        "bgp": "中",
+        "static-route": "中",
+        "route-policy": "中",
+        "route": "中",
+        "vrf": "中",
+        "rip": "中",
+        "is-is": "中",
+        "address-set": "中",
+        "service-set": "中",
+        "address-object": "中",
+        "service-object": "中",
+        "nat": "中",
+        "firewall": "中",
+        "snmp": "中",
+        "nqa": "低",
+        "bfd": "低",
+        "unknown": "低",
+    }
+
+    _REVIEW_REASONS = {
+        "管理面": "涉及认证/授权/日志等关键控制面配置，语义可能因厂商而异，需人工确认",
+        "接口与 VLAN": "二层/三层接口和 VLAN 配置在目标平台可能语义不同，需人工确认",
+        "ACL 与安全策略": "访问控制列表和安全策略需人工确认目标平台对应关系",
+        "路由协议": "路由协议配置（OSPF/BGP 等）需确认目标平台 AS/进程号映射",
+        "防火墙对象": "防火墙对象（地址集/服务集/安全策略）需人工确认映射完整性",
+        "未支持能力": "目标平台未确认支持此功能，建议人工确认是否需要迁移",
+    }
+
+    @classmethod
+    def _redact_line(cls, line: str) -> str:
+        result = line
+        for pattern, replacement in cls._SENSITIVE_PATTERNS:
+            result = pattern.sub(replacement, result)
+        return result
+
+    @classmethod
+    def _get_category_for_feature(cls, feature: str, block_lines: list[str] | None = None) -> str:
+        if feature in ("unknown", ""):
+            if block_lines:
+                combined = " ".join(ln.lower() for ln in block_lines)
+                for kw, cat in cls._UNKNOWN_KEYWORD_CATEGORY_MAP.items():
+                    if kw in combined:
+                        return cat
+            return "未支持能力"
+        for category, features in cls._CATEGORY_GROUPS.items():
+            if feature in features:
+                return category
+        return "未支持能力"
+
+    @classmethod
+    def _get_risk_level(cls, feature: str) -> str:
+        return cls._RISK_LEVELS.get(feature, "低")
+
+    @classmethod
+    def _get_review_reason(cls, category: str) -> str:
+        return cls._REVIEW_REASONS.get(category, "目标平台未确认支持此功能，建议人工确认")
 
     @staticmethod
     def _block_sample_lines(block, max_lines: int = 3) -> list[str]:
-        source_lines = [ln.strip() for ln in block.lines if ln.strip() and not ln.strip().startswith(("!", "#", "*"))]
-        return source_lines[:max_lines]
+        lines = [ln.strip() for ln in block.lines if ln.strip() and not ln.strip().startswith(FallbackNode._COMMENT_MARKERS)]
+        return lines[:max_lines]
 
     def _manual_review_fallback(self, config_text: str, from_vendor: str, to_vendor: str, error: str) -> str:
         from core.parser.block_splitter import split_config_by_feature, summarize_feature_blocks
 
         prefix = self._comment_prefix(to_vendor)
         blocks = split_config_by_feature(config_text, vendor=from_vendor)
-        summary = summarize_feature_blocks(blocks)
+        raw_summary = summarize_feature_blocks(blocks)
         language = "cisco" if (to_vendor or "").lower() == "cisco" else (to_vendor or "text")
+        friendly_reason = self._friendly_fallback_reason(error)
 
         lines = [f"```{language}"]
         lines.append(f"{prefix} MANUAL_REVIEW: 自动翻译未生成可验证结果，已阻止源厂商命令进入可执行配置。")
         lines.append(f"{prefix} source_vendor={from_vendor} target_vendor={to_vendor}")
-        lines.append(f"{prefix} fallback_reason={self._friendly_fallback_reason(error)}")
+        lines.append(f"{prefix} fallback_reason={friendly_reason}")
         lines.append(f"{prefix} block_count={len(blocks)}")
-        if summary:
-            parts = [f"{feature}:{count}" for feature, count in sorted(summary.items())]
+        if raw_summary:
+            parts = [f"{feature}:{count}" for feature, count in sorted(raw_summary.items())]
             lines.append(f"{prefix} feature_summary={', '.join(parts)}")
+
+        category_groups: dict[str, list[tuple[str, int]]] = {
+            "管理面": [],
+            "接口与 VLAN": [],
+            "ACL 与安全策略": [],
+            "路由协议": [],
+            "防火墙对象": [],
+            "未支持能力": [],
+        }
+
+        for block in blocks:
+            feature = block.feature
+            block_lines = block.lines
+            category = self._get_category_for_feature(feature, block_lines)
+            category_groups[category].append((feature, 1))
 
         lines.append(f"{prefix}")
         lines.append(f"{prefix} 人工复核摘要：")
-        for feature, count in sorted(summary.items()):
-            label = self.FEATURE_LABELS.get(feature, feature)
-            lines.append(f"{prefix} - {label}：{count} 个配置块。请确认对应配置是否需要在目标设备重建。")
-            samples = self._block_sample_lines(
-                next((b for b in blocks if b.feature == feature), blocks[0]), max_lines=3
-            )
-            for s in samples[:3]:
-                lines.append(f"{prefix}   示例：{s[:80]}")
+        for category in ("管理面", "接口与 VLAN", "ACL 与安全策略", "路由协议", "防火墙对象", "未支持能力"):
+            items = category_groups.get(category, [])
+            if not items:
+                continue
+            total_count = sum(cnt for _, cnt in items)
+            sample_feature = items[0][0]
+            risk = self._get_risk_level(sample_feature)
+            reason = self._get_review_reason(category)
+            lines.append(f"{prefix} - 【{category}】 {total_count} 个配置块 ⚠ {risk}风险。{reason}")
+            sample_lines: list[str] = []
+            for feat, _ in items:
+                for block in blocks:
+                    block_cat = self._get_category_for_feature(block.feature, block.lines)
+                    if block.feature == feat and block_cat == category:
+                        for raw_line in self._block_sample_lines(block, max_lines=3):
+                            if len(sample_lines) >= 3:
+                                break
+                            sample_lines.append(raw_line)
+                        break
+                if len(sample_lines) >= 3:
+                    break
+            for s in sample_lines[:3]:
+                redacted = self._redact_line(s[:100])
+                lines.append(f"{prefix}   示例：{redacted}")
 
         deterministic = RuleBasedTranslator().translate(config_text, from_vendor, to_vendor)
         deterministic_body = extract_config_block(deterministic).strip()
         if deterministic_body:
             lines.append(f"{prefix}")
             lines.append(f"{prefix} BEGIN_DETERMINISTIC_FALLBACK")
-            lines.extend(deterministic_body.splitlines())
+            for det_line in deterministic_body.splitlines():
+                lines.append(self._redact_line(det_line))
             lines.append(f"{prefix} END_DETERMINISTIC_FALLBACK")
 
         MAX_DETAIL_BLOCKS = 20
@@ -1677,7 +1827,9 @@ class FallbackNode(Node):
             config_text = state.get("config_text", "")
 
         state.set("fallback_used", True)
-        state.set("fallback_reason", error)
+        friendly_reason = self._friendly_fallback_reason(error)
+        state.set("fallback_reason", friendly_reason)
+        state.set("_raw_fallback_error", error)
 
         if self._requires_safe_fallback(error, config_text):
             translated = self._manual_review_fallback(config_text, from_vendor, to_vendor, error)
