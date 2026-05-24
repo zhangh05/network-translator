@@ -102,3 +102,15 @@ class TestDeployableConfigSeparation:
         assert m is not None, "min-height not found for #source"
         val = int(m.group(1))
         assert val >= 280, f"#source min-height should be >= 280px, got {val}px"
+
+    def test_copy_deployable_uses_deployable_config_first(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "r.deployable_config" in html and "_copyDeployable" in html, \
+            "_copyDeployable should reference r.deployable_config"
+
+    def test_export_report_includes_deployable_config(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "deployable_config:stripFence" in html or "deployable_config" in html, \
+            "_buildExportReport should include deployable_config"

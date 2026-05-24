@@ -372,6 +372,7 @@ def run_translation(
         "features": result.get("features", []),
         "analyzer_results": result.get("analyzer_results", []),
         "risk_signals": result.get("risk_signals", []),
+        "deployable_config": result.get("deployable_config", ""),
     }
 
 

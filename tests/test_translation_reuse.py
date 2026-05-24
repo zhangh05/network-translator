@@ -419,6 +419,70 @@ def test_same_request_then_reused(tmp_path, monkeypatch):
     assert mock_run.call_count == 1, "Second identical request must NOT call run_translation"
 
 
+def test_reuse_preserves_deployable_config(tmp_path, monkeypatch):
+    """Scenario: reused result must include deployable_config from persisted project.result."""
+    import sys
+    sys.path.insert(0, str(tmp_path.parent.parent))
+    monkeypatch.setattr("project_store.PROJECT_DIR", tmp_path)
+
+    from project_store import ProjectStore
+
+    store = ProjectStore(project_dir=str(tmp_path))
+    project = store.create_project(name="reuse-deployable")
+    pid = project.id
+
+    cfg = "vlan 10"
+
+    mock_run = MagicMock(return_value={
+        "success": True,
+        "translated": "```cisco\n! full report with review\nvlan 10\n```",
+        "deployable_config": "vlan 10",
+        "fallback_used": False,
+    })
+
+    status1, body1 = _translate_via_store(store, pid, cfg, "huawei", "cisco", "", "", "", "", mock_run)
+    assert status1 == 200
+    assert mock_run.call_count == 1
+
+    status2, body2 = _translate_via_store(store, pid, cfg, "huawei", "cisco", "", "", "", "", mock_run)
+    assert body2.get("reused") is True
+    reused_result = body2.get("result", {})
+    assert "deployable_config" in reused_result, \
+        "reused result must contain deployable_config"
+    assert reused_result["deployable_config"] == "vlan 10", \
+        "deployable_config must match persisted value"
+
+
+def test_run_translation_returns_deployable_config(tmp_path, monkeypatch):
+    """run_translation() result dict must include deployable_config."""
+    import sys
+    sys.path.insert(0, str(tmp_path.parent.parent))
+    monkeypatch.setattr("project_store.PROJECT_DIR", tmp_path)
+
+    from project_store import ProjectStore
+
+    store = ProjectStore(project_dir=str(tmp_path))
+    project = store.create_project(name="run-trans-deployable")
+    pid = project.id
+
+    cfg = "sysname R1\nvlan 10\n"
+
+    mock_run = MagicMock(return_value={
+        "success": True,
+        "translated": "```cisco\n! review report\nhostname R1\nvlan 10\n```",
+        "deployable_config": "hostname R1\nvlan 10",
+        "fallback_used": False,
+    })
+
+    status1, body1 = _translate_via_store(store, pid, cfg, "huawei", "cisco", "", "", "", "", mock_run)
+    assert status1 == 200
+    result1 = body1.get("result", {})
+    assert "deployable_config" in result1, \
+        "run_translation result must include deployable_config"
+    assert result1["deployable_config"] == "hostname R1\nvlan 10", \
+        "deployable_config value must be correct"
+
+
 def test_different_to_vendor_forces_new_translation(tmp_path, monkeypatch):
     """Scenario B: changing to_vendor forces new translation, no reuse.
     Verifies: call_count==1, second result used."""
