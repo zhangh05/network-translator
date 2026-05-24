@@ -204,9 +204,20 @@ class ProjectStore:
         self._save_index()
         return project
 
-    def get_project(self, project_id: str) -> Optional[Project]:
+    def get_project(self, project_id: str, reload: bool = False) -> Optional[Project]:
         """获取项目（优先使用内存缓存，只在缓存不存在时从detail文件加载）。"""
         self._ensure_fresh()
+        if reload:
+            filepath = self._get_project_file(project_id)
+            try:
+                data = self._locked_read(filepath)
+                if data:
+                    proj = self._project_from_data(project_id, data)
+                    self._projects[project_id] = proj
+                    return proj
+            except Exception:
+                logger.exception("Failed to read project %s", project_id)
+            return None
         if project_id in self._projects:
             return self._projects[project_id]
         filepath = self._get_project_file(project_id)
