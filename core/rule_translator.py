@@ -22,6 +22,7 @@ from core.fallback import (
 from core.fallback import switch_rules as sw
 from core.fallback import router_rules as rt
 from core.fallback import firewall_rules as fw
+from core.fallback import management_rules as mgmt
 
 
 class RuleBasedTranslator:
@@ -98,6 +99,26 @@ class RuleBasedTranslator:
         return rv
 
     def _to_huawei(self, stripped: str, lower: str, indent: str, from_vendor: str, state: Dict):
+        rv = mgmt.translate_hostname_to_huawei(stripped, lower, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_ntp_to_huawei(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_logging_to_huawei(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_aaa_to_huawei(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_snmp_to_huawei(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
         rv = sw.translate_to_huawei_switch(stripped, lower, indent, from_vendor)
         if rv is not None:
             return rv
@@ -126,6 +147,26 @@ class RuleBasedTranslator:
         return stripped if from_vendor in ("h3c", "huawei") else indent + stripped
 
     def _to_cisco(self, stripped: str, lower: str, indent: str, from_vendor: str, state: Dict):
+        rv = mgmt.translate_hostname_to_cisco(stripped, lower, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_ntp_to_cisco(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_logging_to_cisco(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_aaa_to_cisco(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_snmp_to_cisco(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
         rv = sw.translate_to_cisco_switch(stripped, lower, indent, from_vendor, state)
         if rv is not None:
             return rv
@@ -266,6 +307,26 @@ class RuleBasedTranslator:
         return None
 
     def _to_h3c(self, stripped: str, lower: str, indent: str, from_vendor: str, state: Dict):
+        rv = mgmt.translate_hostname_to_h3c(stripped, lower, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_ntp_to_h3c(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_logging_to_h3c(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_aaa_to_h3c(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_snmp_to_h3c(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
         rv = sw.translate_to_h3c_switch(stripped, lower, indent, from_vendor, state)
         if rv is not None:
             return rv
@@ -289,6 +350,26 @@ class RuleBasedTranslator:
         return indent + stripped
 
     def _to_ruijie(self, stripped: str, lower: str, indent: str, from_vendor: str, state: Dict):
+        rv = mgmt.translate_hostname_to_ruijie(stripped, lower, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_ntp_to_ruijie(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_logging_to_ruijie(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_aaa_to_ruijie(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_snmp_to_ruijie(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
         rv = sw.translate_to_ruijie_switch(stripped, lower, indent, from_vendor, state)
         if rv is not None:
             return rv
