@@ -322,3 +322,131 @@ def test_firewall_cipher_redacted():
     for line in exe:
         assert "Test@" not in line, f"Secret leaked in: {line}"
         assert "cipher" not in line.lower()
+
+
+def test_huawei_usg_to_hillstone_multiple_rules():
+    result = RuleBasedTranslator().translate(
+        "security-policy\n"
+        " rule name p1\n"
+        "  source-zone trust\n"
+        "  destination-zone untrust\n"
+        "  action permit\n"
+        " rule name p2\n"
+        "  source-zone trust\n"
+        "  destination-zone untrust\n"
+        "  action deny\n"
+        " rule name p3\n"
+        "  source-zone dmz\n"
+        "  destination-zone untrust\n"
+        "  service HTTP\n"
+        "  action permit\n",
+        from_vendor="huawei_usg",
+        to_vendor="hillstone",
+    )
+    exe = _executable_lines(result)
+    policy_lines = [l for l in exe if l.startswith("policy ")]
+    assert len(policy_lines) == 3, f"Expected 3 policy lines, got {len(policy_lines)}: {policy_lines}"
+    assert any("p1" in l and "permit" in l for l in policy_lines), f"Missing p1/permit in {policy_lines}"
+    assert any("p2" in l and "deny" in l for l in policy_lines), f"Missing p2/deny in {policy_lines}"
+    assert any("p3" in l and "permit" in l for l in policy_lines), f"Missing p3/permit in {policy_lines}"
+    assert "no rule defined" not in result
+    assert "security-policy (incomplete" not in result
+    _check_no_source_residue(result, HUAWEI_USG_KEYWORDS)
+
+
+def test_huawei_usg_to_hillstone_multiple_rules_no_false_no_rule_review():
+    result = RuleBasedTranslator().translate(
+        "security-policy\n"
+        " rule name p1\n"
+        "  source-zone trust\n"
+        "  destination-zone untrust\n"
+        "  action permit\n"
+        " rule name p2\n"
+        "  source-zone trust\n"
+        "  destination-zone untrust\n"
+        "  action deny\n",
+        from_vendor="huawei_usg",
+        to_vendor="hillstone",
+    )
+    exe = _executable_lines(result)
+    policy_lines = [l for l in exe if l.startswith("policy ")]
+    assert len(policy_lines) == 2, f"Expected 2 policy lines, got {len(policy_lines)}: {policy_lines}"
+    assert "no rule defined" not in result, f"False 'no rule defined' in {result}"
+    assert "security-policy (incomplete" not in result, f"False incomplete in {result}"
+    _check_no_source_residue(result, HUAWEI_USG_KEYWORDS)
+
+
+def test_huawei_usg_to_hillstone_incomplete_policy_flushes_manual_review_at_eof():
+    result = RuleBasedTranslator().translate(
+        "security-policy\n rule name p1\n  source-zone trust\n",
+        from_vendor="huawei_usg",
+        to_vendor="hillstone",
+    )
+    assert "MANUAL_REVIEW" in result
+    assert "p1" in result
+    assert "incomplete" in result
+    _check_no_source_residue(result, HUAWEI_USG_KEYWORDS)
+
+
+def test_huawei_usg_to_hillstone_incomplete_policy_before_next_top_level_flushes_manual_review():
+    result = RuleBasedTranslator().translate(
+        "security-policy\n rule name p1\n  source-zone trust\n  destination-zone untrust\n"
+        "zone other\n",
+        from_vendor="huawei_usg",
+        to_vendor="hillstone",
+    )
+    assert "MANUAL_REVIEW" in result
+    assert "p1" in result
+    assert "incomplete" in result
+    # Next top-level command should still be translated
+    assert "zone other" in result
+    _check_no_source_residue(result, HUAWEI_USG_KEYWORDS)
+
+
+def test_huawei_usg_to_hillstone_secpol_header_no_rules():
+    result = RuleBasedTranslator().translate(
+        "security-policy\n",
+        from_vendor="huawei_usg",
+        to_vendor="hillstone",
+    )
+    assert "MANUAL_REVIEW" in result
+    assert "no rule" in result.lower()
+    _check_no_source_residue(result, HUAWEI_USG_KEYWORDS)
+
+
+def test_huawei_usg_to_hillstone_unknown_policy_subcommand_manual_review():
+    result = RuleBasedTranslator().translate(
+        "security-policy\n"
+        " rule name p1\n"
+        "  source-zone trust\n"
+        "  destination-zone untrust\n"
+        "  time-range WORK\n"
+        "  action permit\n",
+        from_vendor="huawei_usg",
+        to_vendor="hillstone",
+    )
+    assert "policy p1" in result, f"Missing policy: {result}"
+    assert "MANUAL_REVIEW" in result, f"Missing MANUAL_REVIEW: {result}"
+    assert "time-range WORK" in result, f"Missing time-range WORK: {result}"
+    assert "no rule defined" not in result
+    # No Huawei executable source residue
+    exe = _executable_lines(result)
+    for line in exe:
+        assert "security-policy" not in line, f"Source command leaked: {line}"
+        assert "time-range" not in line, f"Source sub-command leaked: {line}"
+    _check_no_source_residue(result, HUAWEI_USG_KEYWORDS)
+
+
+def test_huawei_usg_to_hillstone_zone_interface_binding_manual_review():
+    result = RuleBasedTranslator().translate(
+        "security-zone name trust\n"
+        " add interface GigabitEthernet0/0/1\n",
+        from_vendor="huawei_usg",
+        to_vendor="hillstone",
+    )
+    assert "zone trust" in result, f"Missing zone: {result}"
+    assert "MANUAL_REVIEW" in result, f"Missing MANUAL_REVIEW: {result}"
+    assert "GigabitEthernet0/0/1" in result, f"Missing interface: {result}"
+    exe = _executable_lines(result)
+    assert not any("add interface" in l for l in exe), f"add interface is executable: {result}"
+    _check_no_source_residue(result, HUAWEI_USG_KEYWORDS)

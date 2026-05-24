@@ -35,6 +35,11 @@ class RuleBasedTranslator:
             else:
                 output.append(translated)
 
+        # EOF flush: emit MANUAL_REVIEW for any incomplete multi-line block
+        pending = self._flush_pending_state(state, to_vendor)
+        if pending:
+            output.extend(pending)
+
         if not output:
             return ""
         return self._wrap("\n".join(output), to_vendor)
@@ -47,21 +52,33 @@ class RuleBasedTranslator:
         indent = line[: len(line) - len(line.lstrip())]
         lower = stripped.lower()
 
+        # Flush pending multi-line block at line boundary before processing
+        flush_output = self._check_flush_secpol_at_line_boundary(indent, state)
+
         if to_vendor == "huawei":
-            return self._to_huawei(stripped, lower, indent, from_vendor, state)
-        if to_vendor == "h3c":
-            return self._to_h3c(stripped, lower, indent)
-        if to_vendor == "cisco":
-            return self._to_cisco(stripped, lower, indent, from_vendor, state)
-        if to_vendor == "ruijie":
-            return self._to_ruijie(stripped, lower, indent, from_vendor, state)
-        if to_vendor == "hillstone":
-            return self._to_hillstone_firewall(stripped, lower, indent, from_vendor, state)
-        if to_vendor == "huawei_usg":
-            return self._to_huawei_usg_firewall(stripped, lower, indent, from_vendor, state)
-        if to_vendor in ("topsec", "dptech"):
-            return self._to_firewall_manual_review(stripped, indent, to_vendor, from_vendor)
-        return line
+            rv = self._to_huawei(stripped, lower, indent, from_vendor, state)
+        elif to_vendor == "h3c":
+            rv = self._to_h3c(stripped, lower, indent)
+        elif to_vendor == "cisco":
+            rv = self._to_cisco(stripped, lower, indent, from_vendor, state)
+        elif to_vendor == "ruijie":
+            rv = self._to_ruijie(stripped, lower, indent, from_vendor, state)
+        elif to_vendor == "hillstone":
+            rv = self._to_hillstone_firewall(stripped, lower, indent, from_vendor, state)
+        elif to_vendor == "huawei_usg":
+            rv = self._to_huawei_usg_firewall(stripped, lower, indent, from_vendor, state)
+        elif to_vendor in ("topsec", "dptech"):
+            rv = self._to_firewall_manual_review(stripped, indent, to_vendor, from_vendor)
+        else:
+            rv = line
+
+        if flush_output:
+            if rv is None:
+                return flush_output
+            if isinstance(rv, list):
+                return flush_output + rv
+            return flush_output + [rv]
+        return rv
 
     def _to_huawei(self, stripped: str, lower: str, indent: str, from_vendor: str, state: dict):
         if lower.startswith("hostname "):
@@ -544,43 +561,54 @@ class RuleBasedTranslator:
         if (from_vendor or "").lower() == "hillstone":
             return stripped
 
-        # Flush pending Huawei USG security-policy multi-line block
-        secpol = state.get("_secpol")
-        if secpol is not None:
-            if indent:
-                m = re.match(r"rule\s+name\s+(\S+)", stripped, re.IGNORECASE)
-                if m:
-                    secpol["name"] = m.group(1)
-                    return None
-                for key, pat in (
-                    ("src_zone", r"source-zone\s+(\S+)"),
-                    ("dst_zone", r"destination-zone\s+(\S+)"),
-                    ("src_addr", r"source-address\s+(\S+)"),
-                    ("dst_addr", r"destination-address\s+(\S+)"),
-                    ("service", r"service\s+(\S+)"),
-                ):
-                    m = re.match(pat, stripped, re.IGNORECASE)
-                    if m:
-                        secpol[key] = m.group(1)
-                        return None
-                m = re.match(r"action\s+(permit|deny)", stripped, re.IGNORECASE)
-                if m:
-                    secpol["action"] = m.group(1)
-                    state["_secpol"] = None
-                    name = secpol.get("name", "UNNAMED")
-                    src_zone = secpol.get("src_zone", "any")
-                    dst_zone = secpol.get("dst_zone", "any")
-                    src_addr = secpol.get("src_addr", "any")
-                    dst_addr = secpol.get("dst_addr", "any")
-                    svc = secpol.get("service", "any")
-                    action = secpol.get("action", "permit")
-                    return f"policy {name} from {src_zone} to {dst_zone} source {src_addr} destination {dst_addr} service {svc} action {action}"
+        # Huawei USG security-policy multi-line block (inside block only)
+        if state.get("_in_secpol"):
+            if not indent:
+                # Exit is handled by _check_flush_secpol_at_line_boundary in _translate_line
+                # This branch should not be reached for a non-indented line
                 return None
-            else:
+            # Inside secpol block
+            m = re.match(r"rule\s+name\s+(\S+)", stripped, re.IGNORECASE)
+            if m:
+                state["_secpol_seen_rule"] = True
+                # Flush previous rule if any
+                secpol = state.get("_secpol")
+                state["_secpol"] = {"name": m.group(1)}
+                if secpol and secpol.get("name"):
+                    if secpol.get("action"):
+                        return self._render_policy(secpol)
+                    else:
+                        return self._manual_review_comment(
+                            f"security-policy name={secpol['name']} incomplete: missing action",
+                            "hillstone",
+                        )
+                return None
+
+            for key, pat in (
+                ("src_zone", r"source-zone\s+(\S+)"),
+                ("dst_zone", r"destination-zone\s+(\S+)"),
+                ("src_addr", r"source-address\s+(\S+)"),
+                ("dst_addr", r"destination-address\s+(\S+)"),
+                ("service", r"service\s+(\S+)"),
+            ):
+                m = re.match(pat, stripped, re.IGNORECASE)
+                if m:
+                    secpol = state.get("_secpol")
+                    if secpol is not None:
+                        secpol[key] = m.group(1)
+                    return None
+
+            m = re.match(r"action\s+(permit|deny)", stripped, re.IGNORECASE)
+            if m:
+                pending = state.get("_secpol", {})
+                pending["action"] = m.group(1)
                 state["_secpol"] = None
-                return self._manual_review_comment(
-                    f"security-policy name={secpol.get('name', 'UNKNOWN')} (incomplete, no action)", "hillstone"
-                )
+                return self._render_policy(pending)
+
+            # Unknown sub-line inside secpol — emit MANUAL_REVIEW
+            secpol = state.get("_secpol")
+            name = secpol.get("name", "UNNAMED") if secpol else "UNNAMED"
+            return f"# MANUAL_REVIEW security-policy rule={name} unsupported sub-command: {stripped}"
 
         # Huawei USG zone
         m = re.match(r"security-zone\s+name\s+(\S+)", stripped, re.IGNORECASE)
@@ -591,7 +619,7 @@ class RuleBasedTranslator:
         if indent and state.get("_last_zone"):
             m = re.match(r"add\s+interface\s+(\S+)", stripped, re.IGNORECASE)
             if m:
-                return None
+                return f"# MANUAL_REVIEW zone {state['_last_zone']} interface binding: {m.group(1)}"
             state["_last_zone"] = None
 
         # Topsec zone
@@ -665,10 +693,69 @@ class RuleBasedTranslator:
 
         # Huawei USG security-policy header
         if lower.startswith("security-policy") and not lower.startswith("security-policy name"):
-            state["_secpol"] = {}
+            state["_in_secpol"] = True
+            state["_secpol"] = None
+            state["_secpol_seen_rule"] = False
             return None
 
         return self._manual_review_comment(stripped, "hillstone", indent)
+
+    def _check_flush_secpol_at_line_boundary(self, indent: str, state: dict) -> Optional[list]:
+        if not state.get("_in_secpol"):
+            return None
+        if indent:
+            return None
+        pending = state.get("_secpol")
+        seen_rule = state.pop("_secpol_seen_rule", False)
+        state["_in_secpol"] = False
+        state["_secpol"] = None
+        output = []
+        if pending and pending.get("name"):
+            if pending.get("action"):
+                output.append(self._render_policy(pending))
+            else:
+                output.append(self._manual_review_comment(
+                    f"security-policy name={pending['name']} incomplete: missing action/destination/service",
+                    "hillstone",
+                ))
+        elif not seen_rule:
+            output.append(self._manual_review_comment(
+                "security-policy (incomplete: no rule defined)",
+                "hillstone",
+            ))
+        return output
+
+    def _render_policy(self, rule: dict) -> str:
+        name = rule.get("name", "UNNAMED")
+        src_zone = rule.get("src_zone", "any")
+        dst_zone = rule.get("dst_zone", "any")
+        src_addr = rule.get("src_addr", "any")
+        dst_addr = rule.get("dst_addr", "any")
+        svc = rule.get("service", "any")
+        action = rule.get("action", "permit")
+        return f"policy {name} from {src_zone} to {dst_zone} source {src_addr} destination {dst_addr} service {svc} action {action}"
+
+    def _flush_pending_state(self, state: dict, to_vendor: str) -> Optional[list]:
+        result = []
+        if state.get("_in_secpol"):
+            pending = state.get("_secpol")
+            seen_rule = state.pop("_secpol_seen_rule", False)
+            state["_in_secpol"] = False
+            state["_secpol"] = None
+            if pending and pending.get("name"):
+                if pending.get("action"):
+                    result.append(self._render_policy(pending))
+                else:
+                    result.append(self._manual_review_comment(
+                        f"security-policy name={pending['name']} incomplete: missing action/destination/service",
+                        to_vendor,
+                    ))
+            elif not seen_rule:
+                result.append(self._manual_review_comment(
+                    "security-policy (incomplete: no rule defined)",
+                    to_vendor,
+                ))
+        return result if result else None
 
     def _to_huawei_usg_firewall(self, stripped: str, lower: str, indent: str, from_vendor: str, state: dict) -> Optional[Union[str, list]]:
         if re.search(r"(cipher|password)\s+\S+", lower):
