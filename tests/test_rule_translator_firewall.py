@@ -271,7 +271,7 @@ def test_dptech_to_huawei_usg_address_object():
 def test_dptech_to_huawei_usg_policy():
     result = RuleBasedTranslator().translate(
         "security-policy name allow-dns source-zone lan destination-zone wan "
-        "destination-address DNS service dns action permit\n",
+        "source-address 10.0.0.0 destination-address DNS service dns action permit\n",
         from_vendor="dptech",
         to_vendor="huawei_usg",
     )
@@ -279,6 +279,7 @@ def test_dptech_to_huawei_usg_policy():
     assert "rule name allow-dns" in result
     assert "source-zone lan" in result
     assert "destination-zone wan" in result
+    assert "source-address 10.0.0.0" in result
     assert "destination-address DNS" in result
     assert "service dns" in result
     assert "action permit" in result
@@ -290,7 +291,7 @@ def test_dptech_to_huawei_usg_full():
         "zone lan\nzone wan\n"
         "object address DNS 8.8.8.8 255.255.255.255\n"
         "security-policy name allow-dns source-zone lan destination-zone wan "
-        "destination-address DNS service dns action permit\n",
+        "source-address 10.0.0.0 destination-address DNS service dns action permit\n",
         from_vendor="dptech",
         to_vendor="huawei_usg",
     )
@@ -299,6 +300,7 @@ def test_dptech_to_huawei_usg_full():
     assert "ip address-set DNS type object" in result
     assert "security-policy" in result
     assert "rule name allow-dns" in result
+    assert "source-address 10.0.0.0" in result
     _check_no_source_residue(result, DPTECH_KEYWORDS)
 
 

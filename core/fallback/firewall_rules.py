@@ -188,15 +188,27 @@ def translate_to_hillstone_firewall(stripped: str, lower: str, indent: str, from
     if m and from_vendor == "hillstone":
         return stripped
 
-    # DPtech single-line policy -> Hillstone
+    # DPtech single-line policy -> Hillstone (requires source-address, no defaulting)
     m = re.match(
-        r"security-policy\s+name\s+(\S+)\s+source-zone\s+(\S+)\s+destination-zone\s+(\S+)\s+(?:source-address\s+(\S+)\s+)?destination-address\s+(\S+)\s+service\s+(\S+)\s+action\s+(permit|deny)",
+        r"security-policy\s+name\s+(\S+)\s+source-zone\s+(\S+)\s+destination-zone\s+(\S+)\s+source-address\s+(\S+)\s+destination-address\s+(\S+)\s+service\s+(\S+)\s+action\s+(permit|deny)",
         stripped,
         re.IGNORECASE,
     )
     if m:
         name, src_zone, dst_zone, src_addr, dst_addr, svc, action = m.groups()
-        return f"policy {name} from {src_zone} to {dst_zone} source {src_addr or 'any'} destination {dst_addr} service {svc} action {action}"
+        return f"policy {name} from {src_zone} to {dst_zone} source {src_addr} destination {dst_addr} service {svc} action {action}"
+
+    # DPtech single-line policy missing source-address -> MANUAL_REVIEW (no implicit "any")
+    m = re.match(
+        r"security-policy\s+name\s+(\S+)\s+source-zone\s+(\S+)\s+destination-zone\s+(\S+)\s+destination-address\s+(\S+)\s+service\s+(\S+)\s+action\s+(permit|deny)",
+        stripped,
+        re.IGNORECASE,
+    )
+    if m:
+        return manual_review_comment(
+            f"security-policy name={m.group(1)}: missing source-address (DPtech default-any semantics not confirmed)",
+            "hillstone",
+        )
 
     # Flat policy (Hillstone, Topsec)
     m = re.match(
@@ -353,23 +365,36 @@ def translate_to_huawei_usg_firewall(stripped: str, lower: str, indent: str, fro
             f"  action {action}",
         ]
 
-    # Policy (DPtech single-line -> Huawei USG multi-line)
+    # Policy (DPtech single-line -> Huawei USG multi-line, requires source-address)
+    m = re.match(
+        r"security-policy\s+name\s+(\S+)\s+source-zone\s+(\S+)\s+destination-zone\s+(\S+)\s+source-address\s+(\S+)\s+destination-address\s+(\S+)\s+service\s+(\S+)\s+action\s+(permit|deny)",
+        stripped,
+        re.IGNORECASE,
+    )
+    if m:
+        name, src_zone, dst_zone, src_addr, dst_addr, svc, action = m.groups()
+        return [
+            "security-policy",
+            f" rule name {name}",
+            f"  source-zone {src_zone}",
+            f"  source-address {src_addr}",
+            f"  destination-zone {dst_zone}",
+            f"  destination-address {dst_addr}",
+            f"  service {svc}",
+            f"  action {action}",
+        ]
+
+    # DPtech policy missing source-address -> MANUAL_REVIEW (no implicit "any")
     m = re.match(
         r"security-policy\s+name\s+(\S+)\s+source-zone\s+(\S+)\s+destination-zone\s+(\S+)\s+destination-address\s+(\S+)\s+service\s+(\S+)\s+action\s+(permit|deny)",
         stripped,
         re.IGNORECASE,
     )
     if m:
-        name, src_zone, dst_zone, dst_addr, svc, action = m.groups()
-        return [
-            "security-policy",
-            f" rule name {name}",
-            f"  source-zone {src_zone}",
-            f"  destination-zone {dst_zone}",
-            f"  destination-address {dst_addr}",
-            f"  service {svc}",
-            f"  action {action}",
-        ]
+        return manual_review_comment(
+            f"security-policy name={m.group(1)}: missing source-address (DPtech default-any semantics not confirmed)",
+            "huawei_usg",
+        )
 
     return manual_review_comment(stripped, "huawei_usg", indent)
 

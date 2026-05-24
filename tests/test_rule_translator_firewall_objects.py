@@ -392,15 +392,15 @@ def test_dptech_zone_to_hillstone():
 
 
 def test_dptech_policy_to_hillstone_is_manual_review():
-    """DPtech -> Hillstone flat policy is not yet supported; expect MANUAL_REVIEW."""
+    """DPtech -> Hillstone: missing source-address requires MANUAL_REVIEW (no implicit any)."""
     result = RuleBasedTranslator().translate(
         "security-policy name allow-web source-zone inside destination-zone outside "
         "destination-address SRV1 service HTTP action permit\n",
         from_vendor="dptech",
         to_vendor="hillstone",
     )
-    assert "policy allow-web" in result
-    assert "source any" in result
+    assert "MANUAL_REVIEW" in result
+    assert "missing source-address" in result
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -433,13 +433,25 @@ def test_dptech_policy_missing_action_to_hillstone():
 def test_dptech_policy_to_hillstone_supported():
     result = RuleBasedTranslator().translate(
         "security-policy name allow-web source-zone inside destination-zone outside "
-        "destination-address SRV1 service HTTP action permit\n",
+        "source-address 10.0.0.0 destination-address SRV1 service HTTP action permit\n",
         from_vendor="dptech",
         to_vendor="hillstone",
     )
     assert "policy allow-web" in result
+    assert "source 10.0.0.0" in result
     assert "action permit" in result
     _check_no_source_residue(result, DPTECH_KW)
+
+
+def test_dptech_policy_without_source_address_to_hillstone_manual_review():
+    result = RuleBasedTranslator().translate(
+        "security-policy name allow-web source-zone inside destination-zone outside "
+        "destination-address SRV1 service HTTP action permit\n",
+        from_vendor="dptech",
+        to_vendor="hillstone",
+    )
+    assert "MANUAL_REVIEW" in result
+    assert "missing source-address" in result
 
 
 def test_dptech_policy_with_source_address_to_hillstone():
@@ -456,13 +468,25 @@ def test_dptech_policy_with_source_address_to_hillstone():
 def test_dptech_policy_to_huawei_usg_supported():
     result = RuleBasedTranslator().translate(
         "security-policy name allow-web source-zone inside destination-zone outside "
-        "destination-address SRV1 service HTTP action permit\n",
+        "source-address 10.0.0.0 destination-address SRV1 service HTTP action permit\n",
         from_vendor="dptech",
         to_vendor="huawei_usg",
     )
     assert "security-policy" in result
     assert "rule name allow-web" in result
+    assert "source-address 10.0.0.0" in result
     _check_no_source_residue(result, DPTECH_KW)
+
+
+def test_dptech_policy_without_source_address_to_huawei_usg_manual_review():
+    result = RuleBasedTranslator().translate(
+        "security-policy name allow-web source-zone inside destination-zone outside "
+        "destination-address SRV1 service HTTP action permit\n",
+        from_vendor="dptech",
+        to_vendor="huawei_usg",
+    )
+    assert "MANUAL_REVIEW" in result
+    assert "missing source-address" in result
 
 
 def test_dptech_policy_with_source_address_to_huawei_usg():
@@ -473,8 +497,8 @@ def test_dptech_policy_with_source_address_to_huawei_usg():
         to_vendor="huawei_usg",
     )
     assert "security-policy" in result
+    assert "rule name allow-web" in result
     assert "source-address 10.0.0.0" in result
-    _check_no_source_residue(result, DPTECH_KW)
 
 
 def test_hillstone_address_host_to_huawei_usg():
@@ -665,7 +689,7 @@ def test_hillstone_policy_to_hillstone_same_vendor():
 def test_dptech_policy_action_deny_to_hillstone():
     result = RuleBasedTranslator().translate(
         "security-policy name deny-ping source-zone wan destination-zone trust "
-        "destination-address SERVER service PING action deny\n",
+        "source-address 10.0.0.0 destination-address SERVER service PING action deny\n",
         from_vendor="dptech",
         to_vendor="hillstone",
     )
