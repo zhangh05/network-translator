@@ -856,13 +856,20 @@ function _renderRiskTabGrouped(r){
   var mustHandle=_dedupe(fatal.concat(mustFix));
   review=_dedupe(review,mustHandle);
   info=_dedupe(info,mustHandle.concat(review));
+  var fallbackNotice="";
+  if(r.fallback_used){
+    fallbackNotice="<div class='rs risk--review'><div class='rs__hd'>⚠ 规则兜底 — 已启用</div><div class='rs__bd'><div class='ri'><div class='ri__msg'>本次没有得到可验证的 LLM 结构化结果，系统已自动切换到规则兜底。可执行配置只包含系统能确定的转换；其余内容已进入人工复核。请重点查看：人工复核摘要、可部署配置、风险报告。</div></div></div></div>"
+  }
   var html='<div class="risk-root">'+
+    fallbackNotice+
     _section("⬆ 必须处理 — 会阻断上线","risk--fatal",mustHandle)+
     _section("⚠ 建议复核 — 需要人工确认","risk--review",review)+
     _section("ℹ 信息提示","risk--info",info)+
     "</div>";
-  if(!mustHandle.length&&!review.length&&!info.length){
+  if(!mustHandle.length&&!review.length&&!info.length&&!r.fallback_used){
     html='<div class="empty">无风险发现，翻译结果可直接用于人工复核。</div>';
+  } else if(!mustHandle.length&&!review.length&&!info.length&&r.fallback_used){
+    html='<div class="risk-root">'+fallbackNotice+"<div class='empty'>除规则兜底通知外，无其他风险发现。</div></div>"
   }
   return html
 }
@@ -941,7 +948,12 @@ async function TL(){
     // show request_id row
     if(R.request_id){E("rid").textContent=R.request_id;E("ridr").classList.remove("h");E("rvr").textContent=_versionLabel(R.version,R.model)}
     RN();
-    bannerShow(R.result.success?"ok":"warn",R.result.fallback_used?"已使用规则兜底":"翻译成功");
+    if(d.reused){
+      bannerShow("ok","配置未变化，已复用上次结果");
+      E("bt").textContent="0.0s"
+    }else{
+      bannerShow(R.result.success?"ok":"warn",R.result.fallback_used?"已使用规则兜底":"翻译成功");
+    }
     // Reload project from server so all browsers see the same result
     try{var sr=await fetch("/api/projects/"+pid.id,{headers:H()});if(sr.ok){var sp=await sr.json();if(sp.ok&&sp.project){var refreshed=PROJS.find(function(x){return x.id===ACTIVE});if(refreshed){refreshed.result=sp.project.result;refreshed.request_id=sp.project.request_id||R.request_id;refreshed.version=sp.project.version||R.version;refreshed.model=sp.project.model||R.model;refreshed.config=sp.project.config_text||c;refreshed.tab="translated"}}}}catch(_){}
     renderSidebar()

@@ -41,6 +41,7 @@ class Project:
         self.version = ""
         self.model = ""
         self.history = []
+        self.last_translate_hash = ""
 
     def to_dict(self) -> dict:
         return {
@@ -60,6 +61,7 @@ class Project:
             "version": self.version,
             "model": self.model,
             "history_count": len(self.history),
+            "last_translate_hash": self.last_translate_hash,
         }
 
     def to_full_dict(self) -> dict:
@@ -126,6 +128,7 @@ class ProjectStore:
         proj.version = data.get("version") or ""
         proj.model = data.get("model") or ""
         proj.history = data.get("history", [])
+        proj.last_translate_hash = data.get("last_translate_hash") or ""
         return proj
 
     def _load_index(self):
@@ -255,6 +258,8 @@ class ProjectStore:
             project.version = updates["version"]
         if "model" in updates:
             project.model = updates["model"]
+        if "last_translate_hash" in updates:
+            project.last_translate_hash = updates["last_translate_hash"]
 
         project.updated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         self._save_project(project)
@@ -503,6 +508,21 @@ def register_project_routes(app):
         if not config_text:
             return {"ok": False, "error": "No config provided"}
 
+        import hashlib
+        config_hash = hashlib.md5(config_text.encode()).hexdigest()
+
+        if project.result is not None and project.last_translate_hash == config_hash:
+            import time as _time
+            return {
+                "ok": True,
+                "result": project.result,
+                "reused": True,
+                "elapsed_ms": 0,
+                "request_id": project.request_id or "",
+                "version": project.version or "",
+                "model": project.model or "",
+            }, 200
+
         # 更新项目配置
         store.update_project(project_id, {
             "config_text": config_text,
@@ -512,6 +532,7 @@ def register_project_routes(app):
             "source_platform": source_platform,
             "target_domain": target_domain,
             "target_platform": target_platform,
+            "last_translate_hash": config_hash,
         })
 
         import uuid

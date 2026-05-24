@@ -201,7 +201,7 @@ interface Vlanif10
 ip route-static 0.0.0.0 0.0.0.0 10.0.10.254
 traffic classifier TC operator and
  if-match acl 3000
-""",
+ """,
     )
 
     FallbackNode().execute(state)
@@ -216,3 +216,102 @@ traffic classifier TC operator and
     assert "! MANUAL_REVIEW unsupported source command: traffic classifier" in translated
     assert "traffic classifier TC" not in executable
     assert "if-match acl" not in executable
+
+
+def test_safe_fallback_emits_grouped_human_readable_summary():
+    state = State()
+    state.set("from_vendor", "huawei")
+    state.set("to_vendor", "cisco")
+    state.set("translate_error", "LLM 输出校验失败: 第 0 项不是对象")
+    state.set(
+        "config_text",
+        """sysname HW-SW
+vlan batch 10 20
+interface Vlanif10
+ ip address 10.0.10.1 255.255.255.0
+traffic classifier TC operator and
+ if-match acl 3000
+traffic behavior TB
+local-user admin password irreversible-cipher x
+acl number 3000
+ rule 5 permit ip
+snmp-agent community read cipher public
+""",
+    )
+
+    FallbackNode().execute(state)
+    translated = state.get("translated_config")
+    executable = "\n".join(_executable_lines(translated))
+
+    assert "人工复核摘要" in translated
+    assert "AAA/认证" in translated or "aaa" in translated.lower()
+    assert "QoS/PBR" in translated or "qos" in translated.lower()
+    assert "ACL/访问控制" in translated or "acl" in translated.lower()
+    assert "MANUAL_REVIEW_BLOCK" in translated
+    assert "BEGIN_DETERMINISTIC_FALLBACK" in translated
+    assert "END_DETERMINISTIC_FALLBACK" in translated
+    assert "hostname HW-SW" in executable
+    assert "vlan 10,20" in executable
+    assert "interface Vlan10" in executable
+    assert "fallback_reason=" in translated
+
+
+def test_safe_fallback_detail_blocks_capped_at_20():
+    state = State()
+    state.set("from_vendor", "huawei")
+    state.set("to_vendor", "cisco")
+    state.set("translate_error", "LLM 输出校验失败: 第 0 项不是对象")
+
+    lines = []
+    for i in range(1, 51):
+        lines.append(f"interface Vlanif{i}")
+        lines.append(f" ip address 10.0.{i}.1 255.255.255.0")
+
+    state.set("config_text", "\n".join(lines))
+
+    FallbackNode().execute(state)
+    translated = state.get("translated_config")
+
+    block_count_line = next(
+        (l for l in translated.splitlines() if l.strip().startswith("! block_count=")), None
+    )
+    assert block_count_line is not None
+    total = int(block_count_line.split("=")[1].strip())
+    assert total == 50
+
+    detail_lines = [
+        l for l in translated.splitlines()
+        if "MANUAL_REVIEW_BLOCK" in l and not l.strip().startswith("!")
+    ]
+    visible_count = sum(1 for l in translated.splitlines() if "MANUAL_REVIEW_BLOCK" in l and l.strip().startswith("! MANUAL_REVIEW_BLOCK"))
+    assert visible_count <= 20, f"Expected ≤20 detail blocks, got {visible_count}"
+
+    if total > 20:
+        assert "... 还有" in translated
+        assert "详见审计日志" in translated or "导出报告" in translated
+
+
+def test_safe_fallback_sample_lines_are_comments_not_executable():
+    state = State()
+    state.set("from_vendor", "huawei")
+    state.set("to_vendor", "cisco")
+    state.set("translate_error", "LLM 输出校验失败: 第 0 项不是对象")
+    state.set(
+        "config_text",
+        """sysname HW-SW
+vlan batch 10 20
+aaa
+ local-user admin password irreversible-cipher x
+interface Vlanif10
+ ip address 10.0.10.1 255.255.255.0
+""",
+    )
+
+    FallbackNode().execute(state)
+    translated = state.get("translated_config")
+    executable = "\n".join(_executable_lines(translated))
+
+    assert "示例：" in translated
+    assert "local-user" not in executable
+    assert "vlan batch" not in executable
+    assert "interface Vlanif10" not in executable

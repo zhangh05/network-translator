@@ -1581,6 +1581,27 @@ class FallbackNode(Node):
             return "未知原因，已切换到规则兜底"
         return error_text[:180]
 
+    FEATURE_LABELS = {
+        "aaa": "AAA/认证",
+        "qos": "QoS/PBR",
+        "interface": "接口配置",
+        "acl": "ACL/访问控制",
+        "snmp": "SNMP/网管",
+        "nqa": "NQA/探测",
+        "bfd": "BFD/快速检测",
+        "stp": "STP/生成树",
+        "vrf": "VRF/VPN instance",
+        "route": "路由",
+        "vlan": "VLAN/二层",
+        "system": "系统/日志/NTP/PKI",
+        "unknown": "未分类",
+    }
+
+    @staticmethod
+    def _block_sample_lines(block, max_lines: int = 3) -> list[str]:
+        source_lines = [ln.strip() for ln in block.lines if ln.strip() and not ln.strip().startswith(("!", "#", "*"))]
+        return source_lines[:max_lines]
+
     def _manual_review_fallback(self, config_text: str, from_vendor: str, to_vendor: str, error: str) -> str:
         from core.parser.block_splitter import split_config_by_feature, summarize_feature_blocks
 
@@ -1597,19 +1618,49 @@ class FallbackNode(Node):
         if summary:
             parts = [f"{feature}:{count}" for feature, count in sorted(summary.items())]
             lines.append(f"{prefix} feature_summary={', '.join(parts)}")
+
+        lines.append(f"{prefix}")
+        lines.append(f"{prefix} 人工复核摘要：")
+        for feature, count in sorted(summary.items()):
+            label = self.FEATURE_LABELS.get(feature, feature)
+            lines.append(f"{prefix} - {label}：{count} 个配置块。请确认对应配置是否需要在目标设备重建。")
+            samples = self._block_sample_lines(
+                next((b for b in blocks if b.feature == feature), blocks[0]), max_lines=3
+            )
+            for s in samples[:3]:
+                lines.append(f"{prefix}   示例：{s[:80]}")
+
         deterministic = RuleBasedTranslator().translate(config_text, from_vendor, to_vendor)
         deterministic_body = extract_config_block(deterministic).strip()
         if deterministic_body:
+            lines.append(f"{prefix}")
             lines.append(f"{prefix} BEGIN_DETERMINISTIC_FALLBACK")
             lines.extend(deterministic_body.splitlines())
             lines.append(f"{prefix} END_DETERMINISTIC_FALLBACK")
-        lines.append(f"{prefix} next_step=请按下列 block 逐项人工复核或补齐对应 parser/renderer 规则。")
-        for index, block in enumerate(blocks, start=1):
+
+        MAX_DETAIL_BLOCKS = 20
+        lines.append(f"{prefix}")
+        if len(blocks) > MAX_DETAIL_BLOCKS:
+            lines.append(f"{prefix} 详细复核块（前 {MAX_DETAIL_BLOCKS} 条）：")
+            visible = blocks[:MAX_DETAIL_BLOCKS]
+        else:
+            lines.append(f"{prefix} 详细复核块：")
+            visible = blocks
+
+        for index, block in enumerate(visible, start=1):
             lines.append(
                 f"{prefix} MANUAL_REVIEW_BLOCK {index}: "
                 f"feature={block.feature} lines={block.start_line}-{block.end_line} "
                 f"source_line_count={len(block.lines)}"
             )
+
+        if len(blocks) > MAX_DETAIL_BLOCKS:
+            remaining = len(blocks) - MAX_DETAIL_BLOCKS
+            lines.append(
+                f"{prefix} ... 还有 {remaining} 个复核块，"
+                f"详见审计日志/导出报告"
+            )
+
         lines.append("```")
         return "\n".join(lines)
 
