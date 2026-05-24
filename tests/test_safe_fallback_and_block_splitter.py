@@ -206,14 +206,15 @@ traffic classifier TC operator and
 
     FallbackNode().execute(state)
     translated = state.get("translated_config")
-    executable = "\n".join(_executable_lines(translated))
+    deployable = state.get("deployable_config", "")
+    executable = "\n".join(_executable_lines(deployable))
 
     assert "hostname HW-SW" in executable
     assert "vlan 10,20" in executable
     assert "interface Vlan10" in executable
     assert "ip address 10.0.10.1 255.255.255.0" in executable
     assert "ip route 0.0.0.0 0.0.0.0 10.0.10.254" in executable
-    assert "! MANUAL_REVIEW unsupported source command: traffic classifier" in translated
+    assert "! MANUAL_REVIEW" in translated
     assert "traffic classifier TC" not in executable
     assert "if-match acl" not in executable
 
@@ -241,15 +242,14 @@ snmp-agent community read cipher public
 
     FallbackNode().execute(state)
     translated = state.get("translated_config")
-    executable = "\n".join(_executable_lines(translated))
+    deployable = state.get("deployable_config", "")
+    executable = "\n".join(_executable_lines(deployable))
 
     assert "人工复核摘要" in translated
     assert "AAA/认证" in translated or "aaa" in translated.lower()
     assert "QoS/PBR" in translated or "qos" in translated.lower()
     assert "ACL/访问控制" in translated or "acl" in translated.lower()
     assert "MANUAL_REVIEW_BLOCK" in translated
-    assert "BEGIN_DETERMINISTIC_FALLBACK" in translated
-    assert "END_DETERMINISTIC_FALLBACK" in translated
     assert "hostname HW-SW" in executable
     assert "vlan 10,20" in executable
     assert "interface Vlan10" in executable

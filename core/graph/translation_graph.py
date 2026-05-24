@@ -150,6 +150,7 @@ def execute_translation_flow(
     results = executor.get_results()
 
     translated = final_state.get("translated_config", "")
+    deployable = final_state.get("deployable_config", "")
     diff_report = final_state.get("diff_report", "")
     validation = final_state.get("validation_result")
     fallback_used = final_state.get("fallback_used", False)
@@ -168,6 +169,7 @@ def execute_translation_flow(
     return {
         "success": success,
         "translated": translated,
+        "deployable_config": deployable,
         "diff": diff_report,
         "source_domain": final_state.get("source_domain", ""),
         "source_platform": final_state.get("source_platform", ""),

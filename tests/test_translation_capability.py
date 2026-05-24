@@ -64,7 +64,7 @@ def test_invalid_llm_json_falls_back_to_rule_translation():
     )
 
     assert result["fallback_used"] is True
-    assert "port trunk allow-pass vlan 20 30" in result["translated"]
+    assert "port trunk allow-pass vlan 20 30" in (result.get("deployable_config") or result["translated"])
 
 
 def test_network_translator_agent_passes_configured_llm_to_graph_nodes():

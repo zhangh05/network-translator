@@ -1719,7 +1719,7 @@ class FallbackNode(Node):
         lines = [ln.strip() for ln in block.lines if ln.strip() and not ln.strip().startswith(FallbackNode._COMMENT_MARKERS)]
         return lines[:max_lines]
 
-    def _manual_review_fallback(self, config_text: str, from_vendor: str, to_vendor: str, error: str) -> str:
+    def _manual_review_fallback(self, config_text: str, from_vendor: str, to_vendor: str, error: str) -> tuple[str, str]:
         from core.parser.block_splitter import split_config_by_feature, summarize_feature_blocks
 
         prefix = self._comment_prefix(to_vendor)
@@ -1781,12 +1781,14 @@ class FallbackNode(Node):
 
         deterministic = RuleBasedTranslator().translate(config_text, from_vendor, to_vendor)
         deterministic_body = extract_config_block(deterministic).strip()
+        deployable_lines = []
         if deterministic_body:
-            lines.append(f"{prefix}")
-            lines.append(f"{prefix} BEGIN_DETERMINISTIC_FALLBACK")
             for det_line in deterministic_body.splitlines():
-                lines.append(self._redact_line(det_line))
-            lines.append(f"{prefix} END_DETERMINISTIC_FALLBACK")
+                deployable_lines.append(self._redact_line(det_line))
+        if deployable_lines:
+            deployable_config = "\n".join(deployable_lines)
+        else:
+            deployable_config = f"{prefix}# (无可部署配置，详见人工复核)"
 
         MAX_DETAIL_BLOCKS = 20
         lines.append(f"{prefix}")
@@ -1812,7 +1814,7 @@ class FallbackNode(Node):
             )
 
         lines.append("```")
-        return "\n".join(lines)
+        return "\n".join(lines), deployable_config
 
     def execute(self, state: State) -> NodeResult:
         from_vendor = state.get("from_vendor", "unknown")
@@ -1832,8 +1834,9 @@ class FallbackNode(Node):
         state.set("_raw_fallback_error", error)
 
         if self._requires_safe_fallback(error, config_text):
-            translated = self._manual_review_fallback(config_text, from_vendor, to_vendor, error)
+            translated, deployable = self._manual_review_fallback(config_text, from_vendor, to_vendor, error)
             state.set("translated_config", translated)
+            state.set("deployable_config", deployable)
             state.set("safe_fallback", True)
             state.set("manual_review_required", True)
             state.set("_route_outcome", "fallback_manual_review")
@@ -1847,6 +1850,8 @@ class FallbackNode(Node):
         translated = RuleBasedTranslator().translate(config_text, from_vendor, to_vendor)
         if translated:
             state.set("translated_config", translated)
+            deployable = extract_config_block(translated).strip()
+            state.set("deployable_config", deployable or translated)
             state.set("_route_outcome", "fallback_success")
         return NodeResult(
             self.node_id,

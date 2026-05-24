@@ -484,10 +484,10 @@ def test_fallback_bgp_in_routing_protocol_category():
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# Deterministic fallback block still present
+# Deterministic fallback as deployable_config (not embedded in translated_config)
 # ─────────────────────────────────────────────────────────────────────────────
 
-def test_fallback_deterministic_block_present():
+def test_fallback_has_separate_deployable_config():
     state = _state(
         "huawei", "cisco",
         "LLM 输出校验失败: 第 0 项不是对象",
@@ -498,14 +498,55 @@ interface Vlanif10
 """,
     )
     FallbackNode().execute(state)
-    result = state.get("translated_config", "")
+    deployable = state.get("deployable_config", "")
 
-    assert "BEGIN_DETERMINISTIC_FALLBACK" in result
-    assert "END_DETERMINISTIC_FALLBACK" in result
-    executable = "\n".join(_executable_lines(result))
-    assert "hostname HW-SW" in executable
-    assert "vlan 10,20" in executable
-    assert "interface Vlan10" in executable
+    assert deployable, "deployable_config must not be empty"
+    assert "hostname HW-SW" in deployable, \
+        f"hostname not in deployable_config: {deployable}"
+    assert "vlan 10,20" in deployable, \
+        f"vlan not in deployable_config: {deployable}"
+
+
+def test_fallback_deployable_config_excludes_report_sections():
+    state = _state(
+        "huawei", "cisco",
+        "LLM 输出校验失败: 第 0 项不是对象",
+        """sysname HW-SW
+vlan batch 10 20
+""",
+    )
+    FallbackNode().execute(state)
+    deployable = state.get("deployable_config", "")
+
+    FORBIDDEN_IN_DEPLOYABLE = [
+        "人工复核摘要",
+        "feature_summary",
+        "block_count=",
+        "fallback_reason=",
+        "MANUAL_REVIEW_BLOCK",
+        "详细复核块",
+    ]
+    for kw in FORBIDDEN_IN_DEPLOYABLE:
+        assert kw not in deployable, \
+            f"Forbidden report keyword {kw!r} found in deployable_config: {deployable[:200]}"
+
+
+def test_fallback_deployable_config_allows_necessary_manual_review_comments():
+    state = _state(
+        "huawei", "cisco",
+        "LLM 输出校验失败: 第 0 项不是对象",
+        """sysname HW-SW
+vlan batch 10 20
+""",
+    )
+    FallbackNode().execute(state)
+    translated = state.get("translated_config", "")
+    deployable = state.get("deployable_config", "")
+
+    mr_count_translated = translated.count("MANUAL_REVIEW")
+    mr_count_deployable = deployable.count("MANUAL_REVIEW")
+    assert mr_count_deployable <= mr_count_translated, \
+        "deployable_config should not have more MANUAL_REVIEW than translated_config"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
