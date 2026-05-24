@@ -136,7 +136,8 @@ def translate_routing_to_cisco(stripped: str, lower: str, indent: str, state: di
     if lower.startswith("ipv4-family unicast"):
         return None
     if lower.startswith("neighbor ") and ("password" in lower or "cipher" in lower):
-        return indent + manual_review_comment(stripped, "cisco", indent)
+        redacted = re.sub(r"(password|cipher)\s+\S+", r"\1 <redacted>", stripped)
+        return indent + manual_review_comment(redacted, "cisco", indent)
     if lower.startswith("neighbor ") or lower.startswith(" peer "):
         return indent + manual_review_comment(stripped, "cisco", indent)
 

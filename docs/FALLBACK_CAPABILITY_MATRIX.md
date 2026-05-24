@@ -285,6 +285,7 @@ Required fields per direction:
 | `tests/test_realistic_fallback_report.py` | Fallback report structure and redaction — 27 tests |
 | `tests/test_rule_translator_realistic_samples.py` | 6 end-to-end realistic samples |
 | `tests/test_fallback_capability_matrix.py` | Capability matrix — 13 tests |
+| `tests/test_rule_translator_realistic_batch_i_e.py` | Realistic medium-length configs (4 directions) — 21 tests |
 
 ## Version History
 
@@ -295,3 +296,4 @@ Required fields per direction:
 | 2026-05-24 Batch I-B | MANAGEMENT: NTP source-interface (H3C/Ruijie), logging facility/manual_review, radius/tacacs key redaction, 37 new tests (79 total) |
 | 2026-05-24 Batch I-C | ACL/QoS: H3C→Huawei packet-filter, Cisco named ACL header, Huawei ACL rule→Cisco, object-group/manual_review guards, 32 new tests (59 total) |
 | 2026-05-25 Batch I-D | FIREWALL: Topsec→Huawei USG (zone/address/policy), Hillstone→Topsec (zone/address/policy), DPtech completeness, dangerous feature guards, address mask netmask format, Topsec routing fix (non-Topsec/Hillstone sources to Topsec → MANUAL_REVIEW), 84 firewall tests |
+| 2026-05-25 Batch I-E | Realistic samples: Cisco→Huawei trunk/access/SVI/ACL/OSPF/NTP/AAA, Huawei→Cisco Vlanif/ACL/OSPF/SNMP/AAA, Topsec→Huawei USG complete policy, Hillstone→Topsec complete policy. Fix: no switchport (Cisco routed-port) dropped in Huawei output, BGP neighbor password redacted in MANUAL_REVIEW. New test file: 21 realistic tests |

@@ -60,6 +60,8 @@ def translate_to_huawei_switch(stripped: str, lower: str, indent: str, from_vend
         return indent + "port trunk allow-pass vlan " + vlan_part
     if lower == "no shutdown":
         return indent + "undo shutdown"
+    if lower == "no switchport":
+        return None
     if lower == "shutdown":
         return indent + "shutdown"
     if lower.startswith("port link-type trunk"):
@@ -106,6 +108,9 @@ def translate_switching_to_huawei(stripped: str, lower: str, indent: str, from_v
     m = re.match(r"switchport\s+trunk\s+(?:allowed|allow-pass)\s+vlan\s+(.+)", lower)
     if m and from_vendor in ("cisco", "ruijie"):
         return indent + "port trunk allow-pass vlan " + normalize_vlan_list(m.group(1))
+    m = re.match(r"switchport\s+trunk\s+native\s+vlan\s+(\S+)", lower)
+    if m:
+        return indent + "native vlan " + m.group(1)
     m = re.match(r"port\s+trunk\s+permit\s+vlan\s+(.+)", stripped, re.IGNORECASE)
     if m and from_vendor in ("cisco", "ruijie"):
         return indent + "port trunk allow-pass vlan " + normalize_vlan_list(m.group(1))
@@ -316,6 +321,8 @@ def translate_to_ruijie_switch(stripped: str, lower: str, indent: str, from_vend
         return indent + f"port-group {m.group(2)} mode active"
     if lower.startswith("switchport "):
         return indent + stripped
+    if lower == "no switchport":
+        return None
     if lower.startswith("undo "):
         if from_vendor in ("huawei", "h3c"):
             return indent + manual_review_comment(stripped, "ruijie", indent)

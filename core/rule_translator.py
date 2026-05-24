@@ -187,6 +187,8 @@ class RuleBasedTranslator:
         if lower.startswith(("spanning-tree ", "stp ", "bpduguard", "loopguard", "rootguard")):
             return indent + manual_review_comment(stripped, "huawei", indent)
 
+        if stripped == "no switchport":
+            return None
         return stripped if from_vendor in ("h3c", "huawei") else indent + stripped
 
     def _to_cisco(self, stripped: str, lower: str, indent: str, from_vendor: str, state: Dict):
