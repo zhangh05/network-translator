@@ -590,14 +590,14 @@ REDACTION_CASES = [
     ("pre-shared-key cipher VPN_KEY", "pre-shared-key cipher <redacted>"),
 ]
 
-ALL_SENSITIVE_VALUES = ["SECRET_PASS", "SECRET_HASH", "PUBLIC_COMM", "RADIUS_KEY", "VPN_KEY"]
+ALL_SENSITIVE_VALUES = ["SECRET_PASS", "SECRET_HASH", "PUBLIC_COMM", "RADIUS_KEY", "VPN_KEY", "ADMIN_SECRET"]
 
 
 @pytest.mark.parametrize("input_line,expected_prefix", REDACTION_CASES)
 def test_fallback_redaction_preserves_command_context(input_line, expected_prefix):
     result = FallbackNode._redact_line(input_line)
-    assert result.startswith(expected_prefix.split(" <redacted>")[0] + " <redacted>") or "<redacted>" in result, \
-        f"Redaction lost command context for: {input_line!r} -> {result!r}"
+    assert result == expected_prefix, \
+        f"Redaction did not preserve exact command context for: {input_line!r} -> {result!r}"
     for val in ALL_SENSITIVE_VALUES:
         assert val not in result, \
             f"Sensitive value {val!r} leaked: {result!r}"
