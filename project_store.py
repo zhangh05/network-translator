@@ -539,7 +539,7 @@ def register_project_routes(app):
                 "model": project.model or "",
             }, 200
 
-        # 更新项目配置
+        # 更新项目配置（不含 last_translate_hash，等翻译成功时一起写入）
         store.update_project(project_id, {
             "config_text": config_text,
             "from_vendor": from_vendor,
@@ -548,7 +548,6 @@ def register_project_routes(app):
             "source_platform": source_platform,
             "target_domain": target_domain,
             "target_platform": target_platform,
-            "last_translate_hash": fingerprint,
         })
 
         import uuid
@@ -579,11 +578,13 @@ def register_project_routes(app):
             )
             return {"ok": False, "error": "Internal translation error", "request_id": request_id}, 500
 
+        # 翻译成功后：同时写入 result 和 fingerprint，避免中途失败导致旧 result 绑定新 fingerprint
         store.update_project(project_id, {
             "result": result_data,
             "request_id": request_id,
             "version": _read_version(),
             "model": _get_model_name(),
+            "last_translate_hash": fingerprint,
         })
 
         store.add_history(project_id, {

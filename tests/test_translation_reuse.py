@@ -6,6 +6,17 @@ import json
 import pytest
 from project_store import Project, ProjectStore
 
+# Flask is only available in the system Python (not venv). API-level tests
+# that require Flask test_client are marked with @pytest.mark.flask.
+# venv users: run full test suite with system Python instead.
+try:
+    from web_app import create_app  # noqa: F401
+    _HAS_FLASK = True
+except ImportError:
+    _HAS_FLASK = False
+
+flask_required = pytest.mark.skipif(not _HAS_FLASK, reason="Flask not available in venv (use system Python for API tests)")
+
 
 # ── Fingerprint helper (mirrors internal logic) ────────────────────────────────
 
@@ -267,3 +278,218 @@ def test_reuse_gate_blocks_old_md5_hash(tmp_path, monkeypatch):
     new_fp = _make_fingerprint(cfg, "huawei", "cisco", "", "", "", "")
     stored_fp = store.get_project("test-old-md5").last_translate_hash
     assert stored_fp != new_fp, "Old MD5 hash must not match SHA256 fingerprint for same config+vendors"
+
+
+# ── Exception-path reuse tests ──────────────────────────────────────────────────
+# These tests use Flask test_client via web_app to cover the full API route.
+
+@flask_required
+def test_exception_does_not_write_fingerprint(tmp_path, monkeypatch):
+    """run_translation failure must not write new fingerprint over old result."""
+    import sys
+    sys.path.insert(0, str(tmp_path.parent.parent))
+    monkeypatch.setattr("project_store.PROJECT_DIR", tmp_path)
+
+    from web_app import create_app
+    app = create_app()
+    client = app.test_client()
+
+    from project_store import get_project_store
+    store = get_project_store()
+    pid = store.create_project(name="exception-test")["id"]
+
+    cfg = "vlan 10"
+    fp_old = _make_fingerprint(cfg, "huawei", "cisco", "", "", "", "")
+    proj = store.get_project(pid)
+    proj.result = {"success": True, "translated": "vlan 10", "fallback_used": False}
+    proj.last_translate_hash = fp_old
+    store.update_project(pid, {"result": proj.result, "last_translate_hash": fp_old})
+
+    from unittest.mock import patch
+    with patch("project_store.run_translation") as mock_run:
+        mock_run.side_effect = RuntimeError("simulated provider outage")
+        resp = client.post(f"/api/projects/{pid}/translate", json={
+            "config_text": cfg,
+            "from_vendor": "huawei",
+            "to_vendor": "h3c",
+        })
+
+    assert resp.status_code == 500, f"Expected 500, got {resp.status_code}"
+
+    reloaded = store.get_project(pid)
+    assert reloaded.last_translate_hash == fp_old, (
+        "last_translate_hash must NOT be updated to new fingerprint after failure"
+    )
+    assert reloaded.result["translated"] == "vlan 10", "Old result must be preserved"
+
+
+@flask_required
+def test_successful_translation_writes_fingerprint_and_result(tmp_path, monkeypatch):
+    """run_translation success must atomically write result + new fingerprint."""
+    import sys
+    sys.path.insert(0, str(tmp_path.parent.parent))
+    monkeypatch.setattr("project_store.PROJECT_DIR", tmp_path)
+
+    from web_app import create_app
+    app = create_app()
+    client = app.test_client()
+
+    from project_store import get_project_store
+    store = get_project_store()
+    pid = store.create_project(name="success-test")["id"]
+
+    cfg = "vlan 10"
+
+    from unittest.mock import patch
+    with patch("project_store.run_translation") as mock_run:
+        mock_run.return_value = {"success": True, "translated": "vlan 10\nhostname SW1", "fallback_used": False}
+        resp = client.post(f"/api/projects/{pid}/translate", json={
+            "config_text": cfg,
+            "from_vendor": "huawei",
+            "to_vendor": "cisco",
+        })
+
+    assert resp.status_code == 200, f"Expected 200, got {resp.status_code}"
+    body = resp.get_json()
+    assert body.get("ok") is True
+
+    reloaded = store.get_project(pid)
+    fp = _make_fingerprint(cfg, "huawei", "cisco", "", "", "", "")
+    assert reloaded.last_translate_hash == fp, "fingerprint must be written after success"
+    assert reloaded.result["translated"] == "vlan 10\nhostname SW1"
+
+
+@flask_required
+def test_same_request_then_reused(tmp_path, monkeypatch):
+    """Second identical request returns reused=True without calling run_translation."""
+    import sys
+    sys.path.insert(0, str(tmp_path.parent.parent))
+    monkeypatch.setattr("project_store.PROJECT_DIR", tmp_path)
+
+    from web_app import create_app
+    app = create_app()
+    client = app.test_client()
+
+    from project_store import get_project_store
+    store = get_project_store()
+    pid = store.create_project(name="reuse-identical")["id"]
+
+    cfg = "vlan 10"
+
+    from unittest.mock import patch
+    with patch("project_store.run_translation") as mock_run:
+        mock_run.return_value = {"success": True, "translated": "vlan 10", "fallback_used": False}
+        resp1 = client.post(f"/api/projects/{pid}/translate", json={
+            "config_text": cfg,
+            "from_vendor": "huawei",
+            "to_vendor": "cisco",
+        })
+        assert resp1.status_code == 200
+
+        mock_run.return_value = {"success": True, "translated": "SHOULD NOT BE CALLED", "fallback_used": False}
+        resp2 = client.post(f"/api/projects/{pid}/translate", json={
+            "config_text": cfg,
+            "from_vendor": "huawei",
+            "to_vendor": "cisco",
+        })
+        body2 = resp2.get_json()
+        assert body2.get("reused") is True
+        assert mock_run.call_count == 0, "run_translation must not be called on reuse"
+
+
+@flask_required
+def test_different_to_vendor_forces_new_translation(tmp_path, monkeypatch):
+    """Changing to_vendor must not reuse old result."""
+    import sys
+    sys.path.insert(0, str(tmp_path.parent.parent))
+    monkeypatch.setattr("project_store.PROJECT_DIR", tmp_path)
+
+    from web_app import create_app
+    app = create_app()
+    client = app.test_client()
+
+    from project_store import get_project_store
+    store = get_project_store()
+    pid = store.create_project(name="reuse-diff-to")["id"]
+
+    cfg = "vlan 10"
+
+    from unittest.mock import patch
+    with patch("project_store.run_translation") as mock_run:
+        mock_run.return_value = {"success": True, "translated": "vlan 10", "fallback_used": False}
+        resp1 = client.post(f"/api/projects/{pid}/translate", json={
+            "config_text": cfg,
+            "from_vendor": "huawei",
+            "to_vendor": "cisco",
+        })
+        assert resp1.status_code == 200
+
+        mock_run.return_value = {"success": True, "translated": "vlan 10 translated to H3C", "fallback_used": False}
+        resp2 = client.post(f"/api/projects/{pid}/translate", json={
+            "config_text": cfg,
+            "from_vendor": "huawei",
+            "to_vendor": "h3c",
+        })
+        body2 = resp2.get_json()
+        assert body2.get("reused") is not True, "Different to_vendor must not reuse"
+        assert mock_run.call_count == 1, "run_translation must be called for different to_vendor"
+        assert "translated to H3C" in body2["result"]["translated"]
+
+
+@flask_required
+def test_after_exception_next_identical_request_succeeds_and_reuses(tmp_path, monkeypatch):
+    """After a failed request, the next identical request must succeed and then reuse."""
+    import sys
+    sys.path.insert(0, str(tmp_path.parent.parent))
+    monkeypatch.setattr("project_store.PROJECT_DIR", tmp_path)
+
+    from web_app import create_app
+    app = create_app()
+    client = app.test_client()
+
+    from project_store import get_project_store
+    store = get_project_store()
+    pid = store.create_project(name="exception-then-success")["id"]
+
+    cfg = "vlan 10"
+
+    from unittest.mock import patch
+    with patch("project_store.run_translation") as mock_run:
+        mock_run.side_effect = RuntimeError("simulated failure")
+        resp1 = client.post(f"/api/projects/{pid}/translate", json={
+            "config_text": cfg,
+            "from_vendor": "huawei",
+            "to_vendor": "cisco",
+        })
+        assert resp1.status_code == 500
+
+        reloaded_after_fail = store.get_project(pid)
+        fp_old = _make_fingerprint(cfg, "huawei", "cisco", "", "", "", "")
+        assert reloaded_after_fail.last_translate_hash == fp_old, (
+            "After exception fingerprint must still be old (empty before first success)"
+        )
+        assert reloaded_after_fail.result is None, "Failed translation must not save result"
+
+        mock_run.side_effect = None
+        mock_run.return_value = {"success": True, "translated": "vlan 10\nhostname SW1", "fallback_used": False}
+        resp2 = client.post(f"/api/projects/{pid}/translate", json={
+            "config_text": cfg,
+            "from_vendor": "huawei",
+            "to_vendor": "cisco",
+        })
+        assert resp2.status_code == 200, f"Second request should succeed, got {resp2.status_code}"
+
+        reloaded_after_success = store.get_project(pid)
+        fp_new = _make_fingerprint(cfg, "huawei", "cisco", "", "", "", "")
+        assert reloaded_after_success.last_translate_hash == fp_new, "After success fingerprint must be written"
+        assert "hostname SW1" in reloaded_after_success.result["translated"]
+
+        mock_run.return_value = {"success": True, "translated": "SHOULD NOT BE CALLED", "fallback_used": False}
+        mock_run.side_effect = None
+        resp3 = client.post(f"/api/projects/{pid}/translate", json={
+            "config_text": cfg,
+            "from_vendor": "huawei",
+            "to_vendor": "cisco",
+        })
+        body3 = resp3.get_json()
+        assert body3.get("reused") is True, "Third identical request must reuse"
