@@ -160,9 +160,18 @@ def translate_huawei_acl_rule_to_cisco(
     rest = m.group(4)
     lower_rest = rest.lower()
 
-    if any(kw in lower_rest for kw in ("time-range", "vpn-instance", "source-port",
-                                          "gt ", "lt ", "neq ")):
+    complex_kw = (
+        "object-group", "object ", "evaluate", "reflect", "dynamic",
+        "time-range", "vpn-instance", "source-port", "logging",
+    )
+    if any(kw in lower_rest for kw in complex_kw):
         return indent + manual_review_comment(stripped, "cisco", indent)
+
+    port_ops = ("gt", "lt", "neq", "range")
+    tokens_rest = rest.split()
+    for i, tok in enumerate(tokens_rest):
+        if tok.lower() in port_ops and i + 1 < len(tokens_rest):
+            return indent + manual_review_comment(stripped, "cisco", indent)
 
     seq = m.group(1) or ""
     action = m.group(2).lower()

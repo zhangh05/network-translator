@@ -530,9 +530,69 @@ def test_huawei_traffic_filter_to_h3c_no_cisco_syntax():
     assert "ip access-group" not in executable
 
 
-def test_cisco_object_group_to_huawei_uses_cisco_prefix():
+def test_huawei_object_group_to_cisco_uses_cisco_prefix():
     result = RuleBasedTranslator().translate(
-        "access-list 101 permit tcp any object-group WEB-SERVERS eq 80\n",
+        "rule 10 permit ip source object-group SRC destination any\n",
         "huawei", "cisco",
     )
     assert "! MANUAL_REVIEW" in result
+
+
+def test_huawei_acl_rule_with_object_group_is_manual_review():
+    result = RuleBasedTranslator().translate(
+        "rule 10 permit ip source object-group SRC destination any\n",
+        "huawei", "cisco",
+    )
+    assert "MANUAL_REVIEW" in result
+    executable = "\n".join(_executable_lines(result))
+    assert "object-group" not in executable.lower()
+
+
+def test_huawei_acl_rule_with_evaluate_is_manual_review():
+    result = RuleBasedTranslator().translate(
+        "rule 10 permit ip source any destination any evaluate ACCESS-CONTROL\n",
+        "huawei", "cisco",
+    )
+    assert "MANUAL_REVIEW" in result
+    executable = "\n".join(_executable_lines(result))
+    assert "evaluate" not in executable.lower()
+
+
+def test_huawei_acl_rule_with_reflect_is_manual_review():
+    result = RuleBasedTranslator().translate(
+        "rule 10 permit tcp source any destination any reflect ACL-REFLECT\n",
+        "huawei", "cisco",
+    )
+    assert "MANUAL_REVIEW" in result
+    executable = "\n".join(_executable_lines(result))
+    assert "reflect" not in executable.lower()
+
+
+def test_huawei_acl_rule_with_dynamic_is_manual_review():
+    result = RuleBasedTranslator().translate(
+        "rule 10 permit tcp source any destination any dynamic DYN-NAME timeout 60\n",
+        "huawei", "cisco",
+    )
+    assert "MANUAL_REVIEW" in result
+    executable = "\n".join(_executable_lines(result))
+    assert "dynamic" not in executable.lower()
+
+
+def test_huawei_acl_rule_with_range_port_is_manual_review():
+    result = RuleBasedTranslator().translate(
+        "rule 10 permit tcp source any destination any destination-port range 1024 65535\n",
+        "huawei", "cisco",
+    )
+    assert "MANUAL_REVIEW" in result
+    executable = "\n".join(_executable_lines(result))
+    assert "range" not in executable.lower()
+
+
+def test_huawei_acl_rule_with_logging_is_manual_review():
+    result = RuleBasedTranslator().translate(
+        "rule 10 permit ip source any destination any logging\n",
+        "huawei", "cisco",
+    )
+    assert "MANUAL_REVIEW" in result
+    executable = "\n".join(_executable_lines(result))
+    assert "logging" not in executable.lower()

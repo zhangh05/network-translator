@@ -115,11 +115,11 @@ The following must NOT be auto-translated (semantic risk too high):
 
 | Pattern | Reason |
 |---------|--------|
-| `rule ... source-port`, `destination-port gt/lt/range` | Port operators beyond `eq` differ across vendors |
+| `rule ... object-group`, `object`, `evaluate`, `reflect`, `dynamic` | Advanced ACL objects not mappable across vendors |
+| `rule ... source-port`, `destination-port gt/lt/neq/range` | Port operators beyond `eq` differ across vendors |
 | `rule ... vpn-instance` | VRF awareness not portable without explicit mapping |
 | `rule ... time-range` | Time-range schedules are vendor-specific |
 | `rule ... logging` / `enable` flags | Audit/logging semantics differ |
-| `rule ... evaluate` / `object-group` | Advanced object groups not mappable |
 | `traffic-policy / service-policy` body (QoS actions: `car`, `remark dscp`, `queue`) | QoS policy bodies always MANUAL_REVIEW |
 | Cisco `access-list N remark` | Remarks can be passed through as comments |
 
