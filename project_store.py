@@ -508,10 +508,26 @@ def register_project_routes(app):
         if not config_text:
             return {"ok": False, "error": "No config provided"}
 
-        import hashlib
-        config_hash = hashlib.md5(config_text.encode()).hexdigest()
+        def _translation_fingerprint(cfg: str, fv: str, tv: str, sd: str, sp: str, td: str, tp: str) -> str:
+            import hashlib
+            import json
+            key = {
+                "config_text": cfg.strip(),
+                "from_vendor": fv or "",
+                "to_vendor": tv or "",
+                "source_domain": sd or "",
+                "source_platform": sp or "",
+                "target_domain": td or "",
+                "target_platform": tp or "",
+            }
+            return hashlib.sha256(json.dumps(key, sort_keys=True, ensure_ascii=True).encode()).hexdigest()
 
-        if project.result is not None and project.last_translate_hash == config_hash:
+        fingerprint = _translation_fingerprint(
+            config_text, from_vendor, to_vendor,
+            source_domain, source_platform, target_domain, target_platform,
+        )
+
+        if project.result is not None and project.last_translate_hash == fingerprint:
             import time as _time
             return {
                 "ok": True,
@@ -532,7 +548,7 @@ def register_project_routes(app):
             "source_platform": source_platform,
             "target_domain": target_domain,
             "target_platform": target_platform,
-            "last_translate_hash": config_hash,
+            "last_translate_hash": fingerprint,
         })
 
         import uuid
