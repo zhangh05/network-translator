@@ -53,6 +53,10 @@ class RuleBasedTranslator:
             return self._to_h3c(stripped, lower, indent)
         if to_vendor == "cisco":
             return self._to_cisco(stripped, lower, indent, from_vendor, state)
+        if to_vendor == "ruijie":
+            return self._to_ruijie(stripped, lower, indent, from_vendor, state)
+        if to_vendor in ("hillstone", "topsec", "dptech", "huawei_usg"):
+            return self._to_firewall_manual_review(stripped, indent, to_vendor, from_vendor)
         return line
 
     def _to_huawei(self, stripped: str, lower: str, indent: str, from_vendor: str, state: dict):
@@ -64,8 +68,7 @@ class RuleBasedTranslator:
             return stripped
         if lower.startswith("interface "):
             name = stripped.split(maxsplit=1)[1]
-            if name.startswith("GigabitEthernet"):
-                name = "XGigabitEthernet" + name[len("GigabitEthernet") :]
+            name = self._normalize_interface_to_huawei(name)
             return "interface " + name
         if lower.startswith("description "):
             return indent + stripped
@@ -112,6 +115,9 @@ class RuleBasedTranslator:
             ("port link-type ", "port default vlan ", "port trunk allow-pass vlan ", "stp edged-port enable")
         ):
             return indent + stripped
+        m = re.match(r"channel-group\s+(\d+)(?:\s+mode\s+\S+)?", stripped, re.IGNORECASE)
+        if m:
+            return indent + f"eth-trunk {m.group(1)}"
         return None
 
     def _translate_routing_to_huawei(self, stripped: str, lower: str, indent: str, state: dict):
@@ -194,7 +200,20 @@ class RuleBasedTranslator:
         if re.match(r"^vlan\s+\d+", lower):
             return stripped
         if lower.startswith("interface "):
-            return stripped
+            return "interface " + self._normalize_interface_to_h3c(stripped.split(maxsplit=1)[1])
+        if lower == "switchport mode trunk":
+            return indent + "port link-type trunk"
+        if lower == "switchport mode access":
+            return indent + "port link-type access"
+        m = re.match(r"switchport\s+trunk\s+allowed\s+vlan\s+(.+)", stripped, re.IGNORECASE)
+        if m:
+            return indent + "port trunk permit vlan " + self._normalize_vlan_list(m.group(1))
+        m = re.match(r"switchport\s+access\s+vlan\s+(.+)", stripped, re.IGNORECASE)
+        if m:
+            return indent + "port default vlan " + self._normalize_vlan_list(m.group(1))
+        m = re.match(r"port-group\s+(\d+)(?:\s+mode\s+\S+)?", stripped, re.IGNORECASE)
+        if m:
+            return indent + f"port link-aggregation group {m.group(1)}"
         if lower.startswith("port trunk allow-pass vlan "):
             return indent + stripped.replace("allow-pass", "permit", 1)
         if lower.startswith("stp edged-port enable"):
@@ -202,6 +221,60 @@ class RuleBasedTranslator:
         if lower.startswith(("port link-type ", "port default vlan ", "ip address ", "description ")):
             return indent + stripped
         return indent + stripped
+
+    def _to_ruijie(self, stripped: str, lower: str, indent: str, from_vendor: str, state: dict):
+        if lower.startswith("sysname "):
+            return "hostname " + stripped.split(maxsplit=1)[1]
+        if lower.startswith("hostname "):
+            return stripped
+        if lower.startswith("vlan batch "):
+            return "vlan " + self._normalize_vlan_list_cisco(stripped.split(maxsplit=2)[2])
+        if re.match(r"^vlan\s+\d+", lower):
+            return "vlan " + self._normalize_vlan_list_cisco(stripped.split(maxsplit=1)[1])
+        if lower.startswith("interface "):
+            name = self._normalize_interface_to_ruijie(stripped.split(maxsplit=1)[1])
+            if name is None:
+                state["unsupported_interface"] = True
+                return self._manual_review_comment(stripped, "ruijie", indent)
+            state["unsupported_interface"] = False
+            return "interface " + name
+        if state.get("unsupported_interface") and indent:
+            return self._manual_review_comment(stripped, "ruijie", indent)
+        if lower.startswith("description "):
+            return indent + stripped
+        if lower.startswith("ip address ") and lower.endswith(" sub"):
+            return indent + stripped[:-4] + " secondary"
+        if lower.startswith("ip address "):
+            return indent + stripped
+        if lower.startswith("port link-type trunk"):
+            return indent + "switchport mode trunk"
+        if lower.startswith("port link-type access"):
+            return indent + "switchport mode access"
+        m = re.match(r"port trunk (allow-pass|permit) vlan\s+(.+)", stripped, re.IGNORECASE)
+        if m:
+            return indent + "switchport trunk allowed vlan " + self._normalize_vlan_list_cisco(m.group(2))
+        m = re.match(r"port default vlan\s+(.+)", stripped, re.IGNORECASE)
+        if m:
+            return indent + "switchport access vlan " + self._normalize_vlan_list_cisco(m.group(1))
+        m = re.match(r"(eth-trunk|port link-aggregation group)\s+(\d+)", stripped, re.IGNORECASE)
+        if m:
+            return indent + f"port-group {m.group(2)} mode active"
+        m = re.match(r"channel-group\s+(\d+)(?:\s+mode\s+\S+)?", stripped, re.IGNORECASE)
+        if m:
+            return indent + f"port-group {m.group(1)} mode active"
+        m = re.match(r"ip route-static\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+(.+))?$", stripped, re.IGNORECASE)
+        if m:
+            route = f"ip route {m.group(1)} {m.group(2)} {m.group(3)}"
+            if m.group(4):
+                return [route, f"! MANUAL_REVIEW route options: {m.group(4)}"]
+            return route
+        if lower.startswith("ip route "):
+            return stripped
+        if lower.startswith("switchport "):
+            return indent + stripped
+        if from_vendor in ("cisco", "huawei", "h3c"):
+            return self._manual_review_comment(stripped, "ruijie", indent)
+        return stripped
 
     def _to_cisco(self, stripped: str, lower: str, indent: str, from_vendor: str, state: dict):
         if lower.startswith("sysname "):
@@ -313,12 +386,38 @@ class RuleBasedTranslator:
         normalized = re.sub(r"(?i)\b(\d+)\s+to\s+(\d+)\b", r"\1-\2", value)
         return ",".join(part for part in re.split(r"[\s,]+", normalized.strip()) if part)
 
+    def _normalize_interface_to_huawei(self, name: str) -> str:
+        normalized = re.sub(r"(?i)^Port-channel(\d+)$", r"Eth-Trunk\1", name)
+        normalized = re.sub(r"(?i)^AggregatePort\s*(\d+)$", r"Eth-Trunk\1", normalized)
+        normalized = re.sub(r"(?i)^GigabitEthernet", "XGigabitEthernet", normalized)
+        return normalized
+
+    def _normalize_interface_to_h3c(self, name: str) -> str:
+        normalized = re.sub(r"(?i)^Port-channel(\d+)$", r"Bridge-Aggregation\1", name)
+        normalized = re.sub(r"(?i)^AggregatePort\s*(\d+)$", r"Bridge-Aggregation\1", normalized)
+        normalized = re.sub(r"(?i)^Vlanif(\d+)$", r"Vlan-interface\1", normalized)
+        normalized = re.sub(r"(?i)^Vlan(\d+)$", r"Vlan-interface\1", normalized)
+        return normalized
+
     def _normalize_interface_to_cisco(self, name: str) -> str:
         normalized = re.sub(r"(?i)^Vlan-interface(\d+)$", r"Vlan\1", name)
         normalized = re.sub(r"(?i)^Vlanif(\d+)$", r"Vlan\1", normalized)
         normalized = re.sub(r"(?i)^Bridge-Aggregation(\d+)$", r"Port-channel\1", normalized)
         normalized = re.sub(r"(?i)^Eth-Trunk(\d+)$", r"Port-channel\1", normalized)
         normalized = re.sub(r"(?i)^XGigabitEthernet", "GigabitEthernet", normalized)
+        normalized = re.sub(r"(?i)^LoopBack(\d+)$", r"Loopback\1", normalized)
+        normalized = re.sub(r"(?i)^NULL(\d+)$", r"Null\1", normalized)
+        if re.match(r"(?i)^MEth", normalized):
+            return None
+        return normalized
+
+    def _normalize_interface_to_ruijie(self, name: str) -> Optional[str]:
+        normalized = re.sub(r"(?i)^Vlan-interface(\d+)$", r"Vlan\1", name)
+        normalized = re.sub(r"(?i)^Vlanif(\d+)$", r"Vlan\1", normalized)
+        normalized = re.sub(r"(?i)^Bridge-Aggregation(\d+)$", r"AggregatePort \1", normalized)
+        normalized = re.sub(r"(?i)^Eth-Trunk(\d+)$", r"AggregatePort \1", normalized)
+        normalized = re.sub(r"(?i)^Port-channel(\d+)$", r"AggregatePort \1", normalized)
+        normalized = re.sub(r"(?i)^XGigabitEthernet", "TenGigabitEthernet", normalized)
         normalized = re.sub(r"(?i)^LoopBack(\d+)$", r"Loopback\1", normalized)
         normalized = re.sub(r"(?i)^NULL(\d+)$", r"Null\1", normalized)
         if re.match(r"(?i)^MEth", normalized):
@@ -429,6 +528,11 @@ class RuleBasedTranslator:
             return self._manual_review_comment(stripped, "cisco")
         return None
 
+    def _to_firewall_manual_review(self, stripped: str, indent: str, to_vendor: str, from_vendor: str) -> str:
+        if (from_vendor or "").lower() == (to_vendor or "").lower():
+            return indent + stripped
+        return self._manual_review_comment(stripped, to_vendor, indent)
+
     def _manual_review_comment(self, stripped: str, to_vendor: str, indent: str = "") -> str:
-        prefix = "!" if (to_vendor or "").lower() == "cisco" else "#"
+        prefix = "!" if (to_vendor or "").lower() in ("cisco", "ruijie") else "#"
         return indent + f"{prefix} MANUAL_REVIEW unsupported source command: {stripped}"

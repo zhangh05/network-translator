@@ -251,3 +251,114 @@ def test_rule_translator_preserves_static_route_preference_and_bfd_as_manual_rev
 
     assert "ip route 0.0.0.0 0.0.0.0 140.19.0.246" in result
     assert "! MANUAL_REVIEW route options: preference 2 track bfd-session to-dr002" in result
+
+
+def test_rule_translator_converts_huawei_and_h3c_switch_primitives_to_ruijie():
+    result = RuleBasedTranslator().translate(
+        """sysname SW-RJ
+vlan batch 10 20 101 to 102
+interface Vlanif10
+ ip address 10.0.10.1 255.255.255.0
+interface Eth-Trunk1
+ port link-type trunk
+ port trunk allow-pass vlan 10 20
+interface XGigabitEthernet0/0/1
+ eth-trunk 1
+ip route-static 0.0.0.0 0.0.0.0 10.0.10.254
+""",
+        from_vendor="huawei",
+        to_vendor="ruijie",
+    )
+
+    assert "hostname SW-RJ" in result
+    assert "vlan 10,20,101-102" in result
+    assert "interface Vlan10" in result
+    assert "interface AggregatePort 1" in result
+    assert "switchport mode trunk" in result
+    assert "switchport trunk allowed vlan 10,20" in result
+    assert "interface TenGigabitEthernet0/0/1" in result
+    assert "port-group 1 mode active" in result
+    assert "ip route 0.0.0.0 0.0.0.0 10.0.10.254" in result
+
+
+def test_rule_translator_converts_cisco_switch_primitives_to_ruijie():
+    result = RuleBasedTranslator().translate(
+        """hostname C-SW
+vlan 30
+interface Port-channel10
+ switchport mode trunk
+ switchport trunk allowed vlan 30,40
+interface GigabitEthernet0/1
+ channel-group 10 mode active
+""",
+        from_vendor="cisco",
+        to_vendor="ruijie",
+    )
+
+    assert "hostname C-SW" in result
+    assert "vlan 30" in result
+    assert "interface AggregatePort 10" in result
+    assert "switchport trunk allowed vlan 30,40" in result
+    assert "interface GigabitEthernet0/1" in result
+    assert "port-group 10 mode active" in result
+
+
+def test_rule_translator_comments_unsupported_firewall_cross_vendor_commands():
+    result = RuleBasedTranslator().translate(
+        """security-zone name trust
+ add interface GigabitEthernet0/0/1
+security-policy
+ rule name allow-http
+  source-zone trust
+  destination-zone untrust
+  action permit
+""",
+        from_vendor="huawei_usg",
+        to_vendor="hillstone",
+    )
+    executable = "\n".join(_executable_lines(result))
+
+    assert "# MANUAL_REVIEW unsupported source command: security-zone name trust" in result
+    assert "security-zone" not in executable
+    assert "security-policy" not in executable
+    assert "source-zone" not in executable
+
+
+def test_rule_translator_converts_cisco_port_channel_to_huawei_eth_trunk():
+    result = RuleBasedTranslator().translate(
+        """interface Port-channel10
+ switchport mode trunk
+ switchport trunk allowed vlan 30,40
+interface GigabitEthernet0/1
+ channel-group 10 mode active
+""",
+        from_vendor="cisco",
+        to_vendor="huawei",
+    )
+
+    assert "interface Eth-Trunk10" in result
+    assert "port link-type trunk" in result
+    assert "port trunk allow-pass vlan 30 40" in result
+    assert "interface XGigabitEthernet0/1" in result
+    assert "eth-trunk 10" in result
+
+
+def test_rule_translator_converts_ruijie_aggregateport_to_h3c_bridge_aggregation():
+    result = RuleBasedTranslator().translate(
+        """hostname RJ
+interface AggregatePort 5
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+interface GigabitEthernet0/2
+ port-group 5 mode active
+""",
+        from_vendor="ruijie",
+        to_vendor="h3c",
+    )
+
+    assert "sysname RJ" in result
+    assert "interface Bridge-Aggregation5" in result
+    assert "port link-type trunk" in result
+    assert "port trunk permit vlan 10 20" in result
+    assert "interface GigabitEthernet0/2" in result
+    assert "port link-aggregation group 5" in result
