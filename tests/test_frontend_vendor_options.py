@@ -43,3 +43,18 @@ def test_frontend_vendor_dropdown_does_not_offer_backend_rejected_huawei_usg_ven
 
     assert "huawei_usg" not in source_options
     assert "huawei_usg" not in target_options
+
+
+def test_frontend_filters_both_source_and_target_domains_by_vendor():
+    assert "function rebuildDomainSelect" in HTML
+    assert "rebuildDomainSelect(E(\"sd\"),E(\"fv\").value,true)" in HTML
+    assert "rebuildDomainSelect(E(\"td\"),E(\"tv\").value,false)" in HTML
+    assert "DOMAIN_META.domain_vendors" in HTML
+
+
+def test_frontend_platform_options_use_friendly_labels():
+    assert "function P(v)" in HTML
+    assert "stoneos:\"StoneOS\"" in HTML
+    assert "\"topsec-os\":\"TOS\"" in HTML
+    assert "comware:\"Comware\"" in HTML
+    assert "+P(p)+" in HTML

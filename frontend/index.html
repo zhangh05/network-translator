@@ -405,41 +405,43 @@ async function loadDomainMeta(){
     var d=await r.json();
     if(!r.ok||!d.ok)throw new Error("meta failed");
     DOMAIN_META=d;
-    rebuildPlatformSelects()
+    cascadeDomains()
   }catch(_){}
 }
 function rebuildPlatformSelects(){
   if(!DOMAIN_META)return;
   var sp=E("sp"),tp=E("tp");
   var fv=E("fv").value, tv=E("tv").value;
-  var sd=E("sd").value, td=E("td").value;
   // populate platform options
   sp.innerHTML="<option value='auto'>平台 auto</option>";
   tp.innerHTML="<option value=''>平台 auto</option>";
   var plats=DOMAIN_META.platforms||{};
   var spPlatforms=plats[fv]||["unknown"];
-  spPlatforms.forEach(function(p){if(p==="unknown")return;sp.innerHTML+="<option value='"+p+"'>"+p+"</option>"});
+  spPlatforms.forEach(function(p){if(p==="unknown")return;sp.innerHTML+="<option value='"+p+"'>"+P(p)+"</option>"});
   var tpPlatforms=plats[tv]||["unknown"];
-  tpPlatforms.forEach(function(p){if(p==="unknown")return;tp.innerHTML+="<option value='"+p+"'>"+p+"</option>"});
+  tpPlatforms.forEach(function(p){if(p==="unknown")return;tp.innerHTML+="<option value='"+p+"'>"+P(p)+"</option>"});
+}
+function rebuildDomainSelect(sel,vendor,isSource){
+  if(!DOMAIN_META)return;
+  var domainVendors=DOMAIN_META.domain_vendors||{};
+  var old=sel.value;
+  sel.innerHTML="<option value='"+(isSource?"auto":"")+"'>域 auto</option>";
+  Object.keys(domainVendors).forEach(function(d){
+    if(domainVendors[d].indexOf(vendor)!==-1||vendor==="auto")
+      sel.innerHTML+="<option value='"+d+"'>"+D(d)+"</option>";
+  });
+  if(sel.querySelector("[value='"+old+"']"))sel.value=old;
 }
 function cascadeDomains(){
   if(!DOMAIN_META)return;
-  var fv=E("fv").value;
-  var domainVendors=DOMAIN_META.domain_vendors||{};
-  var sd=E("sd"), td=E("td");
-  // Rebuild source domain options — filter by selected vendor
-  var sdVal=sd.value;
-  sd.innerHTML="<option value='auto'>域 auto</option>";
-  Object.keys(domainVendors).forEach(function(d){
-    if(domainVendors[d].indexOf(fv)!==-1||fv==="auto")
-      sd.innerHTML+="<option value='"+d+"'>"+D(d)+"</option>";
-  });
-  if(sd.querySelector("[value='"+sdVal+"']"))sd.value=sdVal;
+  rebuildDomainSelect(E("sd"),E("fv").value,true);
+  rebuildDomainSelect(E("td"),E("tv").value,false);
   rebuildPlatformSelects()
 }
 function D(v){return{vendor:{cisco:"Cisco",huawei:"华为",h3c:"华三",ruijie:"锐捷",hillstone:"山石",topsec:"天融信",dbappsecurity:"安恒",dptech:"迪普"},routing:"路由",switching:"交换",firewall:"防火墙"}[v]||v}
+function P(v){return{vrp:"VRP",usg:"USG",comware:"Comware",secpath:"SecPath",ios:"IOS","ios-xe":"IOS-XE","nx-os":"NX-OS",asa:"ASA",ftd:"FTD","rg-os":"RGOS",stoneos:"StoneOS","topsec-os":"TOS"}[v]||v}
 E("fv").addEventListener("change",cascadeDomains);
-E("tv").addEventListener("change",rebuildPlatformSelects);
+E("tv").addEventListener("change",cascadeDomains);
 E("sd").addEventListener("change",rebuildPlatformSelects);
 E("td").addEventListener("change",rebuildPlatformSelects);
 
