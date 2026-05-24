@@ -58,7 +58,7 @@ class RuleBasedTranslator:
         if to_vendor == "huawei":
             rv = self._to_huawei(stripped, lower, indent, from_vendor, state)
         elif to_vendor == "h3c":
-            rv = self._to_h3c(stripped, lower, indent)
+            rv = self._to_h3c(stripped, lower, indent, from_vendor, state)
         elif to_vendor == "cisco":
             rv = self._to_cisco(stripped, lower, indent, from_vendor, state)
         elif to_vendor == "ruijie":
@@ -85,8 +85,23 @@ class RuleBasedTranslator:
             return "sysname " + stripped.split(maxsplit=1)[1]
         if lower.startswith("sysname "):
             return stripped
-        if re.match(r"^vlan\s+\d+", lower):
-            return stripped
+
+        # VLAN: convert Cisco/Ruijie comma format, passthrough H3C/Huawei
+        m = re.match(r"^vlan\s+(\S.*)", stripped, re.IGNORECASE)
+        if m:
+            vlan_val = m.group(1)
+            if from_vendor in ("huawei", "h3c"):
+                return stripped
+            vlans = self._parse_vlan_list(vlan_val)
+            if len(vlans) == 1:
+                return f"vlan {vlans[0]}"
+            return f"vlan batch {self._format_vlans_huawei_batch(vlans)}"
+
+        # SVI: Cisco/Ruijie Vlan N -> Huawei Vlanif N
+        m = re.match(r"^interface\s+Vlan(\d+)$", stripped, re.IGNORECASE)
+        if m:
+            return f"interface Vlanif{m.group(1)}"
+
         if lower.startswith("interface "):
             name = stripped.split(maxsplit=1)[1]
             name = self._normalize_interface_to_huawei(name)
@@ -108,9 +123,29 @@ class RuleBasedTranslator:
         if translated_routing is not None:
             return translated_routing
 
+        # VRF
+        m = re.match(r"vrf\s+definition\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            return f"ip vpn-instance {m.group(1)}"
+        if lower.startswith("rd "):
+            return indent + "route-distinguisher " + stripped.split(maxsplit=1)[1]
+        if lower.startswith("route-target "):
+            return indent + "vpn-target " + stripped.split(maxsplit=1)[1]
+        if lower.startswith("route-distinguisher "):
+            return indent + stripped
+        if lower.startswith("vpn-target "):
+            return indent + stripped
+
         translated_acl = self._translate_acl_to_huawei(stripped, lower, state)
         if translated_acl is not None:
             return translated_acl
+
+        # Route-map / prefix-list -> MANUAL_REVIEW
+        if lower.startswith(("route-map ", "route-policy ", "ip prefix-list ", "prefix-list ")):
+            return indent + self._manual_review_comment(stripped, "huawei", indent)
+        # Unknown SVI / VLAN commands -> MANUAL_REVIEW
+        if lower.startswith(("spanning-tree ", "stp ", "bpduguard", "loopguard", "rootguard")):
+            return indent + self._manual_review_comment(stripped, "huawei", indent)
 
         return stripped if from_vendor in ("h3c", "huawei") else indent + stripped
 
@@ -136,178 +171,94 @@ class RuleBasedTranslator:
             ("port link-type ", "port default vlan ", "port trunk allow-pass vlan ", "stp edged-port enable")
         ):
             return indent + stripped
-        m = re.match(r"channel-group\s+(\d+)(?:\s+mode\s+\S+)?", stripped, re.IGNORECASE)
+        m = re.match(r"(channel-group|eth-trunk|port-group|bridge-aggregation)\s+(\d+)(?:\s+mode\s+\S+)?", stripped, re.IGNORECASE)
         if m:
-            return indent + f"eth-trunk {m.group(1)}"
+            return indent + f"eth-trunk {m.group(2)}"
         return None
 
     def _translate_routing_to_huawei(self, stripped: str, lower: str, indent: str, state: dict):
+        # Static route
+        m = re.match(r"ip\s+route\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+(.+))?$", stripped, re.IGNORECASE)
+        if m:
+            route = f"ip route-static {m.group(1)} {m.group(2)} {m.group(3)}"
+            if m.group(4):
+                return [route, f"# MANUAL_REVIEW route options: {m.group(4)}"]
+            return route
+        if lower.startswith("ip route-static "):
+            m = re.match(r"ip route-static\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+(.+))?$", stripped, re.IGNORECASE)
+            if m:
+                route = f"ip route-static {m.group(1)} {m.group(2)} {m.group(3)}"
+                if m.group(4):
+                    return [route, f"# MANUAL_REVIEW route options: {m.group(4)}"]
+                return route
+
+        # OSPF
         m = re.match(r"router\s+ospf\s+(\S+)", lower)
         if m:
             state["in_bgp"] = False
             return "ospf " + m.group(1)
+        m = re.match(r"ospf\s+(\S+)", lower)
+        if m:
+            state["in_bgp"] = False
+            return stripped
         if lower.startswith("router-id "):
             return indent + stripped
         if lower.startswith("network ") and not state.get("in_bgp"):
             return indent + stripped
+        if lower.startswith("passive-interface "):
+            return indent + "silent-interface " + lower.split(maxsplit=1)[1]
+        if lower.startswith("no passive-interface "):
+            return indent + "undo silent-interface " + lower.split(maxsplit=2)[2]
+        if lower == "passive-interface default":
+            return indent + "silent-interface default"
 
+        # BGP
         m = re.match(r"router\s+bgp\s+(\S+)", lower)
         if m:
             state["in_bgp"] = True
             return ["bgp " + m.group(1), " ipv4-family unicast"]
+        m = re.match(r"bgp\s+(\S+)", lower)
+        if m:
+            state["in_bgp"] = True
+            return stripped
         m = re.match(r"neighbor\s+(\S+)\s+remote-as\s+(\S+)", lower)
         if m:
             return f" peer {m.group(1)} as-number {m.group(2)}"
+        m = re.match(r"peer\s+(\S+)\s+as-number\s+(\S+)", lower)
+        if m:
+            return stripped
         m = re.match(r"network\s+(\S+)\s+mask\s+(\S+)", lower)
         if m:
             return f" network {m.group(1)} {m.group(2)}"
-
-        m = re.match(r"ip\s+route\s+(\S+)\s+(\S+)\s+(\S+)", lower)
-        if m:
-            return f"ip route-static {m.group(1)} {m.group(2)} {m.group(3)}"
-        if lower.startswith("ip route-static "):
-            return stripped
-        return None
-
-    def _translate_acl_to_huawei(self, stripped: str, lower: str, state: dict):
-        m = re.match(r"access-list\s+(\d+)\s+(permit|deny)\s+(\S+)\s+(.+)", lower)
-        if not m:
+        if lower.startswith("neighbor ") or lower.startswith(" peer "):
+            return indent + self._manual_review_comment(stripped, "huawei", indent)
+        if lower.startswith("ipv4-family unicast"):
             return None
-
-        acl_id, action, protocol, rest = m.groups()
-        out = []
-        if state.get("acl") != acl_id:
-            state["acl"] = acl_id
-            out.append(f"acl number {acl_id}")
-
-        out.append(" " + self._build_acl_rule(action, protocol, rest))
-        return out
-
-    def _build_acl_rule(self, action: str, protocol: str, rest: str) -> str:
-        tokens = rest.split()
-        source = "any"
-        source_wildcard: Optional[str] = None
-        destination = "any"
-        destination_wildcard: Optional[str] = None
-        port = None
-
-        if tokens:
-            source = tokens.pop(0)
-        if source != "any" and tokens:
-            source_wildcard = tokens.pop(0)
-        if tokens:
-            destination = tokens.pop(0)
-        if destination != "any" and tokens:
-            destination_wildcard = tokens.pop(0)
-        if len(tokens) >= 2 and tokens[0] == "eq":
-            port = tokens[1]
-
-        parts = [f"rule {action} {protocol}"]
-        parts.extend(["source", source])
-        if source_wildcard:
-            parts.append(source_wildcard)
-        parts.extend(["destination", destination])
-        if destination_wildcard:
-            parts.append(destination_wildcard)
-        if port:
-            parts.extend(["destination-port", "eq", port])
-        return " ".join(parts)
-
-    def _to_h3c(self, stripped: str, lower: str, indent: str):
-        if lower.startswith("hostname "):
-            return "sysname " + stripped.split(maxsplit=1)[1]
-        if lower.startswith("sysname "):
-            return stripped
-        if re.match(r"^vlan\s+\d+", lower):
-            return stripped
-        if lower.startswith("interface "):
-            return "interface " + self._normalize_interface_to_h3c(stripped.split(maxsplit=1)[1])
-        if lower == "switchport mode trunk":
-            return indent + "port link-type trunk"
-        if lower == "switchport mode access":
-            return indent + "port link-type access"
-        m = re.match(r"switchport\s+trunk\s+allowed\s+vlan\s+(.+)", stripped, re.IGNORECASE)
-        if m:
-            return indent + "port trunk permit vlan " + self._normalize_vlan_list(m.group(1))
-        m = re.match(r"switchport\s+access\s+vlan\s+(.+)", stripped, re.IGNORECASE)
-        if m:
-            return indent + "port default vlan " + self._normalize_vlan_list(m.group(1))
-        m = re.match(r"port-group\s+(\d+)(?:\s+mode\s+\S+)?", stripped, re.IGNORECASE)
-        if m:
-            return indent + f"port link-aggregation group {m.group(1)}"
-        if lower.startswith("port trunk allow-pass vlan "):
-            return indent + stripped.replace("allow-pass", "permit", 1)
-        if lower.startswith("stp edged-port enable"):
-            return indent + "stp edged-port"
-        if lower.startswith(("port link-type ", "port default vlan ", "ip address ", "description ")):
-            return indent + stripped
-        return indent + stripped
-
-    def _to_ruijie(self, stripped: str, lower: str, indent: str, from_vendor: str, state: dict):
-        if lower.startswith("sysname "):
-            return "hostname " + stripped.split(maxsplit=1)[1]
-        if lower.startswith("hostname "):
-            return stripped
-        if lower.startswith("vlan batch "):
-            return "vlan " + self._normalize_vlan_list_cisco(stripped.split(maxsplit=2)[2])
-        if re.match(r"^vlan\s+\d+", lower):
-            return "vlan " + self._normalize_vlan_list_cisco(stripped.split(maxsplit=1)[1])
-        if lower.startswith("interface "):
-            name = self._normalize_interface_to_ruijie(stripped.split(maxsplit=1)[1])
-            if name is None:
-                state["unsupported_interface"] = True
-                return self._manual_review_comment(stripped, "ruijie", indent)
-            state["unsupported_interface"] = False
-            return "interface " + name
-        if state.get("unsupported_interface") and indent:
-            return self._manual_review_comment(stripped, "ruijie", indent)
-        if lower.startswith("description "):
-            return indent + stripped
-        if lower.startswith("ip address ") and lower.endswith(" sub"):
-            return indent + stripped[:-4] + " secondary"
-        if lower.startswith("ip address "):
-            return indent + stripped
-        if lower.startswith("port link-type trunk"):
-            return indent + "switchport mode trunk"
-        if lower.startswith("port link-type access"):
-            return indent + "switchport mode access"
-        m = re.match(r"port trunk (allow-pass|permit) vlan\s+(.+)", stripped, re.IGNORECASE)
-        if m:
-            return indent + "switchport trunk allowed vlan " + self._normalize_vlan_list_cisco(m.group(2))
-        m = re.match(r"port default vlan\s+(.+)", stripped, re.IGNORECASE)
-        if m:
-            return indent + "switchport access vlan " + self._normalize_vlan_list_cisco(m.group(1))
-        m = re.match(r"(eth-trunk|port link-aggregation group)\s+(\d+)", stripped, re.IGNORECASE)
-        if m:
-            return indent + f"port-group {m.group(2)} mode active"
-        m = re.match(r"channel-group\s+(\d+)(?:\s+mode\s+\S+)?", stripped, re.IGNORECASE)
-        if m:
-            return indent + f"port-group {m.group(1)} mode active"
-        m = re.match(r"ip route-static\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+(.+))?$", stripped, re.IGNORECASE)
-        if m:
-            route = f"ip route {m.group(1)} {m.group(2)} {m.group(3)}"
-            if m.group(4):
-                return [route, f"! MANUAL_REVIEW route options: {m.group(4)}"]
-            return route
-        if lower.startswith("ip route "):
-            return stripped
-        if lower.startswith("switchport "):
-            return indent + stripped
-        if from_vendor in ("cisco", "huawei", "h3c"):
-            return self._manual_review_comment(stripped, "ruijie", indent)
-        return stripped
 
     def _to_cisco(self, stripped: str, lower: str, indent: str, from_vendor: str, state: dict):
         if lower.startswith("sysname "):
             return "hostname " + stripped.split(maxsplit=1)[1]
         if lower.startswith("hostname "):
             return stripped
-        if lower.startswith("vlan batch "):
+        m = re.match(r"vlan\s+batch\s+(.+)", stripped, re.IGNORECASE)
+        if m:
             state["unsupported_interface"] = False
-            return "vlan " + self._normalize_vlan_list_cisco(stripped.split(maxsplit=2)[2])
-        if re.match(r"^vlan\s+\d+", lower):
+            vlans = self._parse_vlan_list(m.group(1))
+            return "vlan " + self._format_vlans_cisco(vlans)
+        m = re.match(r"^vlan\s+(\S.*)", stripped, re.IGNORECASE)
+        if m:
             state["unsupported_interface"] = False
-            return "vlan " + self._normalize_vlan_list_cisco(stripped.split(maxsplit=1)[1])
+            vlans = self._parse_vlan_list(m.group(1))
+            return "vlan " + self._format_vlans_cisco(vlans)
+        # SVI
+        m = re.match(r"^interface\s+Vlanif(\d+)$", stripped, re.IGNORECASE)
+        if m:
+            state["unsupported_interface"] = False
+            return f"interface Vlan{m.group(1)}"
+        m = re.match(r"^interface\s+Vlan-interface(\d+)$", stripped, re.IGNORECASE)
+        if m:
+            state["unsupported_interface"] = False
+            return f"interface Vlan{m.group(1)}"
         if lower.startswith("interface "):
             name = stripped.split(maxsplit=1)[1]
             name = self._normalize_interface_to_cisco(name)
@@ -328,6 +279,7 @@ class RuleBasedTranslator:
             return indent + "no shutdown"
         if lower == "shutdown":
             return indent + "shutdown"
+        # OSPF
         if lower.startswith("ospf ") and "router-id" in lower:
             m = re.match(r"ospf\s+(\S+)\s+router-id\s+(\S+)", lower)
             if m:
@@ -339,6 +291,11 @@ class RuleBasedTranslator:
             return indent + stripped
         if lower.startswith("network "):
             return indent + stripped
+        if lower.startswith("router-id "):
+            return indent + stripped
+        if lower.startswith("silent-interface"):
+            return indent + "passive-interface " + stripped.split(maxsplit=1)[1]
+        # BGP
         if lower.startswith("bgp "):
             m = re.match(r"bgp\s+(\S+)", lower)
             if m:
@@ -347,8 +304,23 @@ class RuleBasedTranslator:
         m = re.match(r"peer\s+(\S+)\s+as-number\s+(\S+)", lower)
         if m:
             return f" neighbor {m.group(1)} remote-as {m.group(2)}"
+        m = re.match(r"network\s+(\S+)\s+mask\s+(\S+)", lower)
+        if m:
+            return f" network {m.group(1)} {m.group(2)}"
         if lower.startswith("ipv4-family unicast"):
             return None
+        # VRF
+        m = re.match(r"vrf\s+definition\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            return f"vrf definition {m.group(1)}"
+        m = re.match(r"ip\s+vpn-instance\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            return f"vrf definition {m.group(1)}"
+        if lower.startswith("route-distinguisher "):
+            return indent + "rd " + stripped.split(maxsplit=1)[1]
+        if lower.startswith("vpn-target "):
+            return indent + "route-target " + stripped.split(maxsplit=1)[1]
+
         m = re.match(r"ip route-static\s+vpn-instance\s+(\S+)\s+(\S+)\s+(\S+)\s+(\S+)", stripped, re.IGNORECASE)
         if m:
             return f"ip route vrf {m.group(1)} {m.group(2)} {m.group(3)} {m.group(4)}"
@@ -369,9 +341,12 @@ class RuleBasedTranslator:
         m = re.match(r"port trunk (allow-pass|permit) vlan\s+(.+)", lower)
         if m:
             return indent + "switchport trunk allowed vlan " + self._normalize_vlan_list_cisco(m.group(2))
-        m = re.match(r"(eth-trunk|port link-aggregation group)\s+(\d+)", lower)
+        m = re.match(r"(eth-trunk|port link-aggregation group|bridge-aggregation)\s+(\d+)", lower)
         if m:
             return indent + f"channel-group {m.group(2)} mode active"
+        m = re.match(r"port-group\s+(\d+)", lower)
+        if m:
+            return indent + f"channel-group {m.group(1)} mode active"
         if lower.startswith("stp edged-port"):
             return indent + "spanning-tree portfast"
         m = re.match(r"traffic-filter\s+(inbound|outbound)\s+acl(?:\s+name)?\s+(\S+)", stripped, re.IGNORECASE)
@@ -396,8 +371,310 @@ class RuleBasedTranslator:
         if snmp is not None:
             return indent + snmp
 
+        if lower.startswith(("route-map ", "route-policy ", "ip prefix-list ", "prefix-list ")):
+            return indent + self._manual_review_comment(stripped, "cisco", indent)
+
+        # Unknown spanning-tree / STP features -> MANUAL_REVIEW
+        if lower.startswith(("spanning-tree ", "stp ", "bpduguard", "loopguard", "rootguard")):
+            if not (lower.startswith("stp edged-port") or lower == "spanning-tree portfast"):
+                return self._manual_review_comment(stripped, "cisco", indent)
+
         if from_vendor in ("huawei", "h3c"):
             return self._manual_review_comment(stripped, "cisco", indent)
+        return stripped
+
+    def _translate_acl_to_huawei(self, stripped: str, lower: str, state: dict):
+        m = re.match(r"access-list\s+(\d+)\s+(permit|deny)\s+(\S+)\s+(.+)", lower)
+        if not m:
+            return None
+
+        acl_id, action, protocol, rest = m.groups()
+        out = []
+        if state.get("acl") != acl_id:
+            state["acl"] = acl_id
+            out.append(f"acl number {acl_id}")
+
+        out.append(" " + self._build_acl_rule(action, protocol, rest))
+        return out
+
+    def _build_acl_rule(self, action: str, protocol: str, rest: str) -> str:
+        tokens = rest.split()
+        source = "any"
+        source_wildcard = None
+        destination = "any"
+        destination_wildcard = None
+        port = None
+
+        if tokens:
+            source = tokens.pop(0)
+        if source != "any" and tokens:
+            source_wildcard = tokens.pop(0)
+        if tokens:
+            destination = tokens.pop(0)
+        if destination != "any" and tokens:
+            destination_wildcard = tokens.pop(0)
+        if len(tokens) >= 2 and tokens[0] == "eq":
+            port = tokens[1]
+
+        parts = [f"rule {action} {protocol}"]
+        parts.extend(["source", source])
+        if source_wildcard:
+            parts.append(source_wildcard)
+        parts.extend(["destination", destination])
+        if destination_wildcard:
+            parts.append(destination_wildcard)
+        if port:
+            parts.extend(["destination-port", "eq", port])
+        return " ".join(parts)
+
+    def _to_h3c(self, stripped: str, lower: str, indent: str, from_vendor: str, state: dict):
+        if lower.startswith("hostname "):
+            return "sysname " + stripped.split(maxsplit=1)[1]
+        if lower.startswith("sysname "):
+            return stripped
+        m = re.match(r"^vlan\s+(\S.*)", stripped, re.IGNORECASE)
+        if m:
+            vlan_val = m.group(1)
+            if from_vendor in ("huawei", "h3c"):
+                return stripped
+            vlans = self._parse_vlan_list(vlan_val)
+            if len(vlans) == 1:
+                return f"vlan {vlans[0]}"
+            return f"vlan {' to '.join(str(v) for v in vlans)}"
+        # SVI: Cisco/Ruijie Vlan N -> H3C Vlan-interface N
+        m = re.match(r"^interface\s+Vlan(\d+)$", stripped, re.IGNORECASE)
+        if m:
+            return f"interface Vlan-interface{m.group(1)}"
+        if lower.startswith("interface "):
+            return "interface " + self._normalize_interface_to_h3c(stripped.split(maxsplit=1)[1])
+        if lower == "switchport mode trunk":
+            return indent + "port link-type trunk"
+        if lower == "switchport mode access":
+            return indent + "port link-type access"
+        m = re.match(r"switchport\s+trunk\s+allowed\s+vlan\s+(.+)", stripped, re.IGNORECASE)
+        if m:
+            return indent + "port trunk permit vlan " + self._normalize_vlan_list(m.group(1))
+        m = re.match(r"switchport\s+access\s+vlan\s+(.+)", stripped, re.IGNORECASE)
+        if m:
+            return indent + "port default vlan " + self._normalize_vlan_list(m.group(1))
+        m = re.match(r"(channel-group|eth-trunk|port-group)\s+(\d+)(?:\s+mode\s+\S+)?", stripped, re.IGNORECASE)
+        if m:
+            return indent + f"port link-aggregation group {m.group(2)}"
+        if lower.startswith("port trunk allow-pass vlan "):
+            return indent + stripped.replace("allow-pass", "permit", 1)
+        if lower in ("spanning-tree portfast", "stp edged-port"):
+            return indent + "stp edged-port"
+        if lower.startswith("stp edged-port enable"):
+            return indent + "stp edged-port"
+        if lower.startswith(("port link-type ", "port default vlan ", "ip address ", "description ")):
+            return indent + stripped
+        if lower == "no shutdown":
+            return indent + stripped
+        if lower == "shutdown":
+            return indent + stripped
+        if lower == "undo shutdown":
+            return indent + stripped
+        # SVI: Huawei Vlanif -> H3C Vlan-interface
+        m = re.match(r"^interface\s+Vlanif(\d+)$", stripped, re.IGNORECASE)
+        if m:
+            return f"interface Vlan-interface{m.group(1)}"
+        # OSPF
+        m = re.match(r"router\s+ospf\s+(\S+)", lower)
+        if m:
+            state["in_bgp"] = False
+            return stripped
+        m = re.match(r"ospf\s+(\S+)", lower)
+        if m:
+            state["in_bgp"] = False
+            return stripped
+        if lower.startswith("router-id "):
+            return indent + stripped
+        if lower.startswith("area "):
+            return indent + stripped
+        if lower.startswith("network ") and not state.get("in_bgp"):
+            return indent + stripped
+        if lower.startswith("silent-interface"):
+            return indent + stripped
+        if lower.startswith("undo silent-interface"):
+            return indent + stripped
+        # BGP
+        m = re.match(r"router\s+bgp\s+(\S+)", lower)
+        if m:
+            state["in_bgp"] = True
+            return stripped
+        m = re.match(r"bgp\s+(\S+)", lower)
+        if m:
+            state["in_bgp"] = True
+            return stripped
+        m = re.match(r"neighbor\s+(\S+)\s+remote-as\s+(\S+)", lower)
+        if m:
+            return f" peer {m.group(1)} as-number {m.group(2)}"
+        m = re.match(r"peer\s+(\S+)\s+as-number\s+(\S+)", lower)
+        if m:
+            return stripped
+        m = re.match(r"network\s+(\S+)\s+mask\s+(\S+)", lower)
+        if m:
+            return indent + stripped
+        if lower.startswith("ipv4-family unicast"):
+            return None
+        # Static route
+        m = re.match(r"ip\s+route\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+(.+))?$", stripped, re.IGNORECASE)
+        if m:
+            route = f"ip route-static {m.group(1)} {m.group(2)} {m.group(3)}"
+            if m.group(4):
+                return [route, f"# MANUAL_REVIEW route options: {m.group(4)}"]
+            return route
+        if lower.startswith("ip route-static "):
+            m = re.match(r"ip route-static\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+(.+))?$", stripped, re.IGNORECASE)
+            if m:
+                route = f"ip route-static {m.group(1)} {m.group(2)} {m.group(3)}"
+                if m.group(4):
+                    return [route, f"# MANUAL_REVIEW route options: {m.group(4)}"]
+                return route
+        # VRF
+        m = re.match(r"vrf\s+definition\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            return f"ip vpn-instance {m.group(1)}"
+        m = re.match(r"ip\s+vpn-instance\s+(\S+)", stripped, re.IGNORECASE)
+        if m:
+            return stripped
+        if lower.startswith("rd "):
+            return indent + "route-distinguisher " + stripped.split(maxsplit=1)[1]
+        if lower.startswith("route-target "):
+            return indent + "vpn-target " + stripped.split(maxsplit=1)[1]
+        if lower.startswith("route-distinguisher "):
+            return indent + stripped
+        if lower.startswith("vpn-target "):
+            return indent + stripped
+        # BGP neighbor sub-commands -> MANUAL_REVIEW
+        if lower.startswith("neighbor ") or lower.startswith(" peer "):
+            return indent + self._manual_review_comment(stripped, "h3c", indent)
+        # Route-map / prefix-list -> MANUAL_REVIEW
+        if lower.startswith(("route-map ", "route-policy ", "ip prefix-list ", "prefix-list ")):
+            return indent + self._manual_review_comment(stripped, "h3c", indent)
+        # Unknown spanning-tree / STP features -> MANUAL_REVIEW
+        if lower.startswith(("spanning-tree ", "stp ", "bpduguard", "loopguard", "rootguard")):
+            if lower in ("stp edged-port",) or lower.startswith(("stp edged-port", "spanning-tree portfast")):
+                return indent + stripped
+            return indent + self._manual_review_comment(stripped, "h3c", indent)
+        return indent + stripped
+
+    def _to_ruijie(self, stripped: str, lower: str, indent: str, from_vendor: str, state: dict):
+        if lower.startswith("sysname "):
+            return "hostname " + stripped.split(maxsplit=1)[1]
+        if lower.startswith("hostname "):
+            return stripped
+        # VLAN batch handling
+        m = re.match(r"^vlan\s+batch\s+(.+)", stripped, re.IGNORECASE)
+        if m:
+            vlans = self._parse_vlan_list(m.group(1))
+            return "vlan " + self._format_vlans_cisco(vlans)
+        m = re.match(r"^vlan\s+(\S.*)", stripped, re.IGNORECASE)
+        if m:
+            vlan_val = m.group(1)
+            vlans = self._parse_vlan_list(vlan_val)
+            cisco_vlans = self._format_vlans_cisco(vlans)
+            return f"vlan {cisco_vlans}"
+        # SVI
+        m = re.match(r"^interface\s+Vlanif(\d+)$", stripped, re.IGNORECASE)
+        if m:
+            return f"interface Vlan{m.group(1)}"
+        m = re.match(r"^interface\s+Vlan-interface(\d+)$", stripped, re.IGNORECASE)
+        if m:
+            return f"interface Vlan{m.group(1)}"
+        if lower.startswith("interface "):
+            name = self._normalize_interface_to_ruijie(stripped.split(maxsplit=1)[1])
+            if name is None:
+                state["unsupported_interface"] = True
+                return self._manual_review_comment(stripped, "ruijie", indent)
+            state["unsupported_interface"] = False
+            return "interface " + name
+        if state.get("unsupported_interface") and indent:
+            return self._manual_review_comment(stripped, "ruijie", indent)
+        if lower.startswith("description "):
+            return indent + stripped
+        if lower.startswith("ip address ") and lower.endswith(" sub"):
+            return indent + stripped[:-4] + " secondary"
+        if lower.startswith("ip address "):
+            return indent + stripped
+        if lower == "no shutdown":
+            return indent + stripped
+        if lower == "shutdown":
+            return indent + stripped
+        if lower == "undo shutdown":
+            return indent + "no shutdown"
+        if lower.startswith("port link-type trunk"):
+            return indent + "switchport mode trunk"
+        if lower.startswith("port link-type access"):
+            return indent + "switchport mode access"
+        m = re.match(r"port trunk (allow-pass|permit) vlan\s+(.+)", stripped, re.IGNORECASE)
+        if m:
+            return indent + "switchport trunk allowed vlan " + self._normalize_vlan_list_cisco(m.group(2))
+        m = re.match(r"port default vlan\s+(.+)", stripped, re.IGNORECASE)
+        if m:
+            return indent + "switchport access vlan " + self._normalize_vlan_list_cisco(m.group(1))
+        m = re.match(r"(eth-trunk|port link-aggregation group|bridge-aggregation)\s+(\d+)", stripped, re.IGNORECASE)
+        if m:
+            return indent + f"port-group {m.group(2)} mode active"
+        m = re.match(r"channel-group\s+(\d+)(?:\s+mode\s+\S+)?", stripped, re.IGNORECASE)
+        if m:
+            return indent + f"port-group {m.group(1)} mode active"
+        if lower in ("spanning-tree portfast", "stp edged-port"):
+            return indent + "spanning-tree portfast"
+        if lower.startswith("stp edged-port enable"):
+            return indent + "spanning-tree portfast"
+        # OSPF coverage
+        m = re.match(r"router\s+ospf\s+(\S+)", lower)
+        if m:
+            state["in_bgp"] = False
+            return stripped
+        m = re.match(r"ospf\s+(\S+)", lower)
+        if m:
+            state["in_bgp"] = False
+            return f"router ospf {m.group(1)}"
+        if lower.startswith("router-id "):
+            return indent + stripped
+        if lower.startswith("area "):
+            return indent + stripped
+        if lower.startswith("network ") and not state.get("in_bgp"):
+            return indent + stripped
+        if lower.startswith("silent-interface"):
+            return indent + "passive-interface " + lower.split(maxsplit=1)[1]
+        if lower.startswith("undo silent-interface"):
+            return indent + "no passive-interface " + lower.split(maxsplit=2)[2]
+        # BGP coverage
+        m = re.match(r"router\s+bgp\s+(\S+)", lower)
+        if m:
+            state["in_bgp"] = True
+            return stripped
+        m = re.match(r"bgp\s+(\S+)", lower)
+        if m:
+            state["in_bgp"] = True
+            return stripped
+        m = re.match(r"neighbor\s+(\S+)\s+remote-as\s+(\S+)", lower)
+        if m:
+            return f" neighbor {m.group(1)} remote-as {m.group(2)}"
+        m = re.match(r"peer\s+(\S+)\s+as-number\s+(\S+)", lower)
+        if m:
+            return stripped
+        if lower.startswith("ipv4-family unicast"):
+            return None
+        m = re.match(r"ip route-static\s+(\S+)\s+(\S+)\s+(\S+)(?:\s+(.+))?$", stripped, re.IGNORECASE)
+        if m:
+            route = f"ip route {m.group(1)} {m.group(2)} {m.group(3)}"
+            if m.group(4):
+                return [route, f"! MANUAL_REVIEW route options: {m.group(4)}"]
+            return route
+        if lower.startswith("ip route "):
+            return stripped
+        if lower.startswith("switchport "):
+            return indent + stripped
+        # Route-map / prefix-list -> MANUAL_REVIEW
+        if lower.startswith(("route-map ", "route-policy ", "ip prefix-list ", "prefix-list ")):
+            return indent + self._manual_review_comment(stripped, "ruijie", indent)
+        from_vendor_lower = (from_vendor or "").lower()
+        if from_vendor_lower in ("cisco", "huawei", "h3c"):
+            return self._manual_review_comment(stripped, "ruijie", indent)
         return stripped
 
     def _normalize_vlan_list(self, value: str) -> str:
@@ -408,9 +685,11 @@ class RuleBasedTranslator:
         return ",".join(part for part in re.split(r"[\s,]+", normalized.strip()) if part)
 
     def _normalize_interface_to_huawei(self, name: str) -> str:
-        normalized = re.sub(r"(?i)^Port-channel(\d+)$", r"Eth-Trunk\1", name)
+        normalized = re.sub(r"(?i)^Vlan-interface(\d+)$", r"Vlanif\1", name)
+        normalized = re.sub(r"(?i)^Port-channel(\d+)$", r"Eth-Trunk\1", normalized)
         normalized = re.sub(r"(?i)^AggregatePort\s*(\d+)$", r"Eth-Trunk\1", normalized)
-        normalized = re.sub(r"(?i)^GigabitEthernet", "XGigabitEthernet", normalized)
+        normalized = re.sub(r"(?i)^TenGigabitEthernet", "XGigabitEthernet", normalized)
+        normalized = re.sub(r"(?i)^Bridge-Aggregation(\d+)$", r"Eth-Trunk\1", normalized)
         return normalized
 
     def _normalize_interface_to_h3c(self, name: str) -> str:
@@ -418,6 +697,7 @@ class RuleBasedTranslator:
         normalized = re.sub(r"(?i)^AggregatePort\s*(\d+)$", r"Bridge-Aggregation\1", normalized)
         normalized = re.sub(r"(?i)^Vlanif(\d+)$", r"Vlan-interface\1", normalized)
         normalized = re.sub(r"(?i)^Vlan(\d+)$", r"Vlan-interface\1", normalized)
+        normalized = re.sub(r"(?i)^TenGigabitEthernet", "XGigabitEthernet", normalized)
         return normalized
 
     def _normalize_interface_to_cisco(self, name: str) -> str:
@@ -425,7 +705,8 @@ class RuleBasedTranslator:
         normalized = re.sub(r"(?i)^Vlanif(\d+)$", r"Vlan\1", normalized)
         normalized = re.sub(r"(?i)^Bridge-Aggregation(\d+)$", r"Port-channel\1", normalized)
         normalized = re.sub(r"(?i)^Eth-Trunk(\d+)$", r"Port-channel\1", normalized)
-        normalized = re.sub(r"(?i)^XGigabitEthernet", "GigabitEthernet", normalized)
+        normalized = re.sub(r"(?i)^AggregatePort\s*(\d+)$", r"Port-channel\1", normalized)
+        normalized = re.sub(r"(?i)^XGigabitEthernet", "TenGigabitEthernet", normalized)
         normalized = re.sub(r"(?i)^LoopBack(\d+)$", r"Loopback\1", normalized)
         normalized = re.sub(r"(?i)^NULL(\d+)$", r"Null\1", normalized)
         if re.match(r"(?i)^MEth", normalized):
@@ -444,6 +725,56 @@ class RuleBasedTranslator:
         if re.match(r"(?i)^MEth", normalized):
             return None
         return normalized
+
+    def _parse_vlan_list(self, value: str) -> list:
+        parts = re.split(r"[\s,]+", value.strip())
+        result = []
+        for p in parts:
+            if p.lower() == "to" or not p:
+                continue
+            if "-" in p:
+                try:
+                    lo, hi = p.split("-", 1)
+                    result.extend(range(int(lo), int(hi) + 1))
+                except ValueError:
+                    result.append(p)
+            else:
+                try:
+                    result.append(int(p))
+                except ValueError:
+                    result.append(p)
+        return result
+
+    def _format_vlans_cisco(self, vlans: list) -> str:
+        if not vlans:
+            return ""
+        groups = [[vlans[0], vlans[0]]]
+        for v in vlans[1:]:
+            if isinstance(v, int) and isinstance(groups[-1][1], int) and v == groups[-1][1] + 1:
+                groups[-1][1] = v
+            else:
+                groups.append([v, v])
+        return ",".join(
+            str(lo) if lo == hi else f"{lo}-{hi}"
+            for lo, hi in groups
+        )
+
+    def _format_vlans_huawei_batch(self, vlans: list) -> str:
+        if not vlans:
+            return ""
+        groups = [[vlans[0], vlans[0]]]
+        for v in vlans[1:]:
+            if isinstance(v, int) and isinstance(groups[-1][1], int) and v == groups[-1][1] + 1:
+                groups[-1][1] = v
+            else:
+                groups.append([v, v])
+        parts = []
+        for lo, hi in groups:
+            if lo == hi:
+                parts.append(str(lo))
+            else:
+                parts.append(f"{lo} to {hi}")
+        return " ".join(parts)
 
     def _translate_vrp_acl_rule_to_cisco(self, stripped: str) -> str:
         tokens = stripped.split()
@@ -595,6 +926,10 @@ class RuleBasedTranslator:
                 if m:
                     secpol = state.get("_secpol")
                     if secpol is not None:
+                        if key in secpol:
+                            # Multiple values not supported by single-value target
+                            name = secpol.get("name", "UNNAMED")
+                            return f"# MANUAL_REVIEW security-policy rule={name} multi-{key.replace('_','-')}: {m.group(1)} (only first preserved)"
                         secpol[key] = m.group(1)
                     return None
 
@@ -640,12 +975,32 @@ class RuleBasedTranslator:
             state["_addr_set"] = m.group(1)
             return None
 
-        m = re.match(r"address\s+(\d+)\s+(\S+)\s+mask\s+(\d+)", stripped, re.IGNORECASE)
-        if state.get("_addr_set") and m:
+        if state.get("_addr_set"):
+            # address N IP mask prefixlen
+            m = re.match(r"address\s+(\d+)\s+(\S+)\s+mask\s+(\d+)", stripped, re.IGNORECASE)
+            if m:
+                name = state.pop("_addr_set")
+                ip = m.group(2)
+                mask = self._prefixlen_to_netmask(m.group(3))
+                return f"address {name} {ip} {mask}"
+            # address N IP netmask (e.g. 255.255.255.0) or range
+            m = re.match(r"address\s+(\d+)\s+(\d+\.\d+\.\d+\.\d+)\s+(\d+\.\d+\.\d+\.\d+)", stripped)
+            if m:
+                ip = m.group(2)
+                third = m.group(3)
+                prefix = self._netmask_to_prefixlen(third)
+                name = state.pop("_addr_set")
+                if prefix != third:
+                    return f"address {name} {ip} {third}"
+                else:
+                    return self._manual_review_comment(
+                        f"ip address-set {name} range {ip} {third}", "hillstone",
+                    )
+            # Unrecognized address-set sub-command: pop and MANUAL_REVIEW
             name = state.pop("_addr_set")
-            ip = m.group(2)
-            mask = self._prefixlen_to_netmask(m.group(3))
-            return f"address {name} {ip} {mask}"
+            return self._manual_review_comment(
+                f"ip address-set {name} sub-command: {stripped}", "hillstone",
+            )
 
         # Topsec address object
         m = re.match(r"address\s+name\s+(\S+)\s+ip\s+(\S+)\s+(\S+)", stripped, re.IGNORECASE)
@@ -668,12 +1023,18 @@ class RuleBasedTranslator:
             state["_svc_set"] = m.group(1)
             return None
 
-        m = re.match(r"service\s+(\d+)\s+protocol\s+(\S+)\s+destination-port\s+(\S+)", stripped, re.IGNORECASE)
-        if state.get("_svc_set") and m:
+        if state.get("_svc_set"):
+            m = re.match(r"service\s+(\d+)\s+protocol\s+(\S+)\s+destination-port\s+(\S+)", stripped, re.IGNORECASE)
+            if m:
+                name = state.pop("_svc_set")
+                proto = m.group(2)
+                port = m.group(3)
+                return f"service {name} {proto} dst-port {port}"
+            # Unrecognized service-set sub-command: pop and MANUAL_REVIEW
             name = state.pop("_svc_set")
-            proto = m.group(2)
-            port = m.group(3)
-            return f"service {name} {proto} dst-port {port}"
+            return self._manual_review_comment(
+                f"ip service-set {name} sub-command: {stripped}", "hillstone",
+            )
 
         # Hillstone service object (passthrough)
         m = re.match(r"service\s+(\S+)\s+(\S+)\s+dst-port\s+(\S+)", lower)
@@ -793,10 +1154,16 @@ class RuleBasedTranslator:
             state["_addr_set"] = m.group(1)
             return None
 
-        m = re.match(r"address\s+(\d+)\s+(\S+)\s+mask\s+(\d+)", stripped, re.IGNORECASE)
-        if state.get("_addr_set") and m:
-            state.pop("_addr_set")
-            return stripped
+        if state.get("_addr_set"):
+            m = re.match(r"address\s+(\d+)\s+(\S+)\s+mask\s+(\d+)", stripped, re.IGNORECASE)
+            if m:
+                state.pop("_addr_set")
+                return stripped
+            # Unrecognized sub-command in address-set: pop and MANUAL_REVIEW
+            name = state.pop("_addr_set")
+            return self._manual_review_comment(
+                f"ip address-set {name} sub-command: {stripped}", "huawei_usg",
+            )
 
         # Service object (Hillstone flat -> Huawei USG multi-line)
         m = re.match(r"service\s+(\S+)\s+(\S+)\s+dst-port\s+(\S+)", stripped, re.IGNORECASE)
@@ -810,10 +1177,16 @@ class RuleBasedTranslator:
             state["_svc_set"] = m.group(1)
             return None
 
-        m = re.match(r"service\s+(\d+)\s+protocol\s+(\S+)\s+destination-port\s+(\S+)", stripped, re.IGNORECASE)
-        if state.get("_svc_set") and m:
-            state.pop("_svc_set")
-            return stripped
+        if state.get("_svc_set"):
+            m = re.match(r"service\s+(\d+)\s+protocol\s+(\S+)\s+destination-port\s+(\S+)", stripped, re.IGNORECASE)
+            if m:
+                state.pop("_svc_set")
+                return stripped
+            # Unrecognized sub-command in service-set: pop and MANUAL_REVIEW
+            name = state.pop("_svc_set")
+            return self._manual_review_comment(
+                f"ip service-set {name} sub-command: {stripped}", "huawei_usg",
+            )
 
         # Policy (Hillstone flat -> Huawei USG multi-line)
         m = re.match(

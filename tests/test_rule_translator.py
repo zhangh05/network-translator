@@ -80,7 +80,7 @@ ip route-static 0.0.0.0 0.0.0.0 10.0.10.254
     assert "interface Port-channel1" in result
     assert "switchport mode trunk" in result
     assert "switchport trunk allowed vlan 10,20,101-102" in result
-    assert "interface GigabitEthernet0/0/1" in result
+    assert "interface TenGigabitEthernet0/0/1" in result
     assert "channel-group 1 mode active" in result
     assert "ip route 0.0.0.0 0.0.0.0 10.0.10.254" in result
 
@@ -340,7 +340,7 @@ interface GigabitEthernet0/1
     assert "interface Eth-Trunk10" in result
     assert "port link-type trunk" in result
     assert "port trunk allow-pass vlan 30 40" in result
-    assert "interface XGigabitEthernet0/1" in result
+    assert "interface GigabitEthernet0/1" in result
     assert "eth-trunk 10" in result
 
 
