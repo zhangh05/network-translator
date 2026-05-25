@@ -200,9 +200,11 @@ Test file: `tests/test_rule_translator_router_multivendor.py`
 |---------|---------------|
 | Static route options (preference, tag, track, bfd) | MANUAL_REVIEW |
 | OSPF area type (nssa, stub, virtual-link) | MANUAL_REVIEW |
-| BGP neighbor sub-commands (description, update-source, password) | MANUAL_REVIEW |
+| OSPF area authentication message-digest | MANUAL_REVIEW |
+| BGP neighbor sub-commands (description, update-source, password) | MANUAL_REVIEW — password always `<redacted>` + MANUAL_REVIEW |
+| BGP peer sub-commands (connect-interface, ebgp-multihop, password) | MANUAL_REVIEW — password always `<redacted>` + MANUAL_REVIEW |
 | route-map / route-policy skeleton (Batch I-F) | `route-map NAME permit/deny SEQ` ↔ `route-policy NAME permit/deny node SEQ` — skeleton only. `if-match acl ACL` ↔ `match ip address ACL` auto. `apply local-preference N` ↔ `set local-preference N` auto. |
-| route-map / route-policy body commands | MANUAL_REVIEW — continue, call, community, as-path, tag, extcommunity, metric, and all other match/set sub-commands are not auto-translated |
+| route-map / route-policy body commands | MANUAL_REVIEW — continue, call, community (always `<redacted>`), as-path, tag, extcommunity, metric, and all other match/set sub-commands are not auto-translated |
 
 ### Not Supported
 
@@ -222,7 +224,7 @@ Test file: `tests/test_rule_translator_firewall.py`, `tests/test_rule_translator
 | Source | Target | Feature | Conditions |
 |--------|--------|---------|------------|
 | Huawei USG | Hillstone | Zone / address / service / policy | Complete multi-line security-policy block |
-| Hillstone | Huawei USG | Zone / address / service / policy | Complete flat policy with all required fields |
+| Hillstone | Huawei USG | Zone / address / service / policy | Complete flat policy with all required fields. Valid subnet addresses (`IP + netmask`) auto. Address range (`IP1 IP2` non-netmask) and `host` keyword → MANUAL_REVIEW |
 | Topsec | Huawei USG | Zone | `zone name <zone>` |
 | Topsec | Huawei USG | Address object | `address name NAME ip A.B.C.D mask MMM.MMM.MMM.MMM` → `ip address-set NAME type object` + `address 0 A.B.C.D mask MMM.MMM.MMM.MMM` |
 | Topsec | Huawei USG | Policy | Only when **all 6 fields present**: source-zone, destination-zone, source-address, destination-address, service, action. Output: `security-policy` + `rule name ...` block |
@@ -257,7 +259,7 @@ Required fields per direction:
 | Source | Target | MANUAL_REVIEW Items |
 |--------|--------|---------------------|
 | Huawei USG | Hillstone | Zone add interface, address-set range, service-set source-port, multi-value fields, time-range, log, session, user, application, profile sub-commands |
-| Hillstone | Huawei USG | NAT, IPSec, VPN, URL filter, AV, time-range, log, session, profile, application, user |
+| Hillstone | Huawei USG | NAT, IPSec, VPN, URL filter, AV, time-range, log, session, profile, application, user, address range (IP IP non-netmask), address host keyword |
 | Topsec | Huawei USG | Address range/special types, service objects, policy with missing fields |
 | Topsec | Hillstone | Address range/special types, service objects, policy with missing fields |
 | Hillstone | Topsec | Service objects (if not implementable as flat service) |
@@ -286,7 +288,11 @@ Required fields per direction:
 |------|-------|
 | `tests/test_rule_translator.py` | SWITCH + ROUTER + FIREWALL — 19 tests |
 | `tests/test_rule_translator_firewall.py` | FIREWALL (Hillstone ↔ Huawei USG ↔ Topsec ↔ DPtech) — 28 tests |
-| `tests/test_rule_translator_firewall_objects.py` | Firewall object/policy details — 84 tests |
+| `tests/test_rule_translator_firewall_objects.py` | Firewall object/policy details — 108 tests |
+| `tests/test_rule_translator_firewall_service_objects.py` | Firewall service objects — 19 tests |
+| `tests/test_rule_translator_switch_batch_k.py` | SWITCH Batch K-A — trunk add/remove/all/none, native vlan↔pvid, interface range, STP guard/bpdu-protection — 49 tests |
+| `tests/test_rule_translator_router_batch_k.py` | ROUTER Batch K-B — static route options, OSPF authentication, BGP password/update-source/ebgp-multihop, VRF policy, route-policy community redaction — 30 tests |
+| `tests/test_rule_translator_firewall_batch_k.py` | FIREWALL Batch K-C — address range/group, service-set, dangerous guard, zone bind — 14 tests |
 | `tests/test_safe_fallback_and_block_splitter.py` | Infrastructure (safe fallback guard, splitter) |
 | `tests/test_rule_translator_switch_multivendor.py` | SWITCH (12 direction pairs + negatives) |
 | `tests/test_rule_translator_router_multivendor.py` | ROUTER (static/OSPF/BGP/VRF multi-direction) |
@@ -308,3 +314,6 @@ Required fields per direction:
 | 2026-05-25 Batch I-D | FIREWALL: Topsec→Huawei USG (zone/address/policy), Hillstone→Topsec (zone/address/policy), DPtech completeness, dangerous feature guards, address mask netmask format, Topsec routing fix (non-Topsec/Hillstone sources to Topsec → MANUAL_REVIEW), 84 firewall tests |
 | 2026-05-25 Batch I-E | Realistic samples: Cisco→Huawei trunk/access/SVI/ACL/OSPF/NTP/AAA, Huawei→Cisco Vlanif/ACL/OSPF/SNMP/AAA, Topsec→Huawei USG complete policy, Hillstone→Topsec complete policy. Fix: no switchport (Cisco routed-port) dropped in Huawei output, BGP neighbor password redacted in MANUAL_REVIEW. New test file: 21 realistic tests |
 | 2026-05-25 Batch I-F | Firewall service objects (Topsec↔Huawei USG↔Hillstone), route-policy skeleton (Cisco↔Huawei), QoS binding (Huawei inbound only, outbound MANUAL_REVIEW), NAT guard (all NAT → MANUAL_REVIEW). Updated QoS section to clarify inbound-only binding support. Hillstone service format: `service NAME proto PORT` without `dst-port` keyword per Batch I-F spec. Added route-policy skeleton to ROUTER domain section. |
+| 2026-05-25 Batch K-A | SWITCH: trunk allowed vlan add/remove/all/none, access vlan↔port default vlan, native vlan↔pvid, interface range → MANUAL_REVIEW, STP bpdu-protection→spanning-tree bpduguard, undo port trunk permit vlan→undo port trunk allow-pass vlan. 49 new tests (1371/0/3 CI). |
+| 2026-05-25 Batch K-B | ROUTER: static route name/tag/preference/distance/track/bfd → MANUAL_REVIEW, OSPF area authentication → MANUAL_REVIEW, BGP update-source→connect-interface MANUAL_REVIEW, BGP ebgp-multihop → MANUAL_REVIEW, BGP password redaction (`peer` direction + `.+` eat-all regex), route-policy set community → redacted + MANUAL_REVIEW, VRF import/export policy → MANUAL_REVIEW. Bugfix: passive-interface/silent-interface preserve original interface name case. 30 new tests (1925/0/23 CI). |
+| 2026-05-25 Batch K-C | FIREWALL: Hillstone address range (two IP non-netmask) -> Huawei USG MANUAL_REVIEW (BUGFIX: was wrongly auto-translated as `mask 9`). Hillstone address `host` keyword -> Huawei USG MANUAL_REVIEW (was producing invalid `mask host`). Plus 12 regression tests for address-group/service-set/zone-bind/nat dangerous guards. 14 new tests (1939/0/23 CI). |
