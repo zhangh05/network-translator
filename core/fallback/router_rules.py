@@ -88,6 +88,9 @@ def translate_routing_to_huawei(stripped: str, lower: str, indent: str, state: d
     m = re.match(r"network\s+(\S+)\s+mask\s+(\S+)", lower)
     if m:
         return f" network {m.group(1)} {m.group(2)}"
+    if lower.startswith("neighbor ") and re.search(r"\b(password|cipher)\s+\S+", lower):
+        redacted = re.sub(r"(password|cipher)\s+\S+", r"\1 <redacted>", stripped)
+        return indent + manual_review_comment(redacted, "huawei", indent)
     if lower.startswith("neighbor ") or lower.startswith(" peer "):
         return indent + manual_review_comment(stripped, "huawei", indent)
     if lower.startswith("ipv4-family unicast"):

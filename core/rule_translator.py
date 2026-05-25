@@ -188,7 +188,15 @@ class RuleBasedTranslator:
             return indent + manual_review_comment(stripped, "huawei", indent)
 
         if stripped == "no switchport":
-            return None
+            return indent + manual_review_comment(
+                "no switchport", "huawei", indent,
+            )
+        if lower.startswith("neighbor ") and re.search(r"\b(password|cipher)\s+\S+", lower):
+            redacted = re.sub(r"(password|cipher)\s+\S+", r"\1 <redacted>", stripped)
+            return indent + manual_review_comment(redacted, "huawei", indent)
+        if re.search(r"\bcommunity\s+\S+\s+\S+", lower) and not re.search(r"community\s+<redacted>", lower):
+            redacted = re.sub(r"(community\s+)\S+", r"\1<redacted>", stripped)
+            return indent + manual_review_comment(redacted, "huawei", indent)
         return stripped if from_vendor in ("h3c", "huawei") else indent + stripped
 
     def _to_cisco(self, stripped: str, lower: str, indent: str, from_vendor: str, state: Dict):

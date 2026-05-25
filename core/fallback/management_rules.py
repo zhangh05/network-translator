@@ -348,6 +348,9 @@ def translate_snmp_to_huawei(stripped: str, lower: str, indent: str, from_vendor
     if lower.startswith("snmp-server host ") and " community " in lower:
         return None
     if lower.startswith("snmp-server "):
+        if re.search(r"\bcommunity\s+\S+", lower):
+            redacted = re.sub(r"(community\s+)\S+", r"\1<redacted>", stripped)
+            return indent + manual_review_comment(redacted, "huawei", indent)
         return indent + manual_review_comment(stripped, "huawei", indent)
     if lower.startswith("snmp "):
         return indent + manual_review_comment(stripped, "huawei", indent)

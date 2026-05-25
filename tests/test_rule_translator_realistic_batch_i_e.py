@@ -24,13 +24,12 @@ SENSITIVE_PATTERNS_REDACTED = [
 
 
 def _has_secret_leak(result: str) -> bool:
-    """Check if result contains unredacted secrets in executable lines."""
-    executable = "\n".join(
-        l for l in result.split("\n")
-        if l.strip() and not l.strip().startswith("#") and not l.strip().startswith("!")
-    )
+    """Check if result contains unredacted secrets in the FULL output (including comments).
+
+    All secret values must be redacted in ALL output, not just executable lines.
+    """
     for pattern in SENSITIVE_PATTERNS_REDACTED:
-        if pattern.search(executable):
+        if pattern.search(result):
             return True
     return False
 
@@ -544,3 +543,28 @@ ip route-static 192.168.1.0 255.255.255.0 10.1.1.254
         assert result.strip()
         assert "10.1.1.1" in result or "MANUAL_REVIEW" in result
         _check_no_source_residue(result, "huawei")
+
+    def test_no_switchport_not_silently_dropped(self):
+        """no switchport must NOT be silently dropped; it should appear as MANUAL_REVIEW."""
+        config = """interface GigabitEthernet0/0/3
+ no switchport
+ ip address 10.255.1.2 255.255.255.0
+"""
+        result = RuleBasedTranslator().translate(config, "cisco", "huawei")
+
+        assert "MANUAL_REVIEW" in result, \
+            "no switchport must not be silently dropped; expected MANUAL_REVIEW"
+        assert "switchport" not in result.lower() or "MANUAL_REVIEW" in result, \
+            "no switchport should not appear as executable Cisco syntax"
+
+    def test_bgp_neighbor_password_redacted_in_full_output(self):
+        """BGP neighbor password must be redacted in FULL output (including comments)."""
+        config = "neighbor 10.1.1.1 password SECRET_KEY\n"
+        result = RuleBasedTranslator().translate(config, "cisco", "huawei")
+
+        assert "SECRET_KEY" not in result, \
+            f"SECRET_KEY must not appear anywhere in output (got: {result})"
+        assert "<redacted>" in result, \
+            "password should be replaced with <redacted>"
+        assert "MANUAL_REVIEW" in result, \
+            "BGP neighbor with password should be MANUAL_REVIEW"
