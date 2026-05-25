@@ -206,3 +206,41 @@ Fallback 在 LLM 输出无法通过校验时触发，是安全阻断机制，不
 | `tests/test_frontend_fallback_ux.py` | GraphAgent 集成、UX 端到端流程、user-facing 输出 |
 | `tests/test_rule_translator_realistic_samples.py` | 规则翻译器真实样本覆盖 |
 | `tests/test_rule_translator_realistic_batch_i_e.py` | Batch I-E 收敛回归 |
+
+---
+
+## 8. Batch I-I 浏览器端到端验收结果
+
+### LLM 配置
+
+| 字段 | 值 |
+|------|-----|
+| model | Minimax M2.7 |
+| base_url | https://api.minimaxi.com/anthropic |
+| api_key | `***` (masked) |
+| 读取状态 | 通过外部 `llm_settings.txt` 读取成功 |
+
+### 4 样例验收汇总
+
+| # | 样例 | 源→目标 | 翻译方式 | 状态 | 摘要 |
+|---|------|---------|----------|------|------|
+| 1 | Huawei VRP → Cisco | huawei→cisco | LLM | 可部署 | VLAN/ACL/OSPF/snmp/aaa 全部正确翻译 |
+| 2 | Cisco → Huawei | cisco→huawei | LLM | 需人工复核 | BGP password/service-policy/aaa 需审核 |
+| 3 | Topsec → Huawei USG | topsec→huawei_usg | LLM | 可部署 | Zone/address/service/policy 全翻译 |
+| 4 | Hillstone → Topsec | hillstone→topsec | LLM | 需人工复核 | zone/object/service/policy 含 `// MANUAL_REVIEW` |
+
+### 关键验收项
+
+| 验收项 | 结果 |
+|--------|------|
+| 翻译结果 tab 始终优先 deployable_config | ✅ 正确 |
+| 翻译结果 tab 不含人工复核摘要 | ✅ 正确 |
+| 风险分析 tab 可读 (中文分类) | ✅ 正确 |
+| 校验结果 tab 可读 | ✅ 正确 |
+| 差异对比 tab 可读 | ✅ 正确 |
+| 复制全部配置优先 deployable_config | ✅ 正确 |
+| 复制可部署配置过滤 MANUAL_REVIEW | ✅ 正确 |
+| 刷新后结果保留 | ✅ 正确 |
+| 新窗口看到同一结果 | ✅ 正确 |
+| 明文敏感值不在 fallback 输出出现 | ✅ fallback path 已脱敏 |
+| 明文敏感值不在 LLM 输出出现 | ⚠️ **预存问题**: LLM 输出不含 fallback 脱敏，密码/community 可能明文出现 |
