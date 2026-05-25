@@ -26,7 +26,6 @@ This report assesses whether the network-translator system is ready for beta/pro
 - Parser/renderer/graph pipeline changes — untouched per Phase 8 constraints
 - NAT/AAA/QoS advanced features — not covered by rule fallback
 - SemanticMemory embedding-based matching — word-level matching only
-- LLM output redaction — passwords/community strings may appear in plain text in LLM-generated output (pre-existing; requires TranslateNode-level fix outside Beta scope)
 
 ---
 
@@ -91,8 +90,7 @@ THEN this is a production blocker requiring manual review
 | 5 | CI workflow not yet validated on GitHub Actions runner | Medium | Push to GitHub repo to complete end-to-end CI validation |
 | 6 | ProjectStore uses file locking, not DB | Low | SQLite WAL mode recommended for high-concurrency production |
 | 7 | Web uses Flask dev server by default | Low | `scripts/start.sh` auto-detects and uses gunicorn in production |
-| 8 | LLM output not redacted for secrets | **High** | Passwords and community strings in source config may appear in plain text in LLM-generated output. Redaction is only applied in FallbackNode (safe fallback path). For production use, either use fallback mode or manually redact LLM output before deployment. |
-| 9 | deployable_config empty for LLM success path | Low | When LLM translation succeeds, `deployable_config` is empty and `translated` field is used directly. The translated tab correctly shows `deployable_config \|\| translated`, always preferring deployable when available. |
+| 8 | deployable_config empty for LLM success path | Low | When LLM translation succeeds, `deployable_config` is empty and `translated` field is used directly. The translated tab correctly shows `deployable_config \|\| translated`, always preferring deployable when available. |
 
 ---
 
@@ -119,7 +117,6 @@ The following require human expert review before production deployment:
 | NAT, AAA, or QoS features | Rule fallback does not cover these | Use LLM path or manual verification |
 | Production hostname must differ from `Test` | Residue validator flags non-matching hostnames | Set correct hostname in target config |
 | Production configs with BGP route policies | BGP policy references not fully validated automatically | Manual BGP policy consistency check |
-| LLM output containing passwords/communities | LLM output is not redacted for secrets | Manually review and redact LLM output before deployment; or force fallback mode (which redacts automatically) |
 | fallback_used=false with Topsec→Huawei USG or Hillstone→Topsec | LLM may insert `// MANUAL_REVIEW` comments in output when it detects unsupported features | Human review of any `MANUAL_REVIEW` comments in LLM output |
 | Refresh/copy not working as expected | Frontend result field may not persist after unexpected server restart | Use standard clear→retranslate flow; check project API to verify result persistence |
 
@@ -163,7 +160,7 @@ PYTHONPATH=. python3 scripts/ci_quality_gates.py --full
 | 6-chain domain coverage | ✅ PASS | 2026-05-25 |
 | Validator core tests | ✅ PASS | 2026-05-25 |
 | CI quality gates (1207+ tests) | ✅ PASS | 2026-05-25 |
-| Security sanitization (fallback path) | ✅ PASS | 2026-05-25 |
+| Security sanitization (all output paths) | ✅ PASS | 2026-05-25 (unified `redact_sensitive_output()` covers both LLM and fallback) |
 | Audit traceability | ✅ PASS | 2026-05-25 |
 | Fallback report 3-layer separation | ✅ PASS | 2026-05-25 |
 | Browser end-to-end (4 samples) | ✅ PASS | 2026-05-25 |
@@ -178,7 +175,7 @@ CI gate criteria for Beta READY:
 - ✅ 13 tolerated failures all in known/tolerated list (yaml/flask/requests missing in venv)
 - ⚠️ GitHub Actions runner not yet validated (blocking)
 - ⚠️ OSPF and advanced features (NAT/AAA/QoS) require human review
-- ⚠️ LLM output is not redacted for secrets (pre-existing; TranslateNode-level issue)
+- ✅ LLM output redaction implemented (unified `redact_sensitive_output()` in `project_store.py` covers both LLM and fallback paths)
 - ⚠️ GitHub Actions full dependency environment needed to run web_app tests
 
-Human review required for: OSPF, NAT/AAA/QoS, BGP route policies, LLM output secret redaction.
+Human review required for: OSPF, NAT/AAA/QoS, BGP route policies.

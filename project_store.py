@@ -20,6 +20,45 @@ logger = logging.getLogger("translator.project_store")
 
 PROJECT_DIR = Path(__file__).parent / "projects"
 
+# ── Sensitive output redaction ─────────────────────────────────────────────
+# Applied before any user-facing output leaves the service (API response,
+# project persistence, copy/export). Ensures LLM success path and fallback
+# path produce equally clean output.
+
+_REDACT_PATTERNS = [
+    (re.compile(r'(password\s+(?:\d\s+)?)(?!(?:cipher|irreversible-cipher)\s)\S+', re.IGNORECASE), r'\1<redacted>'),
+    (re.compile(r'(secret\s+(?:\d\s+)?)\S+', re.IGNORECASE), r'\1<redacted>'),
+    (re.compile(r'(cipher\s+)\S+', re.IGNORECASE), r'\1<redacted>'),
+    (re.compile(r'(irreversible-cipher\s+)\S+', re.IGNORECASE), r'\1<redacted>'),
+    (re.compile(r'(shared-key\s+)(?!(?:cipher|irreversible-cipher)\s)\S+', re.IGNORECASE), r'\1<redacted>'),
+    (re.compile(r'(pre-shared-key\s+)(?!(?:cipher|irreversible-cipher)\s)\S+', re.IGNORECASE), r'\1<redacted>'),
+    (re.compile(r'(snmp-server\s+community\s+)\S+', re.IGNORECASE), r'\1<redacted>'),
+    (re.compile(r'(snmp-agent\s+community\s+\w+\s+cipher\s+)\S+', re.IGNORECASE), r'\1<redacted>'),
+    (re.compile(r'(tacacs-server\s+key\s+)\S+', re.IGNORECASE), r'\1<redacted>'),
+    (re.compile(r'(radius-server\s+(?:shared-)?key\s+)(?!(?:cipher|irreversible-cipher)\s)\S+', re.IGNORECASE), r'\1<redacted>'),
+    (re.compile(r'(radius\s+shared-key\s+)(?!(?:cipher|irreversible-cipher)\s)\S+', re.IGNORECASE), r'\1<redacted>'),
+    (re.compile(r'(neighbor\s+\S+\s+password\s+)\S+', re.IGNORECASE), r'\1<redacted>'),
+    (re.compile(r'(set\s+community\s+)\S+', re.IGNORECASE), r'\1<redacted>'),
+    (re.compile(r'(apply\s+community\s+)\S+', re.IGNORECASE), r'\1<redacted>'),
+]
+
+
+def redact_sensitive_output(value):
+    """Recursively redact sensitive values from any output structure.
+
+    Handles str, list, dict, and nested combinations. Non-text types
+    (None, bool, int, float) pass through unchanged.
+    """
+    if isinstance(value, str):
+        for pattern, replacement in _REDACT_PATTERNS:
+            value = pattern.sub(replacement, value)
+        return value
+    if isinstance(value, list):
+        return [redact_sensitive_output(item) for item in value]
+    if isinstance(value, dict):
+        return {k: redact_sensitive_output(v) for k, v in value.items()}
+    return value
+
 
 class Project:
     """项目"""
@@ -262,7 +301,7 @@ class ProjectStore:
         if "target_platform" in updates:
             project.target_platform = updates["target_platform"]
         if "result" in updates:
-            project.result = updates["result"]
+            project.result = redact_sensitive_output(updates["result"])
         if "request_id" in updates:
             project.request_id = updates["request_id"]
         if "version" in updates:
@@ -455,6 +494,9 @@ def register_project_routes(app):
         _auth()
         store = get_project_store()
         projects = store.list_projects()
+        for p in projects:
+            if p.get("result") is not None:
+                p["result"] = redact_sensitive_output(p["result"])
         return {"ok": True, "projects": projects}
 
     @app.route("/api/projects", methods=["POST"])
@@ -475,7 +517,10 @@ def register_project_routes(app):
         project = store.get_project(project_id)
         if not project:
             return {"ok": False, "error": "Project not found"}, 404
-        return {"ok": True, "project": project.to_full_dict()}
+        full = project.to_full_dict()
+        if "result" in full and full["result"] is not None:
+            full["result"] = redact_sensitive_output(full["result"])
+        return {"ok": True, "project": full}
 
     @app.route("/api/projects/<project_id>", methods=["PUT"])
     def update_project(project_id):
@@ -543,7 +588,7 @@ def register_project_routes(app):
             import time as _time
             return {
                 "ok": True,
-                "result": project.result,
+                "result": redact_sensitive_output(project.result),
                 "reused": True,
                 "elapsed_ms": 0,
                 "request_id": project.request_id or "",
@@ -589,6 +634,9 @@ def register_project_routes(app):
                 target_domain, target_platform, result=None, error="Internal translation error",
             )
             return {"ok": False, "error": "Internal translation error", "request_id": request_id}, 500
+
+        # 敏感信息脱敏：递归 redact 所有字符串字段
+        result_data = redact_sensitive_output(result_data)
 
         # 翻译成功后：同时写入 result 和 fingerprint，避免中途失败导致旧 result 绑定新 fingerprint
         store.update_project(project_id, {

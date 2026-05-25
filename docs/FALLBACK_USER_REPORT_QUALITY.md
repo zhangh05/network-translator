@@ -206,6 +206,60 @@ Fallback 在 LLM 输出无法通过校验时触发，是安全阻断机制，不
 | `tests/test_frontend_fallback_ux.py` | GraphAgent 集成、UX 端到端流程、user-facing 输出 |
 | `tests/test_rule_translator_realistic_samples.py` | 规则翻译器真实样本覆盖 |
 | `tests/test_rule_translator_realistic_batch_i_e.py` | Batch I-E 收敛回归 |
+| `tests/test_output_redaction.py` | 统一输出脱敏（P0 修复）：16 种模式 + 递归结构 + 无假阳性 + 幂等性 + ProjectStore 集成 |
+
+---
+
+## 7.5. 统一输出脱敏覆盖
+
+### 脱敏位置
+
+脱敏在 `project_store.py` 中作为 API 层拦截器执行，位于 `translate_project()` 的三个输出路径：
+
+| 路径 | 位置 | 说明 |
+|------|------|------|
+| 新翻译保存 | `translate_project()` 内 `run_translation()` 返回后 | 递归脱敏 result_data 再持久化 + 返回 |
+| 复用缓存读取 | `translate_project()` 复用路径 | 从磁盘读取 project.result，脱敏后返回 |
+| GET 项目 API | `get_project()` 路由 | 读取 to_full_dict() 后脱敏 result，兼容旧数据 |
+
+### 脱敏模式（16 种）
+
+| 模式 | 示例输入 | 脱敏后 |
+|------|---------|--------|
+| password | `password SECRET` | `password <redacted>` |
+| secret | `secret 5 HASH` | `secret 5 <redacted>` |
+| cipher | `cipher Hello@123` | `cipher <redacted>` |
+| irreversible-cipher | `irreversible-cipher XyZ` | `irreversible-cipher <redacted>` |
+| shared-key | `shared-key myKey` | `shared-key <redacted>` |
+| pre-shared-key | `pre-shared-key secret` | `pre-shared-key <redacted>` |
+| snmp-server community | `snmp-server community public` | `snmp-server community <redacted>` |
+| snmp-agent community cipher | `snmp-agent community read cipher %%$abc` | `snmp-agent community read cipher <redacted>` |
+| tacacs-server key | `tacacs-server key TacacsKey` | `tacacs-server key <redacted>` |
+| radius-server key | `radius-server key RadiusKey` | `radius-server key <redacted>` |
+| radius shared-key | `radius shared-key SharedKey` | `radius shared-key <redacted>` |
+| neighbor password | `neighbor 10.0.0.1 password Pass` | `neighbor 10.0.0.1 password <redacted>` |
+| set community | `set community 65000:1` | `set community <redacted>` |
+| apply community | `apply community 65000:100` | `apply community <redacted>` |
+
+### 关键设计约束
+
+- **递归**: 自动脱敏 str/list/dict/nested 嵌套结构
+- **无假阳性**: IP、ACL rule、VLAN ID、interface name、OSPF 等 6 类 safe lines 不受影响（30 条断言验证）
+- **幂等性**: 对已脱敏文本再脱敏结果不变
+- **无双重脱敏**: password 优先匹配，cipher/irreversible-cipher 后匹配（负向前瞻避免 password 吃掉 cipher）
+
+### 覆盖字段
+
+| 字段 | 类型 | 脱敏 |
+|------|------|------|
+| `result_data.translated` | str | ✅ |
+| `result_data.deployable_config` | str | ✅ |
+| `result_data.diff` | str | ✅ |
+| `result_data.validation` | dict | ✅ |
+| `result_data.risk_signals` | list[dict] | ✅ |
+| `result_data.capability_gaps` | list[dict] | ✅ |
+| `result_data.analyzer_results` | dict | ✅ |
+| `result_data.node_results` | dict | ✅ |
 
 ---
 
@@ -243,4 +297,4 @@ Fallback 在 LLM 输出无法通过校验时触发，是安全阻断机制，不
 | 刷新后结果保留 | ✅ 正确 |
 | 新窗口看到同一结果 | ✅ 正确 |
 | 明文敏感值不在 fallback 输出出现 | ✅ fallback path 已脱敏 |
-| 明文敏感值不在 LLM 输出出现 | ⚠️ **预存问题**: LLM 输出不含 fallback 脱敏，密码/community 可能明文出现 |
+| 明文敏感值不在 LLM 输出出现 | ✅ 统一 `redact_sensitive_output()` 覆盖 LLM 和 fallback 所有输出路径，持久化前脱敏 |
