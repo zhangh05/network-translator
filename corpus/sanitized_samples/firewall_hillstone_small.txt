@@ -1,0 +1,17 @@
+# Hillstone StoneOS Firewall — small realistic sample
+zone trust
+zone untrust
+zone dmz
+#
+address TRUSTED 192.168.10.0 255.255.255.0
+address UNTRUST 198.51.100.0 255.255.255.0
+address DMZ 10.0.0.0 255.255.255.0
+#
+service HTTP tcp 80
+service HTTPS tcp 443
+service DNS udp 53
+#
+nat source 192.168.10.0 255.255.255.0 to 198.51.100.0 255.255.255.0
+#
+policy ALLOW-HTTPS from trust to untrust source TRUSTED destination UNTRUST service HTTPS action permit
+policy ALLOW-DNS from trust to untrust source TRUSTED destination UNTRUST service DNS action permit

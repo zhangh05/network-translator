@@ -1,0 +1,35 @@
+# Huawei USG Firewall — small realistic sample
+#
+security-zone name trust
+security-zone name untrust
+security-zone name dmz
+#
+ip address-set TRUSTED type object
+ address 0 192.168.10.0 mask 24
+ip address-set UNTRUST type object
+ address 0 198.51.100.0 mask 24
+ip address-set DMZ type object
+ address 0 10.0.0.0 mask 24
+#
+ip service-set HTTP type object
+ service 0 protocol tcp destination-port 80
+ip service-set HTTPS type object
+ service 0 protocol tcp destination-port 443
+ip service-set DNS type object
+ service 0 protocol udp destination-port 53
+#
+security-policy
+ rule name ALLOW-HTTPS
+  source-zone trust
+  destination-zone untrust
+  source-address 192.168.10.0 mask 24
+  destination-address 198.51.100.0 mask 24
+  service HTTPS
+  action permit
+ rule name ALLOW-DNS
+  source-zone trust
+  destination-zone untrust
+  source-address 192.168.10.0 mask 24
+  destination-address 198.51.100.0 mask 24
+  service DNS
+  action permit

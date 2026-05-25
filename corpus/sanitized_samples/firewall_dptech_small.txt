@@ -1,0 +1,21 @@
+# DPtech Firewall — small realistic sample
+zone trust
+zone untrust
+#
+object address TRUSTED 192.168.10.0 255.255.255.0
+object address UNTRUST 198.51.100.0 255.255.255.0
+object address-range RANGE1 10.0.0.1 10.0.0.254
+#
+object service HTTP protocol tcp destination-port 80
+object service DNS protocol udp destination-port 53
+object service PING protocol icmp
+#
+nat address-group NAT-POOL
+#
+security-policy name ALLOW-WEB
+ source-zone trust
+ destination-zone untrust
+ source-address TRUSTED
+ destination-address UNTRUST
+ service HTTP
+ action permit

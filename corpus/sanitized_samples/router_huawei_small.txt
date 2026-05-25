@@ -1,0 +1,32 @@
+# Huawei VRP Router — small realistic sample
+sysname RTR-EDGE-02
+#
+ip route-static 0.0.0.0 0.0.0.0 198.51.100.1
+ip route-static 10.0.0.0 24 10.0.0.2
+ip route-static 10.0.0.0 24 10.0.0.3 preference 100
+ip route-static 172.16.0.0 16 10.0.0.4 tag 200
+#
+ospf 1 router-id 10.0.0.1
+ area 0.0.0.0
+  network 10.0.0.0 0.0.0.255
+  network 192.168.1.0 0.0.0.255
+ area 0.0.0.1
+  network 172.16.0.0 0.0.255.255
+ silent-interface GigabitEthernet0/0/1
+ default-route-advertise always
+#
+bgp 65001
+ router-id 10.0.0.1
+ peer 10.1.1.2 as-number 65002
+ peer 10.1.1.2 description Peer-to-ISP
+ peer 10.1.1.2 password cipher <redacted>
+ peer 10.1.1.2 connect-interface LoopBack0
+ ipv4-family unicast
+  network 10.0.0.0 255.255.255.0
+#
+route-policy RP-PREF permit node 10
+ if-match acl ACL-MATCH
+ apply local-preference 200
+ apply community 65001:200
+#
+ip ip-prefix PL-DEFAULT index 5 permit 0.0.0.0 0

@@ -1,0 +1,37 @@
+! Cisco IOS-XE Switch — small realistic sample
+hostname SW-CORE-01
+!
+vlan 10
+ name MANAGEMENT
+vlan 20
+ name VOICE
+vlan 30
+ name DATA
+!
+interface GigabitEthernet0/1
+ description Uplink-to-CORE
+ switchport mode trunk
+ switchport trunk native vlan 99
+ switchport trunk allowed vlan 10,20,30
+ no shutdown
+!
+interface GigabitEthernet0/2
+ description Access-Desk-101
+ switchport mode access
+ switchport access vlan 10
+ no shutdown
+!
+interface Vlan10
+ ip address 192.168.10.1 255.255.255.0
+ no shutdown
+!
+interface Vlan20
+ ip address 192.168.20.1 255.255.255.0
+ no shutdown
+!
+ip route 0.0.0.0 0.0.0.0 192.168.10.254
+!
+spanning-tree portfast default
+spanning-tree bpduguard enable
+!
+snmp-server community <redacted> ro

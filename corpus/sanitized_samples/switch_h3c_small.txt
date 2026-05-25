@@ -1,0 +1,31 @@
+# H3C Comware Switch — small realistic sample
+sysname SW-CORE-03
+#
+vlan batch 10 20 30 99
+#
+interface GigabitEthernet1/0/1
+ description Uplink-to-CORE
+ port link-type trunk
+ port trunk permit vlan 10 20 30
+ undo shutdown
+#
+interface GigabitEthernet1/0/2
+ description Access-Desk-101
+ port link-type access
+ port default vlan 10
+ undo shutdown
+#
+interface Vlan-interface10
+ ip address 192.168.10.1 255.255.255.0
+#
+interface Vlan-interface20
+ ip address 192.168.20.1 255.255.255.0
+#
+interface Bridge-Aggregation1
+ description LAG-to-CORE
+ port link-type trunk
+ port trunk permit vlan 10 20
+#
+ip route-static 0.0.0.0 0.0.0.0 192.168.10.254
+#
+stp edged-port enable

@@ -1,6 +1,6 @@
 # Fallback Gap Analysis
 
-> **Generated**: `scripts/evaluate_corpus_fallback.py` against `corpus/samples/`
+> **Generated**: `scripts/evaluate_corpus_fallback.py` against `corpus/sanitized_samples/`
 > **Date**: 2026-05-25
 > **Pass rate**: 16/24 (66.7%) — 8 known gaps, all non-blocking for Beta
 

@@ -38,6 +38,18 @@ def test_evaluator_runs_without_error():
     assert result.returncode == 0, f"stderr:\n{result.stderr}"
 
 
+def test_evaluator_uses_sanitized_samples_path():
+    result = _run_eval()
+    assert result.returncode == 0
+    with open(EVAL_SCRIPT) as f:
+        content = f.read()
+    assert "sanitized_samples" in content
+    # Ensure no bare "corpus/samples" reference (not as part of "corpus/sanitized_samples")
+    import re
+    bare_refs = re.findall(r"corpus/samples[^/]", content)
+    assert not bare_refs, f"Found bare corpus/samples references: {bare_refs}"
+
+
 def test_evaluator_writes_json():
     _run_eval()
     assert os.path.exists(JSON_REPORT)
@@ -59,7 +71,7 @@ def test_evaluator_summary_fields():
 
 def test_evaluator_all_samples_covered():
     _run_eval()
-    manifest_path = os.path.join(PROJECT_ROOT, "corpus", "samples", "manifest.json")
+    manifest_path = os.path.join(PROJECT_ROOT, "corpus", "sanitized_samples", "manifest.json")
     with open(manifest_path) as f:
         manifest = json.load(f)
     with open(JSON_REPORT) as f:

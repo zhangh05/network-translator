@@ -1,0 +1,19 @@
+# Topsec TOS Firewall — small realistic sample
+zone name trust
+zone name untrust
+zone name dmz
+#
+address name TRUSTED ip 192.168.10.0 mask 255.255.255.0
+address name UNTRUST ip 198.51.100.0 mask 255.255.255.0
+address name DMZ ip 10.0.0.0 mask 255.255.255.0
+#
+service PING protocol icmp
+service DNS protocol udp destination-port 53
+#
+address-group ALLOWED
+#
+nat source-zone trust
+nat address-group NAT-POOL
+#
+ipsec proposal IPSEC-PROP
+!

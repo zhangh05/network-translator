@@ -1,0 +1,38 @@
+# Huawei VRP Switch — small realistic sample
+sysname SW-CORE-02
+#
+vlan batch 10 20 30 99
+#
+vlan 10
+ description MANAGEMENT
+vlan 20
+ description VOICE
+#
+interface XGigabitEthernet0/0/1
+ description Uplink
+ port link-type trunk
+ port trunk allow-pass vlan 10 20 30
+ port trunk pvid vlan 99
+ undo shutdown
+#
+interface GigabitEthernet0/0/2
+ description Access-Desk-101
+ port link-type access
+ port default vlan 10
+ undo shutdown
+#
+interface Vlanif10
+ ip address 192.168.10.1 255.255.255.0
+#
+interface Vlanif20
+ ip address 192.168.20.1 255.255.255.0
+#
+interface Eth-Trunk1
+ description LAG-to-CORE
+ port link-type trunk
+ port trunk allow-pass vlan 10 20 30
+#
+ip route-static 0.0.0.0 0.0.0.0 192.168.10.254
+#
+stp edged-port enable
+snmp-agent community <redacted> cipher

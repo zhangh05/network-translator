@@ -6,7 +6,7 @@ import os
 import re
 import pytest
 
-CORPUS_DIR = os.path.join(os.path.dirname(__file__), "..", "corpus", "samples")
+CORPUS_DIR = os.path.join(os.path.dirname(__file__), "..", "corpus", "sanitized_samples")
 MANIFEST_PATH = os.path.join(CORPUS_DIR, "manifest.json")
 SAMPLE_PREFIX = os.path.join(CORPUS_DIR, "")
 
@@ -87,6 +87,9 @@ def _find_ips(text: str) -> list:
 
 
 class TestManifest:
+    def test_corpus_path_exists_and_is_git_tracked(self):
+        assert os.path.isdir(CORPUS_DIR), f"Corpus dir not found: {CORPUS_DIR}"
+
     def test_manifest_is_valid_json(self):
         data = _load_manifest()
         assert "version" in data

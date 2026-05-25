@@ -1,0 +1,263 @@
+{
+  "version": "1.0.0",
+  "description": "Multi-vendor sanitized sample corpus for fallback translator evaluation",
+  "samples": [
+    {
+      "id": "sw-cisco-01",
+      "source_vendor": "cisco",
+      "source_platform": "cisco_ios_xe",
+      "source_domain": "SWITCH",
+      "target_candidates": ["huawei", "h3c", "ruijie"],
+      "features_present": ["hostname", "vlan", "trunk", "access_vlan", "svi", "static_route", "stp_portfast", "stp_bpduguard", "snmp_community"],
+      "must_translate": [
+        "hostname -> sysname",
+        "vlan <N> -> vlan <N> / vlan batch <N>",
+        "switchport mode trunk -> port link-type trunk",
+        "switchport trunk allowed vlan -> port trunk allow-pass vlan",
+        "switchport trunk native vlan -> port trunk pvid vlan",
+        "switchport access vlan -> port default vlan",
+        "interface Vlan<N> -> interface Vlanif<N>",
+        "ip route -> ip route-static",
+        "spanning-tree portfast -> stp edged-port"
+      ],
+      "must_manual_review": [
+        "spanning-tree bpduguard enable (not portable across vendors)"
+      ],
+      "forbidden_executable_residue": ["channel-group", "switchport mode", "switchport trunk", "switchport access"],
+      "forbidden_residue_by_target": {"ruijie": ["channel-group"]},
+      "secret_tokens": [],
+      "notes": "Basic L2/L3 switch config with STP. bpduguard is intentionally untranslatable in fallback."
+    },
+    {
+      "id": "sw-huawei-01",
+      "source_vendor": "huawei",
+      "source_platform": "huawei_vrp",
+      "source_domain": "SWITCH",
+      "target_candidates": ["cisco", "h3c", "ruijie"],
+      "features_present": ["hostname", "vlan_batch", "trunk", "access_vlan", "svi", "lag", "static_route", "stp_edged_port", "snmp_community_cipher"],
+      "must_translate": [
+        "sysname -> hostname",
+        "vlan batch -> vlan (comma-separated)",
+        "port link-type trunk -> switchport mode trunk",
+        "port trunk allow-pass vlan -> switchport trunk allowed vlan",
+        "port trunk pvid vlan -> switchport trunk native vlan",
+        "port default vlan -> switchport access vlan",
+        "interface Vlanif<N> -> interface Vlan<N>",
+        "interface Eth-Trunk<N> -> interface Port-channel<N>",
+        "ip route-static -> ip route",
+        "stp edged-port enable -> spanning-tree portfast",
+        "XGigabitEthernet -> TenGigabitEthernet"
+      ],
+      "must_manual_review": [
+        "snmp-agent community ... cipher (secret material, auto-redacted)"
+      ],
+      "forbidden_executable_residue": ["undo shutdown", "port link-type", "port trunk allow-pass", "vlan batch", "stp edged-port", "eth-trunk"],
+      "forbidden_residue_by_target": {"h3c": ["eth-trunk"]},
+      "secret_tokens": [],
+      "notes": "Huawei switch with 10G interfaces and LAG. XGE prefix translation to TenGigabitEthernet."
+    },
+    {
+      "id": "sw-h3c-01",
+      "source_vendor": "h3c",
+      "source_platform": "h3c_comware",
+      "source_domain": "SWITCH",
+      "target_candidates": ["cisco", "huawei", "ruijie"],
+      "features_present": ["hostname", "vlan_batch", "trunk", "access_vlan", "svi", "lag", "static_route", "stp_edged_port"],
+      "must_translate": [
+        "sysname -> hostname",
+        "vlan batch -> vlan (comma-separated cisco/ruijie or vlan batch huawei)",
+        "port link-type trunk -> switchport mode trunk",
+        "port trunk permit vlan -> switchport trunk allowed vlan / port trunk allow-pass vlan",
+        "port default vlan -> switchport access vlan",
+        "interface Vlan-interface<N> -> interface Vlan<N> / Vlanif<N>",
+        "interface Bridge-Aggregation<N> -> interface Port-channel<N> / Eth-Trunk<N>",
+        "ip route-static -> ip route",
+        "stp edged-port enable -> spanning-tree portfast / stp edged-port enable"
+      ],
+      "must_manual_review": [],
+      "forbidden_executable_residue": ["undo shutdown", "port link-type", "port trunk permit", "vlan batch", "bridge-aggregation"],
+      "forbidden_residue_by_target": {"huawei": []},
+      "secret_tokens": [],
+      "notes": "H3C switch with Bridge-Aggregation LAG. Clean config with auto-translate-only features."
+    },
+    {
+      "id": "sw-ruijie-01",
+      "source_vendor": "ruijie",
+      "source_platform": "ruijie_rgos",
+      "source_domain": "SWITCH",
+      "target_candidates": ["cisco", "huawei", "h3c"],
+      "features_present": ["hostname", "vlan", "trunk", "access_vlan", "svi", "lag", "static_route", "stp_portfast"],
+      "must_translate": [
+        "hostname -> sysname",
+        "vlan <N> -> vlan <N> / vlan batch <N>",
+        "switchport mode trunk -> port link-type trunk",
+        "switchport trunk allowed vlan -> port trunk allow-pass vlan / port trunk permit vlan",
+        "switchport access vlan -> port default vlan",
+        "interface Vlan<N> -> interface Vlanif<N> / Vlan-interface<N>",
+        "interface AggregatePort <N> -> interface Port-channel<N> / Eth-Trunk<N> / Bridge-Aggregation<N>",
+        "ip route -> ip route-static",
+        "spanning-tree portfast -> stp edged-port"
+      ],
+      "must_manual_review": [],
+      "forbidden_executable_residue": ["aggregateport", "spanning-tree portfast", "switchport trunk allowed vlan"],
+      "forbidden_residue_by_target": {"cisco": ["aggregateport"]},
+      "secret_tokens": [],
+      "notes": "Ruijie switch with AggregatePort LAG. Ruijie uses Cisco-like syntax."
+    },
+    {
+      "id": "rt-cisco-01",
+      "source_vendor": "cisco",
+      "source_platform": "cisco_ios_xe",
+      "source_domain": "ROUTER",
+      "target_candidates": ["huawei", "h3c"],
+      "features_present": ["hostname", "static_route", "static_route_track", "static_route_name", "ospf", "ospf_passive", "ospf_stub", "ospf_auth", "bgp", "bgp_password", "bgp_update_source", "route_map", "route_map_set_community", "prefix_list"],
+      "must_translate": [
+        "hostname -> sysname",
+        "ip route -> ip route-static (base)",
+        "router ospf <N> -> ospf <N>",
+        "router-id -> router-id",
+        "passive-interface default -> silent-interface default",
+        "no passive-interface -> undo silent-interface",
+        "network <WILDCARD> area -> network <WILDCARD> area",
+        "router bgp <ASN> -> bgp <ASN>",
+        "neighbor <IP> remote-as <ASN> -> peer <IP> as-number <ASN>",
+        "route-map -> route-policy skeleton"
+      ],
+      "must_manual_review": [
+        "ip route ... track <N> (track object not portable)",
+        "ip route ... name <NAME> (name semantics differ)",
+        "area <N> stub (stub area semantics not portable)",
+        "area <N> authentication message-digest (auth semantics not portable)",
+        "neighbor <IP> password <SECRET> (password must be redacted)",
+        "neighbor <IP> update-source <IF> (interface naming not portable)",
+        "set community <VALUE> (community values not portable, must be redacted)",
+        "ip prefix-list (prefix-list syntax varies significantly)"
+      ],
+      "forbidden_executable_residue": ["ip route ", "router ospf", "router bgp"],
+      "forbidden_residue_by_target": {"huawei": ["router ospf", "router bgp"], "h3c": ["router ospf", "router bgp"]},
+      "secret_tokens": [],
+      "notes": "Complex router with OSPF auth/stub, BGP password, route-map community. K-B coverage: track, auth, password, update-source are MANUAL_REVIEW; community is redacted."
+    },
+    {
+      "id": "rt-huawei-01",
+      "source_vendor": "huawei",
+      "source_platform": "huawei_vrp",
+      "source_domain": "ROUTER",
+      "target_candidates": ["cisco", "h3c"],
+      "features_present": ["hostname", "static_route", "static_route_preference", "static_route_tag", "ospf", "ospf_passive", "ospf_default_route", "bgp", "bgp_password", "bgp_connect_interface", "route_policy", "route_policy_community", "prefix_list"],
+      "must_translate": [
+        "sysname -> hostname",
+        "ip route-static -> ip route (base)",
+        "ospf <N> -> router ospf <N>",
+        "router-id -> router-id",
+        "silent-interface -> passive-interface",
+        "area <N> -> area <N>",
+        "network <WILDCARD> -> network <WILDCARD>",
+        "bgp <ASN> -> router bgp <ASN>",
+        "peer <IP> as-number <ASN> -> neighbor <IP> remote-as <ASN>",
+        "route-policy -> route-map skeleton"
+      ],
+      "must_manual_review": [
+        "ip route-static ... preference <N> (preference semantics not portable)",
+        "ip route-static ... tag <N> (tag semantics not portable)",
+        "default-route-advertise always (OSPF default route semantics not portable)",
+        "peer <IP> password cipher <SECRET> (password must be redacted)",
+        "peer <IP> connect-interface <IF> (interface naming not portable)",
+        "peer <IP> description <TEXT> (description semantics differ)",
+        "apply community <VALUE> (community values not portable, must be redacted)",
+        "ip ip-prefix (prefix-list syntax varies significantly)"
+      ],
+      "forbidden_executable_residue": ["undo ", "ip route-static ", "silent-interface"],
+      "forbidden_residue_by_target": {"h3c": []},
+      "secret_tokens": [],
+      "notes": "Huawei router with route-policy community, BGP password, OSPF default-route. K-B: preference/tag/cipher/connect-interface are MANUAL_REVIEW."
+    },
+    {
+      "id": "fw-usg-01",
+      "source_vendor": "huawei_usg",
+      "source_platform": "huawei_usg",
+      "source_domain": "FIREWALL",
+      "target_candidates": ["hillstone", "topsec"],
+      "features_present": ["zone", "address_object", "service_object", "security_policy"],
+      "must_translate": [
+        "security-zone name -> zone (hillstone) / zone name (topsec)",
+        "ip address-set ... type object -> address (flat)",
+        "address 0 <IP> mask <LEN> -> address <NAME> <IP> <MASK>",
+        "ip service-set ... type object -> service (flat)",
+        "service 0 protocol tcp destination-port <PORT> -> service <NAME> tcp <PORT>",
+        "service 0 protocol udp destination-port <PORT> -> service <NAME> udp <PORT>",
+        "security-policy + rule name + source-zone/destination-zone/source-address/destination-address/service/action -> policy one-liner"
+      ],
+      "must_manual_review": [],
+      "forbidden_executable_residue": ["security-zone", "ip address-set", "ip service-set", "security-policy"],
+      "secret_tokens": [],
+      "notes": "Clean Huawei USG security policy with TCP/UDP services and subnet address objects. All features auto-translate to Hillstone."
+    },
+    {
+      "id": "fw-hillstone-01",
+      "source_vendor": "hillstone",
+      "source_platform": "hillstone_stoneos",
+      "source_domain": "FIREWALL",
+      "target_candidates": ["huawei_usg", "topsec"],
+      "features_present": ["zone", "address_object", "service_object", "nat", "security_policy"],
+      "must_translate": [
+        "zone <NAME> -> security-zone name (usg) / zone name (topsec)",
+        "address <NAME> <IP> <MASK> -> ip address-set + address 0 <IP> mask <LEN> (usg)",
+        "address <NAME> <IP> mask <MASK> -> address name <NAME> ip <IP> mask <MASK> (topsec)",
+        "service <NAME> tcp <PORT> -> service-set + service 0 protocol tcp destination-port <PORT> (usg)",
+        "service <NAME> udp <PORT> -> service-set + service 0 protocol udp destination-port <PORT> (usg)",
+        "service <NAME> tcp <PORT> -> service <NAME> protocol tcp destination-port <PORT> (topsec)",
+        "policy <NAME> from ... action permit -> policy name + fields (topsec - one-line)"
+      ],
+      "must_manual_review": [
+        "nat source ... (NAT semantics differ across firewall vendors)"
+      ],
+      "forbidden_executable_residue": ["nat ", "vpn ", "ipsec", "ike"],
+      "secret_tokens": [],
+      "notes": "Hillstone config with zone/address/service/policy + NAT (dangerous feature guard). K-C: NAT guard verified."
+    },
+    {
+      "id": "fw-topsec-01",
+      "source_vendor": "topsec",
+      "source_platform": "topsec_tos",
+      "source_domain": "FIREWALL",
+      "target_candidates": ["huawei_usg", "hillstone"],
+      "features_present": ["zone", "address_object", "service_object", "address_group", "nat", "ipsec"],
+      "must_translate": [
+        "zone name <NAME> -> security-zone name (usg) / zone (hillstone)",
+        "address name <NAME> ip <IP> mask <MASK> -> ip address-set + address 0 <IP> mask <LEN> (usg)",
+        "address name <NAME> ip <IP> mask <MASK> -> address <NAME> <IP> <MASK> (hillstone)",
+        "service <NAME> protocol icmp -> service <NAME> icmp"
+      ],
+      "must_manual_review": [
+        "address-group (address-group objects not portable)",
+        "nat source-zone / nat address-group (NAT semantics not portable)",
+        "ipsec proposal (IPSec parameters not portable)"
+      ],
+      "forbidden_executable_residue": ["zone name", "address name"],
+      "secret_tokens": [],
+      "notes": "Topsec config with dangerous features (NAT, IPSec) and address-group. K-C: dangerous feature guards for nat, ipsec verified."
+    },
+    {
+      "id": "fw-dptech-01",
+      "source_vendor": "dptech",
+      "source_platform": "dptech_fw",
+      "source_domain": "FIREWALL",
+      "target_candidates": ["huawei_usg", "hillstone"],
+      "features_present": ["zone", "address_object", "address_range", "service_object", "nat", "security_policy"],
+      "must_translate": [
+        "zone <NAME> -> security-zone name (usg) / zone (hillstone)",
+        "object address <NAME> <IP> <MASK> -> ip address-set + address 0 <IP> mask <LEN> (usg)",
+        "object address <NAME> <IP> <MASK> -> address <NAME> <IP> <MASK> (hillstone)",
+        "security-policy name <N> + source-zone/destination-zone/source-address/destination-address/service/action -> policy one-liner (hillstone)"
+      ],
+      "must_manual_review": [
+        "object address-range (range objects not portable)",
+        "nat address-group (NAT semantics not portable)"
+      ],
+      "forbidden_executable_residue": ["object address", "nat ", "ipsec", "vpn "],
+      "secret_tokens": [],
+      "notes": "DPtech config with address-range, NAT, and security policy. K-C: address-range and NAT guards verified."
+    }
+  ]
+}

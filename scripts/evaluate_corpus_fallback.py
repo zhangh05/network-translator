@@ -17,7 +17,7 @@ from typing import Any, Dict, List
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 
-CORPUS_DIR = os.path.join(PROJECT_ROOT, "corpus", "samples")
+CORPUS_DIR = os.path.join(PROJECT_ROOT, "corpus", "sanitized_samples")
 REPORTS_DIR = os.path.join(PROJECT_ROOT, "reports")
 MANIFEST_PATH = os.path.join(CORPUS_DIR, "manifest.json")
 

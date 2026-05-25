@@ -1,0 +1,30 @@
+! Cisco IOS-XE Router — small realistic sample
+hostname RTR-EDGE-01
+!
+ip route 0.0.0.0 0.0.0.0 198.51.100.1
+ip route 10.0.0.0 255.255.255.0 10.0.0.1 track 1
+ip route 172.16.0.0 255.255.0.0 10.0.0.2 name BACKUP-ROUTE
+!
+router ospf 1
+ router-id 10.0.0.1
+ passive-interface default
+ no passive-interface GigabitEthernet0/1
+ network 10.0.0.0 0.0.0.255 area 0
+ network 192.168.1.0 0.0.0.255 area 0
+ area 0.0.0.1 stub
+ area 0.0.0.2 authentication message-digest
+!
+router bgp 65001
+ bgp router-id 10.0.0.1
+ neighbor 10.1.1.2 remote-as 65002
+ neighbor 10.1.1.2 description Peer-to-ISP
+ neighbor 10.1.1.2 password <redacted>
+ neighbor 10.1.1.2 update-source Loopback0
+!
+route-map RM-IN permit 10
+ match ip address ACL-MATCH
+ set local-preference 200
+ set community 65001:100
+!
+ip prefix-list PL-DEFAULT seq 5 permit 0.0.0.0/0
+!
