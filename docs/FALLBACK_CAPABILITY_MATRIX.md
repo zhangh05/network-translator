@@ -303,6 +303,25 @@ Required fields per direction:
 | `tests/test_fallback_capability_matrix.py` | Capability matrix — 13 tests |
 | `tests/test_rule_translator_realistic_batch_i_e.py` | Realistic medium-length configs (4 directions) — 21 tests |
 | `tests/test_rule_translator_realistic_batch_k.py` | Realistic multi-vendor configs (8 directions) — 45 tests |
+| `tests/test_corpus_samples.py` | Corpus manifest + sample file validation — 15 tests |
+| `tests/test_corpus_fallback_evaluator.py` | Corpus fallback evaluator infrastructure — 5 tests |
+| `tests/test_fallback_gap_analysis_doc.py` | Gap analysis document consistency — 5 tests |
+
+### Corpus Evaluation
+
+The project maintains a multi-vendor sample corpus at `corpus/samples/` with 10 sanitized configuration files covering all 8 vendor platforms and 3 domains. The corpus is evaluated by `scripts/evaluate_corpus_fallback.py`, which runs every (sample, target) pair through the fallback translator and checks for:
+
+- **Manual review compliance**: Features requiring manual review are properly marked
+- **Source residue**: No executable source-vendor commands remain in output (target-aware)
+- **Secret leakage**: No credential material leaks into output
+
+Known evaluation gaps are documented in `docs/FALLBACK_GAP_ANALYSIS.md` (8 gaps across 6 categories, all non-blocking for Beta).
+
+## Version History
+
+| Date | Change |
+|------|--------|
+| 2026-05-25 Batch L | Added corpus evaluation section, test coverage for corpus tests (15 + 5 + 5 = 25 new tests), gap analysis reference |
 
 ## Version History
 

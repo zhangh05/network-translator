@@ -1,0 +1,490 @@
+{
+  "summary": {
+    "total": 24,
+    "passed": 16,
+    "failed": 8,
+    "by_domain": {
+      "SWITCH": {
+        "total": 12,
+        "passed": 11,
+        "failed": 1
+      },
+      "ROUTER": {
+        "total": 4,
+        "passed": 3,
+        "failed": 1
+      },
+      "FIREWALL": {
+        "total": 8,
+        "passed": 2,
+        "failed": 6
+      }
+    },
+    "by_vendor": {
+      "cisco": {
+        "total": 5,
+        "passed": 4,
+        "failed": 1
+      },
+      "huawei": {
+        "total": 5,
+        "passed": 5,
+        "failed": 0
+      },
+      "h3c": {
+        "total": 3,
+        "passed": 2,
+        "failed": 1
+      },
+      "ruijie": {
+        "total": 3,
+        "passed": 3,
+        "failed": 0
+      },
+      "huawei_usg": {
+        "total": 2,
+        "passed": 1,
+        "failed": 1
+      },
+      "hillstone": {
+        "total": 2,
+        "passed": 0,
+        "failed": 2
+      },
+      "topsec": {
+        "total": 2,
+        "passed": 1,
+        "failed": 1
+      },
+      "dptech": {
+        "total": 2,
+        "passed": 0,
+        "failed": 2
+      }
+    },
+    "pass_rate": 66.7
+  },
+  "results": [
+    {
+      "sample_id": "sw-cisco-01",
+      "source_vendor": "cisco",
+      "target_vendor": "huawei",
+      "source_domain": "SWITCH",
+      "passed": true,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": true,
+      "found_residue": [],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": [
+        "ip route -> ip route-static",
+        "spanning-tree portfast -> stp edged-port"
+      ]
+    },
+    {
+      "sample_id": "sw-cisco-01",
+      "source_vendor": "cisco",
+      "target_vendor": "h3c",
+      "source_domain": "SWITCH",
+      "passed": true,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": true,
+      "found_residue": [],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": [
+        "ip route -> ip route-static",
+        "spanning-tree portfast -> stp edged-port"
+      ]
+    },
+    {
+      "sample_id": "sw-cisco-01",
+      "source_vendor": "cisco",
+      "target_vendor": "ruijie",
+      "source_domain": "SWITCH",
+      "passed": true,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": true,
+      "found_residue": [],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": [
+        "hostname -> sysname",
+        "switchport mode trunk -> port link-type trunk",
+        "switchport trunk allowed vlan -> port trunk allow-pass vlan",
+        "switchport trunk native vlan -> port trunk pvid vlan",
+        "switchport access vlan -> port default vlan",
+        "ip route -> ip route-static",
+        "spanning-tree portfast -> stp edged-port"
+      ]
+    },
+    {
+      "sample_id": "sw-huawei-01",
+      "source_vendor": "huawei",
+      "target_vendor": "cisco",
+      "source_domain": "SWITCH",
+      "passed": true,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": true,
+      "found_residue": [],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": []
+    },
+    {
+      "sample_id": "sw-huawei-01",
+      "source_vendor": "huawei",
+      "target_vendor": "h3c",
+      "source_domain": "SWITCH",
+      "passed": true,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": true,
+      "found_residue": [],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": [
+        "sysname -> hostname",
+        "vlan batch -> vlan (comma-separated)",
+        "port link-type trunk -> switchport mode trunk",
+        "port trunk pvid vlan -> switchport trunk native vlan",
+        "port default vlan -> switchport access vlan",
+        "ip route-static -> ip route",
+        "XGigabitEthernet -> TenGigabitEthernet"
+      ]
+    },
+    {
+      "sample_id": "sw-huawei-01",
+      "source_vendor": "huawei",
+      "target_vendor": "ruijie",
+      "source_domain": "SWITCH",
+      "passed": true,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": true,
+      "found_residue": [],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": [
+        "port trunk pvid vlan -> switchport trunk native vlan"
+      ]
+    },
+    {
+      "sample_id": "sw-h3c-01",
+      "source_vendor": "h3c",
+      "target_vendor": "cisco",
+      "source_domain": "SWITCH",
+      "passed": false,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": false,
+      "found_residue": [
+        "vlan batch"
+      ],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": [
+        "vlan batch -> vlan (comma-separated cisco/ruijie or vlan batch huawei)"
+      ]
+    },
+    {
+      "sample_id": "sw-h3c-01",
+      "source_vendor": "h3c",
+      "target_vendor": "huawei",
+      "source_domain": "SWITCH",
+      "passed": true,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": true,
+      "found_residue": [],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": [
+        "sysname -> hostname",
+        "vlan batch -> vlan (comma-separated cisco/ruijie or vlan batch huawei)",
+        "port link-type trunk -> switchport mode trunk",
+        "port default vlan -> switchport access vlan",
+        "ip route-static -> ip route",
+        "stp edged-port enable -> spanning-tree portfast / stp edged-port enable"
+      ]
+    },
+    {
+      "sample_id": "sw-h3c-01",
+      "source_vendor": "h3c",
+      "target_vendor": "ruijie",
+      "source_domain": "SWITCH",
+      "passed": true,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": true,
+      "found_residue": [],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": []
+    },
+    {
+      "sample_id": "sw-ruijie-01",
+      "source_vendor": "ruijie",
+      "target_vendor": "cisco",
+      "source_domain": "SWITCH",
+      "passed": true,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": true,
+      "found_residue": [],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": [
+        "hostname -> sysname",
+        "switchport mode trunk -> port link-type trunk",
+        "switchport trunk allowed vlan -> port trunk allow-pass vlan / port trunk permit vlan",
+        "switchport access vlan -> port default vlan",
+        "ip route -> ip route-static",
+        "spanning-tree portfast -> stp edged-port"
+      ]
+    },
+    {
+      "sample_id": "sw-ruijie-01",
+      "source_vendor": "ruijie",
+      "target_vendor": "huawei",
+      "source_domain": "SWITCH",
+      "passed": true,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": true,
+      "found_residue": [],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": [
+        "ip route -> ip route-static"
+      ]
+    },
+    {
+      "sample_id": "sw-ruijie-01",
+      "source_vendor": "ruijie",
+      "target_vendor": "h3c",
+      "source_domain": "SWITCH",
+      "passed": true,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": true,
+      "found_residue": [],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": [
+        "ip route -> ip route-static"
+      ]
+    },
+    {
+      "sample_id": "rt-cisco-01",
+      "source_vendor": "cisco",
+      "target_vendor": "huawei",
+      "source_domain": "ROUTER",
+      "passed": true,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": true,
+      "found_residue": [],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": [
+        "ip route -> ip route-static (base)",
+        "router-id -> router-id"
+      ]
+    },
+    {
+      "sample_id": "rt-cisco-01",
+      "source_vendor": "cisco",
+      "target_vendor": "h3c",
+      "source_domain": "ROUTER",
+      "passed": false,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": false,
+      "found_residue": [
+        "router ospf",
+        "router bgp"
+      ],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": [
+        "ip route -> ip route-static (base)",
+        "router-id -> router-id",
+        "passive-interface default -> silent-interface default",
+        "no passive-interface -> undo silent-interface",
+        "route-map -> route-policy skeleton"
+      ]
+    },
+    {
+      "sample_id": "rt-huawei-01",
+      "source_vendor": "huawei",
+      "target_vendor": "cisco",
+      "source_domain": "ROUTER",
+      "passed": true,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": true,
+      "found_residue": [],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": [
+        "router-id -> router-id"
+      ]
+    },
+    {
+      "sample_id": "rt-huawei-01",
+      "source_vendor": "huawei",
+      "target_vendor": "h3c",
+      "source_domain": "ROUTER",
+      "passed": true,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": true,
+      "found_residue": [],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": [
+        "sysname -> hostname",
+        "ip route-static -> ip route (base)",
+        "router-id -> router-id",
+        "silent-interface -> passive-interface",
+        "route-policy -> route-map skeleton"
+      ]
+    },
+    {
+      "sample_id": "fw-usg-01",
+      "source_vendor": "huawei_usg",
+      "target_vendor": "hillstone",
+      "source_domain": "FIREWALL",
+      "passed": true,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": true,
+      "found_residue": [],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": []
+    },
+    {
+      "sample_id": "fw-usg-01",
+      "source_vendor": "huawei_usg",
+      "target_vendor": "topsec",
+      "source_domain": "FIREWALL",
+      "passed": false,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": false,
+      "found_residue": [
+        "security-zone",
+        "ip address-set",
+        "ip service-set",
+        "security-policy"
+      ],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": [
+        "security-zone name -> zone (hillstone) / zone name (topsec)"
+      ]
+    },
+    {
+      "sample_id": "fw-hillstone-01",
+      "source_vendor": "hillstone",
+      "target_vendor": "huawei_usg",
+      "source_domain": "FIREWALL",
+      "passed": false,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": false,
+      "found_residue": [
+        "nat "
+      ],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": []
+    },
+    {
+      "sample_id": "fw-hillstone-01",
+      "source_vendor": "hillstone",
+      "target_vendor": "topsec",
+      "source_domain": "FIREWALL",
+      "passed": false,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": false,
+      "found_residue": [
+        "nat "
+      ],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": []
+    },
+    {
+      "sample_id": "fw-topsec-01",
+      "source_vendor": "topsec",
+      "target_vendor": "huawei_usg",
+      "source_domain": "FIREWALL",
+      "passed": false,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": false,
+      "found_residue": [
+        "zone name"
+      ],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": []
+    },
+    {
+      "sample_id": "fw-topsec-01",
+      "source_vendor": "topsec",
+      "target_vendor": "hillstone",
+      "source_domain": "FIREWALL",
+      "passed": true,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": true,
+      "found_residue": [],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": []
+    },
+    {
+      "sample_id": "fw-dptech-01",
+      "source_vendor": "dptech",
+      "target_vendor": "huawei_usg",
+      "source_domain": "FIREWALL",
+      "passed": false,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": false,
+      "found_residue": [
+        "object address",
+        "nat "
+      ],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": []
+    },
+    {
+      "sample_id": "fw-dptech-01",
+      "source_vendor": "dptech",
+      "target_vendor": "hillstone",
+      "source_domain": "FIREWALL",
+      "passed": false,
+      "manual_review_ok": true,
+      "missing_manual_review": [],
+      "residue_ok": false,
+      "found_residue": [
+        "object address",
+        "nat "
+      ],
+      "secret_ok": true,
+      "leaked_secrets": [],
+      "missing_translations": []
+    }
+  ]
+}

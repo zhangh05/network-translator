@@ -9,7 +9,7 @@
 
 ## 当前状态 (2026-05-25)
 
-项目已完成 Phase 6、Phase 7、Phase 8A-8D、Beta 优化轮次 (配置收敛/安全脱敏/可靠性/审计闭环)、Batch I-J Beta 收口验收包 (已知问题归档 + 统一输出脱敏 P0)。
+项目已完成 Phase 6、Phase 7、Phase 8A-8D、Beta 优化轮次 (配置收敛/安全脱敏/可靠性/审计闭环)、Batch I-J Beta 收口验收包 (已知问题归档 + 统一输出脱敏 P0)、Batch K 多域覆盖率增强 (138 新测试)、Batch L 语料评估框架 (25 新测试)。
 
 **Beta 阶段就绪**: `BETA_READY = YES (conditional)` — 见 `docs/BETA_READINESS_REPORT.md` 和 `docs/BETA_ACCEPTANCE_2026-05-25.md`
 
