@@ -201,3 +201,15 @@ def test_md_report_references_json():
     with open(MD_REPORT) as f:
         content = f.read()
     assert "corpus_fallback_eval.json" in content
+
+
+def test_md_report_no_bare_corpus_samples():
+    """The markdown report must reference corpus/sanitized_samples/, not bare corpus/samples/."""
+    _run_eval()
+    with open(MD_REPORT) as f:
+        content = f.read()
+    # Allow corpus/samples/ only if it's part of corpus/sanitized_samples/ or in a backtick explanation
+    bare_refs = re.findall(r"corpus/samples/[a-z]", content)
+    bare_refs = [r for r in bare_refs if "sanitized" not in content[max(0, content.index(r)-40):content.index(r)+len(r)+40]]
+    assert not bare_refs, f"Found bare corpus/samples/ references in report: {bare_refs}"
+    assert "corpus/sanitized_samples/" in content

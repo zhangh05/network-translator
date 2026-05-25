@@ -309,7 +309,7 @@ Required fields per direction:
 
 ### Corpus Evaluation
 
-The project maintains a multi-vendor sample corpus at `corpus/samples/` with 10 sanitized configuration files covering all 8 vendor platforms and 3 domains. The corpus is evaluated by `scripts/evaluate_corpus_fallback.py`, which runs every (sample, target) pair through the fallback translator and checks for:
+The project maintains a multi-vendor sample corpus at `corpus/sanitized_samples/` with 10 sanitized configuration files covering all 8 vendor platforms and 3 domains. The corpus is evaluated by `scripts/evaluate_corpus_fallback.py`, which runs every (sample, target) pair through the fallback translator and checks for:
 
 - **Manual review compliance**: Features requiring manual review are properly marked
 - **Source residue**: No executable source-vendor commands remain in output (target-aware)

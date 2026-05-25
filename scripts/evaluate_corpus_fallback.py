@@ -135,7 +135,7 @@ def write_markdown(output_data: Dict[str, Any]):
     lines.append("")
     lines.append("- `reports/corpus_fallback_eval.json` — full structured results")
     lines.append("- `docs/FALLBACK_GAP_ANALYSIS.md` — detailed gap register with root cause analysis")
-    lines.append("- `corpus/samples/manifest.json` — corpus sample definitions")
+    lines.append("- `corpus/sanitized_samples/manifest.json` — corpus sample definitions")
     lines.append("")
 
     md_path = os.path.join(REPORTS_DIR, "CORPUS_FALLBACK_EVAL.md")

@@ -40,6 +40,18 @@ def test_matrix_contains_all_3_domains():
         assert d in text, f"Domain {d!r} not found in matrix"
 
 
+def test_matrix_corpus_path_is_sanitized():
+    text = _read_matrix()
+    assert "corpus/sanitized_samples/" in text, \
+        "Matrix must reference corpus/sanitized_samples/ as the primary corpus path"
+    bare = re.findall(r"corpus/samples/", text)
+    for m in bare:
+        idx = text.index(m)
+        window = text[max(0, idx - 150):idx + len(m) + 150]
+        assert "sanitized" in window.lower() or "gitignore" in window.lower() or "ignore" in window.lower(), \
+            f"Bare corpus/samples/ at pos {idx} without sanitized/ignore context: ...{window[:80]}..."
+
+
 def test_matrix_has_management_section():
     text = _read_matrix()
     found = sum(1 for kw in MANAGEMENT_SECTIONS if kw in text)

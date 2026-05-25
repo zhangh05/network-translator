@@ -55,4 +55,4 @@
 
 - `reports/corpus_fallback_eval.json` — full structured results
 - `docs/FALLBACK_GAP_ANALYSIS.md` — detailed gap register with root cause analysis
-- `corpus/samples/manifest.json` — corpus sample definitions
+- `corpus/sanitized_samples/manifest.json` — corpus sample definitions
