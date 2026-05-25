@@ -28,31 +28,13 @@ from typing import TextIO
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 # ── Pre-existing failures (known, non-blocking) ──────────────────────────
-# Taxonomy: 13 known pre-existing + 1 temporary tolerated = 14 total.
-# - Known pre-existing (13): deprecated analyzers (×7), flask missing (×4), requests missing (×2)
-# - Temporary tolerated (1): frozen packaging test awaiting reconciliation during next beta pass.
-# These are NOT counted as regression. Updated: 2026-05-24.
-PREEXISTING_FAILURES: list[str] = [
-    # test_analyzer_object — deprecated FIREWALL object analyzers
-    "tests/test_analyzer_object.py::test_registry_has_address_object_analyzer",
-    "tests/test_analyzer_object.py::test_registry_has_service_object_analyzer",
-    "tests/test_analyzer_object.py::test_registry_address_object_is_object_analyzer",
-    "tests/test_analyzer_object.py::test_registry_service_object_is_object_analyzer",
-    "tests/test_analyzer_object.py::test_registry_not_noop_for_address_object",
-    "tests/test_analyzer_object.py::test_registry_not_noop_for_service_object",
-    "tests/test_analyzer_object.py::test_registry_analyze_all_produces_analyzed_results",
-    # test_contract_project_translate_log — requires flask/requests runtime
-    "tests/test_contract_project_translate_log.py::test_project_translate_writes_jsonl",
-    "tests/test_contract_project_translate_log.py::test_project_translate_jsonl_contains_analyzer_results",
-    # test_readyz_production — requires flask production runtime
-    "tests/test_readyz_production.py::test_readyz_reports_runtime_checks_and_insecure_settings_file",
-    "tests/test_readyz_production.py::test_readyz_reports_feature_registry_loaded",
-    # test_v9_stability — requires requests for retry mocks
-    "tests/test_v9_stability.py::test_llm_retry_on_transient_http_error",
-    "tests/test_v9_stability.py::test_llm_max_retries_not_exceeded_on_success",
-    # Temporary tolerated (1): packaging direct-run port reconciliation
-    "tests/test_packaging_production.py::test_web_app_direct_run_default_port_matches_service",
-]
+# All previously known failures resolved (2026-05-25):
+# - analyzer object registry: 7 fixed (PyYAML installed, readyz checks added)
+# - flask contract/readyz: 4 fixed (Flask installed, readyz checks added)
+# - requests retry: 2 fixed (requests installed)
+# - packaging port calibration: resolved (test now passes)
+# Updated: 2026-05-25.
+PREEXISTING_FAILURES: list[str] = []
 
 # ── Core test files (Layer 1) — zero-tolerance ──────────────────────────
 CORE_TEST_FILES: list[str] = [

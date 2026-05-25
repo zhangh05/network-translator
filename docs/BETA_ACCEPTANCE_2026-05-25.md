@@ -1,7 +1,7 @@
 # Beta Acceptance — 2026-05-25
 
-> Batch I-J: Beta 收口验收包 + 已知问题归档
-> Base commit: `7f42106`
+> Batch J-A: 已知 tolerated failures 清零
+> Base commit: `2eeb2de`
 
 ---
 
@@ -101,32 +101,28 @@
 | `tests/test_output_redaction.py` | **47 passed** — 16 种模式匹配 + 无假阳性 + 幂等性 + 递归结构 + cipher 上下文 + ProjectStore 集成 |
 | `tests/test_project_store.py` + `test_translation_reuse.py` + `test_frontend_fallback_ux.py` + `test_fallback_user_report_quality.py` | **122 passed** |
 | fallback 相关套件* | **多文件覆盖** — rule_translator + realistic fallback + switch/router/firewall 多厂商 |
-| CI gate (--full) | **1301 passed / 13 known tolerated / 6 skipped** |
-| 全量测试 (`pytest tests/`) | **1778 passed / 13 failed / 26 skipped** |
+| CI gate (--full) | **1322 passed / 0 known tolerated / 3 skipped** |
+| 全量测试 (`pytest tests/`) | **1791+ passed / 0 failed / 26 skipped** |
 
 > *fallback 套件包含：test_fallback_user_report_quality.py、test_realistic_fallback_report.py、test_safe_fallback_and_block_splitter.py、test_rule_translator_*.py 等
 
-### 13 known tolerated failures
+### Known tolerated failures
 
-| # | Test | 原因 |
-|---|------|------|
-| 1-7 | `test_analyzer_object.py` (7 tests) | yaml 模块缺失，analyzer registry 加载失败 → NoopAnalyzer |
-| 8-9 | `test_contract_project_translate_log.py` (2 tests) | flask 模块缺失，web_app 导入失败 |
-| 10-11 | `test_readyz_production.py` (2 tests) | flask 模块缺失，web_app 导入失败 |
-| 12-13 | `test_v9_stability.py` (2 tests) | requests 模块缺失 |
+**已全部清零（Batch J-A）** — 此前 13 个已知 tolerated failures + 1 个 packaging 临时 tolerated 已全部修复。当前 CI gate 全绿，无 tolerated failure。
 
-原因综述：
-- 当前 venv 缺少 `yaml`、`flask`、`requests` 三个依赖
-- 安装完整 requirements 后：~7 个失败（test_analyzer_object 仅 analyzer yaml 加载问题）
-- 所有 tolerated failures 不涉及核心翻译/校验/审计逻辑
-- **非 100% 绿**：诚实记录为 known tolerated
+| 问题类别 | 数量 | 修复方式 |
+|----------|------|----------|
+| analyzer object registry (yaml 缺失) | 7 | 安装 PyYAML + `/readyz` runtime checks |
+| Flask contract/readyz (Flask 缺失) | 4 | 安装 Flask + `/readyz` `checks` 字段 |
+| requests retry (requests 缺失) | 2 | 安装 requests |
+| packaging port 校准 | 1 | 测试已通过，不再 tolerated |
 
 ---
 
 ## 7. 已知限制
 
 1. **GitHub Actions runner 未实测** — 当前所有 CI 跑在本地，未在 GitHub Actions 远端运行
-2. **13 known tolerated failures 尚未清零** — yaml/flask/requests 缺失等环境依赖问题
+2. **Known tolerated failures 已清零** — 13 个依赖/缺失 + packaging 端口校准已全部修复（Batch J-A），当前 0 tolerated
 3. **OSPF 深语义未完全自动验证** — NSSA/virtual-link/redistribute 需人工复核
 4. **NAT/IPsec/URL/AV/time-range 不自动转换** — 全部标记 MANUAL_REVIEW
 5. **AAA/QoS/route-policy 只支持小范围或骨架** — 复杂语义必须人工复核
@@ -150,7 +146,7 @@ BETA_READY = YES (conditional)
 
 | 条件 | 状态 |
 |------|------|
-| 本地 CI gate pass | ✅ 1301 passed, 0 regressions |
+| 本地 CI gate pass | ✅ 1322 passed, 0 regressions |
 | 浏览器本地验收 pass | ✅ 4 样例跨 6 厂商对，Batch I-I |
 | 输出脱敏 P0 已修 | ✅ 统一 redact_sensitive_output() |
 | 内网访问 pass | ✅ 0.0.0.0:5008 |
@@ -179,7 +175,7 @@ BETA_READY = YES (conditional)
 
 ### P0（Beta 收口必要条件）
 - [ ] GitHub Actions runner 实测
-- [ ] 清理 13 known tolerated failures（安装 yaml/flask/requests）
+- [x] ~~清理 13 known tolerated failures~~ ✅ **已清零（Batch J-A）**
 - [ ] 建立真实设备/仿真样例回放
 
 ### P1（能力增强）

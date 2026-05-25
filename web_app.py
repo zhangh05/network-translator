@@ -116,6 +116,39 @@ def _get_feature_count() -> int:
         return 0
 
 
+def _check_settings_file_private() -> tuple[bool, str]:
+    """Check whether the LLM settings file has secure permissions.
+
+    Returns (is_private, warning_message).
+    """
+    from core.runtime_config import is_private_file
+    from pathlib import Path
+    settings_path_env = os.environ.get("LLM_SETTINGS_FILE", "").strip()
+    if not settings_path_env:
+        return True, ""
+    path = Path(settings_path_env)
+    if not path.exists():
+        return True, ""
+    if not is_private_file(path):
+        return False, f"{path.name} permissions allow group/world access"
+    return True, ""
+
+
+def _check_feature_registry_loaded() -> tuple[bool, str]:
+    """Check whether the feature registry YAML can be loaded."""
+    try:
+        import yaml
+        reg_path = project_root / "knowledge_data" / "features" / "registry.yaml"
+        if not reg_path.exists():
+            return False, "feature registry file not found"
+        reg = yaml.safe_load(reg_path.read_text())
+        if not isinstance(reg, dict) or "features" not in reg:
+            return False, "feature registry missing 'features' key"
+        return True, ""
+    except Exception as e:
+        return False, f"feature registry load error: {e}"
+
+
 # ── API ──
 import llm_settings
 import project_store
@@ -191,12 +224,22 @@ def create_app():
     def readyz():
         issues = []
         warnings = []
+        checks = {}
         if not (project_root / "VERSION").exists():
             issues.append("VERSION missing")
         if not (project_root / "knowledge_data").is_dir():
             issues.append("knowledge_data missing")
-        if not _is_llm_configured():
+        checks["llm_configured"] = _is_llm_configured()
+        if not checks["llm_configured"]:
             warnings.append("LLM_API_KEY not set — falling back to rule-based translation")
+        settings_private, settings_msg = _check_settings_file_private()
+        checks["settings_file_private"] = settings_private
+        if settings_msg:
+            warnings.append(settings_msg)
+        feature_loaded, feature_msg = _check_feature_registry_loaded()
+        checks["feature_registry_loaded"] = feature_loaded
+        if not feature_loaded:
+            warnings.append(feature_msg)
         if not (project_root / "memory_data").is_dir():
             warnings.append("memory_data directory missing")
         try:
@@ -206,8 +249,8 @@ def create_app():
         status = "ready"
         if issues:
             status = "not_ready"
-            return {"ok": False, "status": status, "issues": issues, "warnings": warnings}, 503
-        return {"ok": True, "status": status, "version": VERSION, "model": _get_model_name(), "warnings": warnings}
+            return {"ok": False, "status": status, "issues": issues, "warnings": warnings, "checks": checks}, 503
+        return {"ok": True, "status": status, "version": VERSION, "model": _get_model_name(), "warnings": warnings, "checks": checks}
 
     @app.route("/api/version", methods=["GET"])
     def version():

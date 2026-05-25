@@ -1,6 +1,6 @@
 {
   "date": "2026-05-25",
-  "batch": "I-J",
+  "batch": "J-A",
   "beta_ready": "YES_CONDITIONAL",
   "base_commit": "9ac480b",
   "latest_commits": [
@@ -8,7 +8,11 @@
     "7f42106",
     "40edc94"
   ],
-  "domains": ["SWITCH", "ROUTER", "FIREWALL"],
+  "domains": [
+    "SWITCH",
+    "ROUTER",
+    "FIREWALL"
+  ],
   "vendor_platforms": [
     "cisco_ios_xe",
     "h3c_comware",
@@ -30,19 +34,70 @@
   "strongest_chain": "H3C Comware SWITCH → Cisco IOS XE SWITCH",
   "fallback_scope": {
     "switch": {
-      "auto": ["vlan", "svi", "trunk", "access", "acl_binding", "ospf_basic", "management_basic"],
-      "manual_review": ["stp_instance", "stp_mode", "lacp", "loopdetect", "mad", "traffic_classifier", "mstp"],
-      "unsupported": ["stackwise", "mlag", "layer3_subinterface"]
+      "auto": [
+        "vlan",
+        "svi",
+        "trunk",
+        "access",
+        "acl_binding",
+        "ospf_basic",
+        "management_basic"
+      ],
+      "manual_review": [
+        "stp_instance",
+        "stp_mode",
+        "lacp",
+        "loopdetect",
+        "mad",
+        "traffic_classifier",
+        "mstp"
+      ],
+      "unsupported": [
+        "stackwise",
+        "mlag",
+        "layer3_subinterface"
+      ]
     },
     "router": {
-      "auto": ["static_route", "ospf_basic", "bgp_skeleton", "vrf_skeleton", "route_policy_skeleton"],
-      "manual_review": ["ospf_deep", "bgp_route_policy", "complex_vrf", "nat", "ipsec"],
-      "unsupported": ["ospf_nssa", "ospf_virtual_link", "ospf_redistribute", "bgp_community_complex"]
+      "auto": [
+        "static_route",
+        "ospf_basic",
+        "bgp_skeleton",
+        "vrf_skeleton",
+        "route_policy_skeleton"
+      ],
+      "manual_review": [
+        "ospf_deep",
+        "bgp_route_policy",
+        "complex_vrf",
+        "nat",
+        "ipsec"
+      ],
+      "unsupported": [
+        "ospf_nssa",
+        "ospf_virtual_link",
+        "ospf_redistribute",
+        "bgp_community_complex"
+      ]
     },
     "firewall": {
-      "auto": ["zone_basic", "address_object_simple", "service_object_simple", "simple_policy"],
-      "manual_review": ["complex_policy", "nat", "ipsec", "url_filter", "av_profile", "time_range"],
-      "unsupported": ["full_firewall_migration"]
+      "auto": [
+        "zone_basic",
+        "address_object_simple",
+        "service_object_simple",
+        "simple_policy"
+      ],
+      "manual_review": [
+        "complex_policy",
+        "nat",
+        "ipsec",
+        "url_filter",
+        "av_profile",
+        "time_range"
+      ],
+      "unsupported": [
+        "full_firewall_migration"
+      ]
     }
   },
   "ui_acceptance": {
@@ -87,46 +142,40 @@
     "output_redaction": {
       "file": "tests/test_output_redaction.py",
       "passed": 47,
-      "categories": ["pattern_matching", "false_positive_avoidance", "idempotence", "recursive_structures", "cipher_context", "store_integration"]
+      "categories": [
+        "pattern_matching",
+        "false_positive_avoidance",
+        "idempotence",
+        "recursive_structures",
+        "cipher_context",
+        "store_integration"
+      ]
     },
     "project_store_related": {
-      "files": ["test_project_store.py", "test_translation_reuse.py", "test_frontend_fallback_ux.py", "test_fallback_user_report_quality.py"],
+      "files": [
+        "test_project_store.py",
+        "test_translation_reuse.py",
+        "test_frontend_fallback_ux.py",
+        "test_fallback_user_report_quality.py"
+      ],
       "passed": 122
     },
     "ci_gate": {
       "file": "scripts/ci_quality_gates.py --full",
-      "passed": 1301,
-      "known_tolerated_failures": 13,
-      "skipped": 6
+      "passed": 1322,
+      "known_tolerated_failures": 0,
+      "skipped": 3
     },
     "full_suite": {
       "file": "pytest tests/",
-      "passed": 1778,
-      "failed": 13,
+      "passed": 1791,
+      "failed": 0,
       "skipped": 26
     }
   },
-  "known_failures": [
-    {
-      "test": "test_analyzer_object.py (7 tests)",
-      "reason": "yaml module missing — analyzer registry falls back to NoopAnalyzer"
-    },
-    {
-      "test": "test_contract_project_translate_log.py (2 tests)",
-      "reason": "flask module missing — web_app import fails"
-    },
-    {
-      "test": "test_readyz_production.py (2 tests)",
-      "reason": "flask module missing — web_app import fails"
-    },
-    {
-      "test": "test_v9_stability.py (2 tests)",
-      "reason": "requests module missing — LLM retry test imports fail"
-    }
-  ],
+  "known_failures": [],
   "known_limits": [
     "GitHub Actions runner not yet validated",
-    "13 known tolerated failures not yet resolved",
     "OSPF deep semantics not fully auto-validated (NSSA/virtual-link/redistribute)",
     "NAT/IPsec/URL/AV/time-range not auto-translated",
     "AAA/QoS/route-policy limited scope, complex semantics require manual review",
@@ -143,7 +192,6 @@
       "priority": "P0",
       "items": [
         "GitHub Actions runner validation",
-        "Resolve 13 known tolerated failures (install yaml/flask/requests)",
         "Real device / simulation replay pipeline"
       ]
     },

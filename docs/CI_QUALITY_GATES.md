@@ -1,6 +1,6 @@
 # CI Quality Gates
 
-> Phase 8B — 2026-05-23 | Beta Update — 2026-05-23
+> Phase 8B — 2026-05-23 | Batch J-A — 2026-05-25 (known failures resolved)
 
 ## Overview
 
@@ -70,27 +70,19 @@ If a non-core test file is already known to fail, its failures are tracked in th
 
 ### Pre-existing Failures
 
-As of 2026-05-24, these 14 failures are tolerated in this development environment.
-They are tolerated by Layer 2 and do not block CI.
+**All previously known failures are now resolved (Batch J-A, 2026-05-25).**
 
-| # | Test | Root Cause |
-|---|------|-----------|
-| 1–7 | `test_analyzer_object.py::test_registry_*` (7 tests) | Deprecated FIREWALL object analyzers not registered in old pipeline registry |
-| 8–9 | `test_contract_project_translate_log.py::test_project_translate_*` | Requires `flask` runtime — not installed in dev env |
-| 10–11 | `test_readyz_production.py::test_readyz_reports_*` | Requires `flask` to import `web_app` |
-| 12–13 | `test_v9_stability.py::test_llm_retry*` / `test_llm_max_retries*` | Requires `requests` for HTTP retry mocking |
-| 14 | `test_packaging_production.py::test_web_app_direct_run_default_port_matches_service` | **Temporary tolerated** — direct-run port (5000) vs service.sh default (5008) calibration needed |
+There are **0 pre-existing failures**. The CI gate has full green status.
 
-In GitHub Actions (where `flask` and `requests` are installed), items 8–13 may pass.
-The pre-existing list remains valid either way — tolerated entries that pass are simply absent from the failure set.
+#### Resolved
+- **7 analyzer-object tests**: PyYAML installed + `/readyz` runtime checks added
+- **4 Flask contract/readyz tests**: Flask installed + `/readyz` endpoint populated with `checks` dict
+- **2 requests retry tests**: requests installed
+- **1 packaging port test**: port calibration resolved (test now passes)
 
 ### Temporary Tolerated Items
 
-Item 14 is **temporary** and will be resolved during a future packaging reconciliation pass:
-
-| # | Test | Resolution Condition |
-|---|------|---------------------|
-| 14 | `test_packaging_production.py::test_web_app_direct_run_default_port_matches_service` | Calibrate `web_app.py` direct-run port with `service.sh` default (5000 vs 5008) during next packaging reconciliation |
+None. All previously temporary tolerated items (packaging port calibration) have been resolved.
 
 ## How to Detect Regression Locally
 
@@ -118,7 +110,7 @@ PYTHONPATH=. python3 scripts/ci_quality_gates.py --full --json ci-report.json
 
 ```
 Layer 1: 524 passed, 20 skipped in 0.88s  → PASS (zero-tolerance, no failures)
-Layer 2: 14 failed, 583 passed, 4 skipped in 1.76s  → PASS (all 14 failures in pre-existing list, 0 regressions)
+Layer 2: 1322 passed, 3 skipped in 70s  → PASS (0 pre-existing, 0 regressions)
 ```
 
 ## Sample Run Output
@@ -130,13 +122,7 @@ Running Layer 1 (core) — 28 files, zero-tolerance...
   *** GATE PASS: all 28 file(s) clean ***
 
 Running Layer 2 (extended) — 42 files, regression-tolerant...
-  *** GATE PASS: no regressions ***
-  Pre-existing (14 known, tolerated):
-    (known) tests/test_analyzer_object.py::test_registry_has_address_object_analyzer
-    (known) tests/test_analyzer_object.py::test_registry_has_service_object_analyzer
-    (known) tests/test_analyzer_object.py::test_registry_...
-    ... (14 total)
-    (temporary) tests/test_packaging_production.py::test_web_app_direct_run_default_port_matches_service
+  *** GATE PASS: no regressions, 0 pre-existing ***
 
 JSON report written to ci-report.json
 ```
@@ -168,29 +154,24 @@ When a new pre-existing failure is discovered (e.g., new deprecation):
         │  Layer 2 — Extended (42 files)    │
         │  Regression-check vs pre-existing │
         │                                   │
-        │  Pre-existing (14 tests)          │
-        │  Known failures, tolerated        │
-        │  (1 temporary — see notes below)  │
+        │  Pre-existing (0) — all resolved     │
         └─────────────────────────────────┘
 ```
 
 ## Pre-existing Superset Tolerance Strategy
 
-The pre-existing failure list (`PREEXISTING_FAILURES` in `scripts/ci_quality_gates.py`) is a **superset** designed to work in both local dev and CI environments without modification.
+The pre-existing failure list (`PREEXISTING_FAILURES` in `scripts/ci_quality_gates.py`) is now **empty** — all previously known failures have been resolved (Batch J-A, 2026-05-25). The superset strategy is retained for future use but currently inactive.
 
 | Environment | Deps Available | Pre-existing List Size | Expected Matches | Strategy |
 |-------------|---------------|----------------------|------------------|----------|
-| Local dev | no flask/requests | 14 entries | 14 failures tolerated | Superset list covers all scenarios |
-| GitHub Actions | flask+requests via pip install | 14 entries | ~7 failures (test_analyzer_object only) | Extra entries (flask/requests) pass in CI — simply absent from actual failure set |
+| Local dev | all deps installed | 0 entries | 0 failures — full green | All failures are regressions |
+| GitHub Actions | all deps via pip install | 0 entries | 0 failures — full green | Same behavior in both environments |
 
 **Why this works safely:**
 
-- The pre-existing list is a **union** of what fails in each environment
-- `test_analyzer_object` (7 tests) fails in both — always matched
-- `test_contract_project_translate_log`, `test_readyz_production`, `test_v9_stability` (6 tests) fail locally but pass in CI — simply absent from the actual failure set, never falsely flagged as regression
-- Any **new** failure is caught identically in both environments because it won't be in the list anywhere
-
-**Result**: One script, one pre-existing list, correct behavior in both environments. No `#if CI` branches.
+- The pre-existing list is empty — every test failure is a regression
+- Behavior is identical across environments
+- Any **new** failure is caught immediately and blocks the gate
 
 ## LLM Configuration Priority
 
@@ -208,11 +189,7 @@ For security: API keys are **never logged in plain text** — only `***` or `(no
 ## CI vs Local Consistency
 
 The same `scripts/ci_quality_gates.py` script is used in both environments.
-The only difference is available dependencies:
-- **Local dev**: may lack `flask`, `requests` → pre-existing list includes 14 tolerated entries
-- **GitHub Actions**: `pip install -r requirements.txt` runs first, so `flask` and `requests` are available → pre-existing list effectively contains 7 entries (the `test_analyzer_object` ones only)
+All required dependencies (`flask`, `requests`, `PyYAML`) are installed locally via `requirements.txt`.
+All previously known pre-existing failures are resolved.
 
-This is consistent because:
-- The pre-existing list is a superset of what either environment produces
-- Any entry in the list that doesn't actually fail is simply absent from the `actual_failures` set → no false positive
-- Any **new** failure not in the list is correctly caught as a regression in both environments
+Consistency is perfect: both environments produce identical full-green results with an empty pre-existing list.

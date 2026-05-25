@@ -84,13 +84,13 @@ class TestJsonParsable:
 
 class TestNumbersMatchJson:
     def test_known_tolerated_failures(self, json_data):
-        assert json_data["tests"]["ci_gate"]["known_tolerated_failures"] == 13
+        assert json_data["tests"]["ci_gate"]["known_tolerated_failures"] == 0
 
     def test_output_redaction_passed(self, json_data):
         assert json_data["tests"]["output_redaction"]["passed"] == 47
 
     def test_ci_gate_passed(self, json_data):
-        assert json_data["tests"]["ci_gate"]["passed"] == 1301
+        assert json_data["tests"]["ci_gate"]["passed"] == 1322
 
     def test_project_store_related_passed(self, json_data):
         assert json_data["tests"]["project_store_related"]["passed"] == 122
@@ -108,7 +108,7 @@ class TestNumbersMatchJson:
             assert p in json_data["redaction"]["covered_paths"]
 
     def test_next_actions_p0_count(self, json_data):
-        assert len(json_data["next_actions"][0]["items"]) == 3
+        assert len(json_data["next_actions"][0]["items"]) == 2  # GH Actions + real device; tolerated failures resolved
 
 
 # ── Markdown structure ──────────────────────────────────────────────────────
@@ -144,8 +144,9 @@ class TestMdContainsExpectedSections:
     def test_github_actions_mentioned(self, md_text):
         assert "GitHub Actions" in md_text
 
-    def test_13_failures_mentioned(self, md_text):
-        assert "13" in md_text and ("known" in md_text.lower() or "tolerated" in md_text.lower())
+    def test_tolerated_failures_mentioned(self, md_text, json_data):
+        expected = str(json_data["tests"]["ci_gate"]["known_tolerated_failures"])
+        assert expected in md_text and ("known" in md_text.lower() or "tolerated" in md_text.lower())
 
     def test_core_chain_described(self, md_text):
         assert "Parser → IR → Renderer → Validator" in md_text
@@ -175,8 +176,6 @@ class TestCrossDocConsistency:
     """Spot-check that key numbers in JSON match MD."""
 
     KP: list[tuple[str, str]] = [
-        ("1254 passed", "1254"),
-        ("13 known", "13"),
         ("47 passed", "47"),
         ("14 种", None),
     ]
@@ -213,20 +212,8 @@ class TestPathsCovered:
 
 class TestKnownFailuresDetail:
     def test_known_failure_count_matches(self, json_data):
-        assert len(json_data["known_failures"]) == 4  # 4 groups = 13 tests
+        assert len(json_data["known_failures"]) == 0  # all resolved
 
     def test_each_failure_has_reason(self, json_data):
         for f in json_data["known_failures"]:
             assert "test" in f and "reason" in f
-
-    def test_flask_missing_mentioned(self, json_data):
-        reasons = " ".join(f["reason"] for f in json_data["known_failures"])
-        assert "flask" in reasons.lower()
-
-    def test_yaml_missing_mentioned(self, json_data):
-        reasons = " ".join(f["reason"] for f in json_data["known_failures"])
-        assert "yaml" in reasons.lower()
-
-    def test_requests_missing_mentioned(self, json_data):
-        reasons = " ".join(f["reason"] for f in json_data["known_failures"])
-        assert "requests" in reasons.lower()

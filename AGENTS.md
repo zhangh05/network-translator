@@ -25,7 +25,7 @@ Beta 冻结状态：不得新增 parser/renderer/graph pipeline 或大功能。
 | 输出脱敏 P0 已修 | ✅ 统一 redact_sensitive_output() 全路径覆盖 |
 | 内网访问 pass | ✅ 0.0.0.0:5008 |
 | GitHub Actions runner 实测 | ❌ **唯一/主要 blocking** |
-| 13 known tolerated failures 清零 | ❌ 待处理 |
+| 13 known tolerated failures 清零 | ✅ Batch J-A |
 | 人工复核边界明确 | ✅ BETA_ACCEPTANCE 完整列出 |
 
 ### 现网 (旧架构，兼容运行)
