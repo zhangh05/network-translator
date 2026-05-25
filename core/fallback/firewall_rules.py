@@ -290,7 +290,11 @@ def translate_to_huawei_usg_firewall(stripped: str, lower: str, indent: str, fro
     m = re.match(r"address\s+(\S+)\s+(\S+)\s+(\S+)", stripped, re.IGNORECASE)
     if m and from_vendor == "hillstone":
         name, ip, mask = m.groups()
+        if mask.lower() == "host":
+            return manual_review_comment(stripped, "huawei_usg")
         prefix = netmask_to_prefixlen(mask)
+        if prefixlen_to_netmask(prefix) != mask:
+            return manual_review_comment(stripped, "huawei_usg")
         return [f"ip address-set {name} type object", f" address 0 {ip} mask {prefix}"]
 
     # Address object (DPtech -> Huawei USG multi-line)

@@ -508,9 +508,7 @@ def test_hillstone_address_host_to_huawei_usg():
         from_vendor="hillstone",
         to_vendor="huawei_usg",
     )
-    assert "ip address-set HOST1 type object" in result
-    assert "10.1.1.1" in result
-    _check_no_source_residue(result, HILLSTONE_KW)
+    assert "MANUAL_REVIEW" in result
 
 
 def test_hillstone_address_range_to_huawei_usg():
