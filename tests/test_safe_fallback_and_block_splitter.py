@@ -108,7 +108,7 @@ interface Vlanif10
     assert "traffic behavior" not in executable
     assert "local-user" not in executable
     assert "interface Vlanif10" not in executable
-    assert "fallback_reason=LLM 输出不是结构化翻译结果，已切换到规则兜底" in translated
+    assert state.get("fallback_reason") == "LLM 输出不是结构化翻译结果，已切换到规则兜底"
     assert "第 0 项不是对象" not in translated
 
 
@@ -122,7 +122,7 @@ def test_safe_fallback_summarizes_non_json_array_error_for_users():
     FallbackNode().execute(state)
     translated = state.get("translated_config")
 
-    assert "fallback_reason=LLM 输出不是结构化翻译结果，已切换到规则兜底" in translated
+    assert state.get("fallback_reason") == "LLM 输出不是结构化翻译结果，已切换到规则兜底"
     assert "不包含 JSON 数组" not in translated
 
 
@@ -246,14 +246,14 @@ snmp-agent community read cipher public
     executable = "\n".join(_executable_lines(deployable))
 
     assert "人工复核摘要" in translated
-    assert "AAA/认证" in translated or "aaa" in translated.lower()
-    assert "QoS/PBR" in translated or "qos" in translated.lower()
-    assert "ACL/访问控制" in translated or "acl" in translated.lower()
-    assert "MANUAL_REVIEW_BLOCK" in translated
+    assert "管理面" in translated or "aaa" in translated.lower()
+    assert "ACL 与安全策略" in translated or "acl" in translated.lower()
+    assert "MANUAL_REVIEW_BLOCK" not in translated, "detail blocks must not appear in user report"
+    assert "fallback_reason=" not in translated, "internal metadata must not appear in user report"
+    assert "block_count=" not in translated, "internal metadata must not appear in user report"
     assert "hostname HW-SW" in executable
     assert "vlan 10,20" in executable
     assert "interface Vlan10" in executable
-    assert "fallback_reason=" in translated
 
 
 def test_safe_fallback_detail_blocks_capped_at_20():
@@ -272,23 +272,12 @@ def test_safe_fallback_detail_blocks_capped_at_20():
     FallbackNode().execute(state)
     translated = state.get("translated_config")
 
-    block_count_line = next(
-        (l for l in translated.splitlines() if l.strip().startswith("! block_count=")), None
-    )
-    assert block_count_line is not None
-    total = int(block_count_line.split("=")[1].strip())
-    assert total == 50
+    metadata = state.get("_fallback_metadata", {})
+    total = metadata.get("block_count", 0)
+    assert total == 50, f"Expected 50 blocks in metadata, got {total}"
 
-    detail_lines = [
-        l for l in translated.splitlines()
-        if "MANUAL_REVIEW_BLOCK" in l and not l.strip().startswith("!")
-    ]
-    visible_count = sum(1 for l in translated.splitlines() if "MANUAL_REVIEW_BLOCK" in l and l.strip().startswith("! MANUAL_REVIEW_BLOCK"))
-    assert visible_count <= 20, f"Expected ≤20 detail blocks, got {visible_count}"
-
-    if total > 20:
-        assert "... 还有" in translated
-        assert "详见审计日志" in translated or "导出报告" in translated
+    assert "MANUAL_REVIEW_BLOCK" not in translated, \
+        "detail blocks must not appear in user-facing report"
 
 
 def test_safe_fallback_sample_lines_are_comments_not_executable():

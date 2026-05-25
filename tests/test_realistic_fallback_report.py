@@ -347,14 +347,14 @@ def test_fallback_reason_is_user_friendly():
     FallbackNode().execute(state)
     result = state.get("translated_config", "")
 
-    comment = _comment_lines(result)
-    reason_lines = [ln for ln in comment if "fallback_reason=" in ln]
-    assert len(reason_lines) > 0, f"No fallback_reason line found: {comment[:5]}"
-    reason_line = reason_lines[0]
+    reason = state.get("fallback_reason", "")
+    assert reason != "", f"No fallback_reason in state metadata"
+    assert "fallback_reason=" not in result, \
+        "fallback_reason must not appear as internal metadata in user-facing report"
 
     for diag in INTERNAL_DIAGNOSTICS:
-        assert diag not in reason_line, \
-            f"Internal diagnostic {diag!r} found in fallback_reason: {reason_line}"
+        assert diag not in reason, \
+            f"Internal diagnostic {diag!r} found in fallback_reason: {reason}"
 
 
 # ─────────────────────────────────────────────────────────────────────────────

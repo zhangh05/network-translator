@@ -1730,12 +1730,6 @@ class FallbackNode(Node):
 
         lines = [f"```{language}"]
         lines.append(f"{prefix} MANUAL_REVIEW: 自动翻译未生成可验证结果，已阻止源厂商命令进入可执行配置。")
-        lines.append(f"{prefix} source_vendor={from_vendor} target_vendor={to_vendor}")
-        lines.append(f"{prefix} fallback_reason={friendly_reason}")
-        lines.append(f"{prefix} block_count={len(blocks)}")
-        if raw_summary:
-            parts = [f"{feature}:{count}" for feature, count in sorted(raw_summary.items())]
-            lines.append(f"{prefix} feature_summary={', '.join(parts)}")
 
         category_groups: dict[str, list[tuple[str, int]]] = {
             "管理面": [],
@@ -1779,6 +1773,8 @@ class FallbackNode(Node):
                 redacted = self._redact_line(s[:100])
                 lines.append(f"{prefix}   示例：{redacted}")
 
+        lines.append("```")
+
         deterministic = RuleBasedTranslator().translate(config_text, from_vendor, to_vendor)
         deterministic_body = extract_config_block(deterministic).strip()
         deployable_lines = []
@@ -1790,31 +1786,26 @@ class FallbackNode(Node):
         else:
             deployable_config = f"{prefix}# (无可部署配置，详见人工复核)"
 
-        MAX_DETAIL_BLOCKS = 20
-        lines.append(f"{prefix}")
-        if len(blocks) > MAX_DETAIL_BLOCKS:
-            lines.append(f"{prefix} 详细复核块（前 {MAX_DETAIL_BLOCKS} 条）：")
-            visible = blocks[:MAX_DETAIL_BLOCKS]
-        else:
-            lines.append(f"{prefix} 详细复核块：")
-            visible = blocks
+        report = "\n".join(lines)
 
-        for index, block in enumerate(visible, start=1):
-            lines.append(
-                f"{prefix} MANUAL_REVIEW_BLOCK {index}: "
-                f"feature={block.feature} lines={block.start_line}-{block.end_line} "
-                f"source_line_count={len(block.lines)}"
-            )
+        metadata = {
+            "source_vendor": from_vendor,
+            "target_vendor": to_vendor,
+            "fallback_reason": friendly_reason,
+            "block_count": len(blocks),
+            "feature_summary": dict(sorted(raw_summary.items())) if raw_summary else {},
+            "feature_blocks": [
+                {
+                    "feature": b.feature,
+                    "start_line": b.start_line,
+                    "end_line": b.end_line,
+                    "line_count": len(b.lines),
+                }
+                for b in blocks
+            ],
+        }
 
-        if len(blocks) > MAX_DETAIL_BLOCKS:
-            remaining = len(blocks) - MAX_DETAIL_BLOCKS
-            lines.append(
-                f"{prefix} ... 还有 {remaining} 个复核块，"
-                f"详见审计日志/导出报告"
-            )
-
-        lines.append("```")
-        return "\n".join(lines), deployable_config
+        return report, deployable_config, metadata
 
     def execute(self, state: State) -> NodeResult:
         from_vendor = state.get("from_vendor", "unknown")
@@ -1834,9 +1825,14 @@ class FallbackNode(Node):
         state.set("_raw_fallback_error", error)
 
         if self._requires_safe_fallback(error, config_text):
-            translated, deployable = self._manual_review_fallback(config_text, from_vendor, to_vendor, error)
+            translated, deployable, fb_meta = self._manual_review_fallback(config_text, from_vendor, to_vendor, error)
             state.set("translated_config", translated)
             state.set("deployable_config", deployable)
+            state.set("block_count", fb_meta["block_count"])
+            state.set("feature_summary", fb_meta["feature_summary"])
+            state.set("source_vendor", fb_meta["source_vendor"])
+            state.set("target_vendor", fb_meta["target_vendor"])
+            state.set("_fallback_metadata", fb_meta)
             state.set("safe_fallback", True)
             state.set("manual_review_required", True)
             state.set("_route_outcome", "fallback_manual_review")
