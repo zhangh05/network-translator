@@ -323,3 +323,65 @@ def catch_all_manual_review(stripped: str, lower: str, indent: str, to_vendor: s
     if lower.startswith(ROUTEMAP_KEYWORDS):
         return indent + manual_review_comment(stripped, to_vendor, indent)
     return indent + manual_review_comment(stripped, to_vendor, indent)
+
+
+ROUTEMAP_SKIP_KEYWORDS = (
+    "continue", "call ", "on ", "add", "set ", "match ",
+)
+
+
+def translate_cisco_route_map_to_huawei(stripped: str, lower: str, indent: str) -> Optional[Union[str, List[str]]]:
+    m = re.match(r"route-map\s+(\S+)\s+(permit|deny)\s+(\d+)(?:\s+(.+))?$", stripped, re.IGNORECASE)
+    if not m:
+        return None
+    name, action, seq, rest = m.groups()
+    if rest:
+        first_word = rest.split()[0].lower() if rest.split() else ""
+        if any(rest.lower().startswith(kw) for kw in ROUTEMAP_SKIP_KEYWORDS):
+            return None
+        return [f"route-policy {name} {action} node {seq}", manual_review_comment(f"route-map body: {rest}", "huawei", indent)]
+    return f"route-policy {name} {action} node {seq}"
+
+
+def translate_huawei_route_policy_to_cisco(stripped: str, lower: str, indent: str) -> Optional[Union[str, List[str]]]:
+    m = re.match(r"route-policy\s+(\S+)\s+(permit|deny)\s+node\s+(\d+)(?:\s+(.+))?$", stripped, re.IGNORECASE)
+    if not m:
+        return None
+    name, action, seq, rest = m.groups()
+    if rest:
+        if any(rest.lower().startswith(kw) for kw in ROUTEMAP_SKIP_KEYWORDS):
+            return None
+        return [f"route-map {name} {action} {seq}", manual_review_comment(f"route-policy body: {rest}", "cisco", indent)]
+    return f"route-map {name} {action} {seq}"
+
+
+def translate_route_map_match_to_huawei(stripped: str, lower: str, indent: str) -> Optional[str]:
+    m = re.match(r"match\s+ip\s+address\s+(prefix-list|\S+)(?:\s+(\S+))?", stripped, re.IGNORECASE)
+    if m:
+        target, name = m.group(1), m.group(2)
+        if target.lower() == "prefix-list" or (name and name.lower() == "prefix-list"):
+            return None
+        acl_name = name if name else target
+        return indent + f"if-match acl {acl_name}"
+    return None
+
+
+def translate_route_policy_match_to_cisco(stripped: str, lower: str, indent: str) -> Optional[str]:
+    m = re.match(r"if-match\s+acl\s+(\S+)", stripped, re.IGNORECASE)
+    if m:
+        return indent + f"match ip address {m.group(1)}"
+    return None
+
+
+def translate_route_map_set_to_huawei(stripped: str, lower: str, indent: str) -> Optional[str]:
+    m = re.match(r"set\s+local-preference\s+(\d+)", lower)
+    if m:
+        return f"apply local-preference {m.group(1)}"
+    return None
+
+
+def translate_route_policy_set_to_cisco(stripped: str, lower: str, indent: str) -> Optional[str]:
+    m = re.match(r"apply\s+local-preference\s+(\d+)", lower)
+    if m:
+        return f"set local-preference {m.group(1)}"
+    return None

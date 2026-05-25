@@ -233,7 +233,8 @@ security-policy
     assert "MANUAL_REVIEW" in r, "zone interface binding must produce MANUAL_REVIEW"
     assert "address CUST-LAN 192.168.100.0 255.255.255.0" in r
     assert "address SRV-NET 10.0.0.0 255.255.255.0" in r
-    assert "service WEB-SVC tcp dst-port 80" in r
+    assert "service WEB-SVC tcp 80" in r, \
+        "Hillstone format: service NAME proto PORT (no dst-port keyword per Batch I-F spec)"
     assert "policy POL-WAN-TO-LAN" in r
     assert "MANUAL_REVIEW" in r, "time-range must produce MANUAL_REVIEW"
     assert not any("security-policy" in x.lower() for x in exe), "security-policy source must not leak"

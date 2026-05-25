@@ -90,7 +90,12 @@ class RuleBasedTranslator:
         elif to_vendor == "ruijie":
             rv = self._to_ruijie(stripped, lower, indent, from_vendor, state)
         elif to_vendor == "hillstone":
-            rv = fw.translate_to_hillstone_firewall(stripped, lower, indent, from_vendor, state)
+            if from_vendor == "topsec":
+                rv = fw.translate_topsec_service_to_hillstone(stripped, lower, indent)
+                if rv is None:
+                    rv = fw.translate_to_hillstone_firewall(stripped, lower, indent, from_vendor, state)
+            else:
+                rv = fw.translate_to_hillstone_firewall(stripped, lower, indent, from_vendor, state)
         elif to_vendor == "topsec":
             if from_vendor == "topsec":
                 rv = fw.translate_topsec_to_topsec(stripped, lower, indent, from_vendor, state)
@@ -179,11 +184,38 @@ class RuleBasedTranslator:
                 return indent + manual_review_comment(stripped, "huawei", indent)
             return rv
 
+        rv = acl.translate_cisco_service_policy_to_huawei(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
         if lower.startswith("service-policy "):
             return indent + manual_review_comment(stripped, "huawei", indent)
 
-        if lower.startswith(("route-map ", "route-policy ", "ip prefix-list ", "prefix-list ")):
+        if from_vendor == "cisco" and lower.startswith("route-map "):
+            rv = rt.translate_cisco_route_map_to_huawei(stripped, lower, indent)
+            if rv is not None:
+                return rv
+
+        if lower.startswith(("route-policy ", "ip prefix-list ", "prefix-list ")):
             return indent + manual_review_comment(stripped, "huawei", indent)
+
+        if from_vendor == "cisco" and lower.startswith("match "):
+            rv = rt.translate_route_map_match_to_huawei(stripped, lower, indent)
+            if rv is not None:
+                return rv
+            return indent + manual_review_comment(stripped, "huawei", indent)
+
+        if from_vendor == "cisco" and lower.startswith("set "):
+            rv = rt.translate_route_map_set_to_huawei(stripped, lower, indent)
+            if rv is not None:
+                return rv
+            redacted = stripped
+            if re.search(r"\bcommunity\s+\S+", lower) and not re.search(r"community\s+<redacted>", lower):
+                redacted = re.sub(r"(community\s+)\S+", r"\1<redacted>", stripped)
+            return indent + manual_review_comment(redacted, "huawei", indent)
+
+        if from_vendor == "cisco" and lower.startswith(("continue ", "call ")):
+            return indent + manual_review_comment(stripped, "huawei", indent)
+
         if lower.startswith(("spanning-tree ", "stp ", "bpduguard", "loopguard", "rootguard")):
             return indent + manual_review_comment(stripped, "huawei", indent)
 
@@ -194,9 +226,16 @@ class RuleBasedTranslator:
         if lower.startswith("neighbor ") and re.search(r"\b(password|cipher)\s+\S+", lower):
             redacted = re.sub(r"(password|cipher)\s+\S+", r"\1 <redacted>", stripped)
             return indent + manual_review_comment(redacted, "huawei", indent)
-        if re.search(r"\bcommunity\s+\S+\s+\S+", lower) and not re.search(r"community\s+<redacted>", lower):
+        if re.search(r"\bcommunity\s+\S+", lower) and not re.search(r"community\s+<redacted>", lower):
             redacted = re.sub(r"(community\s+)\S+", r"\1<redacted>", stripped)
             return indent + manual_review_comment(redacted, "huawei", indent)
+
+        if from_vendor == "cisco" and re.match(r"ip\s+nat\s+", lower):
+            return indent + manual_review_comment(stripped, "huawei", indent)
+
+        if from_vendor == "cisco" and lower.startswith(("policy-map ", "class ", "class-map ", "priority", "police ", "trust", "rate-limit")):
+            return indent + manual_review_comment(stripped, "huawei", indent)
+
         return stripped if from_vendor in ("h3c", "huawei") else indent + stripped
 
     def _to_cisco(self, stripped: str, lower: str, indent: str, from_vendor: str, state: Dict):
@@ -271,6 +310,21 @@ class RuleBasedTranslator:
         if rv is not None:
             return rv
 
+        if from_vendor == "huawei" and lower.startswith("route-policy "):
+            rv = rt.translate_huawei_route_policy_to_cisco(stripped, lower, indent)
+            if rv is not None:
+                return rv
+
+        if from_vendor == "huawei" and lower.startswith("apply "):
+            rv = rt.translate_route_policy_set_to_cisco(stripped, lower, indent)
+            if rv is not None:
+                return rv
+
+        if from_vendor == "huawei" and lower.startswith("if-match "):
+            rv = rt.translate_route_policy_match_to_cisco(stripped, lower, indent)
+            if rv is not None:
+                return rv
+
         if lower.startswith(("route-map ", "route-policy ", "ip prefix-list ", "prefix-list ")):
             return indent + manual_review_comment(stripped, "cisco", indent)
         if lower.startswith(("spanning-tree ", "stp ", "bpduguard", "loopguard", "rootguard")):
@@ -304,6 +358,8 @@ class RuleBasedTranslator:
             return indent + f"ip access-group {m.group(2)} {self._direction_to_cisco(m.group(1))}"
         m = re.match(r"traffic-policy\s+(\S+)\s+(inbound|outbound)", stripped, re.IGNORECASE)
         if m:
+            if m.group(2).lower() == "outbound":
+                return indent + manual_review_comment(stripped, "cisco", indent)
             return indent + f"service-policy {self._direction_to_cisco_qos(m.group(2))} {m.group(1)}"
         m = re.match(r"packet-filter\s+(\S+)\s+(inbound|outbound)", stripped, re.IGNORECASE)
         if m:

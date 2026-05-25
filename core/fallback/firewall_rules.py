@@ -2,7 +2,7 @@
 """FIREWALL-domain translation rules for the fallback translator."""
 
 import re
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 from core.fallback.common import manual_review_comment
 
@@ -165,32 +165,25 @@ def translate_to_hillstone_firewall(stripped: str, lower: str, indent: str, from
         return stripped
 
     # Huawei USG service object (multi-line)
+    if state.get("_svc_set") is not None:
+        rv = translate_huawei_usg_service_to_hillstone(stripped, lower, indent, state)
+        if rv is not None:
+            return rv
+
     m = re.match(r"ip\s+service-set\s+(\S+)\s+type\s+object", stripped, re.IGNORECASE)
     if m:
         state["_svc_set"] = m.group(1)
         return None
 
-    if state.get("_svc_set"):
-        m = re.match(r"service\s+(\d+)\s+protocol\s+(\S+)\s+destination-port\s+(\S+)", stripped, re.IGNORECASE)
-        if m:
-            name = state.pop("_svc_set")
-            proto = m.group(2)
-            port = m.group(3)
-            return f"service {name} {proto} dst-port {port}"
-        m = re.match(r"service\s+(\d+)\s+protocol\s+(\S+)\s*$", stripped, re.IGNORECASE)
-        if m:
-            name = state.pop("_svc_set")
-            proto = m.group(2)
-            return f"service {name} {proto}"
-        name = state.pop("_svc_set")
-        return manual_review_comment(
-            f"ip service-set {name} sub-command: {stripped}", "hillstone",
-        )
-
     # Hillstone service object (passthrough)
     m = re.match(r"service\s+(\S+)\s+(\S+)\s+dst-port\s+(\S+)", lower)
     if m and from_vendor == "hillstone":
         return stripped
+
+    # Topsec service object -> Hillstone
+    rv = translate_topsec_service_to_hillstone(stripped, lower, indent)
+    if rv is not None:
+        return rv
 
     # DPtech single-line policy -> Hillstone (requires source-address, no defaulting)
     m = re.match(
@@ -326,10 +319,9 @@ def translate_to_huawei_usg_firewall(stripped: str, lower: str, indent: str, fro
         )
 
     # Service object (Hillstone flat -> Huawei USG multi-line)
-    m = re.match(r"service\s+(\S+)\s+(\S+)\s+dst-port\s+(\S+)", stripped, re.IGNORECASE)
-    if m and from_vendor == "hillstone":
-        name, proto, port = m.groups()
-        return [f"ip service-set {name} type object", f" service 0 protocol {proto} destination-port {port}"]
+    rv = translate_hillstone_service_to_huawei_usg(stripped, lower, indent)
+    if rv is not None:
+        return rv
 
     # Service ANY ip (Hillstone -> Huawei USG: protocol ip with no port = any)
     m = re.match(r"service\s+(\S+)\s+ip\s*$", lower)
@@ -425,6 +417,10 @@ def translate_topsec_to_huawei_usg(stripped: str, lower: str, indent: str, from_
             return [f"ip address-set {name} type object", f" address 0 {ip} mask {mask}"]
         return manual_review_comment(stripped, "huawei_usg", indent)
 
+    rv = translate_topsec_service_to_huawei_usg(stripped, lower, indent)
+    if rv is not None:
+        return rv
+
     if lower.startswith("policy name "):
         m = re.match(
             r"policy\s+name\s+(\S+)\s+"
@@ -494,6 +490,10 @@ def translate_hillstone_to_topsec(stripped: str, lower: str, indent: str, from_v
             return f"address name {name} ip {ip} mask {mask}"
         return manual_review_comment(stripped, "topsec", indent)
 
+    rv = translate_hillstone_service_to_topsec(stripped, lower, indent)
+    if rv is not None:
+        return rv
+
     m = re.match(
         r"policy\s+(?:name\s+)?(\S+)\s+"
         r"from\s+(\S+)\s+to\s+(\S+)\s+"
@@ -548,3 +548,94 @@ def translate_topsec_to_topsec(stripped: str, lower: str, indent: str, from_vend
 
 def translate_to_topsec_manual_review(stripped: str, lower: str, indent: str, from_vendor: str) -> str:
     return manual_review_comment(stripped, "topsec", indent)
+
+
+def translate_topsec_service_to_huawei_usg(stripped: str, lower: str, indent: str) -> Optional[Union[str, List[str]]]:
+    if "source-port" in lower:
+        return None
+    m_port = re.search(r"destination-port\s+([\d,\-]+)", lower)
+    if m_port and ("," in m_port.group(1) or "-" in m_port.group(1)):
+        return None
+    m = re.match(
+        r"service\s+(\S+)\s+protocol\s+(tcp|udp|icmp)(?:\s+destination-port\s+(\d+))?",
+        stripped,
+        re.IGNORECASE,
+    )
+    if not m:
+        return None
+    name, protocol, port = m.groups()
+    if protocol.lower() == "icmp":
+        return [f"ip service-set {name} type object", f" service 0 protocol icmp"]
+    if port:
+        return [f"ip service-set {name} type object", f" service 0 protocol {protocol.lower()} destination-port {port}"]
+    return None
+
+
+def translate_hillstone_service_to_huawei_usg(stripped: str, lower: str, indent: str) -> Optional[Union[str, List[str]]]:
+    if re.search(r"\b\d+-\d+\b", lower) or "," in lower:
+        return None
+    tokens = lower.split()
+    if len(tokens) > 5 or (len(tokens) == 5 and tokens[3] != "dst-port"):
+        return None
+    m = re.match(r"service\s+(\S+)\s+(tcp|udp|icmp)(?:\s+(?:dst-port\s+)?(\d+))?", stripped, re.IGNORECASE)
+    if not m:
+        return None
+    name, protocol, port = m.groups()
+    if protocol.lower() == "icmp":
+        return [f"ip service-set {name} type object", f" service 0 protocol icmp"]
+    if port:
+        return [f"ip service-set {name} type object", f" service 0 protocol {protocol.lower()} destination-port {port}"]
+    return None
+    return None
+
+
+def translate_huawei_usg_service_to_hillstone(stripped: str, lower: str, indent: str, state: dict) -> Optional[Union[str, List[str]]]:
+    m = re.match(r"ip\s+service-set\s+(\S+)\s+type\s+object", stripped, re.IGNORECASE)
+    if m:
+        state["_svc_set"] = m.group(1)
+        return None
+    svc_name = state.get("_svc_set")
+    if svc_name:
+        if "source-port" in stripped.lower() or re.search(r"destination-port\s+\d+-\d+", stripped) or re.search(r"destination-port\s+\d+,\d+", stripped):
+            state.pop("_svc_set", None)
+            return manual_review_comment(f"ip service-set {svc_name} sub: {stripped}", "hillstone", indent)
+        m = re.match(r"service\s+(\d+)\s+protocol\s+(tcp|udp|icmp)(?:\s+destination-port\s+(\d+))?", stripped, re.IGNORECASE)
+        if m:
+            state.pop("_svc_set", None)
+            svc_index, protocol, port = m.groups()
+            port_part = f" {port}" if port else ""
+            return f"service {svc_name} {protocol.lower()}{port_part}"
+        state.pop("_svc_set", None)
+        return manual_review_comment(f"ip service-set {svc_name} sub: {stripped}", "hillstone", indent)
+    return None
+
+
+def translate_hillstone_service_to_topsec(stripped: str, lower: str, indent: str) -> Optional[str]:
+    if re.search(r"\b\d+-\d+\b", lower) or "," in lower:
+        return None
+    tokens = lower.split()
+    if len(tokens) > 4:
+        return None
+    m = re.match(r"service\s+(\S+)\s+(tcp|udp|icmp)(?:\s+(\d+))?", stripped, re.IGNORECASE)
+    if not m:
+        return None
+    name, protocol, port = m.groups()
+    if port:
+        return f"service {name} protocol {protocol.lower()} destination-port {port}"
+    return f"service {name} protocol {protocol.lower()}"
+
+
+def translate_topsec_service_to_hillstone(stripped: str, lower: str, indent: str) -> Optional[str]:
+    if re.search(r"destination-port\s+\d+-\d+", lower) or re.search(r"destination-port\s+\d+,\d+", lower):
+        return None
+    m = re.match(
+        r"service\s+(\S+)\s+protocol\s+(tcp|udp|icmp)(?:\s+destination-port\s+(\d+))?",
+        stripped,
+        re.IGNORECASE,
+    )
+    if not m:
+        return None
+    name, protocol, port = m.groups()
+    if port:
+        return f"service {name} {protocol.lower()} {port}"
+    return f"service {name} {protocol.lower()}"

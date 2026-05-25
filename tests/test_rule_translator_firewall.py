@@ -74,7 +74,8 @@ def test_huawei_usg_to_hillstone_service_object():
         from_vendor="huawei_usg",
         to_vendor="hillstone",
     )
-    assert "service HTTP tcp dst-port 80" in result
+    assert "service HTTP tcp 80" in result, \
+        "Hillstone format: service NAME protocol PORT (no dst-port keyword)"
     _check_no_source_residue(result, HUAWEI_USG_KEYWORDS)
 
 
@@ -113,7 +114,8 @@ def test_huawei_usg_to_hillstone_full():
     assert "zone trust" in result
     assert "zone untrust" in result
     assert "address WEB 10.0.0.10 255.255.255.255" in result
-    assert "service HTTP tcp dst-port 80" in result
+    assert "service HTTP tcp 80" in result, \
+        "Hillstone format: service NAME protocol PORT (no dst-port keyword)"
     exe = _executable_lines(result)
     policy_lines = [l for l in exe if l.startswith("policy ")]
     assert len(policy_lines) == 1

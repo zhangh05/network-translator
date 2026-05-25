@@ -108,6 +108,24 @@ def translate_ruijie_access_group_to_h3c(
 
 
 # ─────────────────────────────────────────────────────────────────────────────
+# Cisco service-policy (QoS) → Huawei traffic-policy
+# ─────────────────────────────────────────────────────────────────────────────
+
+def translate_cisco_service_policy_to_huawei(
+    stripped: str, lower: str, indent: str, from_vendor: str
+) -> Optional[str]:
+    if from_vendor.lower() != "cisco":
+        return None
+    m = re.match(r"service-policy\s+(input|output)\s+(\S+)", stripped, re.IGNORECASE)
+    if m:
+        direction = m.group(1).lower()
+        if direction == "output":
+            return None
+        return indent + f"traffic-policy {m.group(2)} inbound"
+    return None
+
+
+# ─────────────────────────────────────────────────────────────────────────────
 # Huawei traffic-policy (QoS) → Cisco service-policy
 # ─────────────────────────────────────────────────────────────────────────────
 
@@ -118,7 +136,10 @@ def translate_huawei_traffic_policy_to_cisco(
         return None
     m = re.match(r"traffic-policy\s+(\S+)\s+(inbound|outbound)", stripped, re.IGNORECASE)
     if m:
-        return indent + f"service-policy {_direction_to_cisco_qos(m.group(2))} {m.group(1)}"
+        direction = m.group(2).lower()
+        if direction == "outbound":
+            return None
+        return indent + f"service-policy {_direction_to_cisco_qos(direction)} {m.group(1)}"
     return None
 
 

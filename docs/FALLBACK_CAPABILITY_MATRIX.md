@@ -123,14 +123,18 @@ The following must NOT be auto-translated (semantic risk too high):
 | `traffic-policy / service-policy` body (QoS actions: `car`, `remark dscp`, `queue`) | QoS policy bodies always MANUAL_REVIEW |
 | Cisco `access-list N remark` | Remarks can be passed through as comments |
 
-### QoS — Interface binding only (safe subset)
+### QoS — Interface binding only (safe subset, Batch I-F)
+
+**Only binding lines are auto-translated. Policy bodies are always MANUAL_REVIEW.**
 
 | Source | Target | Conditions |
 |--------|--------|------------|
-| `traffic-policy P inbound` (Huawei/H3C) | Cisco | `service-policy input P` (QoS body remains MANUAL_REVIEW) |
-| `traffic-policy P outbound` (Huawei/H3C) | Cisco | `service-policy output P` (QoS body remains MANUAL_REVIEW) |
+| `traffic-policy P inbound` (Huawei/H3C) | Cisco | `service-policy input P` (binding only) |
+| `traffic-policy P outbound` (Huawei/H3C) | Cisco | **MANUAL_REVIEW** — outbound direction semantics differ across platforms |
+| `service-policy input P` (Cisco) | Huawei/H3C | `traffic-policy P inbound` (binding only) |
+| `service-policy output P` (Cisco) | Huawei/H3C | **MANUAL_REVIEW** — outbound direction semantics differ across platforms |
 
-**Everything inside `traffic-policy / traffic-classifier / traffic-behavior / car / remark dscp / queue`** → MANUAL_REVIEW.
+**Everything inside `traffic-policy / traffic-classifier / traffic-behavior / car / remark dscp / queue / policy-map / class-map / police / priority / bandwidth / shape`** → MANUAL_REVIEW.
 
 ## SWITCH Domain
 
@@ -197,7 +201,8 @@ Test file: `tests/test_rule_translator_router_multivendor.py`
 | Static route options (preference, tag, track, bfd) | MANUAL_REVIEW |
 | OSPF area type (nssa, stub, virtual-link) | MANUAL_REVIEW |
 | BGP neighbor sub-commands (description, update-source, password) | MANUAL_REVIEW |
-| route-map / route-policy / prefix-list body commands | MANUAL_REVIEW |
+| route-map / route-policy skeleton (Batch I-F) | `route-map NAME permit/deny SEQ` ↔ `route-policy NAME permit/deny node SEQ` — skeleton only. `if-match acl ACL` ↔ `match ip address ACL` auto. `apply local-preference N` ↔ `set local-preference N` auto. |
+| route-map / route-policy body commands | MANUAL_REVIEW — continue, call, community, as-path, tag, extcommunity, metric, and all other match/set sub-commands are not auto-translated |
 
 ### Not Supported
 
@@ -227,6 +232,11 @@ Test file: `tests/test_rule_translator_firewall.py`, `tests/test_rule_translator
 | DPtech | Huawei USG | Zone / address / policy | Complete policy with all required fields |
 | DPtech | Hillstone | Zone / policy | Complete policy with all required fields |
 | Topsec | Topsec | Passthrough | Same-vendor; non-dangerous commands pass through unchanged |
+| Topsec | Huawei USG | Service object | `service NAME protocol tcp/udp/icmp destination-port N` → `ip service-set NAME type object` + `service 0 protocol tcp/udp/icmp destination-port N`. Port range/source-port/multi-port → MANUAL_REVIEW |
+| Hillstone | Huawei USG | Service object | `service NAME tcp/udp N` / `service NAME tcp/udp dst-port N` → `ip service-set NAME type object` + `service 0 protocol tcp/udp destination-port N`. Port range/multi-port → MANUAL_REVIEW |
+| Huawei USG | Hillstone | Service object | `ip service-set NAME type object` + `service 0 protocol tcp/udp destination-port N` → `service NAME tcp/udp N` (no `dst-port` keyword per Batch I-F spec). Port range/source-port/multi-port → MANUAL_REVIEW |
+| Hillstone | Topsec | Service object | `service NAME tcp/udp N` → `service NAME protocol tcp/udp destination-port N`. ICMP: `service NAME icmp` → `service NAME protocol icmp`. Port range/multi-port → MANUAL_REVIEW |
+| Topsec | Hillstone | Service object | `service NAME protocol tcp/udp destination-port N` → `service NAME tcp/udp N`. ICMP: `service NAME protocol icmp` → `service NAME icmp` |
 
 ### Firewall policy fields — NO implicit defaults
 
@@ -297,3 +307,4 @@ Required fields per direction:
 | 2026-05-24 Batch I-C | ACL/QoS: H3C→Huawei packet-filter, Cisco named ACL header, Huawei ACL rule→Cisco, object-group/manual_review guards, 32 new tests (59 total) |
 | 2026-05-25 Batch I-D | FIREWALL: Topsec→Huawei USG (zone/address/policy), Hillstone→Topsec (zone/address/policy), DPtech completeness, dangerous feature guards, address mask netmask format, Topsec routing fix (non-Topsec/Hillstone sources to Topsec → MANUAL_REVIEW), 84 firewall tests |
 | 2026-05-25 Batch I-E | Realistic samples: Cisco→Huawei trunk/access/SVI/ACL/OSPF/NTP/AAA, Huawei→Cisco Vlanif/ACL/OSPF/SNMP/AAA, Topsec→Huawei USG complete policy, Hillstone→Topsec complete policy. Fix: no switchport (Cisco routed-port) dropped in Huawei output, BGP neighbor password redacted in MANUAL_REVIEW. New test file: 21 realistic tests |
+| 2026-05-25 Batch I-F | Firewall service objects (Topsec↔Huawei USG↔Hillstone), route-policy skeleton (Cisco↔Huawei), QoS binding (Huawei inbound only, outbound MANUAL_REVIEW), NAT guard (all NAT → MANUAL_REVIEW). Updated QoS section to clarify inbound-only binding support. Hillstone service format: `service NAME proto PORT` without `dst-port` keyword per Batch I-F spec. Added route-policy skeleton to ROUTER domain section. |

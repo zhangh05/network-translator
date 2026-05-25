@@ -581,7 +581,8 @@ def test_huawei_usg_service_tcp_to_hillstone():
         from_vendor="huawei_usg",
         to_vendor="hillstone",
     )
-    assert "service HTTP tcp dst-port 80" in result
+    assert "service HTTP tcp 80" in result, \
+        "Hillstone format: service NAME proto PORT (no dst-port keyword per Batch I-F spec)"
 
 
 def test_huawei_usg_service_udp_to_hillstone():
@@ -590,7 +591,8 @@ def test_huawei_usg_service_udp_to_hillstone():
         from_vendor="huawei_usg",
         to_vendor="hillstone",
     )
-    assert "service DNS udp dst-port 53" in result
+    assert "service DNS udp 53" in result, \
+        "Hillstone format: service NAME proto PORT (no dst-port keyword per Batch I-F spec)"
 
 
 def test_huawei_usg_service_icmp_to_hillstone():
