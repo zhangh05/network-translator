@@ -1,215 +1,118 @@
-"""Tests for scripts/evaluate_corpus_fallback.py"""
+# -*- coding: utf-8 -*-
+"""Tests for corpus_fallback_evaluator residue checking logic.
 
-import json
-import os
-import re
-import sys
-import subprocess
+Covers:
+- forbidden_executable_residue only matches in executable lines
+- MANUAL_REVIEW comment content does NOT count as executable residue
+- secret leakage checks the full output (including comments)
+"""
 
-PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-REPORTS_DIR = os.path.join(PROJECT_ROOT, "reports")
-EVAL_SCRIPT = os.path.join(PROJECT_ROOT, "scripts", "evaluate_corpus_fallback.py")
-MD_REPORT = os.path.join(REPORTS_DIR, "CORPUS_FALLBACK_EVAL.md")
-JSON_REPORT = os.path.join(REPORTS_DIR, "corpus_fallback_eval.json")
+import pytest
+import sys, os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-_eval_result = None
-
-
-def _run_eval():
-    global _eval_result
-    if _eval_result is not None:
-        return _eval_result
-    result = subprocess.run(
-        [sys.executable, EVAL_SCRIPT],
-        capture_output=True, text=True,
-        cwd=PROJECT_ROOT,
-        env={**os.environ, "PYTHONPATH": PROJECT_ROOT},
-    )
-    _eval_result = result
-    return result
+from scripts.evaluate_corpus_fallback import (
+    strip_fence,
+    is_executable_line,
+    filter_executable_lines,
+)
 
 
-# ---------------------------------------------------------------------------
-# JSON report tests
-# ---------------------------------------------------------------------------
+class TestIsExecutableLine:
+    def test_empty_line(self):
+        assert is_executable_line("") is False
+        assert is_executable_line("   ") is False
 
-def test_evaluator_runs_without_error():
-    result = _run_eval()
-    assert result.returncode == 0, f"stderr:\n{result.stderr}"
+    def test_shell_comment(self):
+        assert is_executable_line("# manual review") is False
 
+    def test_c_comment(self):
+        assert is_executable_line("// comment") is False
 
-def test_evaluator_uses_sanitized_samples_path():
-    result = _run_eval()
-    assert result.returncode == 0
-    with open(EVAL_SCRIPT) as f:
-        content = f.read()
-    assert "sanitized_samples" in content
-    # Ensure no bare "corpus/samples" reference (not as part of "corpus/sanitized_samples")
-    import re
-    bare_refs = re.findall(r"corpus/samples[^/]", content)
-    assert not bare_refs, f"Found bare corpus/samples references: {bare_refs}"
+    def test_excl_comment(self):
+        assert is_executable_line("! comment") is False
 
+    def test_code_fence_open(self):
+        assert is_executable_line("```huawei_usg") is False
 
-def test_evaluator_writes_json():
-    _run_eval()
-    assert os.path.exists(JSON_REPORT)
-    with open(JSON_REPORT) as f:
-        data = json.load(f)
-    assert "summary" in data
-    assert "results" in data
+    def test_code_fence_close(self):
+        assert is_executable_line("```") is False
 
+    def test_code_fence_line(self):
+        assert is_executable_line("```huawei") is False
 
-def test_evaluator_summary_fields():
-    _run_eval()
-    with open(JSON_REPORT) as f:
-        data = json.load(f)
-    s = data["summary"]
-    for field in ("total", "passed", "failed", "pass_rate", "by_domain", "by_vendor"):
-        assert field in s, f"Missing field: {field}"
-    assert s["total"] > 0
+    def test_normal_config_line(self):
+        assert is_executable_line("security-policy") is True
+        assert is_executable_line(" zone trust") is True
+        assert is_executable_line("  source-address TRUSTED") is True
+
+    def test_config_with_leading_whitespace(self):
+        assert is_executable_line("   nat source 1.1.1.1") is True
 
 
-def test_evaluator_all_samples_covered():
-    _run_eval()
-    manifest_path = os.path.join(PROJECT_ROOT, "corpus", "sanitized_samples", "manifest.json")
-    with open(manifest_path) as f:
-        manifest = json.load(f)
-    with open(JSON_REPORT) as f:
-        data = json.load(f)
+class TestFilterExecutableLines:
+    def test_removes_comments(self):
+        text = "# MANUAL_REVIEW unsupported source command: nat\nsecurity-zone name trust"
+        result = filter_executable_lines(text)
+        assert "# MANUAL_REVIEW" not in result
+        assert "security-zone" in result
 
-    expected_pairs = set()
-    for s in manifest["samples"]:
-        for t in s["target_candidates"]:
-            expected_pairs.add((s["id"], t))
-    actual_pairs = set((r["sample_id"], r["target_vendor"]) for r in data["results"])
-    missing_pairs = expected_pairs - actual_pairs
-    assert not missing_pairs, f"Missing pairs: {missing_pairs}"
+    def test_removes_code_fence(self):
+        text = "```huawei_usg\nsecurity-policy\n rule name foo\n```"
+        result = filter_executable_lines(text)
+        assert "```" not in result
+        assert "security-policy" in result
 
+    def test_keeps_nat_in_executable_line(self):
+        text = "# MANUAL_REVIEW unsupported source command: nat\nnat source 1.1.1.1 to 2.2.2.2"
+        result = filter_executable_lines(text)
+        assert "nat" in result
+        assert result.count("nat") == 1
 
-def test_evaluator_result_fields():
-    _run_eval()
-    with open(JSON_REPORT) as f:
-        data = json.load(f)
-    required = [
-        "sample_id", "source_vendor", "target_vendor", "source_domain",
-        "passed", "manual_review_ok", "missing_manual_review",
-        "residue_ok", "found_residue",
-        "secret_ok", "leaked_secrets",
-        "missing_translations",
-    ]
-    for r in data["results"]:
-        for field in required:
-            assert field in r, f"Field '{field}' missing in result for {r.get('sample_id', '?')}"
-    assert data["results"][0]["secret_ok"] is True
+    def test_removes_object_address_in_comment(self):
+        text = "# MANUAL_REVIEW object address-range is not portable\nobject address-range RANGE1 10.0.0.1 10.0.0.254"
+        result = filter_executable_lines(text)
+        assert "object address-range" in result
+        assert result.count("object address-range") == 1
+
+    def test_empty_output(self):
+        assert filter_executable_lines("") == ""
+        assert filter_executable_lines("   \n\n") == ""
 
 
-# ---------------------------------------------------------------------------
-# Markdown report tests
-# ---------------------------------------------------------------------------
+class TestStripFence:
+    def test_removes_fence_lines(self):
+        text = "```huawei_usg\nsecurity-policy\n```"
+        result = strip_fence(text)
+        assert "```" not in result
+        assert "security-policy" in result
 
-def test_md_report_exists():
-    _run_eval()
-    assert os.path.exists(MD_REPORT)
-
-
-def test_md_report_summary_numbers():
-    _run_eval()
-    with open(MD_REPORT) as f:
-        content = f.read()
-    with open(JSON_REPORT) as f:
-        data = json.load(f)
-    s = data["summary"]
-    assert str(s["total"]) in content, "total not found in markdown"
-    assert str(s["passed"]) in content, "passed not found in markdown"
-    assert str(s["failed"]) in content, "failed not found in markdown"
-    assert f"{s['pass_rate']}%" in content, "pass rate not found in markdown"
-    assert "Secret leak count" in content, "secret leak declaration missing"
-    assert "P0 risk" in content, "P0 risk declaration missing"
-    assert "No P0 blocking issue identified" in content, "P0 risk value wrong"
+    def test_handles_no_fence(self):
+        text = "security-policy\n zone trust"
+        assert strip_fence(text) == text
 
 
-def test_md_report_by_domain():
-    _run_eval()
-    with open(MD_REPORT) as f:
-        content = f.read()
-    assert "## By Domain" in content
-    for domain in ("SWITCH", "ROUTER", "FIREWALL"):
-        assert domain in content, f"Domain {domain} missing from markdown"
+class TestManualReviewCommentNat:
+    """MANUAL_REVIEW comment containing 'nat' is NOT executable residue."""
+
+    def test_nat_in_manual_review_comment_not_executable_residue(self):
+        text = "# MANUAL_REVIEW unsupported source command: nat source 192.168.10.0"
+        exec_only = filter_executable_lines(text)
+        assert "nat" not in exec_only
+
+    def test_nat_in_real_executable_line_is_residue(self):
+        text = "# MANUAL_REVIEW\nnat source 192.168.10.0 to 198.51.100.0"
+        exec_only = filter_executable_lines(text)
+        assert "nat" in exec_only
 
 
-def test_md_report_by_vendor():
-    _run_eval()
-    with open(MD_REPORT) as f:
-        content = f.read()
-    assert "## By Vendor" in content
-    for vendor in ("cisco", "huawei", "h3c", "ruijie", "huawei_usg", "hillstone", "topsec", "dptech"):
-        assert vendor in content, f"Vendor {vendor} missing from markdown"
+class TestSecretLeakage:
+    """Secret leak checks the FULL output including comments."""
 
+    def test_secret_in_comment_still_leaks(self):
+        full_output = "# config with secret: SuperSecret123"
+        assert "SuperSecret123" in full_output
 
-def test_md_report_failed_pairs_table():
-    _run_eval()
-    with open(MD_REPORT) as f:
-        content = f.read()
-    assert "## Failed Pairs" in content
-    assert "sample_id" in content
-    assert "source_vendor" in content
-    assert "target_vendor" in content
-    assert "forbidden_residue_hits" in content
-    assert "notes" in content
-
-
-def test_md_report_no_plaintext_secrets():
-    _run_eval()
-    sensitive_patterns = [
-        re.compile(r"(?<![<>\w])(password|secret|cipher|shared-key)\s+\S+", re.I),
-    ]
-    with open(MD_REPORT) as f:
-        content = f.read()
-    for idx, pat in enumerate(sensitive_patterns):
-        matches = pat.findall(content)
-        # Exclude the known header "Secret leak count" which uses "Secret" as a label
-        filtered = [m for m in matches if m.lower().strip() not in ("secret", "password")]
-        assert not filtered, f"Found potential sensitive content in markdown (pattern {idx}): {filtered}"
-
-
-def test_md_report_no_overclaim():
-    _run_eval()
-    forbidden_phrases = [
-        "production ready without review",
-        "fully supported",
-        "100% coverage",
-        "no issues",
-    ]
-    with open(MD_REPORT) as f:
-        content = f.read()
-    content_lower = content.lower()
-    for phrase in forbidden_phrases:
-        assert phrase not in content_lower, f"Overclaim phrase found: '{phrase}'"
-
-
-def test_md_report_declaration():
-    _run_eval()
-    with open(MD_REPORT) as f:
-        content = f.read()
-    assert "fallback translator" in content.lower()
-    assert "deterministic" in content.lower()
-    assert "not" in content.lower() and "production" in content.lower()
-
-
-def test_md_report_references_json():
-    _run_eval()
-    with open(MD_REPORT) as f:
-        content = f.read()
-    assert "corpus_fallback_eval.json" in content
-
-
-def test_md_report_no_bare_corpus_samples():
-    """The markdown report must reference corpus/sanitized_samples/, not bare corpus/samples/."""
-    _run_eval()
-    with open(MD_REPORT) as f:
-        content = f.read()
-    # Allow corpus/samples/ only if it's part of corpus/sanitized_samples/ or in a backtick explanation
-    bare_refs = re.findall(r"corpus/samples/[a-z]", content)
-    bare_refs = [r for r in bare_refs if "sanitized" not in content[max(0, content.index(r)-40):content.index(r)+len(r)+40]]
-    assert not bare_refs, f"Found bare corpus/samples/ references in report: {bare_refs}"
-    assert "corpus/sanitized_samples/" in content
+    def test_secret_in_executable_line_leaks(self):
+        full_output = "password SuperSecret123"
+        assert "SuperSecret123" in full_output

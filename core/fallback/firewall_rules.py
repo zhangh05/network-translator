@@ -218,6 +218,61 @@ def translate_to_hillstone_firewall(stripped: str, lower: str, indent: str, from
         return [f"policy {name} from {src_zone} to {dst_zone} source {src_addr} destination {dst_addr} service {svc} action {action}",
                 f"# MANUAL_REVIEW service {svc}: verify Hillstone service object definition"]
 
+    # DPtech multi-line security-policy block
+    if state.get("_in_dptech_secpol"):
+        if not indent:
+            state["_in_dptech_secpol"] = False
+            state.pop("_dptech_secpol", None)
+            state["_dptech_secpol_seen_rule"] = False
+        else:
+            m = re.match(r"source-zone\s+(\S+)", stripped, re.IGNORECASE)
+            if m:
+                state.setdefault("_dptech_secpol", {})["src_zone"] = m.group(1)
+                return None
+            m = re.match(r"destination-zone\s+(\S+)", stripped, re.IGNORECASE)
+            if m:
+                state.setdefault("_dptech_secpol", {})["dst_zone"] = m.group(1)
+                return None
+            m = re.match(r"source-address\s+(\S+)", stripped, re.IGNORECASE)
+            if m:
+                state.setdefault("_dptech_secpol", {})["src_addr"] = m.group(1)
+                return None
+            m = re.match(r"destination-address\s+(\S+)", stripped, re.IGNORECASE)
+            if m:
+                state.setdefault("_dptech_secpol", {})["dst_addr"] = m.group(1)
+                return None
+            m = re.match(r"service\s+(\S+)", stripped, re.IGNORECASE)
+            if m:
+                state.setdefault("_dptech_secpol", {})["service"] = m.group(1)
+                return None
+            m = re.match(r"action\s+(permit|deny)", stripped, re.IGNORECASE)
+            if m:
+                dptech_secpol = state.get("_dptech_secpol") or {}
+                dptech_secpol["action"] = m.group(1)
+                state["_in_dptech_secpol"] = False
+                state["_dptech_secpol"] = None
+                state["_dptech_secpol_seen_rule"] = False
+                all_fields = all(k in dptech_secpol for k in ("src_zone", "dst_zone", "src_addr", "dst_addr", "service", "action"))
+                if all_fields:
+                    return _render_hillstone_policy(dptech_secpol)
+                missing = [f for f in ("src_zone", "dst_zone", "src_addr", "dst_addr", "service") if f not in dptech_secpol]
+                return manual_review_comment(
+                    f"security-policy name={dptech_secpol.get('name','UNNAMED')} incomplete: missing {', '.join(missing)}",
+                    "hillstone",
+                )
+            name = (state.get("_dptech_secpol") or {}).get("name", "UNNAMED")
+            return manual_review_comment(
+                f"security-policy name={name} unsupported sub: {stripped}", "hillstone",
+            )
+
+    # DPtech security-policy header (multi-line block start)
+    m = re.match(r"security-policy\s+name\s+(\S+)", stripped, re.IGNORECASE)
+    if m:
+        state["_in_dptech_secpol"] = True
+        state["_dptech_secpol"] = {"name": m.group(1)}
+        state["_dptech_secpol_seen_rule"] = False
+        return None
+
     # Huawei USG security-policy header
     if lower.startswith("security-policy") and not lower.startswith("security-policy name"):
         state["_in_secpol"] = True
@@ -254,6 +309,17 @@ def check_flush_secpol_at_line_boundary(indent: str, state: dict) -> Optional[li
     return output
 
 
+def _render_hillstone_policy(rule: dict) -> str:
+    name = rule.get("name", "UNNAMED")
+    src_zone = rule.get("src_zone", "any")
+    dst_zone = rule.get("dst_zone", "any")
+    src_addr = rule.get("src_addr", "any")
+    dst_addr = rule.get("dst_addr", "any")
+    svc = rule.get("service", "any")
+    action = rule.get("action", "permit")
+    return f"policy {name} from {src_zone} to {dst_zone} source {src_addr} destination {dst_addr} service {svc} action {action}"
+
+
 def _render_policy(rule: dict) -> str:
     name = rule.get("name", "UNNAMED")
     src_zone = rule.get("src_zone", "any")
@@ -263,6 +329,19 @@ def _render_policy(rule: dict) -> str:
     svc = rule.get("service", "any")
     action = rule.get("action", "permit")
     return f"policy {name} from {src_zone} to {dst_zone} source {src_addr} destination {dst_addr} service {svc} action {action}"
+
+
+def _render_huawei_secpol_rule(rule: dict) -> list:
+    return [
+        "security-policy",
+        f" rule name {rule.get('name', 'UNNAMED')}",
+        f"  source-zone {rule.get('source_zone', 'any')}",
+        f"  destination-zone {rule.get('dest_zone', 'any')}",
+        f"  source-address {rule.get('source_address', 'any')}",
+        f"  destination-address {rule.get('dest_address', 'any')}",
+        f"  service {rule.get('service', 'any')}",
+        f"  action {rule.get('action', 'permit')}",
+    ]
 
 
 def translate_to_huawei_usg_firewall(stripped: str, lower: str, indent: str, from_vendor: str, state: dict) -> Optional[Union[str, list]]:
@@ -391,6 +470,121 @@ def translate_to_huawei_usg_firewall(stripped: str, lower: str, indent: str, fro
         r"security-policy\s+name\s+(\S+)\s+source-zone\s+(\S+)\s+destination-zone\s+(\S+)\s+destination-address\s+(\S+)\s+service\s+(\S+)\s+action\s+(permit|deny)",
         stripped,
         re.IGNORECASE,
+    )
+    if m:
+        return manual_review_comment(
+            f"security-policy name={m.group(1)}: missing source-address (DPtech default-any semantics not confirmed)",
+            "huawei_usg",
+        )
+
+    # DPtech multi-line security-policy block
+    if state.get("_in_dptech_secpol"):
+        if not indent:
+            state["_in_dptech_secpol"] = False
+            state.pop("_dptech_secpol", None)
+            state["_dptech_secpol_seen_rule"] = False
+        else:
+            m = re.match(r"rule\s+name\s+(\S+)", stripped, re.IGNORECASE)
+            if m:
+                state["_dptech_secpol_seen_rule"] = True
+                prev = state.get("_dptech_secpol")
+                state["_dptech_secpol"] = {"name": m.group(1)}
+                if prev and prev.get("name") and prev.get("action"):
+                    out = _render_huawei_secpol_rule(prev)
+                    state["_dptech_secpol"] = {"name": m.group(1)}
+                    return out
+                elif prev and prev.get("name"):
+                    return manual_review_comment(
+                        f"security-policy name={prev['name']} incomplete: missing action", "huawei_usg",
+                    )
+                return None
+
+            dptech_secpol = state.get("_dptech_secpol") or {}
+            name = dptech_secpol.get("name", "UNNAMED")
+
+            m = re.match(r"source-zone\s+(\S+)", stripped, re.IGNORECASE)
+            if m:
+                dptech_secpol["source_zone"] = m.group(1)
+                state["_dptech_secpol"] = dptech_secpol
+                return None
+            m = re.match(r"destination-zone\s+(\S+)", stripped, re.IGNORECASE)
+            if m:
+                dptech_secpol["dest_zone"] = m.group(1)
+                state["_dptech_secpol"] = dptech_secpol
+                return None
+            m = re.match(r"source-address\s+(\S+)", stripped, re.IGNORECASE)
+            if m:
+                dptech_secpol["source_address"] = m.group(1)
+                state["_dptech_secpol"] = dptech_secpol
+                return None
+            m = re.match(r"destination-address\s+(\S+)", stripped, re.IGNORECASE)
+            if m:
+                dptech_secpol["dest_address"] = m.group(1)
+                state["_dptech_secpol"] = dptech_secpol
+                return None
+            m = re.match(r"service\s+(\S+)", stripped, re.IGNORECASE)
+            if m:
+                dptech_secpol["service"] = m.group(1)
+                state["_dptech_secpol"] = dptech_secpol
+                return None
+            m = re.match(r"action\s+(permit|deny)", stripped, re.IGNORECASE)
+            if m:
+                dptech_secpol["action"] = m.group(1)
+                state["_dptech_secpol"] = None
+                state["_dptech_secpol_seen_rule"] = False
+                all_fields = all(k in dptech_secpol for k in ("source_zone", "dest_zone", "source_address", "dest_address", "service", "action"))
+                if all_fields:
+                    return _render_huawei_secpol_rule(dptech_secpol)
+                missing = []
+                for f in ("source_zone", "dest_zone", "source_address", "dest_address", "service"):
+                    if f not in dptech_secpol:
+                        missing.append(f.replace("_", "-"))
+                if missing:
+                    return manual_review_comment(
+                        f"security-policy name={dptech_secpol.get('name','UNNAMED')} incomplete: missing {', '.join(missing)}",
+                        "huawei_usg",
+                    )
+                return _render_huawei_secpol_rule(dptech_secpol)
+
+            return manual_review_comment(
+                f"security-policy name={name} unsupported sub: {stripped}", "huawei_usg",
+            )
+
+    # DPtech security-policy header (multi-line block start)
+    m = re.match(r"security-policy\s+name\s+(\S+)", stripped, re.IGNORECASE)
+    if m:
+        state["_in_dptech_secpol"] = True
+        state["_dptech_secpol"] = {"name": m.group(1)}
+        state["_dptech_secpol_seen_rule"] = False
+        return None
+
+    # DPtech single-line security-policy -> Huawei USG multi-line (only if all 6 fields present)
+    m = re.match(
+        r"security-policy\s+name\s+(\S+)\s+"
+        r"source-zone\s+(\S+)\s+destination-zone\s+(\S+)\s+"
+        r"source-address\s+(\S+)\s+destination-address\s+(\S+)\s+"
+        r"service\s+(\S+)\s+action\s+(permit|deny)",
+        stripped, re.IGNORECASE,
+    )
+    if m:
+        name, src_zone, dst_zone, src_addr, dst_addr, svc, action = m.groups()
+        return _render_huawei_secpol_rule({
+            "name": name,
+            "source_zone": src_zone,
+            "dest_zone": dst_zone,
+            "source_address": src_addr,
+            "dest_address": dst_addr,
+            "service": svc,
+            "action": action,
+        })
+
+    # DPtech single-line security-policy missing source-address -> MANUAL_REVIEW
+    m = re.match(
+        r"security-policy\s+name\s+(\S+)\s+"
+        r"source-zone\s+(\S+)\s+destination-zone\s+(\S+)\s+"
+        r"destination-address\s+(\S+)\s+"
+        r"service\s+(\S+)\s+action\s+(permit|deny)",
+        stripped, re.IGNORECASE,
     )
     if m:
         return manual_review_comment(

@@ -11,9 +11,9 @@
 | Metric | Value |
 |--------|-------|
 | Total (sample, target) pairs | 24 |
-| Passed | 16 |
-| Failed | 8 |
-| Pass rate | 66.7% |
+| Passed | 22 |
+| Failed | 2 |
+| Pass rate | 91.7% |
 | Secret leak count | 0 (no secrets leaked across any pair) |
 | P0 risk | No P0 blocking issue identified |
 
@@ -21,20 +21,20 @@
 
 | Domain | Total | Passed | Failed | Pass rate |
 |--------|-------|--------|--------|-----------|
-| FIREWALL | 8 | 2 | 6 | 25.0% |
+| FIREWALL | 8 | 7 | 1 | 87.5% |
 | ROUTER | 4 | 3 | 1 | 75.0% |
-| SWITCH | 12 | 11 | 1 | 91.7% |
+| SWITCH | 12 | 12 | 0 | 100.0% |
 
 ## By Vendor
 
 | Source vendor | Total | Passed | Failed |
 |--------------|-------|--------|--------|
 | cisco | 5 | 4 | 1 |
-| dptech | 2 | 0 | 2 |
-| h3c | 3 | 2 | 1 |
-| hillstone | 2 | 0 | 2 |
+| dptech | 2 | 2 | 0 |
+| h3c | 3 | 3 | 0 |
+| hillstone | 2 | 2 | 0 |
 | huawei | 5 | 5 | 0 |
-| huawei_usg | 2 | 1 | 1 |
+| huawei_usg | 2 | 2 | 0 |
 | ruijie | 3 | 3 | 0 |
 | topsec | 2 | 1 | 1 |
 
@@ -42,14 +42,8 @@
 
 | sample_id | source_vendor | target_vendor | domain | manual_review_leak | forbidden_residue_hits | notes |
 |-----------|--------------|--------------|--------|-------------------|----------------------|-------|
-| sw-h3c-01 | h3c | cisco | SWITCH | — | vlan batch | H3C switch with Bridge-Aggregation LAG. Clean config with auto-translate-only features. |
 | rt-cisco-01 | cisco | h3c | ROUTER | — | router ospf; router bgp | Complex router with OSPF auth/stub, BGP password, route-map community. K-B coverage: track, auth, password, update-source are MANUAL_REVIEW; community is redacted. |
-| fw-usg-01 | huawei_usg | topsec | FIREWALL | — | security-zone; ip address-set; ip service-set; security-policy | Clean Huawei USG security policy with TCP/UDP services and subnet address objects. All features auto-translate to Hillstone. |
-| fw-hillstone-01 | hillstone | huawei_usg | FIREWALL | — | nat  | Hillstone config with zone/address/service/policy + NAT (dangerous feature guard). K-C: NAT guard verified. |
-| fw-hillstone-01 | hillstone | topsec | FIREWALL | — | nat  | Hillstone config with zone/address/service/policy + NAT (dangerous feature guard). K-C: NAT guard verified. |
 | fw-topsec-01 | topsec | huawei_usg | FIREWALL | — | zone name | Topsec config with dangerous features (NAT, IPSec) and address-group. K-C: dangerous feature guards for nat, ipsec verified. |
-| fw-dptech-01 | dptech | huawei_usg | FIREWALL | — | object address; nat  | DPtech config with address-range, NAT, and security policy. K-C: address-range and NAT guards verified. |
-| fw-dptech-01 | dptech | hillstone | FIREWALL | — | object address; nat  | DPtech config with address-range, NAT, and security policy. K-C: address-range and NAT guards verified. |
 
 ## Output Files
 

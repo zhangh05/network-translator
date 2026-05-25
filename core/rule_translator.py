@@ -627,7 +627,22 @@ class RuleBasedTranslator:
         return " ".join(parts)
 
     def _check_flush_secpol_at_line_boundary(self, indent: str, state: Dict):
-        return fw.check_flush_secpol_at_line_boundary(indent, state)
+        result = fw.check_flush_secpol_at_line_boundary(indent, state)
+        if result:
+            return result
+        if not state.get("_in_dptech_secpol"):
+            return None
+        if indent:
+            return None
+        state["_in_dptech_secpol"] = False
+        pending = state.pop("_dptech_secpol", None)
+        state["_dptech_secpol_seen_rule"] = False
+        output = []
+        if pending and pending.get("name"):
+            output.append(manual_review_comment(
+                f"security-policy name={pending['name']} incomplete at block boundary (no action)", "hillstone",
+            ))
+        return output if output else None
 
     def _flush_pending_state(self, state: Dict, to_vendor: str) -> Optional[List[str]]:
         result = []
@@ -649,4 +664,30 @@ class RuleBasedTranslator:
                     "security-policy (incomplete: no rule defined)",
                     to_vendor,
                 ))
+        if state.get("_in_dptech_secpol"):
+            state["_in_dptech_secpol"] = False
+            pending = state.pop("_dptech_secpol", None)
+            state["_dptech_secpol_seen_rule"] = False
+            if pending and pending.get("name"):
+                if pending.get("action"):
+                    if to_vendor == "huawei_usg":
+                        all_fields = all(k in pending for k in ("source_zone", "dest_zone", "source_address", "dest_address", "service", "action"))
+                        if all_fields:
+                            result.extend(fw._render_huawei_secpol_rule(pending))
+                        else:
+                            result.append(manual_review_comment(
+                                f"security-policy name={pending['name']} incomplete at config end", to_vendor,
+                            ))
+                    else:
+                        all_fields = all(k in pending for k in ("src_zone", "dst_zone", "src_addr", "dst_addr", "service", "action"))
+                        if all_fields:
+                            result.append(fw._render_hillstone_policy(pending))
+                        else:
+                            result.append(manual_review_comment(
+                                f"security-policy name={pending['name']} incomplete at config end", to_vendor,
+                            ))
+                else:
+                    result.append(manual_review_comment(
+                        f"security-policy name={pending['name']} incomplete: missing action", to_vendor,
+                    ))
         return result if result else None

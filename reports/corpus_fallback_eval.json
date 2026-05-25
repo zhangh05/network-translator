@@ -1,13 +1,13 @@
 {
   "summary": {
     "total": 24,
-    "passed": 16,
-    "failed": 8,
+    "passed": 22,
+    "failed": 2,
     "by_domain": {
       "SWITCH": {
         "total": 12,
-        "passed": 11,
-        "failed": 1
+        "passed": 12,
+        "failed": 0
       },
       "ROUTER": {
         "total": 4,
@@ -16,8 +16,8 @@
       },
       "FIREWALL": {
         "total": 8,
-        "passed": 2,
-        "failed": 6
+        "passed": 7,
+        "failed": 1
       }
     },
     "by_vendor": {
@@ -33,8 +33,8 @@
       },
       "h3c": {
         "total": 3,
-        "passed": 2,
-        "failed": 1
+        "passed": 3,
+        "failed": 0
       },
       "ruijie": {
         "total": 3,
@@ -43,13 +43,13 @@
       },
       "huawei_usg": {
         "total": 2,
-        "passed": 1,
-        "failed": 1
+        "passed": 2,
+        "failed": 0
       },
       "hillstone": {
         "total": 2,
-        "passed": 0,
-        "failed": 2
+        "passed": 2,
+        "failed": 0
       },
       "topsec": {
         "total": 2,
@@ -58,11 +58,11 @@
       },
       "dptech": {
         "total": 2,
-        "passed": 0,
-        "failed": 2
+        "passed": 2,
+        "failed": 0
       }
     },
-    "pass_rate": 66.7
+    "pass_rate": 91.7
   },
   "results": [
     {
@@ -178,13 +178,11 @@
       "source_vendor": "h3c",
       "target_vendor": "cisco",
       "source_domain": "SWITCH",
-      "passed": false,
+      "passed": true,
       "manual_review_ok": true,
       "missing_manual_review": [],
-      "residue_ok": false,
-      "found_residue": [
-        "vlan batch"
-      ],
+      "residue_ok": true,
+      "found_residue": [],
       "secret_ok": true,
       "leaked_secrets": [],
       "missing_translations": [
@@ -374,16 +372,11 @@
       "source_vendor": "huawei_usg",
       "target_vendor": "topsec",
       "source_domain": "FIREWALL",
-      "passed": false,
+      "passed": true,
       "manual_review_ok": true,
       "missing_manual_review": [],
-      "residue_ok": false,
-      "found_residue": [
-        "security-zone",
-        "ip address-set",
-        "ip service-set",
-        "security-policy"
-      ],
+      "residue_ok": true,
+      "found_residue": [],
       "secret_ok": true,
       "leaked_secrets": [],
       "missing_translations": [
@@ -395,13 +388,11 @@
       "source_vendor": "hillstone",
       "target_vendor": "huawei_usg",
       "source_domain": "FIREWALL",
-      "passed": false,
+      "passed": true,
       "manual_review_ok": true,
       "missing_manual_review": [],
-      "residue_ok": false,
-      "found_residue": [
-        "nat "
-      ],
+      "residue_ok": true,
+      "found_residue": [],
       "secret_ok": true,
       "leaked_secrets": [],
       "missing_translations": []
@@ -411,13 +402,11 @@
       "source_vendor": "hillstone",
       "target_vendor": "topsec",
       "source_domain": "FIREWALL",
-      "passed": false,
+      "passed": true,
       "manual_review_ok": true,
       "missing_manual_review": [],
-      "residue_ok": false,
-      "found_residue": [
-        "nat "
-      ],
+      "residue_ok": true,
+      "found_residue": [],
       "secret_ok": true,
       "leaked_secrets": [],
       "missing_translations": []
@@ -457,14 +446,11 @@
       "source_vendor": "dptech",
       "target_vendor": "huawei_usg",
       "source_domain": "FIREWALL",
-      "passed": false,
+      "passed": true,
       "manual_review_ok": true,
       "missing_manual_review": [],
-      "residue_ok": false,
-      "found_residue": [
-        "object address",
-        "nat "
-      ],
+      "residue_ok": true,
+      "found_residue": [],
       "secret_ok": true,
       "leaked_secrets": [],
       "missing_translations": []
@@ -474,14 +460,11 @@
       "source_vendor": "dptech",
       "target_vendor": "hillstone",
       "source_domain": "FIREWALL",
-      "passed": false,
+      "passed": true,
       "manual_review_ok": true,
       "missing_manual_review": [],
-      "residue_ok": false,
-      "found_residue": [
-        "object address",
-        "nat "
-      ],
+      "residue_ok": true,
+      "found_residue": [],
       "secret_ok": true,
       "leaked_secrets": [],
       "missing_translations": []

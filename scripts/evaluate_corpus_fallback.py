@@ -56,6 +56,21 @@ def strip_fence(text: str) -> str:
     return "\n".join(lines).strip()
 
 
+def is_executable_line(line: str) -> bool:
+    stripped = line.strip()
+    if not stripped:
+        return False
+    if stripped.startswith("#") or stripped.startswith("!") or stripped.startswith("//"):
+        return False
+    if stripped.startswith("```"):
+        return False
+    return True
+
+
+def filter_executable_lines(text: str) -> str:
+    return "\n".join(l for l in text.splitlines() if is_executable_line(l))
+
+
 def get_residue_patterns(entry: Dict, target: str) -> List[str]:
     by_target = entry.get("forbidden_residue_by_target", {})
     if target in by_target:
@@ -188,12 +203,13 @@ def run_evaluation() -> Dict[str, Any]:
                     manual_review_ok = False
                     missing_mr.append(mr)
 
-            # ---- forbidden residue (target-aware) ----
+            # ---- forbidden residue (target-aware, executable-lines only) ----
             forbidden = get_residue_patterns(entry, target)
             residue_ok = True
             found_residue = []
+            exec_output = filter_executable_lines(output)
             for pat in forbidden:
-                if pat in output:
+                if pat in exec_output:
                     residue_ok = False
                     found_residue.append(pat)
 
