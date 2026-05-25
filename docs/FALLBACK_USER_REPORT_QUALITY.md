@@ -158,7 +158,50 @@ Fallback 在 LLM 输出无法通过校验时触发，是安全阻断机制，不
 
 ---
 
-## 6. 测试引用
+## 6. 浏览器 UI 视角
+
+### 翻译结果三tab 定位
+
+| UI Tab | 显示内容 | 数据来源 |
+|--------|----------|----------|
+| **翻译结果**（translated） | Fallback 模式：显示包含 `人工复核摘要` 的完整 fallback 报告（含 6 中文分类）；正常 LLM 翻译：显示目标厂商配置 | `translated` 字段（Fallback 时含报告；正常时含配置）|
+| **风险分析**（risk） | Fallback notice + capability gaps + analyzer results + risk signals | `capability_gaps`、`analyzer_results`、`risk_signals` |
+| **校验结果**（validation） | 部署状态（可部署/需人工复核/不建议上线）、错误数、警告数 | `validation` 字段 |
+| **差异对比**（diff） | 源配置与目标配置的结构化 diff | `diff` 字段 |
+
+### Fallback 模式下的translated tab
+
+Fallback 时，translated tab 显示完整 fallback 报告（`r.translated`），包含：
+- `MANUAL_REVIEW` 头部说明
+- `人工复核摘要`：6 中文分类（管理面、接口与 VLAN、ACL 与安全策略、路由协议、防火墙对象、未支持能力）
+- 每个分类：数量、风险等级、中文原因、≤3 示例行
+- `MANUAL_REVIEW` 行在 UI 中以高亮样式显示
+
+风险 tab 中的 fallback notice 提示："请重点查看：人工复核摘要、可部署配置、风险报告"。
+
+### deployable_config 的展示方式
+
+`deployable_config` 不直接在 UI tab 中展示，而是通过：
+1. **复制全部配置**：复制 `deployable_config`（Fallback 时为确定性规则翻译结果）
+2. **复制可部署配置**：复制 `deployable_config` 并过滤 `# MANUAL_REVIEW` 行
+3. **导出报告**（`_buildExportReport`）：在报告 JSON 中包含 `deployable_config` 字段
+
+### 刷新后结果保留机制
+
+翻译成功后：
+1. 前端调用 `GET /api/projects/<id>` 重新加载项目
+2. `project.result` 包含完整的 `result_data`（含 `deployable_config`、`translated`、`validation` 等）
+3. 前端 `R.result` 被刷新为 `sp.project.result`
+4. 多浏览器/多窗口访问同一项目 ID 时，看到相同结果
+
+清空结果（CL 按钮）时：
+- `project.result` 被设为 `null`
+- `project.request_id`、`project.version`、`project.model` 被清空
+- `PROJS` 本地状态同步清空
+
+---
+
+## 7. 测试引用
 
 | 测试文件 | 覆盖内容 |
 |----------|----------|

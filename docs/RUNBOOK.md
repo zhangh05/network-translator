@@ -194,6 +194,83 @@ curl --noproxy '*' -s -X POST http://localhost:5008/api/projects/<pid>/translate
 curl -H "X-API-Secret: <your-secret>" ...
 ```
 
+## Browser Acceptance Testing
+
+### Starting the service
+
+The service requires Flask, which is installed in `.venv-local` (not `venv`):
+```bash
+# Using the project's service script (uses .venv-local automatically)
+PORT=5008 ./scripts/start.sh
+
+# Or directly with .venv-local
+PORT=5008 .venv-local/bin/python web_app.py
+```
+
+Verify service is running:
+```bash
+curl --noproxy '*' http://127.0.0.1:5008/healthz
+```
+
+Expected: `{"ok":true,"status":"healthy"}`
+
+### Access addresses
+
+- Local: `http://127.0.0.1:5008`
+- LAN: `http://<machine-lan-ip>:5008` (e.g. `http://192.168.5.x:5008`)
+- The service listens on `0.0.0.0:5008` by default
+
+### Manual acceptance steps
+
+1. Open browser to `http://127.0.0.1:5008`
+2. Create/rename project window via sidebar
+3. Select source vendor (e.g. Huawei) and target vendor (e.g. Cisco)
+4. Paste configuration text
+5. Click 翻译 button
+6. After translation completes, check:
+   - **translated tab**: Shows fallback report (if LLM validation failed) or LLM translation (if successful)
+   - **risk tab**: Shows fallback notice (if fallback) + Chinese category risk analysis
+   - **validation tab**: Shows deployability status and error/warning counts
+   - **diff tab**: Shows source vs target config diff
+7. Click 复制 dropdown:
+   - **复制全部配置**: Copies `deployable_config` (or `translated` if deployable is empty)
+   - **复制可部署配置**: Copies `deployable_config` with `# MANUAL_REVIEW` lines removed
+   - **复制风险报告**: Copies structured text report with validation/capability gaps
+8. Refresh browser — result should persist
+9. Open new browser window — same project should be visible
+
+### Fallback report visibility
+
+When fallback is triggered (LLM output validation failed):
+- **translated tab** shows the full fallback report including `人工复核摘要` (6 Chinese categories with sample lines)
+- **risk tab** shows a fallback notice directing user to "请重点查看：人工复核摘要、可部署配置、风险报告"
+- **MANUAL_REVIEW** lines are highlighted in the translated tab
+
+### If results disappear after refresh
+
+Check project persistence:
+```bash
+# List projects
+curl --noproxy '*' http://127.0.0.1:5008/api/projects
+
+# Get specific project
+curl --noproxy '*' http://127.0.0.1:5008/api/projects/<project-id>
+```
+
+Verify `result` field is not null and contains `deployable_config`.
+
+### If copy content is wrong
+
+The three copy modes pull from different fields:
+
+| Copy mode | Source field | Notes |
+|-----------|-------------|-------|
+| 复制全部配置 | `deployable_config \|\| translated` | Prefers deployable |
+| 复制可部署配置 | `deployable_config` | Filters out `# MANUAL_REVIEW` lines |
+| 复制风险报告 | Constructed from `validation`, `risk_signals`, `capability_gaps`, `analyzer_results` | Never includes raw config |
+
+Check browser DevTools → Network tab → translate API response to verify `deployable_config` field is present and correct.
+
 ## Troubleshooting
 
 | Symptom | Likely Cause | Fix |
