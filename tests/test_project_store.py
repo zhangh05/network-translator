@@ -50,6 +50,21 @@ def test_delete_project(store):
     assert store.get_project(p.id) is None
 
 
+def test_delete_project_invalidates_other_process_index_cache():
+    """A delete in one worker must be visible to another worker immediately."""
+    with tempfile.TemporaryDirectory() as tmp:
+        worker_a = ProjectStore(project_dir=tmp)
+        p = worker_a.create_project("delete-me")
+
+        worker_b = ProjectStore(project_dir=tmp)
+        assert any(row["id"] == p.id for row in worker_b.list_projects())
+
+        assert worker_a.delete_project(p.id) is True
+
+        listed_after_delete = worker_b.list_projects()
+        assert all(row["id"] != p.id for row in listed_after_delete)
+
+
 def test_delete_nonexistent(store):
     assert store.delete_project("nope") is False
 

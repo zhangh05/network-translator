@@ -120,11 +120,19 @@ class ProjectStore:
         self.meta_file = self.project_dir / "projects.json"
         self._projects: Dict[str, Project] = {}
         self._last_load: float = 0.0
+        self._index_mtime_ns: Optional[int] = None
         self._load_index()
 
     def _ensure_fresh(self):
-        if time.time() - self._last_load > self._INDEX_TTL:
+        current_mtime = self._index_mtime()
+        if current_mtime != self._index_mtime_ns or time.time() - self._last_load > self._INDEX_TTL:
             self._load_index()
+
+    def _index_mtime(self) -> Optional[int]:
+        try:
+            return self.meta_file.stat().st_mtime_ns
+        except FileNotFoundError:
+            return None
 
     @staticmethod
     def _locked_write(filepath: Path, write_fn):
@@ -218,12 +226,14 @@ class ProjectStore:
         except Exception:
             logger.exception("Failed to load project index")
         self._last_load = time.time()
+        self._index_mtime_ns = self._index_mtime()
 
     def _save_index(self):
         """保存项目索引"""
         try:
             data = {"projects": [p.to_dict() for p in self._projects.values()]}
             self._locked_write(self.meta_file, lambda f: json.dump(data, f, indent=2, ensure_ascii=False))
+            self._index_mtime_ns = self._index_mtime()
         except Exception:
             logger.exception("Failed to save project index")
 
@@ -346,6 +356,7 @@ class ProjectStore:
 
     def delete_project(self, project_id: str) -> bool:
         """删除项目"""
+        self._ensure_fresh()
         if project_id in self._projects:
             del self._projects[project_id]
             filepath = self._get_project_file(project_id)
