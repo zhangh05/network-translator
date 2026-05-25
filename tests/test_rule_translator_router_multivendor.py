@@ -383,7 +383,7 @@ def test_ospf_passive_interface_default_cisco_to_huawei():
 def test_ospf_no_passive_interface_cisco_to_huawei():
     t = RuleBasedTranslator()
     r = t.translate("router ospf 10\n no passive-interface GigabitEthernet0/1\n", "cisco", "huawei")
-    assert "undo silent-interface gigabitethernet0/1" in r
+    assert "undo silent-interface GigabitEthernet0/1" in r
 
 
 def test_bgp_cisco_to_ruijie():

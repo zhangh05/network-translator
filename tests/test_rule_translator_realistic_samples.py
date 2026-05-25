@@ -160,7 +160,7 @@ router bgp 65001
     assert "ospf 10" in r
     assert "router-id 10.0.0.1" in r
     assert "silent-interface default" in r
-    assert "undo silent-interface gigabitethernet0/1" in r
+    assert "undo silent-interface GigabitEthernet0/1" in r
     assert "network 10.0.0.0 0.0.0.255 area 0" in r
     assert "ip route-static 0.0.0.0 0.0.0.0 10.0.0.254" in r
     assert "MANUAL_REVIEW" in r, "track option must produce MANUAL_REVIEW"

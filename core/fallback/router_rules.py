@@ -58,15 +58,15 @@ def translate_routing_to_huawei(stripped: str, lower: str, indent: str, state: d
     if lower.startswith("router-id "):
         return indent + stripped
     if lower.startswith("area "):
-        if re.search(r"\b(stub|nssa|virtual-link)\b", lower):
+        if re.search(r"\b(stub|nssa|virtual-link|authentication)\b", lower):
             return indent + manual_review_comment(stripped, "huawei", indent)
         return indent + stripped
     if lower.startswith("network ") and not state.get("in_bgp"):
         return indent + stripped
     if lower.startswith("passive-interface "):
-        return indent + "silent-interface " + lower.split(maxsplit=1)[1]
+        return indent + "silent-interface " + stripped.split(maxsplit=1)[1]
     if lower.startswith("no passive-interface "):
-        return indent + "undo silent-interface " + lower.split(maxsplit=2)[2]
+        return indent + "undo silent-interface " + stripped.split(maxsplit=2)[2]
     if lower == "passive-interface default":
         return indent + "silent-interface default"
 
@@ -89,9 +89,9 @@ def translate_routing_to_huawei(stripped: str, lower: str, indent: str, state: d
     if m:
         return f" network {m.group(1)} {m.group(2)}"
     if lower.startswith("neighbor ") and re.search(r"\b(password|cipher)\s+\S+", lower):
-        redacted = re.sub(r"(password|cipher)\s+\S+", r"\1 <redacted>", stripped)
+        redacted = re.sub(r"(password|cipher)\s+.+", r"\1 <redacted>", stripped)
         return indent + manual_review_comment(redacted, "huawei", indent)
-    if lower.startswith("neighbor ") or lower.startswith(" peer "):
+    if lower.startswith("neighbor ") or lower.startswith("peer "):
         return indent + manual_review_comment(stripped, "huawei", indent)
     if lower.startswith("ipv4-family unicast"):
         return None
@@ -108,7 +108,7 @@ def translate_routing_to_cisco(stripped: str, lower: str, indent: str, state: di
         m = re.match(r"ospf\s+(\S+)", lower)
         return f"router ospf {m.group(1)}" if m else stripped
     if lower.startswith("area "):
-        if re.search(r"\b(stub|nssa|virtual-link)\b", lower):
+        if re.search(r"\b(stub|nssa|virtual-link|authentication)\b", lower):
             return indent + manual_review_comment(stripped, "cisco", indent)
         return indent + stripped
     if lower.startswith("network "):
@@ -138,10 +138,10 @@ def translate_routing_to_cisco(stripped: str, lower: str, indent: str, state: di
         return f" network {m.group(1)} {m.group(2)}"
     if lower.startswith("ipv4-family unicast"):
         return None
-    if lower.startswith("neighbor ") and ("password" in lower or "cipher" in lower):
-        redacted = re.sub(r"(password|cipher)\s+\S+", r"\1 <redacted>", stripped)
+    if (lower.startswith("neighbor ") or lower.startswith("peer ")) and ("password" in lower or "cipher" in lower):
+        redacted = re.sub(r"(password|cipher)\s+.+", r"\1 <redacted>", stripped)
         return indent + manual_review_comment(redacted, "cisco", indent)
-    if lower.startswith("neighbor ") or lower.startswith(" peer "):
+    if lower.startswith("neighbor ") or lower.startswith("peer "):
         return indent + manual_review_comment(stripped, "cisco", indent)
 
     # Static route
@@ -223,9 +223,9 @@ def translate_routing_to_ruijie(stripped: str, lower: str, indent: str, state: d
     if lower.startswith("network ") and not state.get("in_bgp"):
         return indent + stripped
     if lower.startswith("silent-interface"):
-        return indent + "passive-interface " + lower.split(maxsplit=1)[1]
+        return indent + "passive-interface " + stripped.split(maxsplit=1)[1]
     if lower.startswith("undo silent-interface"):
-        return indent + "no passive-interface " + lower.split(maxsplit=2)[2]
+        return indent + "no passive-interface " + stripped.split(maxsplit=2)[2]
 
     # BGP
     m = re.match(r"router\s+bgp\s+(\S+)", lower)
