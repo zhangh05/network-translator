@@ -310,37 +310,62 @@ def check_flush_secpol_at_line_boundary(indent: str, state: dict) -> Optional[li
 
 
 def _render_hillstone_policy(rule: dict) -> str:
-    name = rule.get("name", "UNNAMED")
-    src_zone = rule.get("src_zone", "any")
-    dst_zone = rule.get("dst_zone", "any")
-    src_addr = rule.get("src_addr", "any")
-    dst_addr = rule.get("dst_addr", "any")
-    svc = rule.get("service", "any")
-    action = rule.get("action", "permit")
+    name = rule.get("name") or "UNNAMED"
+    src_zone = rule.get("src_zone")
+    dst_zone = rule.get("dst_zone")
+    src_addr = rule.get("src_addr")
+    dst_addr = rule.get("dst_addr")
+    svc = rule.get("service")
+    action = rule.get("action")
+    if None in (src_zone, dst_zone, src_addr, dst_addr, svc, action):
+        raise ValueError(
+            f"_render_hillstone_policy missing fields: "
+            f"name={name} src_zone={src_zone} dst_zone={dst_zone} "
+            f"src_addr={src_addr} dst_addr={dst_addr} service={svc} action={action}"
+        )
     return f"policy {name} from {src_zone} to {dst_zone} source {src_addr} destination {dst_addr} service {svc} action {action}"
 
 
 def _render_policy(rule: dict) -> str:
-    name = rule.get("name", "UNNAMED")
-    src_zone = rule.get("src_zone", "any")
-    dst_zone = rule.get("dst_zone", "any")
+    name = rule.get("name") or "UNNAMED"
+    src_zone = rule.get("src_zone")
+    dst_zone = rule.get("dst_zone")
     src_addr = rule.get("src_addr", "any")
     dst_addr = rule.get("dst_addr", "any")
     svc = rule.get("service", "any")
-    action = rule.get("action", "permit")
+    action = rule.get("action")
+    if None in (src_zone, dst_zone, action):
+        raise ValueError(
+            f"_render_policy missing required fields: "
+            f"name={name} src_zone={src_zone} dst_zone={dst_zone} action={action}"
+        )
     return f"policy {name} from {src_zone} to {dst_zone} source {src_addr} destination {dst_addr} service {svc} action {action}"
 
 
 def _render_huawei_secpol_rule(rule: dict) -> list:
+    name = rule.get("name") or "UNNAMED"
+    source_zone = rule.get("source_zone")
+    dest_zone = rule.get("dest_zone")
+    source_address = rule.get("source_address")
+    dest_address = rule.get("dest_address")
+    svc = rule.get("service")
+    action = rule.get("action")
+    if None in (source_zone, dest_zone, source_address, dest_address, svc, action):
+        raise ValueError(
+            f"_render_huawei_secpol_rule missing fields: "
+            f"name={name} source_zone={source_zone} dest_zone={dest_zone} "
+            f"source_address={source_address} dest_address={dest_address} "
+            f"service={svc} action={action}"
+        )
     return [
         "security-policy",
-        f" rule name {rule.get('name', 'UNNAMED')}",
-        f"  source-zone {rule.get('source_zone', 'any')}",
-        f"  destination-zone {rule.get('dest_zone', 'any')}",
-        f"  source-address {rule.get('source_address', 'any')}",
-        f"  destination-address {rule.get('dest_address', 'any')}",
-        f"  service {rule.get('service', 'any')}",
-        f"  action {rule.get('action', 'permit')}",
+        f" rule name {name}",
+        f"  source-zone {source_zone}",
+        f"  destination-zone {dest_zone}",
+        f"  source-address {source_address}",
+        f"  destination-address {dest_address}",
+        f"  service {svc}",
+        f"  action {action}",
     ]
 
 

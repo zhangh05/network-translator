@@ -65,7 +65,14 @@ def test_gap_analysis_summary_matches_eval():
 def test_gap_analysis_has_required_sections():
     with open(GAP_ANALYSIS_PATH) as f:
         content = f.read()
-    for section in ["## Summary", "## Gap Register", "### Priority Summary", "### GAP-FW-01", "### GAP-RT-01", "### GAP-SW-01"]:
+    for section in [
+        "## Summary",
+        "## Resolved in Batch M",
+        "## Active Gap Register",
+        "## Priority Summary",
+        "### GAP-RT-01",
+        "### GAP-FW-03",
+    ]:
         assert section in content, f"Missing section: {section}"
 
 
