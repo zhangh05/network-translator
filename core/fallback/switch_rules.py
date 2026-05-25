@@ -27,6 +27,10 @@ def translate_to_huawei_switch(stripped: str, lower: str, indent: str, from_vend
     if lower.startswith("sysname "):
         return stripped
 
+    # interface range → MANUAL_REVIEW (no direct Huawei equivalent)
+    if lower.startswith("interface range"):
+        return indent + manual_review_comment(stripped, "huawei", indent)
+
     m = re.match(r"^vlan\s+(\S.*)", stripped, re.IGNORECASE)
     if m:
         vlan_val = m.group(1)
@@ -40,6 +44,30 @@ def translate_to_huawei_switch(stripped: str, lower: str, indent: str, from_vend
     m = re.match(r"^interface\s+Vlan(\d+)$", stripped, re.IGNORECASE)
     if m:
         return f"interface Vlanif{m.group(1)}"
+
+    # switchport trunk allowed vlan add → translate with MANUAL_REVIEW
+    m = re.match(r"switchport\s+trunk\s+allowed\s+vlan\s+add\s+(.+)", lower)
+    if m:
+        vlans = normalize_vlan_list(m.group(1))
+        return indent + "port trunk allow-pass vlan " + vlans + "\n" + indent + manual_review_comment(
+            f"switchport trunk allowed vlan add {m.group(1)}: incremental add semantics, verify full allowed list",
+            "huawei", indent,
+        )
+
+    # switchport trunk allowed vlan remove → undo allow-pass
+    m = re.match(r"switchport\s+trunk\s+allowed\s+vlan\s+remove\s+(.+)", lower)
+    if m:
+        vlans = normalize_vlan_list(m.group(1))
+        return indent + "undo port trunk allow-pass vlan " + vlans
+
+    # switchport trunk allowed vlan all/none → MANUAL_REVIEW
+    if re.match(r"switchport\s+trunk\s+allowed\s+vlan\s+(all|none)\s*$", lower):
+        return indent + manual_review_comment(stripped, "huawei", indent)
+
+    # switchport trunk native vlan → pvid
+    m = re.match(r"switchport\s+trunk\s+native\s+vlan\s+(\S+)", lower)
+    if m:
+        return indent + "port trunk pvid vlan " + m.group(1)
 
     if lower.startswith("interface "):
         name = stripped.split(maxsplit=1)[1]
@@ -80,6 +108,11 @@ def translate_to_huawei_switch(stripped: str, lower: str, indent: str, from_vend
         ("port link-type ", "port default vlan ", "port trunk allow-pass vlan ", "stp edged-port enable")
     ):
         return indent + stripped
+    # undo port trunk permit vlan → undo port trunk allow-pass vlan (H3C→Huawei)
+    m = re.match(r"undo\s+port\s+trunk\s+permit\s+vlan\s+(.+)", lower)
+    if m:
+        vlans = normalize_vlan_list(m.group(1))
+        return indent + "undo port trunk allow-pass vlan " + vlans
     if lower.startswith("undo "):
         return indent + stripped
     if re.match(r"stp\s+(?:instance\s+\d+|mode\s+|priority\s+\d+|bpdu-protection|root-protection|bpduguard)", lower):
@@ -90,8 +123,9 @@ def translate_to_huawei_switch(stripped: str, lower: str, indent: str, from_vend
         return indent + manual_review_comment(stripped, "huawei", indent)
     if lower.startswith("mode lacp"):
         return indent + stripped
+    # port trunk pvid → passthrough for huawei target
     if re.match(r"port trunk pvid vlan", lower):
-        return indent + manual_review_comment(stripped, "huawei", indent)
+        return indent + stripped
     return None
 
 
@@ -105,9 +139,13 @@ def translate_switching_to_huawei(stripped: str, lower: str, indent: str, from_v
     m = re.match(r"switchport\s+access\s+vlan\s+(.+)", lower)
     if m:
         return indent + "port default vlan " + normalize_vlan_list(m.group(1))
+    # switchport trunk allowed vlan — skip add/remove/all/none (handled above)
     m = re.match(r"switchport\s+trunk\s+(?:allowed|allow-pass)\s+vlan\s+(.+)", lower)
     if m and from_vendor in ("cisco", "ruijie"):
-        return indent + "port trunk allow-pass vlan " + normalize_vlan_list(m.group(1))
+        vlan_val = m.group(1)
+        if vlan_val.strip().lower() in ("add", "remove", "all", "none") or re.match(r"^(add|remove)\s+", vlan_val.strip().lower()):
+            return None
+        return indent + "port trunk allow-pass vlan " + normalize_vlan_list(vlan_val)
     m = re.match(r"switchport\s+trunk\s+native\s+vlan\s+(\S+)", lower)
     if m:
         return indent + "native vlan " + m.group(1)
@@ -131,6 +169,10 @@ def translate_to_cisco_switch(stripped: str, lower: str, indent: str, from_vendo
         return "hostname " + stripped.split(maxsplit=1)[1]
     if lower.startswith("hostname "):
         return stripped
+
+    # interface range → MANUAL_REVIEW (no direct Cisco equivalent from non-Cisco sources)
+    if lower.startswith("interface range"):
+        return manual_review_comment(stripped, "cisco", indent)
 
     m = re.match(r"vlan\s+batch\s+(.+)", stripped, re.IGNORECASE)
     if m:
@@ -183,6 +225,17 @@ def translate_to_cisco_switch(stripped: str, lower: str, indent: str, from_vendo
     m = re.match(r"port trunk (allow-pass|permit) vlan\s+(.+)", stripped, re.IGNORECASE)
     if m:
         return indent + "switchport trunk allowed vlan " + normalize_vlan_list_cisco(m.group(2))
+    # undo port trunk allow-pass vlan → switchport trunk allowed vlan remove
+    m = re.match(r"undo\s+port\s+trunk\s+(?:allow-pass|permit)\s+vlan\s+(.+)", lower)
+    if m:
+        return indent + "switchport trunk allowed vlan remove " + normalize_vlan_list_cisco(m.group(1))
+    # port trunk pvid → switchport trunk native vlan
+    m = re.match(r"port\s+trunk\s+pvid\s+vlan\s+(\S+)", lower)
+    if m:
+        return indent + "switchport trunk native vlan " + m.group(1)
+    # bare native vlan without trunk context → MANUAL_REVIEW
+    if re.match(r"native\s+vlan\s+\S+", lower) and from_vendor != "cisco":
+        return indent + manual_review_comment(stripped, "cisco", indent)
     m = re.match(r"(eth-trunk|port link-aggregation group|bridge-aggregation)\s+(\d+)", stripped, re.IGNORECASE)
     if m:
         return indent + f"channel-group {m.group(2)} mode active"
@@ -191,7 +244,13 @@ def translate_to_cisco_switch(stripped: str, lower: str, indent: str, from_vendo
         return indent + f"channel-group {m.group(1)} mode active"
     if lower.startswith("stp edged-port"):
         return indent + "spanning-tree portfast"
-    if re.match(r"stp\s+(?:instance\s+\d+|mode\s+\S+|priority\s+\d+|bpdu-protection|root-protection|bpduguard)", lower):
+    # stp bpdu-protection → spanning-tree bpduguard enable
+    if re.match(r"stp\s+bpdu-protection", lower):
+        return indent + "spanning-tree bpduguard enable"
+    # stp root-protection → spanning-tree guard root
+    if re.match(r"stp\s+root-protection", lower):
+        return indent + "spanning-tree guard root"
+    if re.match(r"stp\s+(?:instance\s+\d+|mode\s+\S+|priority\s+\d+|bpduguard)", lower):
         return manual_review_comment(stripped, "cisco", indent)
     if lower.startswith("loopdetect"):
         return manual_review_comment(stripped, "cisco", indent)
@@ -211,6 +270,26 @@ def translate_to_h3c_switch(stripped: str, lower: str, indent: str, from_vendor:
         return "sysname " + stripped.split(maxsplit=1)[1]
     if lower.startswith("sysname "):
         return stripped
+    # interface range → MANUAL_REVIEW
+    if lower.startswith("interface range"):
+        return manual_review_comment(stripped, "h3c", indent)
+    # switchport trunk allowed vlan add → translate + MANUAL_REVIEW
+    m = re.match(r"switchport\s+trunk\s+allowed\s+vlan\s+add\s+(.+)", lower)
+    if m:
+        vlans = normalize_vlan_list(m.group(1))
+        return indent + "port trunk permit vlan " + vlans + "\n" + indent + manual_review_comment(
+            f"switchport trunk allowed vlan add {m.group(1)}: incremental add semantics, verify full list",
+            "h3c", indent,
+        )
+    # switchport trunk allowed vlan remove → undo permit
+    m = re.match(r"switchport\s+trunk\s+allowed\s+vlan\s+remove\s+(.+)", lower)
+    if m:
+        vlans = normalize_vlan_list(m.group(1))
+        return indent + "undo port trunk permit vlan " + vlans
+    # switchport trunk native vlan → pvid
+    m = re.match(r"switchport\s+trunk\s+native\s+vlan\s+(\S+)", lower)
+    if m:
+        return indent + "port trunk pvid vlan " + m.group(1)
     m = re.match(r"^vlan\s+(\S.*)", stripped, re.IGNORECASE)
     if m:
         vlan_val = m.group(1)
@@ -265,6 +344,19 @@ def translate_to_ruijie_switch(stripped: str, lower: str, indent: str, from_vend
         return "hostname " + stripped.split(maxsplit=1)[1]
     if lower.startswith("hostname "):
         return stripped
+    # interface range → MANUAL_REVIEW for non-Ruijie source
+    if lower.startswith("interface range"):
+        if from_vendor in ("ruijie",):
+            return indent + stripped
+        return manual_review_comment(stripped, "ruijie", indent)
+    # switchport trunk allowed vlan add → translate + MANUAL_REVIEW
+    m = re.match(r"switchport\s+trunk\s+allowed\s+vlan\s+add\s+(.+)", lower)
+    if m:
+        vlans = normalize_vlan_list_cisco(m.group(1))
+        return indent + "switchport trunk allowed vlan " + vlans + "\n" + indent + manual_review_comment(
+            f"switchport trunk allowed vlan add {m.group(1)}: incremental add semantics, verify full list",
+            "ruijie", indent,
+        )
     m = re.match(r"^vlan\s+batch\s+(.+)", stripped, re.IGNORECASE)
     if m:
         vlans = parse_vlan_list(m.group(1))

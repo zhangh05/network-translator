@@ -318,7 +318,7 @@ def test_interface_range_huawei_to_cisco():
 def test_native_vlan_huawei_to_cisco():
     t = RuleBasedTranslator()
     r = t.translate("port trunk pvid vlan 10\n", "huawei", "cisco")
-    assert "MANUAL_REVIEW" in r, "port trunk pvid vlan must produce MANUAL_REVIEW"
+    assert "switchport trunk native vlan 10" in r
 
 
 def test_shutdown_cycle_cisco_to_huawei():
@@ -499,7 +499,7 @@ def test_stp_priority_manual_review_huawei_to_cisco():
 def test_stp_bpdu_protection_manual_review_huawei_to_cisco():
     t = RuleBasedTranslator()
     r = t.translate("stp bpdu-protection", "huawei", "cisco")
-    assert "MANUAL_REVIEW" in r
+    assert "spanning-tree bpduguard enable" in r
 
 
 def test_loopdetect_manual_review_huawei_to_cisco():
@@ -567,13 +567,13 @@ def test_port_default_vlan_huawei_to_h3c():
 def test_port_trunk_pvid_manual_review_huawei_to_cisco():
     t = RuleBasedTranslator()
     r = t.translate("port trunk pvid vlan 10", "huawei", "cisco")
-    assert "MANUAL_REVIEW" in r
+    assert "switchport trunk native vlan 10" in r
 
 
 def test_native_vlan_trunk_huawei_to_cisco():
     t = RuleBasedTranslator()
     r = t.translate("port trunk pvid vlan 10", "huawei", "cisco")
-    assert "MANUAL_REVIEW" in r
+    assert "switchport trunk native vlan 10" in r
 
 
 def test_undo_portswitch_huawei_to_ruijie_manual_review():
