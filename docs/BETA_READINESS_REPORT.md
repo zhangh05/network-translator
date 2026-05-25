@@ -1,14 +1,16 @@
 # Beta Readiness Report
 
-> Generated: 2026-05-25 (Batch I-I: Real browser end-to-end verification)
-> Commit: 6fc5d2e (Batch I-H convergence fix)
-> Run ID: beta-readiness-002
+> Generated: 2026-05-25 (Batch I-J: Beta acceptance package + known issues archive)
+> Commit: 7f42106 (P0 output redaction convergence)
+> See also: `docs/BETA_ACCEPTANCE_2026-05-25.md` (full acceptance document)
+> Run ID: beta-readiness-003
 
 ---
 
 ## 1. Scope
 
 This report assesses whether the network-translator system is ready for beta/production pilot deployment.
+Full acceptance details: **[docs/BETA_ACCEPTANCE_2026-05-25.md](./BETA_ACCEPTANCE_2026-05-25.md)**
 
 **In scope for Beta:**
 - LLM configuration convergence (external file + priority chain)
@@ -67,15 +69,16 @@ THEN this is a production blocker requiring manual review
 | Criterion | Status | Evidence |
 |-----------|--------|----------|
 | Validator core (Layer 1) | ✅ PASS | 524 passed, 0 failures |
-| Full test suite | ✅ PASS | 1207+ passed, 13 known pre-existing failures (yaml/flask/requests missing in venv), 0 regressions |
-| CI quality gates | ✅ PASS | Layer 1 zero-tolerance + Layer 2 regression-check pass |
+| Full test suite | ✅ PASS | 1778 passed, 13 known pre-existing failures, 0 regressions |
+| CI quality gates | ✅ PASS | CI gate --full: 1254 passed, 13 known tolerated, 0 regressions |
 | LLM config security | ✅ PASS | `mask_api_key()` never logs full key; tests confirm |
 | Audit schema v1.0 | ✅ PASS | All batch/audit outputs include schema_version, run_id, commit_hash, generated_at |
 | 6-chain domain coverage | ✅ PASS | SWITCH/ROUTER/FIREWALL each represented; residue is known/expected |
 | Browser end-to-end (Batch I-I) | ✅ PASS | 4 real samples across Huawei→Cisco, Cisco→Huawei, Topsec→Huawei USG, Hillstone→Topsec; all via live LLM with model Minimax M2.7 |
 | Fallback report quality (Batch I-G) | ✅ PASS | 3-layer output separation; 10 new quality tests |
 | Frontend UX (Batch I-H) | ✅ PASS | deployable_config separated from translated_config report; copy/refresh/clear/multi-window verified |
-| Documentation | ✅ PASS | RUNBOOK.md, RELEASE_CHECKLIST.md, CI_QUALITY_GATES.md, BETA_READINESS_REPORT.md, FALLBACK_USER_REPORT_QUALITY.md |
+| Output redaction (P0, Batch I-J) | ✅ PASS | `redact_sensitive_output()` covers all API paths, patterns 14, tests 47 |
+| Documentation | ✅ PASS | BETA_ACCEPTANCE_2026-05-25.md, RUNBOOK.md, RELEASE_CHECKLIST.md, CI_QUALITY_GATES.md, BETA_READINESS_REPORT.md, FALLBACK_USER_REPORT_QUALITY.md |
 
 ---
 
@@ -170,12 +173,12 @@ PYTHONPATH=. python3 scripts/ci_quality_gates.py --full
 **Verdict**: `BETA_READY = YES (conditional)` for pilot deployment.
 
 CI gate criteria for Beta READY:
-- ✅ CI gate exit 0
-- ✅ 0 regressions
+- ✅ CI gate exit 0 — 1254 passed, 0 regressions
 - ✅ 13 tolerated failures all in known/tolerated list (yaml/flask/requests missing in venv)
-- ⚠️ GitHub Actions runner not yet validated (blocking)
+- ✅ LLM output redaction implemented (unified `redact_sensitive_output()` in `project_store.py` covers both LLM and fallback paths, all API paths)
+- ⚠️ **GitHub Actions runner not yet validated (primary blocking)**
 - ⚠️ OSPF and advanced features (NAT/AAA/QoS) require human review
-- ✅ LLM output redaction implemented (unified `redact_sensitive_output()` in `project_store.py` covers both LLM and fallback paths)
-- ⚠️ GitHub Actions full dependency environment needed to run web_app tests
+- ⚠️ 13 known tolerated failures not yet resolved
 
 Human review required for: OSPF, NAT/AAA/QoS, BGP route policies.
+Full details: **[docs/BETA_ACCEPTANCE_2026-05-25.md](./BETA_ACCEPTANCE_2026-05-25.md)**

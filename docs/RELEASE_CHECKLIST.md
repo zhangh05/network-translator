@@ -1,10 +1,20 @@
 # Release Checklist
 
-> Phase 8D — 2026-05-23
+> Phase 8D — 2026-05-25 (Batch I-J: Beta acceptance documented)
 
 ## Pre-Release Verification
 
 Run these steps in order.
+
+### 0. Beta Acceptance Doc Consistency
+
+```bash
+PYTHONPATH=. venv/bin/python3 -m pytest tests/test_beta_acceptance_docs.py -v
+```
+
+**Pass criteria**: All tests pass. JSON and Markdown numbers match.
+
+See `docs/BETA_ACCEPTANCE_2026-05-25.md` and `docs/beta_acceptance_2026_05_25.json`.
 
 ### 1. CI Quality Gates (core + regression)
 
@@ -118,12 +128,13 @@ cat VERSION
 
 | Step | Command | Pass Criteria |
 |------|---------|---------------|
+| 0 | `pytest test_beta_acceptance_docs` | All pass, JSON+MD consistent |
 | 1 | `ci_quality_gates.py --full` | Exit 0, no regressions |
 | 2 | `pytest test_validator* test_schema_contract` | All pass |
 | 3 | `pytest test_integration_phase6 + phase7` | 39/39 pass |
 | 4 | `audit_trace.sh` | Exit 0, both chains PASS |
 | 5 | `run_baseline.py` | 0 errors |
-| 6 | `pytest tests/` | 1069+ pass, 0 regressions |
+| 6 | `pytest tests/` | 1778+ pass, 0 regressions |
 | 7 | `knowledge_lint --coverage` | P0 = 100% |
 | 8 | `/healthz` | 200 OK |
 | 9 | `/readyz` | status = ready |

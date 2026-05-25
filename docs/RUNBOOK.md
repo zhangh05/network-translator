@@ -1,6 +1,6 @@
 # Runbook
 
-> Phase 8D — 2026-05-23
+> Phase 8D — 2026-05-25 (Batch I-J: Beta acceptance documented)
 
 ## Service Management
 
@@ -46,6 +46,16 @@ PYTHONPATH=. python3 scripts/ci_quality_gates.py --full
 ### Full test suite
 ```bash
 PYTHONPATH=. venv/bin/python3 -m pytest tests/ -v
+```
+
+### Beta acceptance doc consistency
+```bash
+PYTHONPATH=. venv/bin/python3 -m pytest tests/test_beta_acceptance_docs.py -v
+```
+
+### Output redaction tests
+```bash
+PYTHONPATH=. venv/bin/python3 -m pytest tests/test_output_redaction.py -v
 ```
 
 ### Specific modules
@@ -149,11 +159,25 @@ network-translator/
 └── VERSION             # Current version label
 ```
 
+## Beta Acceptance
+
+Full Beta acceptance package: **[docs/BETA_ACCEPTANCE_2026-05-25.md](./BETA_ACCEPTANCE_2026-05-25.md)**
+Machine-readable summary: **[docs/beta_acceptance_2026_05_25.json](./beta_acceptance_2026_05_25.json)**
+
+### Current verdict
+```
+BETA_READY = YES (conditional)
+```
+- ✅ CI gate pass: 1254 passed, 0 regressions
+- ✅ Output redaction P0 resolved (all API paths)
+- ⚠️ **Primary blocking**: GitHub Actions runner not yet validated
+- ⚠️ 13 known tolerated failures not yet resolved
+
 ## Pre-existing Failure Tolerances
 
 See `docs/CI_QUALITY_GATES.md` for the authoritative list.
 
-As of 2026-05-23:
+As of 2026-05-25:
 - 13 known failures (deprecated analyzer + missing flask/requests in dev)
 - CI with full deps: ~7 known failures (test_analyzer_object only)
 - All tolerated in Layer 2 gate; Layer 1 core gate is zero-tolerance

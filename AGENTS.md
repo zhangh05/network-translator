@@ -7,14 +7,26 @@
 
 核心承诺：结构化解析 → 语义迁移 → 覆盖率校验 → 残留检测 → 风险/人工复核报告。
 
-## 当前状态 (2026-05-23)
+## 当前状态 (2026-05-25)
 
-项目已完成 Phase 6 (语义+覆盖率 baseline 集成)、Phase 7 (OSPF 深度校验/能力映射矩阵/7层集成)、Phase 8A (20任务性能基线)、Phase 8B (CI 质量门禁)、Phase 8C+8D (审计归档/运行手册/发布清单)、Beta 优化轮次 (配置收敛/安全脱敏/可靠性/审计闭环)。
+项目已完成 Phase 6、Phase 7、Phase 8A-8D、Beta 优化轮次 (配置收敛/安全脱敏/可靠性/审计闭环)、Batch I-J Beta 收口验收包 (已知问题归档 + 统一输出脱敏 P0)。
 
-**Beta 阶段就绪**: `BETA_READY = YES (conditional)` — 见 `docs/BETA_READINESS_REPORT.md`
+**Beta 阶段就绪**: `BETA_READY = YES (conditional)` — 见 `docs/BETA_READINESS_REPORT.md` 和 `docs/BETA_ACCEPTANCE_2026-05-25.md`
 
 Beta 冻结状态：不得新增 parser/renderer/graph pipeline 或大功能。
 允许：GitHub Actions 实测、历史债务 reconciliation、文档修正、bugfix。
+
+### Beta 判定条件
+
+| 条件 | 状态 |
+|------|------|
+| 本地 CI gate pass | ✅ 1254 passed, 0 regressions |
+| 浏览器本地验收 pass | ✅ Batch I-I: 4 样例跨 6 厂商对 |
+| 输出脱敏 P0 已修 | ✅ 统一 redact_sensitive_output() 全路径覆盖 |
+| 内网访问 pass | ✅ 0.0.0.0:5008 |
+| GitHub Actions runner 实测 | ❌ **唯一/主要 blocking** |
+| 13 known tolerated failures 清零 | ❌ 待处理 |
+| 人工复核边界明确 | ✅ BETA_ACCEPTANCE 完整列出 |
 
 ### 现网 (旧架构，兼容运行)
 - LLM-driven 单次翻译管线 (ParseNode → TranslateNode → ValidateNode)
