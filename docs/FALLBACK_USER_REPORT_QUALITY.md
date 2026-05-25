@@ -160,31 +160,26 @@ Fallback 在 LLM 输出无法通过校验时触发，是安全阻断机制，不
 
 ## 6. 浏览器 UI 视角
 
-### 翻译结果三tab 定位
+### 翻译结果 tab 定位
 
-| UI Tab | 显示内容 | 数据来源 |
-|--------|----------|----------|
-| **翻译结果**（translated） | Fallback 模式：显示包含 `人工复核摘要` 的完整 fallback 报告（含 6 中文分类）；正常 LLM 翻译：显示目标厂商配置 | `translated` 字段（Fallback 时含报告；正常时含配置）|
-| **风险分析**（risk） | Fallback notice + capability gaps + analyzer results + risk signals | `capability_gaps`、`analyzer_results`、`risk_signals` |
-| **校验结果**（validation） | 部署状态（可部署/需人工复核/不建议上线）、错误数、警告数 | `validation` 字段 |
-| **差异对比**（diff） | 源配置与目标配置的结构化 diff | `diff` 字段 |
+**翻译结果 tab（translated）：** 始终显示 `deployable_config`，即可复制的目标厂商配置。不显示人工复核摘要、分类标签或内部 diagnostics。Fallback 时仍显示确定性规则翻译的 `deployable_config`。
 
-### Fallback 模式下的translated tab
+**风险分析 tab（risk）：** 显示 fallback notice（当 `fallback_used=true`）和 6 中文分类风险分析（capability gaps、analyzer results、risk signals）。Fallback notice 引导用户查看人工复核摘要。
 
-Fallback 时，translated tab 显示完整 fallback 报告（`r.translated`），包含：
-- `MANUAL_REVIEW` 头部说明
-- `人工复核摘要`：6 中文分类（管理面、接口与 VLAN、ACL 与安全策略、路由协议、防火墙对象、未支持能力）
-- 每个分类：数量、风险等级、中文原因、≤3 示例行
-- `MANUAL_REVIEW` 行在 UI 中以高亮样式显示
+**校验结果 tab（validation）：** 显示部署状态（可部署/需人工复核/不建议上线）、错误数、警告数。
 
-风险 tab 中的 fallback notice 提示："请重点查看：人工复核摘要、可部署配置、风险报告"。
+**差异对比 tab（diff）：** 显示源配置与目标配置的结构化 diff。
 
 ### deployable_config 的展示方式
 
-`deployable_config` 不直接在 UI tab 中展示，而是通过：
-1. **复制全部配置**：复制 `deployable_config`（Fallback 时为确定性规则翻译结果）
-2. **复制可部署配置**：复制 `deployable_config` 并过滤 `# MANUAL_REVIEW` 行
-3. **导出报告**（`_buildExportReport`）：在报告 JSON 中包含 `deployable_config` 字段
+`deployable_config` 在**翻译结果 tab** 直接展示（而非仅通过复制函数）：
+- 翻译结果 tab 渲染 `stripFence(deployable_config || translated)`
+- Fallback 时翻译结果 tab 显示确定性规则翻译的净配置
+
+复制函数访问方式：
+1. **复制全部配置**：复制 `deployable_config || translated`
+2. **复制可部署配置**：复制 `deployable_config`，过滤 `# MANUAL_REVIEW` 行
+3. **导出报告**：包含 `deployable_config`、`translated`、`validation`、`capability_gaps`、`analyzer_results` 等完整字段
 
 ### 刷新后结果保留机制
 

@@ -114,3 +114,62 @@ class TestDeployableConfigSeparation:
             html = f.read()
         assert "deployable_config:stripFence" in html or "deployable_config" in html, \
             "_buildExportReport should include deployable_config"
+
+
+class TestFallbackModeTranslatedTab:
+
+    def test_translated_tab_renders_deployable_config_even_when_fallback_used(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "r.deployable_config||r.translated" in html, \
+            "RN() must prefer deployable_config even when fallback_used=true"
+
+    def test_translated_tab_does_not_show_人工复核摘要(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        rn_match = re.search(r"function RN\(\).*?\{", html, re.DOTALL)
+        assert rn_match, "RN() function not found"
+        rn_body_start = rn_match.end()
+        rn_close = html.find("}", rn_body_start)
+        snippet = html[rn_body_start:rn_close+20]
+        assert "人工复核摘要" not in snippet, \
+            "RN() translated tab must not show '人工复核摘要' — that belongs in risk tab"
+
+    def test_translated_tab_does_not_show_fallback_reason_internal_field(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        rn_match = re.search(r"function RN\(\).*?\{", html, re.DOTALL)
+        assert rn_match
+        rn_body_start = rn_match.end()
+        rn_close = html.find("}", rn_body_start)
+        snippet = html[rn_body_start:rn_close+20]
+        assert "fallback_reason=" not in snippet, \
+            "RN() must not expose fallback_reason internal field in translated tab"
+
+    def test_translated_tab_does_not_show_block_count_internal_field(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        rn_match = re.search(r"function RN\(\).*?\{", html, re.DOTALL)
+        assert rn_match
+        rn_body_start = rn_match.end()
+        rn_close = html.find("}", rn_body_start)
+        snippet = html[rn_body_start:rn_close+20]
+        assert "block_count=" not in snippet, \
+            "RN() must not expose block_count internal field in translated tab"
+
+    def test_risk_tab_shows_fallback_notice_with_chinese_categories(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "风险分析" in html, "risk tab label not found"
+        assert "fallbackNotice" in html or "r.fallback_used" in html, \
+            "risk tab must show fallback notice when fallback_used=true"
+        assert "人工复核摘要" in html, \
+            "risk tab must reference 人工复核摘要 in fallback notice"
+
+    def test_validation_tab_shows_manual_review_required_field(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "需人工复核" in html, \
+            "validation tab must show manual review required status"
+        assert "manual_review_required" in html, \
+            "validation rendering must use manual_review_required field"

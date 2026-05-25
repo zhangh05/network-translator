@@ -228,7 +228,7 @@ Expected: `{"ok":true,"status":"healthy"}`
 4. Paste configuration text
 5. Click 翻译 button
 6. After translation completes, check:
-   - **translated tab**: Shows fallback report (if LLM validation failed) or LLM translation (if successful)
+   - **translated tab**: Always shows `deployable_config` (deterministic rule-based output when fallback is used)
    - **risk tab**: Shows fallback notice (if fallback) + Chinese category risk analysis
    - **validation tab**: Shows deployability status and error/warning counts
    - **diff tab**: Shows source vs target config diff
@@ -242,9 +242,10 @@ Expected: `{"ok":true,"status":"healthy"}`
 ### Fallback report visibility
 
 When fallback is triggered (LLM output validation failed):
-- **translated tab** shows the full fallback report including `人工复核摘要` (6 Chinese categories with sample lines)
+- **translated tab** shows `deployable_config` (deterministic rule-based output), not the fallback report
 - **risk tab** shows a fallback notice directing user to "请重点查看：人工复核摘要、可部署配置、风险报告"
-- **MANUAL_REVIEW** lines are highlighted in the translated tab
+- `人工复核摘要` appears in the **risk tab** via the fallback notice and Chinese category analysis, not in the translated tab
+- `MANUAL_REVIEW` lines (if any in `deployable_config`) are highlighted in the translated tab
 
 ### If results disappear after refresh
 

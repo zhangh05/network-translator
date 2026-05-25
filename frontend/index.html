@@ -887,7 +887,7 @@ function RN(){
   if(!r){E("out").textContent="";_updateRiskSummary(null);return}
   _updateRiskSummary(r);
   var tab=R.tab;
-  var clean=stripFence(r.fallback_used?(r.translated||""):(r.deployable_config||r.translated||""));
+  var clean=stripFence(r.deployable_config||r.translated||"");
   var views={
     translated:_highlightManualReview(clean)||"",
     risk:_renderRiskTabGrouped(r),
