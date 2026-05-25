@@ -90,7 +90,7 @@ class TestNumbersMatchJson:
         assert json_data["tests"]["output_redaction"]["passed"] == 47
 
     def test_ci_gate_passed(self, json_data):
-        assert json_data["tests"]["ci_gate"]["passed"] == 1254
+        assert json_data["tests"]["ci_gate"]["passed"] == 1301
 
     def test_project_store_related_passed(self, json_data):
         assert json_data["tests"]["project_store_related"]["passed"] == 122
