@@ -136,26 +136,39 @@ class ProjectStore:
 
     @staticmethod
     def _locked_write(filepath: Path, write_fn):
-        """Write with exclusive file lock."""
+        """Write atomically with an exclusive sidecar lock."""
         filepath.parent.mkdir(parents=True, exist_ok=True)
-        with open(filepath, "w", encoding="utf-8") as f:
-            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        lockfile = filepath.with_suffix(filepath.suffix + ".lock")
+        tmpfile = filepath.with_suffix(filepath.suffix + f".{os.getpid()}.{threading.get_ident()}.tmp")
+        with open(lockfile, "a", encoding="utf-8") as lock:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
             try:
-                write_fn(f)
+                with open(tmpfile, "w", encoding="utf-8") as f:
+                    write_fn(f)
+                    f.flush()
+                    os.fsync(f.fileno())
+                os.replace(tmpfile, filepath)
             finally:
-                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                try:
+                    if tmpfile.exists():
+                        tmpfile.unlink()
+                except OSError:
+                    pass
+                fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
 
     @staticmethod
     def _locked_read(filepath: Path) -> Optional[dict]:
-        """Read with shared file lock."""
+        """Read with the same sidecar lock used by atomic writes."""
         if not filepath.exists():
             return None
-        with open(filepath, "r", encoding="utf-8") as f:
-            fcntl.flock(f.fileno(), fcntl.LOCK_SH)
+        lockfile = filepath.with_suffix(filepath.suffix + ".lock")
+        with open(lockfile, "a", encoding="utf-8") as lock:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_SH)
             try:
-                return json.load(f)
+                with open(filepath, "r", encoding="utf-8") as f:
+                    return json.load(f)
             finally:
-                fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
 
     @staticmethod
     def _project_from_data(project_id: str, data: Dict[str, Any]) -> Project:
@@ -183,48 +196,49 @@ class ProjectStore:
         self._projects.clear()
         try:
             data = self._locked_read(self.meta_file)
-            if data:
-                for p in data.get("projects", []):
-                    proj = self._project_from_data(p["id"], p)
-
-                    # Backfill: hydrate missing result and metadata from detail file
-                    # for historical projects that predate the request_id/version/model fields.
-                    detail_file = self._get_project_file(proj.id)
-                    if detail_file.exists():
-                        try:
-                            detail_data = self._locked_read(detail_file)
-                            if detail_data:
-                                # Result: backfill only if index result is None but detail has it
-                                if proj.result is None and detail_data.get("result") is not None:
-                                    proj.result = detail_data.get("result")
-                                # Metadata: backfill None or empty fields from detail
-                                for field in ("request_id", "version", "model"):
-                                    idx_val = getattr(proj, field, None) or ""
-                                    detail_val = detail_data.get(field)
-                                    if not idx_val and detail_val:
-                                        setattr(proj, field, detail_val)
-                        except Exception:
-                            pass
-
-                    self._projects[p["id"]] = proj
-
-            # Recovery: projects.json is an index, not the durable source of truth.
-            # If it is stale/truncated, recover orphan detail files so refresh and
-            # later saves do not hide or drop existing projects.
-            for detail_file in self.project_dir.glob("*.json"):
-                if detail_file.name == self.meta_file.name:
-                    continue
-                project_id = detail_file.stem
-                if project_id in self._projects:
-                    continue
-                try:
-                    detail_data = self._locked_read(detail_file)
-                    if detail_data:
-                        self._projects[project_id] = self._project_from_data(project_id, detail_data)
-                except Exception:
-                    logger.exception("Failed to recover project detail %s", project_id)
         except Exception:
-            logger.exception("Failed to load project index")
+            logger.exception("Failed to load project index; recovering from detail files")
+            data = None
+        if data:
+            for p in data.get("projects", []):
+                proj = self._project_from_data(p["id"], p)
+
+                # Backfill: hydrate missing result and metadata from detail file
+                # for historical projects that predate the request_id/version/model fields.
+                detail_file = self._get_project_file(proj.id)
+                if detail_file.exists():
+                    try:
+                        detail_data = self._locked_read(detail_file)
+                        if detail_data:
+                            # Result: backfill only if index result is None but detail has it
+                            if proj.result is None and detail_data.get("result") is not None:
+                                proj.result = detail_data.get("result")
+                            # Metadata: backfill None or empty fields from detail
+                            for field in ("request_id", "version", "model"):
+                                idx_val = getattr(proj, field, None) or ""
+                                detail_val = detail_data.get(field)
+                                if not idx_val and detail_val:
+                                    setattr(proj, field, detail_val)
+                    except Exception:
+                        pass
+
+                self._projects[p["id"]] = proj
+
+        # Recovery: projects.json is an index, not the durable source of truth.
+        # If it is stale/truncated/corrupt, recover orphan detail files so refresh
+        # and later saves do not hide or drop existing projects.
+        for detail_file in self.project_dir.glob("*.json"):
+            if detail_file.name == self.meta_file.name:
+                continue
+            project_id = detail_file.stem
+            if project_id in self._projects:
+                continue
+            try:
+                detail_data = self._locked_read(detail_file)
+                if detail_data:
+                    self._projects[project_id] = self._project_from_data(project_id, detail_data)
+            except Exception:
+                logger.exception("Failed to recover project detail %s", project_id)
         self._last_load = time.time()
         self._index_mtime_ns = self._index_mtime()
 
@@ -357,9 +371,9 @@ class ProjectStore:
     def delete_project(self, project_id: str) -> bool:
         """删除项目"""
         self._ensure_fresh()
-        if project_id in self._projects:
-            del self._projects[project_id]
-            filepath = self._get_project_file(project_id)
+        filepath = self._get_project_file(project_id)
+        if project_id in self._projects or filepath.exists():
+            self._projects.pop(project_id, None)
             if filepath.exists():
                 filepath.unlink()
             self._save_index()

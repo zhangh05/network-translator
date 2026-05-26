@@ -334,6 +334,39 @@ def test_load_index_recovers_orphan_detail_projects():
         assert listed[orphan.id]["request_id"] == "req-orphan"
 
 
+def test_load_index_recovers_detail_projects_when_index_json_is_corrupt():
+    """A corrupt projects.json must not hide durable project detail files."""
+    with tempfile.TemporaryDirectory() as tmp:
+        ps = ProjectStore(project_dir=tmp)
+        p = ps.create_project("recover-from-corrupt-index")
+        ps.update_project(p.id, {"config_text": "hostname R1"})
+
+        with open(ps.meta_file, "w", encoding="utf-8") as f:
+            f.write('{"projects": []} trailing-corruption')
+
+        reloaded = ProjectStore(project_dir=tmp)
+        listed = {row["id"]: row for row in reloaded.list_projects()}
+
+        assert p.id in listed
+        assert listed[p.id]["name"] == "recover-from-corrupt-index"
+
+
+def test_delete_project_removes_detail_file_even_when_index_is_corrupt():
+    """Delete must work from the durable detail file even if the index is bad."""
+    with tempfile.TemporaryDirectory() as tmp:
+        ps = ProjectStore(project_dir=tmp)
+        p = ps.create_project("delete-from-corrupt-index")
+
+        with open(ps.meta_file, "w", encoding="utf-8") as f:
+            f.write('{"projects": []} trailing-corruption')
+
+        reloaded = ProjectStore(project_dir=tmp)
+
+        assert reloaded.delete_project(p.id) is True
+        assert not (Path(tmp) / f"{p.id}.json").exists()
+        assert all(row["id"] != p.id for row in reloaded.list_projects())
+
+
 def test_save_index_does_not_drop_orphan_detail_projects_after_create():
     """Creating a new project must not rewrite index with only in-memory rows."""
     import json
