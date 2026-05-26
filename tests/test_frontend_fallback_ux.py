@@ -187,3 +187,28 @@ class TestFallbackModeTranslatedTab:
             "validation tab must show manual review required status"
         assert "manual_review_required" in html, \
             "validation rendering must use manual_review_required field"
+
+
+class TestUserFriendlyRiskAndDiffTabs:
+    def test_risk_tab_is_launch_checklist_not_internal_categories(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        for label in ("上线检查清单", "上线结论", "上线前必须处理", "需要人工确认", "系统已自动处理"):
+            assert label in html, f"risk tab should contain user-facing label: {label}"
+
+    def test_risk_tab_keeps_raw_details_collapsed(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "原始技术细节" in html, "risk tab should keep raw technical details in a collapsed section"
+        assert "_renderRiskRawDetails" in html, "risk tab should have a dedicated raw details renderer"
+
+    def test_diff_tab_is_change_explanation_not_raw_diff_first(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        for label in ("变更说明", "自动映射", "需要确认的变化", "未迁移 / 不支持"):
+            assert label in html, f"diff tab should contain user-facing label: {label}"
+
+    def test_diff_tab_has_user_sentence_helper(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "_diffLineToUserText" in html, "diff tab should translate raw diff lines into user sentences"

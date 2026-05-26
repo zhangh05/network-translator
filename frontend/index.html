@@ -212,6 +212,9 @@
   .rs__hd{padding:6px 12px;font-weight:600;font-size:11px;letter-spacing:.3px}
   .rs__note{font-weight:400;font-style:italic;opacity:.8}
   .rs__bd{padding:4px 8px}
+  .risk-intro{margin:14px 0 12px;padding:12px;border-radius:8px;background:var(--s1);border-left:3px solid var(--ac)}
+  .risk-intro__hd{font-size:13px;font-weight:700;color:var(--t1);margin-bottom:4px}
+  .risk-intro__bd{font-size:12px;color:var(--t2);line-height:1.6}
   .risk--fatal .rs__hd{background:rgba(220,38,38,.12);color:var(--rd)}
   .risk--fatal .rs__bd{background:rgba(220,38,38,.04)}
   .risk--review .rs__hd{background:rgba(217,119,6,.12);color:var(--am)}
@@ -248,6 +251,13 @@
   .ds__hd{padding:5px 10px;font-weight:600;font-size:11px}
   .ds__cnt{font-weight:400;opacity:.8;margin-left:4px}
   .ds__pre{background:var(--s1);padding:8px 10px;margin:0;font-size:11px;overflow:auto;max-height:200px;white-space:pre-wrap;word-break:break-all}
+  .diff-intro{margin:14px 0 12px;padding:12px;border-radius:8px;background:var(--s1);border-left:3px solid var(--gr)}
+  .diff-intro__hd{font-size:13px;font-weight:700;color:var(--t1);margin-bottom:4px}
+  .diff-intro__bd{font-size:12px;color:var(--t2);line-height:1.6}
+  .diff-list{background:var(--s1);padding:8px 10px;margin:0;list-style:none}
+  .diff-list li{padding:5px 0;border-bottom:1px solid var(--s2);line-height:1.5}
+  .diff-list li:last-child{border-bottom:0}
+  .diff-raw{display:block;color:var(--t3);font-family:monospace;font-size:11px;margin-top:2px}
   .diff--normal .ds__hd{background:rgba(5,150,105,.1);color:var(--gr)}
   .diff--confirm .ds__hd{background:rgba(217,119,6,.1);color:var(--am)}
   .diff--risk .ds__hd{background:rgba(220,38,38,.1);color:var(--rd)}
@@ -644,23 +654,38 @@ function _renderValidationTab(v){
 function _renderDiffTab(diff){
   if(!diff||!diff.trim())return'<div class="empty">未发现差异</div>';
   var lines=diff.split("\n");
-  var normal=[],confirm=[],risk=[];
+  var normal=[],confirm=[],unsupported=[];
   lines.forEach(function(l){
     var lo=l.toLowerCase();
+    if(!l.trim())return;
+    if(lo.indexOf("manual_review")!==-1||lo.indexOf("unsupported")!==-1){unsupported.push(l);return}
     if(lo.indexOf("port-channel")!==-1||lo.indexOf("vlan")!==-1||lo.indexOf("eth-trunk")!==-1||lo.indexOf("vlanif")!==-1||lo.indexOf("ethernet")!==-1){normal.push(l);return}
     if(lo.indexOf("+vlan")!==-1||lo.indexOf("-vlan")!==-1||lo.indexOf("+acl")!==-1||lo.indexOf("-acl")!==-1||lo.indexOf("+ospf")!==-1||lo.indexOf("-ospf")!==-1){confirm.push(l);return}
-    if(lo.indexOf("duplicate")!==-1||lo.indexOf("conflict")!==-1||lo.indexOf("+ip route")!==-1||lo.indexOf("-ip route")!==-1){risk.push(l);return}
+    if(lo.indexOf("duplicate")!==-1||lo.indexOf("conflict")!==-1||lo.indexOf("+ip route")!==-1||lo.indexOf("-ip route")!==-1){confirm.push(l);return}
     if(l.trim())normal.push(l);
   });
+  function _diffLineToUserText(l){
+    var raw=l.replace(/^[+\-]\s*/,"").trim();
+    var lo=raw.toLowerCase();
+    if(lo.indexOf("manual_review")!==-1||lo.indexOf("unsupported")!==-1)return"该命令没有确定的目标厂商等价写法，已进入人工复核。";
+    if(lo.indexOf("vlanif")!==-1||lo.indexOf("vlan-interface")!==-1||lo.indexOf("interface vlan")!==-1)return"三层 VLAN 接口已按目标厂商命名方式转换。";
+    if(lo.indexOf("eth-trunk")!==-1||lo.indexOf("bridge-aggregation")!==-1||lo.indexOf("port-channel")!==-1)return"链路聚合接口已按目标厂商命名方式转换。";
+    if(lo.indexOf("vlan")!==-1)return"VLAN 配置已按目标厂商格式转换。";
+    if(lo.indexOf("acl")!==-1||lo.indexOf("access-list")!==-1||lo.indexOf("traffic-filter")!==-1)return"ACL / 访问控制配置发生变化，需要确认规则顺序和绑定方向。";
+    if(lo.indexOf("ospf")!==-1||lo.indexOf("bgp")!==-1||lo.indexOf("ip route")!==-1)return"路由相关配置发生变化，需要确认邻居、区域、下一跳和策略。";
+    if(lo.indexOf("snmp")!==-1||lo.indexOf("aaa")!==-1||lo.indexOf("local-user")!==-1)return"管理面配置发生变化，需要按目标设备重新确认认证和审计策略。";
+    return"配置格式或命令位置发生变化，请结合原配置确认语义一致。";
+  }
   function _sec(title,cls,items){
     if(!items.length)return"";
-    return'<div class="ds"><div class="ds__hd">'+title+' <span class="ds__cnt">'+items.length+'</span></div><pre class="ds__pre">'+
-      items.map(function(l){return esc(l)}).join("\n")+"</pre></div>";
+    return'<div class="ds '+cls+'"><div class="ds__hd">'+title+' <span class="ds__cnt">'+items.length+'</span></div><ul class="diff-list">'+
+      items.map(function(l){return"<li>"+esc(_diffLineToUserText(l))+"<span class='diff-raw'>"+esc(l)+"</span></li>"}).join("")+"</ul></div>";
   }
   return'<div class="diff-root">'+
-    _sec("正常厂商映射","diff--normal",normal)+
-    _sec("需确认的变化","diff--confirm",confirm)+
-    _sec("潜在风险","diff--risk",risk)+
+    '<div class="diff-intro"><div class="diff-intro__hd">变更说明</div><div class="diff-intro__bd">这里先解释迁移中发生了什么，再把原始 diff 收起来。用户只需要优先确认“需要确认”和“未迁移”两类。</div></div>'+
+    _sec("自动映射","diff--normal",normal)+
+    _sec("需要确认的变化","diff--confirm",confirm)+
+    _sec("未迁移 / 不支持","diff--risk",unsupported)+
     '<details class="val-raw"><summary class="val-toggle">查看原始 diff</summary><pre>'+esc(diff)+"</pre></details>"+
     "</div>";
 }
@@ -852,6 +877,10 @@ function _renderRiskTabGrouped(r){
       items.map(function(it){return _item(typeof it==="string"?it:it.msg,it.feat||it.feature)}).join("")+
       "</div></div>";
   }
+  function _renderRiskRawDetails(){
+    var raw={validation:v,capability_gaps:gaps,analyzer_results:_actionableAnalyzers(ar),risk_signals:riskSignals};
+    return'<details class="val-raw"><summary class="val-toggle">原始技术细节</summary><pre>'+esc(JSON.stringify(raw,null,2))+"</pre></details>";
+  }
 
   var mustHandle=_dedupe(fatal.concat(mustFix));
   review=_dedupe(review,mustHandle);
@@ -861,15 +890,17 @@ function _renderRiskTabGrouped(r){
     fallbackNotice="<div class='rs risk--review'><div class='rs__hd'>⚠ 规则兜底 — 已启用</div><div class='rs__bd'><div class='ri'><div class='ri__msg'>本次没有得到可验证的 LLM 结构化结果，系统已自动切换到规则兜底。可执行配置只包含系统能确定的转换；其余内容已进入人工复核。请重点查看：人工复核摘要、可部署配置、风险报告。</div></div></div></div>"
   }
   var html='<div class="risk-root">'+
+    '<div class="risk-intro"><div class="risk-intro__hd">上线检查清单</div><div class="risk-intro__bd"><b>上线结论：</b>'+esc((_statusFromResult(r)||{}).txt||"需人工复核")+'。先处理阻断项，再确认人工复核项；低风险自动处理项默认只作参考。</div></div>'+
     fallbackNotice+
-    _section("⬆ 必须处理 — 会阻断上线","risk--fatal",mustHandle)+
-    _section("⚠ 建议复核 — 需要人工确认","risk--review",review)+
-    _section("ℹ 信息提示","risk--info",info)+
+    _section("上线前必须处理","risk--fatal",mustHandle)+
+    _section("需要人工确认","risk--review",review)+
+    _section("系统已自动处理","risk--info",info)+
+    _renderRiskRawDetails()+
     "</div>";
   if(!mustHandle.length&&!review.length&&!info.length&&!r.fallback_used){
-    html='<div class="empty">无风险发现，翻译结果可直接用于人工复核。</div>';
+    html='<div class="risk-root"><div class="risk-intro"><div class="risk-intro__hd">上线检查清单</div><div class="risk-intro__bd"><b>上线结论：</b>可部署。未发现阻断项，建议仍按变更流程抽查。</div></div><div class="empty">无风险发现。</div>'+_renderRiskRawDetails()+"</div>";
   } else if(!mustHandle.length&&!review.length&&!info.length&&r.fallback_used){
-    html='<div class="risk-root">'+fallbackNotice+"<div class='empty'>除规则兜底通知外，无其他风险发现。</div></div>"
+    html='<div class="risk-root"><div class="risk-intro"><div class="risk-intro__hd">上线检查清单</div><div class="risk-intro__bd"><b>上线结论：</b>需人工复核。规则兜底结果只能作为辅助迁移。</div></div>'+fallbackNotice+"<div class='empty'>除规则兜底通知外，无其他风险发现。</div>"+_renderRiskRawDetails()+"</div>"
   }
   return html
 }
