@@ -43,6 +43,13 @@ class TestFrontendFallbackNotice:
         assert "其余内容已进入人工复核" in notice, \
             f"Notice missing '其余内容已进入人工复核': {notice[:200]}"
 
+    def test_notice_explains_llm_was_attempted_but_validation_failed(self):
+        notice = _fallback_notice_text()
+        assert "LLM 已尝试翻译" in notice, \
+            f"Notice should not imply LLM was skipped entirely: {notice[:200]}"
+        assert "结构化校验未通过" in notice, \
+            f"Notice should explain fallback is caused by validation failure: {notice[:200]}"
+
     def test_notice_contains请查看人工复核摘要(self):
         notice = _fallback_notice_text()
         assert "人工复核摘要" in notice, \

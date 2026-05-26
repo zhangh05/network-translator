@@ -897,7 +897,7 @@ function _renderRiskTabGrouped(r){
   info=_dedupe(info,mustHandle.concat(review));
   var fallbackNotice="";
   if(r.fallback_used){
-    fallbackNotice="<div class='rs risk--review'><div class='rs__hd'>⚠ 规则兜底 — 已启用</div><div class='rs__bd'><div class='ri'><div class='ri__msg'>本次没有得到可验证的 LLM 结构化结果，系统已自动切换到规则兜底。可执行配置只包含系统能确定的转换；其余内容已进入人工复核。请重点查看：人工复核摘要、可部署配置、风险报告。</div></div></div></div>"
+    fallbackNotice="<div class='rs risk--review'><div class='rs__hd'>⚠ 规则兜底 — 已启用</div><div class='rs__bd'><div class='ri'><div class='ri__msg'>LLM 已尝试翻译，但本次返回内容的结构化校验未通过，系统已自动切换到规则兜底。可执行配置只包含系统能确定的转换；其余内容已进入人工复核。请重点查看：人工复核摘要、可部署配置、风险报告。</div></div></div></div>"
   }
   var html='<div class="risk-root">'+
     '<div class="risk-intro"><div class="risk-intro__hd">上线检查清单</div><div class="risk-intro__bd"><b>上线结论：</b>'+esc((_statusFromResult(r)||{}).txt||"需人工复核")+'。先处理阻断项，再确认人工复核项；低风险自动处理项默认只作参考。</div></div>'+
