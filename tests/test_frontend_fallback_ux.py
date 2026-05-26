@@ -121,8 +121,22 @@ class TestFallbackModeTranslatedTab:
     def test_translated_tab_renders_deployable_config_even_when_fallback_used(self):
         with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
             html = f.read()
-        assert "r.deployable_config||r.translated" in html, \
-            "RN() must prefer deployable_config even when fallback_used=true"
+        assert "_deployableOnlyText(r)" in html, \
+            "RN() must render filtered deployable-only text"
+
+    def test_translated_tab_filters_manual_review_lines(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "function _deployableOnlyText" in html, \
+            "translated tab needs a deployable-only helper"
+        assert 'l.indexOf("MANUAL_REVIEW")===-1' in html, \
+            "translated tab must filter MANUAL_REVIEW lines out of deployable view"
+
+    def test_translated_tab_has_empty_deployable_message(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "无可部署配置" in html and "请查看风险分析" in html, \
+            "translated tab should guide users when only manual-review lines remain"
 
     def test_translated_tab_does_not_show_人工复核摘要(self):
         with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:

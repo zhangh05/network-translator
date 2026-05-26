@@ -881,15 +881,22 @@ function _highlightManualReview(text){
     return esc(l)
   }).join("\n")
 }
+function _deployableOnlyText(r){
+  var t=stripFence(r&&r.deployable_config?r.deployable_config:r&&r.translated||"");
+  var lines=t.split("\n").filter(function(l){return l.indexOf("MANUAL_REVIEW")===-1});
+  var body=lines.join("\n").trim();
+  if(body)return body;
+  return "# 无可部署配置，请查看风险分析 / 校验结果中的人工复核项。"
+}
 function esc(s){return (s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
 function RN(){
   var r=R.result;
   if(!r){E("out").textContent="";_updateRiskSummary(null);return}
   _updateRiskSummary(r);
   var tab=R.tab;
-  var clean=stripFence(r.deployable_config||r.translated||"");
+  var clean=_deployableOnlyText(r);
   var views={
-    translated:_highlightManualReview(clean)||"",
+    translated:esc(clean)||"",
     risk:_renderRiskTabGrouped(r),
     validation:_renderValidationTab(r.validation||r.semantic_validation||{}),
     diff:_renderDiffTab(r.diff||""),
@@ -994,7 +1001,7 @@ async function _copyText(text){
     return ok
   }catch(_){return false}
 }
-async function _copyAll(){_closeCopyMenu();var t=stripFence(R.result?R.result.deployable_config||R.result.translated:"");if(!t.trim())return;if(await _copyText(t)){_flashCopyBtn()}else{_flashCopyBtn("复制失败")}}
+async function _copyAll(){_closeCopyMenu();var t=R.result?_deployableOnlyText(R.result):"";if(!t.trim())return;if(await _copyText(t)){_flashCopyBtn()}else{_flashCopyBtn("复制失败")}}
 async function _copyDeployable(){_closeCopyMenu();var r=R.result;var t=r&&r.deployable_config?stripFence(r.deployable_config):"";if(!t.trim())t=stripFence(r&&r.translated||"");var lines=t.split("\n");var filtered=lines.filter(function(l){return l.indexOf("MANUAL_REVIEW")===-1}).filter(function(l){return l.trim()}).join("\n");if(!filtered.trim()){_flashCopyBtn("无可用");return};if(await _copyText(filtered)){_flashCopyBtn()}else{_flashCopyBtn("复制失败")}}
 async function _copyReport(){_closeCopyMenu();var r=R.result;if(!r)return;var v=r.validation||{};var riskSignals=r.risk_signals||[];var lines=["=== 翻译风险报告 ===","","Request ID: "+R.request_id,"Version: "+R.version+(R.model?" ("+R.model+")":""),"","--- 验证 ---","Level: "+(v.level||"info"),"Deployable: "+(v.deployable===false?"否":"是"),"Manual Review: "+(v.manual_review_required?"需复核":"否"),"Errors: "+(v.errors||[]).length,"Warnings: "+(v.warnings||[]).length,"","--- 风险信号 ---"].concat(riskSignals.map(function(s){return"  ["+s.severity+"] "+s.feature+": "+(s.message||"-")})).concat(["","--- 能力缺口 ---"]).concat((r.capability_gaps||[]).map(function(g){return"  ["+g.severity+"] "+g.feature+": "+(g.suggestion||g.status)})).concat(["","--- 分析器发现 ---"]).concat((r.analyzer_results||[]).map(function(a){var rl=a.risk_level||"none";return"  ["+rl+"] "+a.feature+": "+(a.summary||a.notes&&a.notes[0]||"-")})).concat(["","--- 节点耗时 ---"]).concat((r.node_results||[]).map(function(n){return"  "+n.node+": "+(n.elapsed_ms||0).toFixed(1)+"ms "+n.status}));if(await _copyText(lines.join("\n"))){_flashCopyBtn()}else{_flashCopyBtn("复制失败")}}
 function _flashCopyBtn(msg){var b=E("cbtn");b.textContent=msg||"已复制";setTimeout(function(){b.textContent="复制"},1200)}
