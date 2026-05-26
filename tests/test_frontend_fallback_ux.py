@@ -103,6 +103,22 @@ class TestDeployableConfigSeparation:
         val = int(m.group(1))
         assert val >= 280, f"#source min-height should be >= 280px, got {val}px"
 
+    def test_desktop_layout_keeps_source_and_result_side_by_side(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert 'id="scard"' in html, "source card needs a stable id for desktop split layout"
+        assert "@media(min-width:1100px)" in html, "desktop split layout media query missing"
+        assert "grid-template-columns" in html and "#scard" in html and "#rcard" in html, \
+            "desktop layout should keep source and result visible side by side"
+
+    def test_desktop_layout_gives_source_independent_scroll(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "#source{height:calc(100% - 40px)" in html, \
+            "desktop source textarea should fill its own card instead of disappearing above results"
+        assert "#rcard{height:calc(100vh - 128px)" in html, \
+            "desktop result card should have its own bounded height"
+
     def test_copy_deployable_uses_deployable_config_first(self):
         with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
             html = f.read()

@@ -265,6 +265,16 @@
   /* Sub-label in risk summary bar */
   #rsum .rssub{display:block;font-size:11px;font-weight:400;color:var(--t3);margin-top:2px;margin-bottom:4px}
 
+  @media(min-width:1100px){
+    #body{display:grid;grid-template-columns:minmax(360px,42%) minmax(0,1fr);grid-template-rows:auto minmax(0,1fr);align-items:start;overflow:hidden}
+    #banner{grid-column:1/-1}
+    #scard,#rcard{height:calc(100vh - 128px);min-height:0}
+    #scard{display:flex;flex-direction:column}
+    #source{height:calc(100% - 40px);min-height:0;max-height:none;resize:none}
+    #rcard{display:flex;flex-direction:column;overflow:visible}
+    #out{flex:1;min-height:0;max-height:none}
+  }
+
   @media(max-width:720px){
     #sb{width:56px}
     #sb .item .name,#sb .item .rename,#sb .item .del,#sb .sh span,#sb .foot .stat span{display:none}
@@ -331,7 +341,7 @@
 
   <div id="body">
     <div id="banner" class="bn"></div>
-    <div class="card">
+    <div class="card" id="scard">
       <div class="card__head"><span class="tit">原始配置</span><span class="meta" id="cc">0</span></div>
       <textarea id="source" spellcheck="false" placeholder="在此粘贴网络设备配置..."></textarea>
     </div>
