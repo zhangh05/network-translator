@@ -261,6 +261,14 @@
   .diff--normal .ds__hd{background:rgba(5,150,105,.1);color:var(--gr)}
   .diff--confirm .ds__hd{background:rgba(217,119,6,.1);color:var(--am)}
   .diff--risk .ds__hd{background:rgba(220,38,38,.1);color:var(--rd)}
+  .review-intro{margin:14px 0 12px;padding:12px;border-radius:8px;background:rgba(217,119,6,.08);border-left:3px solid var(--am);font-size:12px;color:var(--t2);line-height:1.6}
+  .review-item{margin:10px 0;border:1px solid var(--br);border-radius:10px;overflow:hidden;background:var(--s1)}
+  .review-item__hd{padding:8px 12px;background:var(--s2);font-size:12px;font-weight:700;color:var(--t1);display:flex;gap:8px;align-items:center}
+  .review-item__tag{font-size:11px;color:var(--am);font-weight:600}
+  .review-item__bd{padding:10px 12px;font-size:12px;color:var(--t2)}
+  .review-row{margin:8px 0}
+  .review-row b{display:block;color:var(--t1);margin-bottom:4px}
+  .review-src{background:#fff7ed;border-left:3px solid var(--am);padding:8px 10px;margin:0;white-space:pre-wrap;overflow:auto;max-height:160px;font:12px/1.6 "JetBrains Mono","Cascadia Code",ui-monospace,monospace;color:var(--t1)}
 
   /* Sub-label in risk summary bar */
   #rsum .rssub{display:block;font-size:11px;font-weight:400;color:var(--t3);margin-top:2px;margin-bottom:4px}
@@ -377,6 +385,7 @@
       </div>
       <div class="tabs">
         <button class="on" data-tab="translated">翻译后配置</button>
+        <button data-tab="review">人工复核</button>
         <button data-tab="risk">风险分析</button>
         <button data-tab="validation">校验结果</button>
         <button data-tab="diff">差异对比</button>
@@ -699,6 +708,72 @@ function _renderDiffTab(diff){
     '<details class="val-raw"><summary class="val-toggle">查看原始 diff</summary><pre>'+esc(diff)+"</pre></details>"+
     "</div>";
 }
+function _extractManualReviewCommands(r){
+  var text=[r&&r.translated||"",r&&r.deployable_config||""].join("\n");
+  var out=[];
+  text.split("\n").forEach(function(line){
+    if(line.indexOf("MANUAL_REVIEW")===-1)return;
+    var raw=line.replace(/^[!#]\s*/,"").trim();
+    var m=raw.match(/unsupported source command:\s*(.+)$/i);
+    if(m&&m[1]){out.push(m[1].trim());return}
+    m=raw.match(/MANUAL_REVIEW[:\s]+(.+)$/i);
+    if(m&&m[1])out.push(m[1].trim())
+  });
+  return out
+}
+function _reviewReasonForFeature(feature,fallback){
+  var f=(feature||"").toLowerCase();
+  if(fallback)return"该原配置没有确定的目标厂商等价写法，已从可部署配置中移出。";
+  if(f.indexOf("aaa")!==-1||f.indexOf("auth")!==-1)return"认证、授权或账号策略跨厂商语义差异较大，需要人工确认。";
+  if(f.indexOf("qos")!==-1||f.indexOf("traffic")!==-1)return"QoS 分类、动作或绑定方向可能不等价，需要人工确认。";
+  if(f.indexOf("acl")!==-1||f.indexOf("security")!==-1)return"访问控制或安全策略需要确认规则顺序、方向和对象引用。";
+  if(f.indexOf("ospf")!==-1||f.indexOf("bgp")!==-1||f.indexOf("route")!==-1||f.indexOf("vrf")!==-1)return"路由相关语义需要确认邻居、区域、下一跳或策略是否一致。";
+  if(f.indexOf("bfd")!==-1)return"BFD 会话参数不完整或平台语义不同，需要人工确认。";
+  return"系统无法确认该能力在目标平台完全等价，需要人工复核。"
+}
+function _reviewActionForFeature(feature){
+  var f=(feature||"").toLowerCase();
+  if(f.indexOf("aaa")!==-1||f.indexOf("auth")!==-1)return"按目标设备认证体系重建配置，并验证登录、授权和审计策略。";
+  if(f.indexOf("qos")!==-1||f.indexOf("traffic")!==-1)return"核对分类条件、动作、入/出方向和接口绑定后再上线。";
+  if(f.indexOf("acl")!==-1||f.indexOf("security")!==-1)return"逐条核对 ACL/策略顺序、方向、对象和默认动作。";
+  if(f.indexOf("ospf")!==-1||f.indexOf("bgp")!==-1||f.indexOf("route")!==-1||f.indexOf("vrf")!==-1)return"核对路由表、邻居状态、策略引用和回退路径。";
+  return"在原配置中定位该片段，确认目标平台等价写法后再合入可部署配置。"
+}
+function _renderManualReviewTab(r){
+  var items=[],seen={};
+  function add(feature,reason,lines,action){
+    lines=(lines||[]).filter(function(x){return x&&String(x).trim()}).slice(0,8);
+    var key=[feature||"未分类",reason||"",lines.join("\n")].join("|");
+    if(seen[key])return;seen[key]=true;
+    items.push({feature:feature||"未分类",reason:reason||_reviewReasonForFeature(feature),lines:lines,action:action||_reviewActionForFeature(feature)})
+  }
+  (r.analyzer_results||[]).forEach(function(a){
+    if(_isMissingAnalyzer(a))return;
+    var lines=[];
+    (a.source_lines||[]).forEach(function(x){lines.push(x)});
+    (a.missing_context||[]).forEach(function(x){lines.push(x)});
+    (a.rules||[]).slice(0,5).forEach(function(rule){(rule.source_lines||[]).forEach(function(x){lines.push(x)})});
+    if(a.manual_review_required||lines.length||["warning","high","critical","fatal"].indexOf((a.risk_level||"").toLowerCase())!==-1){
+      add(_friendlyFeatureName(a.feature),a.summary||(a.notes&&a.notes[0])||_reviewReasonForFeature(a.feature),lines,_reviewActionForFeature(a.feature))
+    }
+  });
+  _visibleCapabilityGaps(r.capability_gaps||[]).forEach(function(g){
+    add(_friendlyFeatureName(g.feature),g.suggestion||_reviewReasonForFeature(g.feature),g.source_lines||[],_reviewActionForFeature(g.feature))
+  });
+  (r.risk_signals||[]).forEach(function(s){
+    add(_friendlyFeatureName(s.feature||"风险信号"),s.message||_reviewReasonForFeature(s.feature),s.source_lines||[],_reviewActionForFeature(s.feature))
+  });
+  _extractManualReviewCommands(r).forEach(function(cmd){
+    add("未迁移命令",_reviewReasonForFeature("unsupported",true),[cmd],"确认该命令是否需要在目标设备重建；如需要，请手工转换后再上线。")
+  });
+  if(!items.length)return'<div class="review-intro"><b>人工复核</b><br>未发现需要单独人工确认的原配置片段。仍建议按变更流程抽查关键业务。</div>';
+  return'<div class="review-root"><div class="review-intro"><b>人工复核</b><br>下面列出触发人工确认的原配置片段、原因和建议动作。翻译后配置不会自动包含这些不确定内容。</div>'+
+    items.map(function(it,i){return'<div class="review-item"><div class="review-item__hd"><span>复核项 '+(i+1)+'</span><span class="review-item__tag">'+esc(it.feature)+'</span></div><div class="review-item__bd">'+
+      '<div class="review-row"><b>原因</b>'+esc(it.reason)+'</div>'+
+      '<div class="review-row"><b>原配置片段</b><pre class="review-src">'+esc(it.lines.length?it.lines.join("\n"):"系统未拿到精确原始行，请查看左侧原配置中对应功能块。")+'</pre></div>'+
+      '<div class="review-row"><b>建议动作</b>'+esc(it.action)+'</div>'+
+      "</div></div>"}).join("")+"</div>";
+}
 
 async function Z(){try{var r=await fetch("/healthz");var d=await r.json();var ok=r.ok&&d.ok;E("sd1").className="sdot "+(ok?"on":"");E("sl").textContent=ok?"已连接":"离线"}catch(_){E("sd1").className="sdot";E("sl").textContent="离线"}}
 async function L(){try{var r=await fetch("/api/llm/settings",{headers:H()});if(!r.ok)return;var s=((await r.json()).settings||{});E("bu").value=s.base_url||"";E("md").value=s.model||"";E("ak").value=s.api_key||"";E("asec").value=localStorage.getItem("api_secret")||"";E("to").value=s.timeout||45;E("bmd").textContent=s.model||"未配置";E("sm").textContent="已加载"}catch(e){}}
@@ -938,6 +1013,7 @@ function RN(){
   var clean=_deployableOnlyText(r);
   var views={
     translated:esc(clean)||"",
+    review:_renderManualReviewTab(r),
     risk:_renderRiskTabGrouped(r),
     validation:_renderValidationTab(r.validation||r.semantic_validation||{}),
     diff:_renderDiffTab(r.diff||""),

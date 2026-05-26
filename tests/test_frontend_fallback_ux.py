@@ -235,3 +235,32 @@ class TestUserFriendlyRiskAndDiffTabs:
         with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
             html = f.read()
         assert "_diffLineToUserText" in html, "diff tab should translate raw diff lines into user sentences"
+
+
+class TestManualReviewTab:
+    def test_manual_review_tab_exists_as_separate_option(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert 'data-tab="review"' in html, "manual review must be a separate tab"
+        assert "人工复核" in html, "manual review tab label should be visible"
+
+    def test_manual_review_tab_has_dedicated_renderer(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "function _renderManualReviewTab" in html, "manual review tab needs its own renderer"
+        assert "review:_renderManualReviewTab(r)" in html, "RN() should route review tab to renderer"
+
+    def test_manual_review_tab_shows_source_lines_and_reason(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        for label in ("原配置片段", "原因", "建议动作"):
+            assert label in html, f"manual review item should expose {label}"
+        assert "source_lines" in html, "manual review should use analyzer/capability source_lines"
+
+    def test_manual_review_tab_extracts_manual_review_source_commands(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "_extractManualReviewCommands" in html, \
+            "manual review should extract original commands from MANUAL_REVIEW comments"
+        assert "unsupported source command" in html, \
+            "manual review should parse unsupported source command comments"
