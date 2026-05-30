@@ -1732,11 +1732,12 @@ class FallbackNode(Node):
 
     def _manual_review_fallback(self, config_text: str, from_vendor: str, to_vendor: str, error: str) -> tuple[str, str]:
         from core.parser.block_splitter import split_config_by_feature, summarize_feature_blocks
-        from core.module_graph import build_module_graph
+        from core.module_graph import build_module_graph, translate_module_graph
 
         prefix = self._comment_prefix(to_vendor)
         blocks = split_config_by_feature(config_text, vendor=from_vendor)
         module_graph = build_module_graph(config_text, vendor=from_vendor)
+        module_translation = translate_module_graph(module_graph, from_vendor, to_vendor)
         raw_summary = summarize_feature_blocks(blocks)
         module_summary: dict[str, int] = {}
         for module in module_graph.modules:
@@ -1791,16 +1792,13 @@ class FallbackNode(Node):
 
         lines.append("```")
 
-        deterministic = RuleBasedTranslator().translate(config_text, from_vendor, to_vendor)
-        deterministic_body = extract_config_block(deterministic).strip()
-        deployable_lines = []
-        if deterministic_body:
-            for det_line in deterministic_body.splitlines():
-                deployable_lines.append(self._redact_line(det_line))
-        if deployable_lines:
-            deployable_config = "\n".join(deployable_lines)
+        if module_translation.deployable_config:
+            deployable_config = "\n".join(
+                self._redact_line(det_line)
+                for det_line in module_translation.deployable_config.splitlines()
+            )
         else:
-            deployable_config = f"{prefix}# (无可部署配置，详见人工复核)"
+            deployable_config = f"{prefix} (无可部署配置，详见人工复核)"
 
         report = "\n".join(lines)
 
@@ -1812,6 +1810,8 @@ class FallbackNode(Node):
             "feature_summary": dict(sorted(raw_summary.items())) if raw_summary else {},
             "module_summary": dict(sorted(module_summary.items())) if module_summary else {},
             "module_graph": module_graph.to_dict(),
+            "module_translations": module_translation.to_dict(),
+            "manual_review_config": module_translation.manual_review_config,
             "feature_blocks": [
                 {
                     "feature": b.feature,
@@ -1850,6 +1850,8 @@ class FallbackNode(Node):
             state.set("feature_summary", fb_meta["feature_summary"])
             state.set("module_summary", fb_meta["module_summary"])
             state.set("module_graph", fb_meta["module_graph"])
+            state.set("module_translations", fb_meta["module_translations"])
+            state.set("manual_review_config", fb_meta["manual_review_config"])
             state.set("source_vendor", fb_meta["source_vendor"])
             state.set("target_vendor", fb_meta["target_vendor"])
             state.set("_fallback_metadata", fb_meta)

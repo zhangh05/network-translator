@@ -500,6 +500,7 @@ def test_run_translation_returns_module_graph(tmp_path, monkeypatch):
         "success": True,
         "translated": "```cisco\nvlan 10\ninterface Vlan10\n```",
         "deployable_config": "vlan 10\ninterface Vlan10",
+        "manual_review_config": "# MODULE_REVIEW 0003:unknown:9 unknown",
         "fallback_used": True,
         "module_summary": {"vlan": 1, "interface": 1},
         "module_graph": {
@@ -509,6 +510,7 @@ def test_run_translation_returns_module_graph(tmp_path, monkeypatch):
             ],
             "edges": [{"from_module": "0002:interface:2", "to_module": "0001:vlan:1", "label": "vlan:10"}],
         },
+        "module_translations": {"results": [], "deployable_config": "vlan 10\ninterface Vlan10", "manual_review_config": ""},
     })
 
     status, body = _translate_via_store(store, pid, cfg, "huawei", "cisco", "", "", "", "", mock_run)
@@ -516,6 +518,8 @@ def test_run_translation_returns_module_graph(tmp_path, monkeypatch):
     result = body.get("result", {})
     assert result["module_summary"] == {"vlan": 1, "interface": 1}
     assert result["module_graph"]["edges"][0]["label"] == "vlan:10"
+    assert result["manual_review_config"].startswith("# MODULE_REVIEW")
+    assert "module_translations" in result
 
 
 def test_different_to_vendor_forces_new_translation(tmp_path, monkeypatch):

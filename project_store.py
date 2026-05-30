@@ -439,6 +439,8 @@ def run_translation(
         "analyzer_results": result.get("analyzer_results", []),
         "risk_signals": result.get("risk_signals", []),
         "deployable_config": result.get("deployable_config", ""),
+        "manual_review_config": result.get("manual_review_config", ""),
+        "module_translations": result.get("module_translations", {}),
     }
 
 

@@ -170,6 +170,7 @@ def execute_translation_flow(
         "success": success,
         "translated": translated,
         "deployable_config": deployable,
+        "manual_review_config": final_state.get("manual_review_config", ""),
         "diff": diff_report,
         "source_domain": final_state.get("source_domain", ""),
         "source_platform": final_state.get("source_platform", ""),
@@ -178,6 +179,7 @@ def execute_translation_flow(
         "features": final_state.get("features", []),
         "module_summary": final_state.get("module_summary", {}),
         "module_graph": final_state.get("module_graph", {}),
+        "module_translations": final_state.get("module_translations", {}),
         "analyzer_results": final_state.get("analyzer_results", []),
         "validation": {
             "valid": validation.valid if validation else False,

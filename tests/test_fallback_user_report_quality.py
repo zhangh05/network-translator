@@ -123,12 +123,14 @@ class TestHillstoneToTopsecFallbackReportQuality:
 
         report = state.get("translated_config", "")
         deployable = state.get("deployable_config", "")
+        manual_review = state.get("manual_review_config", "")
 
         assert "MANUAL_REVIEW" in report
         assert "fallback_reason=" not in report
         assert "block_count=" not in report
         assert "zone trust" in report
-        assert "# MANUAL_REVIEW" in deployable
+        assert "MANUAL_REVIEW" not in deployable
+        assert "zone trust" in manual_review
 
 
 class TestMixedUnsupportedCommandsQuality:

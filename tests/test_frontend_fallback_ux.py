@@ -137,6 +137,8 @@ class TestDeployableConfigSeparation:
             html = f.read()
         assert "deployable_config:stripFence" in html or "deployable_config" in html, \
             "_buildExportReport should include deployable_config"
+        assert "manual_review_config" in html and "module_translations" in html, \
+            "_buildExportReport should include separated manual-review module output"
 
 
 class TestFallbackModeTranslatedTab:

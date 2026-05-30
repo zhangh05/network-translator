@@ -4,7 +4,7 @@ import tempfile
 from core.graph import State
 from core.graph.agent import GraphAgent
 from core.graph.nodes import FallbackNode
-from core.module_graph import build_module_graph, ordered_modules, assemble_source_modules
+from core.module_graph import build_module_graph, ordered_modules, assemble_source_modules, translate_module_graph
 
 
 SAMPLE_CONFIG = """sysname HW-SW
@@ -174,9 +174,13 @@ def test_safe_fallback_module_graph_keeps_manual_review_source_evidence_in_metad
 
     FallbackNode().execute(state)
     deployable = state.get("deployable_config", "")
-    modules = state.get("_fallback_metadata")["module_graph"]["modules"]
+    metadata = state.get("_fallback_metadata")
+    modules = metadata["module_graph"]["modules"]
 
-    assert "MANUAL_REVIEW" in deployable
+    assert "MANUAL_REVIEW" not in deployable
+    assert "voice-vlan" not in deployable
+    assert "voice-vlan" in metadata["manual_review_config"]
+    assert metadata["module_translations"]["results"]
     assert any(
         module["status"] == "manual_review" and "voice-vlan" in "\n".join(module["source_lines"])
         for module in modules
@@ -200,3 +204,36 @@ def test_graph_agent_result_exposes_module_graph_for_api_consumers():
     assert result["module_summary"]["vlan"] == 1
     assert result["module_graph"]["modules"]
     assert any(edge["label"] == "vlan:10" for edge in result["module_graph"]["edges"])
+
+
+def test_translate_module_graph_separates_deployable_and_manual_review_outputs():
+    graph = build_module_graph(SAMPLE_CONFIG, vendor="huawei")
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+
+    assert "hostname HW-SW" in assembly.deployable_config
+    assert "vlan 10,20,101-102" in assembly.deployable_config
+    assert "interface Vlan10" in assembly.deployable_config
+    assert "ip access-group 3000 in" in assembly.deployable_config
+    assert "MANUAL_REVIEW" not in assembly.deployable_config
+    assert "voice-vlan" in assembly.manual_review_config
+    assert any(item.module_id for item in assembly.results)
+    assert any(item.status == "manual_review" for item in assembly.results)
+
+
+def test_translate_module_graph_preserves_dependency_order_in_deployable_config():
+    config = """interface Vlanif10
+ ip address 10.0.10.1 255.255.255.0
+ traffic-filter inbound acl 3000
+#
+acl number 3000
+ rule 5 permit ip
+#
+vlan batch 10
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+
+    assert assembly.deployable_config.index("vlan 10") < assembly.deployable_config.index("interface Vlan10")
+    assert assembly.deployable_config.index("ip access-list") < assembly.deployable_config.index("interface Vlan10")
