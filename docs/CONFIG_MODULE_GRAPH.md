@@ -23,6 +23,10 @@ The first implementation is intentionally additive:
 
 - `core/module_graph/` builds a graph from existing feature blocks.
 - `FallbackNode` stores the graph under `_fallback_metadata["module_graph"]`.
+- `ParseNode` builds the graph for both LLM and fallback paths.
+- API results expose `module_summary` and `module_graph`.
+- The manual-review UI can use module source lines, line spans, and dependency
+  metadata as user-facing evidence.
 - Existing parser, renderer, validator, fallback rules, project store, and UI
   behavior are not replaced.
 
@@ -53,6 +57,12 @@ confirmation without polluting the translated configuration tab.
 - `to_module`: provider module id.
 - `label`: resource key connecting the two modules.
 
+`AssemblyResult`:
+
+- `sections`: dependency-ordered module sections.
+- `text`: source modules rendered with audit headers. This is not target-vendor
+  output. It is a deterministic source-order/dependency-order assembly view.
+
 ## Example
 
 ```text
@@ -73,6 +83,22 @@ The resulting graph contains:
 - SVI module consumes `vlan:10` and `acl:3000`.
 - Edges connect SVI -> VLAN and SVI -> ACL.
 
+The source assembly view can render providers before the consumer:
+
+```text
+### module 0003:vlan:7 | feature=vlan | status=translatable | lines=7-7 | provides=vlan:10
+vlan batch 10
+
+### module 0002:acl:4 | feature=acl | status=translatable | lines=4-5 | provides=acl:3000
+acl number 3000
+ rule 5 permit ip
+
+### module 0001:interface:1 | feature=interface | status=translatable | lines=1-3 | depends_on=0002:acl:4,0003:vlan:7 | provides=interface:Vlanif10 | consumes=acl:3000,vlan:10 | tags=svi
+interface Vlanif10
+ ip address 10.0.10.1 255.255.255.0
+ traffic-filter inbound acl 3000
+```
+
 ## Non-Goals
 
 This layer does not claim semantic equivalence and does not replace the strong
@@ -84,3 +110,12 @@ IR path. It is a safer decomposition and evidence layer for:
 - future UI visibility.
 
 Anything that cannot be confidently translated must remain in `manual_review`.
+
+## Next Steps
+
+1. Add module translators that accept a single `ConfigModule` and return a
+   typed module translation result.
+2. Add an assembly policy that merges translated modules by dependency order
+   while preserving safe source order.
+3. Replace fallback's flat line-by-line path gradually, one feature family at a
+   time, starting with VLAN + interface + ACL binding.

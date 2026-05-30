@@ -739,14 +739,40 @@ function _reviewActionForFeature(feature){
   if(f.indexOf("ospf")!==-1||f.indexOf("bgp")!==-1||f.indexOf("route")!==-1||f.indexOf("vrf")!==-1)return"核对路由表、邻居状态、策略引用和回退路径。";
   return"在原配置中定位该片段，确认目标平台等价写法后再合入可部署配置。"
 }
+function _moduleGraphReviewItems(r){
+  var graph=(r&&r.module_graph)||{};
+  var modules=graph.modules||[];
+  var out=[];
+  modules.forEach(function(m){
+    var lines=m.source_lines||[];
+    var isManual=(m.status==="manual_review")||(m.manual_review_reason&&m.manual_review_reason.trim());
+    if(!isManual)return;
+    var meta=[];
+    if((m.provides||[]).length)meta.push("提供: "+m.provides.join(", "));
+    if((m.consumes||[]).length)meta.push("引用: "+m.consumes.join(", "));
+    if((m.depends_on||[]).length)meta.push("依赖模块: "+m.depends_on.join(", "));
+    if((m.tags||[]).length)meta.push("标签: "+m.tags.join(", "));
+    out.push({
+      feature:_friendlyFeatureName(m.feature),
+      reason:m.manual_review_reason||_reviewReasonForFeature(m.feature),
+      lines:lines,
+      action:_reviewActionForFeature(m.feature),
+      meta:meta,
+      span:"原配置第 "+m.start_line+"-"+m.end_line+" 行"
+    })
+  });
+  return out
+}
 function _renderManualReviewTab(r){
   var items=[],seen={};
-  function add(feature,reason,lines,action){
+  function add(feature,reason,lines,action,meta,span){
     lines=(lines||[]).filter(function(x){return x&&String(x).trim()}).slice(0,8);
-    var key=[feature||"未分类",reason||"",lines.join("\n")].join("|");
+    meta=(meta||[]).filter(function(x){return x&&String(x).trim()});
+    var key=[feature||"未分类",reason||"",lines.join("\n"),meta.join("\n"),span||""].join("|");
     if(seen[key])return;seen[key]=true;
-    items.push({feature:feature||"未分类",reason:reason||_reviewReasonForFeature(feature),lines:lines,action:action||_reviewActionForFeature(feature)})
+    items.push({feature:feature||"未分类",reason:reason||_reviewReasonForFeature(feature),lines:lines,action:action||_reviewActionForFeature(feature),meta:meta,span:span||""})
   }
+  _moduleGraphReviewItems(r).forEach(function(m){add(m.feature,m.reason,m.lines,m.action,m.meta,m.span)});
   (r.analyzer_results||[]).forEach(function(a){
     if(_isMissingAnalyzer(a))return;
     var lines=[];
@@ -769,7 +795,9 @@ function _renderManualReviewTab(r){
   if(!items.length)return'<div class="review-intro"><b>人工复核</b><br>未发现需要单独人工确认的原配置片段。仍建议按变更流程抽查关键业务。</div>';
   return'<div class="review-root"><div class="review-intro"><b>人工复核</b><br>下面列出触发人工确认的原配置片段、原因和建议动作。翻译后配置不会自动包含这些不确定内容。</div>'+
     items.map(function(it,i){return'<div class="review-item"><div class="review-item__hd"><span>复核项 '+(i+1)+'</span><span class="review-item__tag">'+esc(it.feature)+'</span></div><div class="review-item__bd">'+
+      (it.span?'<div class="review-row"><b>位置</b>'+esc(it.span)+'</div>':"")+
       '<div class="review-row"><b>原因</b>'+esc(it.reason)+'</div>'+
+      (it.meta&&it.meta.length?'<div class="review-row"><b>模块关联</b><pre class="review-src">'+esc(it.meta.join("\n"))+'</pre></div>':"")+
       '<div class="review-row"><b>原配置片段</b><pre class="review-src">'+esc(it.lines.length?it.lines.join("\n"):"系统未拿到精确原始行，请查看左侧原配置中对应功能块。")+'</pre></div>'+
       '<div class="review-row"><b>建议动作</b>'+esc(it.action)+'</div>'+
       "</div></div>"}).join("")+"</div>";
@@ -1124,7 +1152,7 @@ async function _copyReport(){_closeCopyMenu();var r=R.result;if(!r)return;var v=
 function _flashCopyBtn(msg){var b=E("cbtn");b.textContent=msg||"已复制";setTimeout(function(){b.textContent="复制"},1200)}
 
 // ── Export ──
-function _buildExportReport(){var r=R.result;if(!r)return null;var v=r.validation||{};return{request_id:R.request_id,version:R.version,model:R.model,source:{vendor:E("fv").value,domain:E("sd").value,platform:E("sp").value},target:{vendor:E("tv").value,domain:E("td").value,platform:E("tp").value},translated:stripFence(r.translated||""),deployable_config:stripFence(r.deployable_config||""),validation:v,risk_signals:r.risk_signals||[],capability_gaps:r.capability_gaps||[],analyzer_results:r.analyzer_results||[],node_results:r.node_results||[],timing:{elapsed_ms:Date.now()-R.t0}}}
+function _buildExportReport(){var r=R.result;if(!r)return null;var v=r.validation||{};return{request_id:R.request_id,version:R.version,model:R.model,source:{vendor:E("fv").value,domain:E("sd").value,platform:E("sp").value},target:{vendor:E("tv").value,domain:E("td").value,platform:E("tp").value},translated:stripFence(r.translated||""),deployable_config:stripFence(r.deployable_config||""),module_summary:r.module_summary||{},module_graph:r.module_graph||{},validation:v,risk_signals:r.risk_signals||[],capability_gaps:r.capability_gaps||[],analyzer_results:r.analyzer_results||[],node_results:r.node_results||[],timing:{elapsed_ms:Date.now()-R.t0}}}
 async function _exportReport(){var report=_buildExportReport();if(!report)return;var name="translation-report-"+R.request_id+".json";var blob=new Blob([JSON.stringify(report,null,2)],{type:"application/json"});var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
 
 document.querySelectorAll(".tabs button").forEach(function(t){t.addEventListener("click",function(){R.tab=this.dataset.tab;document.querySelectorAll(".tabs button").forEach(function(b){b.classList.toggle("on",b===t)});RN();saveActive()})});

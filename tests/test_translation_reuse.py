@@ -483,6 +483,41 @@ def test_run_translation_returns_deployable_config(tmp_path, monkeypatch):
         "deployable_config value must be correct"
 
 
+def test_run_translation_returns_module_graph(tmp_path, monkeypatch):
+    """run_translation() result dict must include module graph fields."""
+    import sys
+    sys.path.insert(0, str(tmp_path.parent.parent))
+    monkeypatch.setattr("project_store.PROJECT_DIR", tmp_path)
+
+    from project_store import ProjectStore
+
+    store = ProjectStore(project_dir=str(tmp_path))
+    project = store.create_project(name="run-trans-module-graph")
+    pid = project.id
+
+    cfg = "vlan 10\ninterface Vlanif10\n ip address 10.0.10.1 255.255.255.0\n"
+    mock_run = MagicMock(return_value={
+        "success": True,
+        "translated": "```cisco\nvlan 10\ninterface Vlan10\n```",
+        "deployable_config": "vlan 10\ninterface Vlan10",
+        "fallback_used": True,
+        "module_summary": {"vlan": 1, "interface": 1},
+        "module_graph": {
+            "modules": [
+                {"module_id": "0001:vlan:1", "feature": "vlan", "provides": ["vlan:10"], "consumes": []},
+                {"module_id": "0002:interface:2", "feature": "interface", "provides": ["interface:Vlanif10"], "consumes": ["vlan:10"]},
+            ],
+            "edges": [{"from_module": "0002:interface:2", "to_module": "0001:vlan:1", "label": "vlan:10"}],
+        },
+    })
+
+    status, body = _translate_via_store(store, pid, cfg, "huawei", "cisco", "", "", "", "", mock_run)
+    assert status == 200
+    result = body.get("result", {})
+    assert result["module_summary"] == {"vlan": 1, "interface": 1}
+    assert result["module_graph"]["edges"][0]["label"] == "vlan:10"
+
+
 def test_different_to_vendor_forces_new_translation(tmp_path, monkeypatch):
     """Scenario B: changing to_vendor forces new translation, no reuse.
     Verifies: call_count==1, second result used."""

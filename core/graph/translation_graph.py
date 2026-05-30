@@ -176,6 +176,8 @@ def execute_translation_flow(
         "target_domain": final_state.get("target_domain", ""),
         "target_platform": final_state.get("target_platform", ""),
         "features": final_state.get("features", []),
+        "module_summary": final_state.get("module_summary", {}),
+        "module_graph": final_state.get("module_graph", {}),
         "analyzer_results": final_state.get("analyzer_results", []),
         "validation": {
             "valid": validation.valid if validation else False,

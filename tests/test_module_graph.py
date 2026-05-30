@@ -1,8 +1,10 @@
 import json
+import tempfile
 
 from core.graph import State
+from core.graph.agent import GraphAgent
 from core.graph.nodes import FallbackNode
-from core.module_graph import build_module_graph, ordered_modules
+from core.module_graph import build_module_graph, ordered_modules, assemble_source_modules
 
 
 SAMPLE_CONFIG = """sysname HW-SW
@@ -120,6 +122,27 @@ vlan batch 10
     assert positions[acl_module.module_id] < positions[svi_module.module_id]
 
 
+def test_assemble_source_modules_returns_dependency_ordered_sections():
+    config = """interface Vlanif10
+ ip address 10.0.10.1 255.255.255.0
+ traffic-filter inbound acl 3000
+#
+acl number 3000
+ rule 5 permit ip
+#
+vlan batch 10
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assembled = assemble_source_modules(graph)
+
+    assert assembled.sections[0].feature == "acl" or assembled.sections[0].feature == "vlan"
+    assert assembled.text.index("vlan batch 10") < assembled.text.index("interface Vlanif10")
+    assert assembled.text.index("acl number 3000") < assembled.text.index("interface Vlanif10")
+    assert "### module" in assembled.text
+    assert "depends_on" in assembled.text
+
+
 def test_safe_fallback_metadata_includes_module_graph_for_review_ui():
     state = State()
     state.set("from_vendor", "huawei")
@@ -158,3 +181,22 @@ def test_safe_fallback_module_graph_keeps_manual_review_source_evidence_in_metad
         module["status"] == "manual_review" and "voice-vlan" in "\n".join(module["source_lines"])
         for module in modules
     )
+
+
+def test_graph_agent_result_exposes_module_graph_for_api_consumers():
+    class NonObjectListLLM:
+        def chat(self, *args, **kwargs):
+            return {"content": '["not an object"]', "tool_calls": []}
+
+    agent = GraphAgent(
+        llm=NonObjectListLLM(),
+        cache_dir=tempfile.mkdtemp(),
+        memory_dir=tempfile.mkdtemp(),
+    )
+
+    result = agent.run(SAMPLE_CONFIG, from_vendor="huawei", to_vendor="cisco")
+
+    assert result["fallback_used"] is True
+    assert result["module_summary"]["vlan"] == 1
+    assert result["module_graph"]["modules"]
+    assert any(edge["label"] == "vlan:10" for edge in result["module_graph"]["edges"])

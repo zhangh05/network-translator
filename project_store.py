@@ -434,6 +434,8 @@ def run_translation(
         "target_domain": result.get("target_domain", ""),
         "target_platform": result.get("target_platform", ""),
         "features": result.get("features", []),
+        "module_summary": result.get("module_summary", {}),
+        "module_graph": result.get("module_graph", {}),
         "analyzer_results": result.get("analyzer_results", []),
         "risk_signals": result.get("risk_signals", []),
         "deployable_config": result.get("deployable_config", ""),

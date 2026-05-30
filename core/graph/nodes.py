@@ -97,6 +97,17 @@ class ParseNode(Node):
         except Exception:
             state.set("features", [])
 
+        try:
+            from core.module_graph import build_module_graph
+            module_graph = build_module_graph(config_text, vendor=vendor)
+            module_summary: dict[str, int] = {}
+            for module in module_graph.modules:
+                module_summary[module.feature] = module_summary.get(module.feature, 0) + 1
+            state.set("module_graph", module_graph.to_dict())
+            state.set("module_summary", dict(sorted(module_summary.items())))
+        except Exception:
+            logger.debug("module graph build skipped", exc_info=True)
+
         return NodeResult(
             self.node_id,
             NodeStatus.SUCCESS,
@@ -1837,6 +1848,8 @@ class FallbackNode(Node):
             state.set("deployable_config", deployable)
             state.set("block_count", fb_meta["block_count"])
             state.set("feature_summary", fb_meta["feature_summary"])
+            state.set("module_summary", fb_meta["module_summary"])
+            state.set("module_graph", fb_meta["module_graph"])
             state.set("source_vendor", fb_meta["source_vendor"])
             state.set("target_vendor", fb_meta["target_vendor"])
             state.set("_fallback_metadata", fb_meta)

@@ -257,6 +257,14 @@ class TestManualReviewTab:
             assert label in html, f"manual review item should expose {label}"
         assert "source_lines" in html, "manual review should use analyzer/capability source_lines"
 
+    def test_manual_review_tab_uses_module_graph_first(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "r.module_graph" in html, "manual review tab should consume module_graph from API result"
+        assert "manual_review_reason" in html, "module graph manual_review_reason should be displayed"
+        assert "depends_on" in html and "provides" in html and "consumes" in html, \
+            "module graph dependencies should be visible to users"
+
     def test_manual_review_tab_extracts_manual_review_source_commands(self):
         with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
             html = f.read()
