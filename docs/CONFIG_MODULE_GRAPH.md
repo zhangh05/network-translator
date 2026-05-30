@@ -130,7 +130,13 @@ traffic-filter inbound acl 3000
 | `interface.loopback` | Loopback interface | `interface:LoopBack0` | none |
 | `acl` | ACL definition | `acl:3000` | objects or time ranges later |
 | `acl_binding` | ACL bind point | none | `acl:3000`, `interface:*` |
-| `ospf` | OSPF process block | `ospf:1` | route policy/BFD later |
+| `ospf.process` | OSPF process and router-id | `ospf:1` | none |
+| `ospf.area` | Plain OSPF area declaration | `ospf:1:area:0.0.0.0` | `ospf:1` |
+| `ospf.network` | OSPF network statement | none | `ospf:1`, optional area |
+| `ospf.passive_interface` | OSPF passive/silent interface | none | `ospf:1` |
+| `ospf.authentication` | OSPF authentication | none | `ospf:1` |
+| `ospf.redistribute` | OSPF redistribution/default route | none | `ospf:1` |
+| `ospf.area_special` | OSPF stub/nssa/virtual-link | none | `ospf:1` |
 | `bgp` | BGP process block | `bgp:*` later | peer/policy/VRF later |
 | `zone` | Firewall zone | `zone:trust` | interface bindings later |
 | `address_object` | Firewall address object | `addr:WEB` | none |
@@ -162,6 +168,32 @@ During module translation, `acl_binding` is rendered with explicit interface
 context. This prevents duplicate output such as two `ip access-group` lines and
 keeps binding semantics separate from interface address/configuration semantics.
 
+## OSPF Risk Separation
+
+OSPF is not treated as one flat block. A source block such as:
+
+```text
+ospf 1 router-id 10.0.0.1
+ area 0.0.0.0
+  network 10.0.10.0 0.0.0.255
+ silent-interface Vlanif10
+ area 0.0.0.0 authentication-mode md5
+ import-route static
+```
+
+is decomposed into:
+
+- `ospf.process`: process id and router-id.
+- `ospf.area`: plain area declaration.
+- `ospf.network`: network announcement.
+- `ospf.passive_interface`: passive/silent interface behavior.
+- `ospf.authentication`: manual review.
+- `ospf.redistribute`: manual review.
+
+This prevents high-risk authentication and redistribution commands from being
+merged into otherwise safe OSPF process/network translation. The same principle
+will be extended to BGP peers, route-policy bindings, and VRF-aware routing.
+
 ## Non-Goals
 
 This layer does not claim semantic equivalence and does not replace the strong
@@ -176,10 +208,8 @@ Anything that cannot be confidently translated must remain in `manual_review`.
 
 ## Next Steps
 
-1. Split OSPF and BGP into submodules: process, area, peer, redistribution,
-   authentication, and policy binding.
-2. Move ACL binding translation from interface-body fallback into a dedicated
-   module translator with explicit interface context.
-3. Split firewall NAT/IPsec/profile features into typed manual-review modules.
-4. Replace fallback's remaining flat line-by-line paths gradually, one feature
+1. Split BGP into submodules: process, peer, address-family, password, route
+   policy binding, and redistribution.
+2. Split firewall NAT/IPsec/profile features into typed manual-review modules.
+3. Replace fallback's remaining flat line-by-line paths gradually, one feature
    family at a time.

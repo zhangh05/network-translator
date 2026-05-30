@@ -88,6 +88,8 @@ def _translate_module(
 
     if module.feature == "acl_binding":
         return _translate_acl_binding_module(module, from_vendor, to_vendor, translator)
+    if module.feature.startswith("ospf."):
+        return _translate_ospf_module(module, from_vendor, to_vendor, translator)
 
     translated = translator.translate(source_text, from_vendor, to_vendor)
     body = _extract_config_block(translated).strip()
@@ -108,6 +110,65 @@ def _translate_module(
         status = "partial"
         reason = "模块部分命令需要人工复核"
 
+    return ModuleTranslationResult(
+        module_id=module.module_id,
+        feature=module.feature,
+        status=status,
+        source_lines=module.source_lines,
+        translated_lines=translated_lines,
+        manual_review_lines=review_lines or ([] if translated_lines else _source_review_lines(module, reason)),
+        provides=module.provides,
+        consumes=module.consumes,
+        depends_on=module.depends_on,
+        reason=reason,
+    )
+
+
+def _translate_ospf_module(
+    module: ConfigModule,
+    from_vendor: str,
+    to_vendor: str,
+    translator: RuleBasedTranslator,
+) -> ModuleTranslationResult:
+    if module.status == "manual_review":
+        return ModuleTranslationResult(
+            module_id=module.module_id,
+            feature=module.feature,
+            status="manual_review",
+            source_lines=module.source_lines,
+            manual_review_lines=_source_review_lines(module),
+            provides=module.provides,
+            consumes=module.consumes,
+            depends_on=module.depends_on,
+            reason=module.manual_review_reason,
+        )
+
+    process_id = _first_resource_value(module.provides + module.consumes, "ospf:")
+    if ":area:" in process_id:
+        process_id = process_id.split(":area:", 1)[0]
+    source_text = "\n".join(module.source_lines)
+    if process_id and not _starts_with_ospf_header(source_text):
+        header = f"router ospf {process_id}" if from_vendor in ("cisco", "ruijie") else f"ospf {process_id}"
+        source_text = f"{header}\n " + "\n ".join(module.source_lines)
+
+    translated = translator.translate(source_text, from_vendor, to_vendor)
+    body = _extract_config_block(translated).strip()
+    translated_lines: list[str] = []
+    review_lines: list[str] = []
+    for line in body.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if "MANUAL_REVIEW" in stripped:
+            review_lines.append(line)
+        else:
+            translated_lines.append(line)
+
+    status = "translated" if translated_lines else "manual_review"
+    reason = "" if translated_lines else "OSPF 子模块没有生成确定的可部署配置"
+    if review_lines and translated_lines:
+        status = "partial"
+        reason = "OSPF 子模块部分命令需要人工复核"
     return ModuleTranslationResult(
         module_id=module.module_id,
         feature=module.feature,
@@ -167,6 +228,11 @@ def _first_resource_value(resources: list[str], prefix: str) -> str:
         if resource.startswith(prefix):
             return resource[len(prefix):]
     return ""
+
+
+def _starts_with_ospf_header(text: str) -> bool:
+    first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    return bool(re.match(r"^(?:ospf|router\s+ospf)\s+\S+", first, re.IGNORECASE))
 
 
 def _source_review_lines(module: ConfigModule, reason: str = "") -> list[str]:

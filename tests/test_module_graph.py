@@ -37,7 +37,8 @@ def test_build_module_graph_extracts_feature_modules_with_source_spans():
     assert graph.by_feature("acl")
     assert graph.by_feature("interface.svi")
     assert graph.by_feature("interface.physical")
-    assert graph.by_feature("ospf")
+    assert graph.by_feature("ospf.process")
+    assert graph.by_feature("ospf.network")
     assert all(module.start_line <= module.end_line for module in graph.modules)
     assert all(module.source_lines for module in graph.modules)
 
@@ -78,11 +79,13 @@ def test_trunk_interface_records_vlan_consumes_and_trunk_tag():
 
 def test_ospf_module_preserves_process_identity_and_source_lines():
     graph = build_module_graph(SAMPLE_CONFIG, vendor="huawei")
-    ospf_module = graph.by_feature("ospf")[0]
+    ospf_module = graph.by_feature("ospf.process")[0]
+    network_module = graph.by_feature("ospf.network")[0]
 
     assert "ospf:1" in ospf_module.provides
     assert ospf_module.source_lines[0].startswith("ospf 1")
-    assert any("network 10.0.10.0" in line for line in ospf_module.source_lines)
+    assert "ospf:1" in network_module.consumes
+    assert any("network 10.0.10.0" in line for line in network_module.source_lines)
 
 
 def test_vendor_specific_unknown_feature_becomes_manual_review_module():
@@ -165,7 +168,9 @@ def test_safe_fallback_metadata_includes_module_graph_for_review_ui():
     assert module_summary["interface.svi"] == 1
     assert module_summary["interface.physical"] == 1
     assert module_summary["acl_binding"] == 1
-    assert module_summary["ospf"] == 1
+    assert module_summary["ospf.process"] == 1
+    assert module_summary["ospf.area"] == 1
+    assert module_summary["ospf.network"] == 1
     assert module_graph["modules"]
     assert any("vlan:10" in module["provides"] for module in module_graph["modules"])
     assert any("acl:3000" in module["consumes"] for module in module_graph["modules"])
@@ -310,6 +315,61 @@ acl number 3000
 
     assert assembly.deployable_config.count("ip access-group 3000 in") == 1
     assert "interface Vlan10" in assembly.deployable_config
+
+
+def test_ospf_submodules_keep_authentication_and_redistribute_out_of_deployable():
+    config = """ospf 1 router-id 10.0.0.1
+ area 0.0.0.0
+  network 10.0.10.0 0.0.0.255
+ silent-interface Vlanif10
+ area 0.0.0.0 authentication-mode md5
+ import-route static
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assert graph.by_feature("ospf.process")
+    assert graph.by_feature("ospf.area")
+    assert graph.by_feature("ospf.network")
+    assert graph.by_feature("ospf.passive_interface")
+    assert graph.by_feature("ospf.authentication")[0].status == "manual_review"
+    assert graph.by_feature("ospf.redistribute")[0].status == "manual_review"
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+
+    assert "router ospf 1" in assembly.deployable_config
+    assert "network 10.0.10.0 0.0.0.255" in assembly.deployable_config
+    assert "passive-interface Vlanif10" in assembly.deployable_config
+    assert "authentication-mode" not in assembly.deployable_config
+    assert "import-route static" not in assembly.deployable_config
+    assert "authentication-mode md5" in assembly.manual_review_config
+    assert "import-route static" in assembly.manual_review_config
+
+
+def test_cisco_ospf_authentication_and_redistribute_are_manual_review_submodules():
+    config = """router ospf 1
+ router-id 10.0.0.1
+ network 10.0.10.0 0.0.0.255 area 0
+ passive-interface Vlan10
+ redistribute static
+ area 0 authentication message-digest
+"""
+    graph = build_module_graph(config, vendor="cisco")
+
+    assert graph.by_feature("ospf.process")
+    assert graph.by_feature("ospf.network")
+    assert graph.by_feature("ospf.passive_interface")
+    assert graph.by_feature("ospf.authentication")[0].status == "manual_review"
+    assert graph.by_feature("ospf.redistribute")[0].status == "manual_review"
+
+    assembly = translate_module_graph(graph, from_vendor="cisco", to_vendor="huawei")
+
+    assert "ospf 1" in assembly.deployable_config
+    assert "network 10.0.10.0 0.0.0.255 area 0" in assembly.deployable_config
+    assert "silent-interface Vlan10" in assembly.deployable_config
+    assert "redistribute static" not in assembly.deployable_config
+    assert "authentication message-digest" not in assembly.deployable_config
+    assert "redistribute static" in assembly.manual_review_config
+    assert "authentication message-digest" in assembly.manual_review_config
 
 
 def test_device_identity_is_separate_from_generic_system_module():

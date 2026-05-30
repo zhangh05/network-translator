@@ -91,6 +91,9 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
     consumes: set[str] = set()
     tags: set[str] = set()
 
+    if feature == "ospf":
+        return _ospf_module_specs_from_block(block)
+
     if feature == "device_identity":
         provides.add("device:hostname")
     elif feature == "vlan":
@@ -163,6 +166,104 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
     if feature.startswith("interface."):
         specs.extend(_acl_binding_specs_from_interface(block))
 
+    return specs
+
+
+def _ospf_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    process_id = _extract_ospf_process("\n".join(block.lines))
+    process_key = f"ospf:{process_id}" if process_id else "ospf:unknown"
+    specs: list[_ModuleSpec] = []
+    process_lines = [block.lines[0]]
+    area_context = ""
+
+    for offset, raw_line in enumerate(block.lines[1:], 1):
+        stripped = raw_line.strip()
+        line_no = block.start_line + offset
+        if _is_ospf_process_line(stripped):
+            process_lines.append(raw_line)
+            continue
+        if _is_ospf_area_line(stripped) and not _is_ospf_risky_line(stripped):
+            area_id = _extract_ospf_area_id(stripped)
+            area_key = f"{process_key}:area:{area_id}" if area_id else f"{process_key}:area:unknown"
+            area_context = raw_line
+            specs.append(
+                _ModuleSpec(
+                    feature="ospf.area",
+                    start_line=line_no,
+                    end_line=line_no,
+                    source_lines=[raw_line],
+                    provides={area_key},
+                    consumes={process_key},
+                    tags={area_id} if area_id else set(),
+                )
+            )
+            continue
+        if _is_ospf_network_line(stripped):
+            source_lines = [area_context, raw_line] if area_context and not _is_cisco_ospf_network(stripped) else [raw_line]
+            consumes = {process_key}
+            if area_context:
+                area_id = _extract_ospf_area_id(area_context.strip())
+                if area_id:
+                    consumes.add(f"{process_key}:area:{area_id}")
+            specs.append(
+                _ModuleSpec(
+                    feature="ospf.network",
+                    start_line=line_no,
+                    end_line=line_no,
+                    source_lines=source_lines,
+                    consumes=consumes,
+                )
+            )
+            continue
+        if _is_ospf_passive_line(stripped):
+            specs.append(
+                _ModuleSpec(
+                    feature="ospf.passive_interface",
+                    start_line=line_no,
+                    end_line=line_no,
+                    source_lines=[raw_line],
+                    consumes={process_key},
+                )
+            )
+            continue
+
+        risky_feature = _ospf_risky_feature(stripped)
+        if risky_feature:
+            specs.append(
+                _ModuleSpec(
+                    feature=risky_feature,
+                    start_line=line_no,
+                    end_line=line_no,
+                    source_lines=[raw_line],
+                    consumes={process_key},
+                    status="manual_review",
+                    manual_review_reason=_ospf_manual_review_reason(risky_feature, stripped),
+                )
+            )
+            continue
+
+        specs.append(
+            _ModuleSpec(
+                feature="ospf.unknown",
+                start_line=line_no,
+                end_line=line_no,
+                source_lines=[raw_line],
+                consumes={process_key},
+                status="manual_review",
+                manual_review_reason=f"OSPF 子命令无法确定等价转换，需要人工复核: {stripped}",
+            )
+        )
+
+    specs.insert(
+        0,
+        _ModuleSpec(
+            feature="ospf.process",
+            start_line=block.start_line,
+            end_line=block.start_line + len(process_lines) - 1,
+            source_lines=process_lines,
+            provides={process_key},
+        ),
+    )
     return specs
 
 
@@ -280,6 +381,8 @@ def _coupling_relation(feature: str, resource: str) -> str:
         return "member_of_lag"
     if feature.startswith("interface.") and resource.startswith("vlan:"):
         return "interface_uses_vlan"
+    if feature.startswith("ospf."):
+        return "ospf_submodule_uses_process"
     return "depends_on"
 
 
@@ -428,6 +531,57 @@ def _extract_acl_binding_ref(line: str) -> Optional[tuple[str, str]]:
 def _extract_ospf_process(text: str) -> str:
     first = next((line.strip() for line in text.splitlines() if line.strip()), "")
     match = re.match(r"^(?:ospf|router\s+ospf)\s+(\S+)", first, re.IGNORECASE)
+    return match.group(1) if match else ""
+
+
+def _is_ospf_process_line(line: str) -> bool:
+    return bool(re.match(r"^router-id\b", line, re.IGNORECASE))
+
+
+def _is_ospf_area_line(line: str) -> bool:
+    return bool(re.match(r"^area\s+\S+(?:\s*)$", line, re.IGNORECASE))
+
+
+def _is_ospf_network_line(line: str) -> bool:
+    return bool(re.match(r"^network\s+\S+\s+\S+(?:\s+area\s+\S+)?$", line, re.IGNORECASE))
+
+
+def _is_cisco_ospf_network(line: str) -> bool:
+    return bool(re.search(r"\sarea\s+\S+$", line, re.IGNORECASE))
+
+
+def _is_ospf_passive_line(line: str) -> bool:
+    return bool(re.match(r"^(?:no\s+)?passive-interface\b|^(?:undo\s+)?silent-interface\b", line, re.IGNORECASE))
+
+
+def _is_ospf_risky_line(line: str) -> bool:
+    return bool(_ospf_risky_feature(line))
+
+
+def _ospf_risky_feature(line: str) -> str:
+    if re.search(r"\bauthentication\b|authentication-mode", line, re.IGNORECASE):
+        return "ospf.authentication"
+    if re.match(r"^(?:import-route|redistribute|default-route-advertise)\b", line, re.IGNORECASE):
+        return "ospf.redistribute"
+    if re.search(r"\b(stub|nssa|virtual-link)\b", line, re.IGNORECASE):
+        return "ospf.area_special"
+    if re.search(r"\bcost\b|message-digest-key", line, re.IGNORECASE):
+        return "ospf.interface_tuning"
+    return ""
+
+
+def _ospf_manual_review_reason(feature: str, line: str) -> str:
+    reasons = {
+        "ospf.authentication": "OSPF 认证跨厂商密钥/算法语义不同，需要人工复核",
+        "ospf.redistribute": "OSPF 重分发策略会影响路由传播，需要人工复核",
+        "ospf.area_special": "OSPF stub/nssa/virtual-link 区域语义复杂，需要人工复核",
+        "ospf.interface_tuning": "OSPF 接口调优参数可能影响收敛/选路，需要人工复核",
+    }
+    return f"{reasons.get(feature, 'OSPF 子命令需要人工复核')}: {line}"
+
+
+def _extract_ospf_area_id(line: str) -> str:
+    match = re.match(r"^area\s+(\S+)", line, re.IGNORECASE)
     return match.group(1) if match else ""
 
 
