@@ -35,7 +35,8 @@ def test_build_module_graph_extracts_feature_modules_with_source_spans():
     assert len(graph.modules) >= 6
     assert graph.by_feature("vlan")
     assert graph.by_feature("acl")
-    assert graph.by_feature("interface")
+    assert graph.by_feature("interface.svi")
+    assert graph.by_feature("interface.physical")
     assert graph.by_feature("ospf")
     assert all(module.start_line <= module.end_line for module in graph.modules)
     assert all(module.source_lines for module in graph.modules)
@@ -51,21 +52,25 @@ def test_vlan_module_provides_each_vlan_from_batch_and_range():
 
 def test_svi_and_acl_binding_modules_depend_on_their_providers():
     graph = build_module_graph(SAMPLE_CONFIG, vendor="huawei")
-    svi_module = next(module for module in graph.by_feature("interface") if "svi" in module.tags)
+    svi_module = graph.by_feature("interface.svi")[0]
+    binding_module = graph.by_feature("acl_binding")[0]
     acl_module = graph.by_feature("acl")[0]
     vlan_module = graph.by_feature("vlan")[0]
 
     assert "vlan:10" in svi_module.consumes
-    assert "acl:3000" in svi_module.consumes
+    assert "acl:3000" in binding_module.consumes
+    assert "interface:Vlanif10" in binding_module.consumes
     assert vlan_module.module_id in svi_module.depends_on
-    assert acl_module.module_id in svi_module.depends_on
+    assert acl_module.module_id in binding_module.depends_on
+    assert svi_module.module_id in binding_module.depends_on
     assert any(edge.from_module == svi_module.module_id and edge.to_module == vlan_module.module_id for edge in graph.edges)
-    assert any(edge.from_module == svi_module.module_id and edge.to_module == acl_module.module_id for edge in graph.edges)
+    assert any(edge.from_module == binding_module.module_id and edge.to_module == acl_module.module_id for edge in graph.edges)
+    assert any(coupling["relation"] == "binds_acl_to_interface" for coupling in graph.to_dict()["couplings"])
 
 
 def test_trunk_interface_records_vlan_consumes_and_trunk_tag():
     graph = build_module_graph(SAMPLE_CONFIG, vendor="huawei")
-    trunk_module = next(module for module in graph.by_feature("interface") if "trunk" in module.tags)
+    trunk_module = graph.by_feature("interface.physical")[0]
 
     assert {"vlan:10", "vlan:20"}.issubset(set(trunk_module.consumes))
     assert "trunk" in trunk_module.tags
@@ -114,7 +119,7 @@ vlan batch 10
     graph = build_module_graph(config, vendor="huawei")
     ordered = ordered_modules(graph)
     positions = {module.module_id: index for index, module in enumerate(ordered)}
-    svi_module = next(module for module in graph.by_feature("interface") if "svi" in module.tags)
+    svi_module = graph.by_feature("interface.svi")[0]
     acl_module = graph.by_feature("acl")[0]
     vlan_module = graph.by_feature("vlan")[0]
 
@@ -157,12 +162,15 @@ def test_safe_fallback_metadata_includes_module_graph_for_review_ui():
 
     assert module_summary["vlan"] == 1
     assert module_summary["acl"] == 1
-    assert module_summary["interface"] == 2
+    assert module_summary["interface.svi"] == 1
+    assert module_summary["interface.physical"] == 1
+    assert module_summary["acl_binding"] == 1
     assert module_summary["ospf"] == 1
     assert module_graph["modules"]
     assert any("vlan:10" in module["provides"] for module in module_graph["modules"])
     assert any("acl:3000" in module["consumes"] for module in module_graph["modules"])
     assert any(edge["label"] == "acl:3000" for edge in module_graph["edges"])
+    assert any(coupling["relation"] == "binds_acl_to_interface" for coupling in module_graph["couplings"])
 
 
 def test_safe_fallback_module_graph_keeps_manual_review_source_evidence_in_metadata():
@@ -237,3 +245,66 @@ vlan batch 10
 
     assert assembly.deployable_config.index("vlan 10") < assembly.deployable_config.index("interface Vlan10")
     assert assembly.deployable_config.index("ip access-list") < assembly.deployable_config.index("interface Vlan10")
+
+
+def test_device_identity_is_separate_from_generic_system_module():
+    graph = build_module_graph("sysname CORE-SW\nclock timezone CST add 08:00:00\n", vendor="huawei")
+
+    identity = graph.by_feature("device_identity")[0]
+    system = graph.by_feature("system")[0]
+
+    assert "device:hostname" in identity.provides
+    assert identity.source_lines == ["sysname CORE-SW"]
+    assert system.source_lines == ["clock timezone CST add 08:00:00"]
+
+
+def test_firewall_policy_uses_zone_address_and_service_objects():
+    config = """security-zone name trust
+#
+security-zone name untrust
+#
+ip address-set WEB type object
+ address 0 10.1.1.10 mask 255.255.255.255
+#
+ip service-set HTTP type object
+ service 0 protocol tcp destination-port 80
+#
+security-policy
+ rule name allow-web
+  source-zone trust
+  destination-zone untrust
+  destination-address WEB
+  service HTTP
+  action permit
+"""
+    graph = build_module_graph(config, vendor="huawei_usg")
+
+    policy = graph.by_feature("security_policy")[0]
+
+    assert graph.by_feature("zone")
+    assert graph.by_feature("address_object")
+    assert graph.by_feature("service_object")
+    assert {"zone:trust", "zone:untrust", "addr:WEB", "svc:HTTP"}.issubset(set(policy.consumes))
+    assert any(coupling["relation"] == "policy_uses_object" for coupling in graph.to_dict()["couplings"])
+
+
+def test_interface_kinds_are_split_into_specific_module_features():
+    config = """interface LoopBack0
+ ip address 10.0.0.1 255.255.255.255
+#
+interface Eth-Trunk1
+ mode lacp-static
+#
+interface GigabitEthernet0/0/1
+ eth-trunk 1
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assert graph.by_feature("interface.loopback")
+    assert graph.by_feature("interface.lag")
+    assert graph.by_feature("interface.physical")
+    physical = graph.by_feature("interface.physical")[0]
+    lag = graph.by_feature("interface.lag")[0]
+    assert "lag:1" in physical.consumes
+    assert lag.module_id in physical.depends_on
+    assert any(coupling["relation"] == "member_of_lag" for coupling in graph.to_dict()["couplings"])

@@ -17,6 +17,7 @@ class ConfigModule:
     consumes: list[str] = field(default_factory=list)
     depends_on: list[str] = field(default_factory=list)
     tags: list[str] = field(default_factory=list)
+    couplings: list[dict] = field(default_factory=list)
     status: str = "translatable"
     manual_review_reason: str = ""
 
@@ -36,12 +37,26 @@ class ModuleDependency:
         return asdict(self)
 
 
+@dataclass(frozen=True)
+class ModuleCoupling:
+    """Typed semantic relation between two modules."""
+
+    from_module: str
+    to_module: str
+    relation: str
+    resource: str
+
+    def to_dict(self) -> dict:
+        return asdict(self)
+
+
 @dataclass
 class ModuleGraph:
     """Config modules plus cross-module references."""
 
     modules: list[ConfigModule] = field(default_factory=list)
     edges: list[ModuleDependency] = field(default_factory=list)
+    couplings: list[ModuleCoupling] = field(default_factory=list)
 
     def by_feature(self, feature: str) -> list[ConfigModule]:
         return [module for module in self.modules if module.feature == feature]
@@ -53,4 +68,5 @@ class ModuleGraph:
         return {
             "modules": [module.to_dict() for module in self.modules],
             "edges": [edge.to_dict() for edge in self.edges],
+            "couplings": [coupling.to_dict() for coupling in self.couplings],
         }

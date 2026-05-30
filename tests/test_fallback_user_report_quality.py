@@ -130,7 +130,8 @@ class TestHillstoneToTopsecFallbackReportQuality:
         assert "block_count=" not in report
         assert "zone trust" in report
         assert "MANUAL_REVIEW" not in deployable
-        assert "zone trust" in manual_review
+        assert "zone name trust" in deployable
+        assert "policy name=from" in manual_review
 
 
 class TestMixedUnsupportedCommandsQuality:
