@@ -142,6 +142,26 @@ The taxonomy is intentionally extensible. A new feature must define its
 `provides`, `consumes`, status policy, and user-facing manual-review reason
 before it is allowed to affect deployable output.
 
+## ACL Binding Ownership
+
+Interface modules intentionally do not own ACL binding lines. For example:
+
+```text
+interface Vlanif10
+ ip address 10.0.10.1 255.255.255.0
+ traffic-filter inbound acl 3000
+```
+
+is decomposed into:
+
+- `interface.svi`: owns `interface Vlanif10` and the IP address.
+- `acl_binding`: owns `traffic-filter inbound acl 3000` and consumes both
+  `interface:Vlanif10` and `acl:3000`.
+
+During module translation, `acl_binding` is rendered with explicit interface
+context. This prevents duplicate output such as two `ip access-group` lines and
+keeps binding semantics separate from interface address/configuration semantics.
+
 ## Non-Goals
 
 This layer does not claim semantic equivalence and does not replace the strong

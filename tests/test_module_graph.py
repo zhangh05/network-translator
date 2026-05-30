@@ -247,6 +247,71 @@ vlan batch 10
     assert assembly.deployable_config.index("ip access-list") < assembly.deployable_config.index("interface Vlan10")
 
 
+def test_acl_binding_is_translated_once_with_interface_context():
+    config = """interface Vlanif10
+ ip address 10.0.10.1 255.255.255.0
+ traffic-filter inbound acl 3000
+#
+acl number 3000
+ rule 5 permit ip
+#
+vlan batch 10
+"""
+    graph = build_module_graph(config, vendor="huawei")
+    svi = graph.by_feature("interface.svi")[0]
+    binding = graph.by_feature("acl_binding")[0]
+
+    assert "traffic-filter inbound acl 3000" not in "\n".join(svi.source_lines)
+    assert binding.source_lines == ["traffic-filter inbound acl 3000"]
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+
+    assert assembly.deployable_config.count("ip access-group 3000 in") == 1
+    assert "interface Vlan10" in assembly.deployable_config
+
+
+def test_cisco_acl_binding_module_translates_to_huawei_with_interface_context():
+    config = """interface Vlan10
+ ip address 10.0.10.1 255.255.255.0
+ ip access-group WEB-IN in
+#
+ip access-list extended WEB-IN
+ 10 permit ip any any
+"""
+    graph = build_module_graph(config, vendor="cisco")
+    svi = graph.by_feature("interface.svi")[0]
+    binding = graph.by_feature("acl_binding")[0]
+
+    assert "ip access-group WEB-IN in" not in "\n".join(svi.source_lines)
+    assert binding.source_lines == ["ip access-group WEB-IN in"]
+
+    assembly = translate_module_graph(graph, from_vendor="cisco", to_vendor="huawei")
+
+    assert assembly.deployable_config.count("traffic-filter inbound acl WEB-IN") == 1
+    assert "interface Vlanif10" in assembly.deployable_config
+
+
+def test_h3c_acl_binding_module_translates_to_cisco_with_interface_context():
+    config = """interface Vlan-interface10
+ ip address 10.0.10.1 255.255.255.0
+ packet-filter 3000 inbound
+#
+acl number 3000
+ rule 5 permit ip
+"""
+    graph = build_module_graph(config, vendor="h3c")
+    svi = graph.by_feature("interface.svi")[0]
+    binding = graph.by_feature("acl_binding")[0]
+
+    assert "packet-filter 3000 inbound" not in "\n".join(svi.source_lines)
+    assert binding.source_lines == ["packet-filter 3000 inbound"]
+
+    assembly = translate_module_graph(graph, from_vendor="h3c", to_vendor="cisco")
+
+    assert assembly.deployable_config.count("ip access-group 3000 in") == 1
+    assert "interface Vlan10" in assembly.deployable_config
+
+
 def test_device_identity_is_separate_from_generic_system_module():
     graph = build_module_graph("sysname CORE-SW\nclock timezone CST add 08:00:00\n", vendor="huawei")
 

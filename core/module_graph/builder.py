@@ -151,7 +151,7 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
             feature=feature,
             start_line=block.start_line,
             end_line=block.end_line,
-            source_lines=block.lines,
+            source_lines=_module_source_lines(block, feature),
             provides=provides,
             consumes=consumes,
             tags=tags,
@@ -164,6 +164,17 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         specs.extend(_acl_binding_specs_from_interface(block))
 
     return specs
+
+
+def _module_source_lines(block: ConfigBlock, feature: str) -> list[str]:
+    if not feature.startswith("interface."):
+        return block.lines
+    filtered = [block.lines[0]]
+    for line in block.lines[1:]:
+        if _extract_acl_binding_ref(line):
+            continue
+        filtered.append(line)
+    return filtered
 
 
 def _acl_binding_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:

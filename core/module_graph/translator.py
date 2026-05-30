@@ -86,6 +86,9 @@ def _translate_module(
             reason=module.manual_review_reason,
         )
 
+    if module.feature == "acl_binding":
+        return _translate_acl_binding_module(module, from_vendor, to_vendor, translator)
+
     translated = translator.translate(source_text, from_vendor, to_vendor)
     body = _extract_config_block(translated).strip()
     translated_lines: list[str] = []
@@ -117,6 +120,53 @@ def _translate_module(
         depends_on=module.depends_on,
         reason=reason,
     )
+
+
+def _translate_acl_binding_module(
+    module: ConfigModule,
+    from_vendor: str,
+    to_vendor: str,
+    translator: RuleBasedTranslator,
+) -> ModuleTranslationResult:
+    interface_name = _first_resource_value(module.consumes, "interface:")
+    source_text = "\n".join(module.source_lines)
+    if interface_name:
+        source_text = f"interface {interface_name}\n " + "\n ".join(module.source_lines)
+
+    translated = translator.translate(source_text, from_vendor, to_vendor)
+    body = _extract_config_block(translated).strip()
+    translated_lines: list[str] = []
+    review_lines: list[str] = []
+    for line in body.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if "MANUAL_REVIEW" in stripped:
+            review_lines.append(line)
+        else:
+            translated_lines.append(line)
+
+    status = "translated" if translated_lines else "manual_review"
+    reason = "" if translated_lines else "ACL 绑定没有生成确定的可部署配置"
+    return ModuleTranslationResult(
+        module_id=module.module_id,
+        feature=module.feature,
+        status=status,
+        source_lines=module.source_lines,
+        translated_lines=translated_lines,
+        manual_review_lines=review_lines or ([] if translated_lines else _source_review_lines(module, reason)),
+        provides=module.provides,
+        consumes=module.consumes,
+        depends_on=module.depends_on,
+        reason=reason,
+    )
+
+
+def _first_resource_value(resources: list[str], prefix: str) -> str:
+    for resource in resources:
+        if resource.startswith(prefix):
+            return resource[len(prefix):]
+    return ""
 
 
 def _source_review_lines(module: ConfigModule, reason: str = "") -> list[str]:
