@@ -372,6 +372,70 @@ def test_cisco_ospf_authentication_and_redistribute_are_manual_review_submodules
     assert "authentication message-digest" in assembly.manual_review_config
 
 
+def test_bgp_submodules_keep_password_and_policy_out_of_deployable():
+    config = """bgp 65000
+ router-id 10.0.0.1
+ peer 10.0.0.2 as-number 65001
+ peer 10.0.0.2 password cipher SECRET_KEY
+ peer 10.0.0.2 route-policy EXPORT export
+ network 10.10.0.0 255.255.255.0
+ import-route static
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assert graph.by_feature("bgp.process")
+    assert graph.by_feature("bgp.neighbor")
+    assert graph.by_feature("bgp.network")
+    assert graph.by_feature("bgp.password")[0].status == "manual_review"
+    assert graph.by_feature("bgp.policy")[0].status == "manual_review"
+    assert graph.by_feature("bgp.redistribute")[0].status == "manual_review"
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+
+    assert "router bgp 65000" in assembly.deployable_config
+    assert "neighbor 10.0.0.2 remote-as 65001" in assembly.deployable_config
+    assert "network 10.10.0.0" in assembly.deployable_config
+    assert "SECRET_KEY" not in assembly.deployable_config
+    assert "route-policy EXPORT" not in assembly.deployable_config
+    assert "import-route static" not in assembly.deployable_config
+    assert "SECRET_KEY" not in assembly.manual_review_config
+    assert "<redacted>" in assembly.manual_review_config
+    assert "route-policy EXPORT export" in assembly.manual_review_config
+    assert "import-route static" in assembly.manual_review_config
+
+
+def test_cisco_bgp_submodules_keep_password_and_route_map_out_of_deployable():
+    config = """router bgp 65000
+ bgp router-id 10.0.0.1
+ neighbor 10.0.0.2 remote-as 65001
+ neighbor 10.0.0.2 password SECRET_KEY
+ neighbor 10.0.0.2 route-map EXPORT out
+ network 10.10.0.0 mask 255.255.255.0
+ redistribute connected
+"""
+    graph = build_module_graph(config, vendor="cisco")
+
+    assert graph.by_feature("bgp.process")
+    assert graph.by_feature("bgp.neighbor")
+    assert graph.by_feature("bgp.network")
+    assert graph.by_feature("bgp.password")[0].status == "manual_review"
+    assert graph.by_feature("bgp.policy")[0].status == "manual_review"
+    assert graph.by_feature("bgp.redistribute")[0].status == "manual_review"
+
+    assembly = translate_module_graph(graph, from_vendor="cisco", to_vendor="huawei")
+
+    assert "bgp 65000" in assembly.deployable_config
+    assert "peer 10.0.0.2 as-number 65001" in assembly.deployable_config
+    assert "network 10.10.0.0 255.255.255.0" in assembly.deployable_config
+    assert "SECRET_KEY" not in assembly.deployable_config
+    assert "route-map EXPORT" not in assembly.deployable_config
+    assert "redistribute connected" not in assembly.deployable_config
+    assert "SECRET_KEY" not in assembly.manual_review_config
+    assert "<redacted>" in assembly.manual_review_config
+    assert "route-map EXPORT out" in assembly.manual_review_config
+    assert "redistribute connected" in assembly.manual_review_config
+
+
 def test_device_identity_is_separate_from_generic_system_module():
     graph = build_module_graph("sysname CORE-SW\nclock timezone CST add 08:00:00\n", vendor="huawei")
 

@@ -93,6 +93,8 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
 
     if feature == "ospf":
         return _ospf_module_specs_from_block(block)
+    if feature == "bgp":
+        return _bgp_module_specs_from_block(block)
 
     if feature == "device_identity":
         provides.add("device:hostname")
@@ -267,6 +269,83 @@ def _ospf_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
     return specs
 
 
+def _bgp_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    asn = _extract_bgp_asn("\n".join(block.lines))
+    process_key = f"bgp:{asn}" if asn else "bgp:unknown"
+    specs: list[_ModuleSpec] = []
+    process_lines = [block.lines[0]]
+
+    for offset, raw_line in enumerate(block.lines[1:], 1):
+        stripped = raw_line.strip()
+        line_no = block.start_line + offset
+        if _is_bgp_process_line(stripped):
+            process_lines.append(raw_line)
+            continue
+        if _is_bgp_neighbor_line(stripped):
+            neighbor = _extract_bgp_neighbor(stripped)
+            specs.append(
+                _ModuleSpec(
+                    feature="bgp.neighbor",
+                    start_line=line_no,
+                    end_line=line_no,
+                    source_lines=[raw_line],
+                    consumes={process_key},
+                    provides={f"{process_key}:neighbor:{neighbor}"} if neighbor else set(),
+                )
+            )
+            continue
+        if _is_bgp_network_line(stripped):
+            specs.append(
+                _ModuleSpec(
+                    feature="bgp.network",
+                    start_line=line_no,
+                    end_line=line_no,
+                    source_lines=[raw_line],
+                    consumes={process_key},
+                )
+            )
+            continue
+
+        risky_feature = _bgp_risky_feature(stripped)
+        if risky_feature:
+            specs.append(
+                _ModuleSpec(
+                    feature=risky_feature,
+                    start_line=line_no,
+                    end_line=line_no,
+                    source_lines=[_redact_bgp_sensitive_line(raw_line)],
+                    consumes={process_key},
+                    status="manual_review",
+                    manual_review_reason=_bgp_manual_review_reason(risky_feature, _redact_bgp_sensitive_line(stripped)),
+                )
+            )
+            continue
+
+        specs.append(
+            _ModuleSpec(
+                feature="bgp.unknown",
+                start_line=line_no,
+                end_line=line_no,
+                source_lines=[_redact_bgp_sensitive_line(raw_line)],
+                consumes={process_key},
+                status="manual_review",
+                manual_review_reason=f"BGP 子命令无法确定等价转换，需要人工复核: {_redact_bgp_sensitive_line(stripped)}",
+            )
+        )
+
+    specs.insert(
+        0,
+        _ModuleSpec(
+            feature="bgp.process",
+            start_line=block.start_line,
+            end_line=block.start_line + len(process_lines) - 1,
+            source_lines=process_lines,
+            provides={process_key},
+        ),
+    )
+    return specs
+
+
 def _module_source_lines(block: ConfigBlock, feature: str) -> list[str]:
     if not feature.startswith("interface."):
         return block.lines
@@ -383,6 +462,8 @@ def _coupling_relation(feature: str, resource: str) -> str:
         return "interface_uses_vlan"
     if feature.startswith("ospf."):
         return "ospf_submodule_uses_process"
+    if feature.startswith("bgp."):
+        return "bgp_submodule_uses_process"
     return "depends_on"
 
 
@@ -532,6 +613,57 @@ def _extract_ospf_process(text: str) -> str:
     first = next((line.strip() for line in text.splitlines() if line.strip()), "")
     match = re.match(r"^(?:ospf|router\s+ospf)\s+(\S+)", first, re.IGNORECASE)
     return match.group(1) if match else ""
+
+
+def _extract_bgp_asn(text: str) -> str:
+    first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    match = re.match(r"^(?:bgp|router\s+bgp)\s+(\S+)", first, re.IGNORECASE)
+    return match.group(1) if match else ""
+
+
+def _is_bgp_process_line(line: str) -> bool:
+    return bool(re.match(r"^(?:bgp\s+)?router-id\b|^ipv4-family\b|^address-family\b", line, re.IGNORECASE))
+
+
+def _is_bgp_neighbor_line(line: str) -> bool:
+    if _bgp_risky_feature(line):
+        return False
+    return bool(re.match(r"^(?:peer|neighbor)\s+\S+\s+(?:as-number|remote-as)\s+\S+", line, re.IGNORECASE))
+
+
+def _is_bgp_network_line(line: str) -> bool:
+    return bool(re.match(r"^network\s+\S+(?:\s+(?:mask\s+)?\S+)?$", line, re.IGNORECASE))
+
+
+def _extract_bgp_neighbor(line: str) -> str:
+    match = re.match(r"^(?:peer|neighbor)\s+(\S+)", line, re.IGNORECASE)
+    return match.group(1) if match else ""
+
+
+def _bgp_risky_feature(line: str) -> str:
+    if re.search(r"\bpassword\b|authentication-key|keychain", line, re.IGNORECASE):
+        return "bgp.password"
+    if re.search(r"\b(route-policy|route-map|filter-policy|prefix-list|as-path-filter|community-filter)\b", line, re.IGNORECASE):
+        return "bgp.policy"
+    if re.match(r"^(?:import-route|redistribute|default-route-advertise)\b", line, re.IGNORECASE):
+        return "bgp.redistribute"
+    if re.search(r"\bcommunity\b|local-preference|med\b|next-hop|update-source|connect-interface", line, re.IGNORECASE):
+        return "bgp.attribute"
+    return ""
+
+
+def _bgp_manual_review_reason(feature: str, line: str) -> str:
+    reasons = {
+        "bgp.password": "BGP 邻居认证密钥不能自动迁移，已脱敏并要求人工复核",
+        "bgp.policy": "BGP 路由策略/过滤器会影响路由传播，需要人工复核",
+        "bgp.redistribute": "BGP 重分发策略会影响路由传播，需要人工复核",
+        "bgp.attribute": "BGP 属性调优可能影响选路，需要人工复核",
+    }
+    return f"{reasons.get(feature, 'BGP 子命令需要人工复核')}: {line}"
+
+
+def _redact_bgp_sensitive_line(line: str) -> str:
+    return re.sub(r"(\b(?:password|authentication-key|keychain)\b(?:\s+cipher)?\s+)\S+", r"\1<redacted>", line, flags=re.IGNORECASE)
 
 
 def _is_ospf_process_line(line: str) -> bool:

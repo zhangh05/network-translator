@@ -90,6 +90,8 @@ def _translate_module(
         return _translate_acl_binding_module(module, from_vendor, to_vendor, translator)
     if module.feature.startswith("ospf."):
         return _translate_ospf_module(module, from_vendor, to_vendor, translator)
+    if module.feature.startswith("bgp."):
+        return _translate_bgp_module(module, from_vendor, to_vendor, translator)
 
     translated = translator.translate(source_text, from_vendor, to_vendor)
     body = _extract_config_block(translated).strip()
@@ -183,6 +185,65 @@ def _translate_ospf_module(
     )
 
 
+def _translate_bgp_module(
+    module: ConfigModule,
+    from_vendor: str,
+    to_vendor: str,
+    translator: RuleBasedTranslator,
+) -> ModuleTranslationResult:
+    if module.status == "manual_review":
+        return ModuleTranslationResult(
+            module_id=module.module_id,
+            feature=module.feature,
+            status="manual_review",
+            source_lines=module.source_lines,
+            manual_review_lines=_source_review_lines(module),
+            provides=module.provides,
+            consumes=module.consumes,
+            depends_on=module.depends_on,
+            reason=module.manual_review_reason,
+        )
+
+    asn = _first_resource_value(module.provides + module.consumes, "bgp:")
+    if ":neighbor:" in asn:
+        asn = asn.split(":neighbor:", 1)[0]
+    source_text = "\n".join(module.source_lines)
+    if asn and not _starts_with_bgp_header(source_text):
+        header = f"router bgp {asn}" if from_vendor in ("cisco", "ruijie") else f"bgp {asn}"
+        source_text = f"{header}\n " + "\n ".join(module.source_lines)
+
+    translated = translator.translate(source_text, from_vendor, to_vendor)
+    body = _extract_config_block(translated).strip()
+    translated_lines: list[str] = []
+    review_lines: list[str] = []
+    for line in body.splitlines():
+        stripped = line.strip()
+        if not stripped:
+            continue
+        if "MANUAL_REVIEW" in stripped:
+            review_lines.append(line)
+        else:
+            translated_lines.append(line)
+
+    status = "translated" if translated_lines else "manual_review"
+    reason = "" if translated_lines else "BGP 子模块没有生成确定的可部署配置"
+    if review_lines and translated_lines:
+        status = "partial"
+        reason = "BGP 子模块部分命令需要人工复核"
+    return ModuleTranslationResult(
+        module_id=module.module_id,
+        feature=module.feature,
+        status=status,
+        source_lines=module.source_lines,
+        translated_lines=translated_lines,
+        manual_review_lines=review_lines or ([] if translated_lines else _source_review_lines(module, reason)),
+        provides=module.provides,
+        consumes=module.consumes,
+        depends_on=module.depends_on,
+        reason=reason,
+    )
+
+
 def _translate_acl_binding_module(
     module: ConfigModule,
     from_vendor: str,
@@ -233,6 +294,11 @@ def _first_resource_value(resources: list[str], prefix: str) -> str:
 def _starts_with_ospf_header(text: str) -> bool:
     first = next((line.strip() for line in text.splitlines() if line.strip()), "")
     return bool(re.match(r"^(?:ospf|router\s+ospf)\s+\S+", first, re.IGNORECASE))
+
+
+def _starts_with_bgp_header(text: str) -> bool:
+    first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    return bool(re.match(r"^(?:bgp|router\s+bgp)\s+\S+", first, re.IGNORECASE))
 
 
 def _source_review_lines(module: ConfigModule, reason: str = "") -> list[str]:

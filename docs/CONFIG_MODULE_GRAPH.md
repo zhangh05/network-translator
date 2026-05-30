@@ -12,7 +12,7 @@ translation, the source config can be decomposed into auditable modules:
 - VLAN modules
 - Interface modules split by kind
 - ACL definition and ACL binding modules
-- Routing modules such as OSPF
+- Routing modules such as OSPF and BGP
 - Firewall object and policy modules
 - Manual-review modules for unsupported or vendor-specific features
 
@@ -44,8 +44,9 @@ confirmation without polluting the translated configuration tab.
 
 - `module_id`: stable source-order identifier.
 - `feature`: normalized feature type, for example `device_identity`, `vlan`,
-  `interface.svi`, `interface.physical`, `acl`, `acl_binding`, `ospf`,
-  `zone`, `address_object`, `service_object`, `security_policy`, or `unknown`.
+  `interface.svi`, `interface.physical`, `acl`, `acl_binding`,
+  `ospf.process`, `bgp.process`, `zone`, `address_object`, `service_object`,
+  `security_policy`, or `unknown`.
 - `start_line` / `end_line`: original config line span.
 - `source_lines`: original source config lines.
 - `provides`: resources defined by the module, such as `vlan:10` or `acl:3000`.
@@ -137,7 +138,13 @@ traffic-filter inbound acl 3000
 | `ospf.authentication` | OSPF authentication | none | `ospf:1` |
 | `ospf.redistribute` | OSPF redistribution/default route | none | `ospf:1` |
 | `ospf.area_special` | OSPF stub/nssa/virtual-link | none | `ospf:1` |
-| `bgp` | BGP process block | `bgp:*` later | peer/policy/VRF later |
+| `bgp.process` | BGP process and router-id | `bgp:65000` | none |
+| `bgp.neighbor` | Basic BGP neighbor AS mapping | `bgp:65000:neighbor:10.0.0.2` | `bgp:65000` |
+| `bgp.network` | BGP network statement | none | `bgp:65000` |
+| `bgp.password` | BGP neighbor authentication | none | `bgp:65000` |
+| `bgp.policy` | BGP route-policy/route-map/filter binding | none | `bgp:65000` |
+| `bgp.redistribute` | BGP redistribution/default route | none | `bgp:65000` |
+| `bgp.attribute` | BGP attribute tuning | none | `bgp:65000` |
 | `zone` | Firewall zone | `zone:trust` | interface bindings later |
 | `address_object` | Firewall address object | `addr:WEB` | none |
 | `service_object` | Firewall service object | `svc:HTTP` | none |
@@ -191,8 +198,34 @@ is decomposed into:
 - `ospf.redistribute`: manual review.
 
 This prevents high-risk authentication and redistribution commands from being
-merged into otherwise safe OSPF process/network translation. The same principle
-will be extended to BGP peers, route-policy bindings, and VRF-aware routing.
+merged into otherwise safe OSPF process/network translation.
+
+## BGP Risk Separation
+
+BGP follows the same split. A source block such as:
+
+```text
+bgp 65000
+ router-id 10.0.0.1
+ peer 10.0.0.2 as-number 65001
+ peer 10.0.0.2 password cipher SECRET_KEY
+ peer 10.0.0.2 route-policy EXPORT export
+ network 10.10.0.0 255.255.255.0
+ import-route static
+```
+
+is decomposed into:
+
+- `bgp.process`: process AS and router-id.
+- `bgp.neighbor`: basic peer AS relationship.
+- `bgp.network`: network announcement.
+- `bgp.password`: manual review with secret value redacted.
+- `bgp.policy`: manual review.
+- `bgp.redistribute`: manual review.
+
+Only the low-risk process/neighbor/network pieces may enter `deployable_config`.
+Password, route-policy/filter, community, attribute tuning, and redistribution
+stay in `manual_review_config` with source evidence.
 
 ## Non-Goals
 
@@ -208,8 +241,7 @@ Anything that cannot be confidently translated must remain in `manual_review`.
 
 ## Next Steps
 
-1. Split BGP into submodules: process, peer, address-family, password, route
-   policy binding, and redistribution.
+1. Split BGP address-family and VRF-aware peer context into submodules.
 2. Split firewall NAT/IPsec/profile features into typed manual-review modules.
 3. Replace fallback's remaining flat line-by-line paths gradually, one feature
    family at a time.
