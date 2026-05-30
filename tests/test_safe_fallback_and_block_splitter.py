@@ -2,6 +2,8 @@ from pathlib import Path
 from unittest.mock import patch
 import tempfile
 
+import pytest
+
 from core.graph import State
 from core.graph.agent import GraphAgent
 from core.graph.nodes import FallbackNode
@@ -22,6 +24,9 @@ def _executable_lines(text: str) -> list[str]:
 
 def test_block_splitter_classifies_real_huawei_config_features():
     from core.parser.block_splitter import split_config_by_feature
+
+    if not HUAWEI_SAMPLE.exists():
+        pytest.skip("optional desktop sample /Users/zhangh01/Desktop/1.txt is not present")
 
     config_text = HUAWEI_SAMPLE.read_text(encoding="utf-8")
     blocks = split_config_by_feature(config_text, vendor="huawei")
