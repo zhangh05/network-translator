@@ -752,3 +752,73 @@ def test_multicast_interface_lines_are_split_from_interface_and_reviewed():
     assert "interface:GigabitEthernet0/0/2" in multicast.consumes
     assert "pim" in multicast.tags
     assert "igmp" in multicast.tags
+
+
+def test_firewall_nat_policy_is_typed_manual_review_with_zone_refs():
+    config = """security-zone name trust
+#
+security-zone name untrust
+#
+nat-policy
+ rule name srcnat
+  source-zone trust
+  destination-zone untrust
+  action source-nat easy-ip
+"""
+    graph = build_module_graph(config, vendor="huawei_usg")
+
+    nat = graph.by_feature("firewall.nat")[0]
+
+    assert nat.status == "manual_review"
+    assert "zone:trust" in nat.consumes
+    assert "zone:untrust" in nat.consumes
+    assert "nat-policy:srcnat" in nat.provides
+    assert any(coupling["relation"] == "nat_uses_object" for coupling in graph.to_dict()["couplings"])
+
+
+def test_ipsec_and_ike_blocks_are_typed_manual_review_with_secret_redaction():
+    config = """ike proposal 10
+ encryption-algorithm aes-cbc-256
+#
+ike peer VPN-PEER
+ pre-shared-key cipher SECRET_KEY
+ remote-address 10.0.0.2
+#
+ipsec policy VPN 1 isakmp
+ security acl 3000
+ ike-peer VPN-PEER
+ proposal TRANS
+"""
+    graph = build_module_graph(config, vendor="huawei_usg")
+
+    modules = graph.by_feature("firewall.ipsec")
+    joined = "\n".join(line for module in modules for line in module.source_lines)
+
+    assert len(modules) == 3
+    assert all(module.status == "manual_review" for module in modules)
+    assert "SECRET_KEY" not in joined
+    assert "<redacted>" in joined
+    assert any("acl:3000" in module.consumes for module in modules)
+    assert any("ipsec-policy:VPN:1" in module.provides for module in modules)
+
+
+def test_firewall_profile_and_time_range_are_typed_manual_review_modules():
+    config = """time-range WORK
+ period-range 08:00 to 18:00 working-day
+#
+url-filter profile WEB-FILTER
+ category block gambling
+#
+antivirus profile AV-STRICT
+ scan enable
+"""
+    graph = build_module_graph(config, vendor="topsec")
+
+    time_range = graph.by_feature("time_range")[0]
+    profiles = graph.by_feature("firewall.profile")
+
+    assert time_range.status == "manual_review"
+    assert "time-range:WORK" in time_range.provides
+    assert len(profiles) == 2
+    assert {"profile:WEB-FILTER", "profile:AV-STRICT"}.issubset({item for module in profiles for item in module.provides})
+    assert all(module.status == "manual_review" for module in profiles)

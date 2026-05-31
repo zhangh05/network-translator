@@ -86,6 +86,25 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
         return "bfd"
     if _matches_any(first, (r"^stp\b", r"^spanning-tree\b")):
         return "stp"
+    if _matches_any(first, (r"^(?:nat-policy|nat\b|source-nat\b|destination-nat\b|ip\s+nat\b)",)):
+        return "firewall_nat"
+    if _matches_any(
+        first,
+        (
+            r"^(?:ike|ipsec|crypto|tunnel-group)\b",
+            r"^vpn\b",
+        ),
+    ):
+        return "firewall_ipsec"
+    if _matches_any(first, (r"^time-range\b",)):
+        return "time_range"
+    if _matches_any(
+        first,
+        (
+            r"^(?:url-filter|antivirus|av-profile|intrusion|ips|profile|application|user-profile)\b",
+        ),
+    ):
+        return "firewall_profile"
 
     # A few Huawei/H3C global commands are important to keep visible for audit,
     # but they are not safe to auto-render through generic fallback.

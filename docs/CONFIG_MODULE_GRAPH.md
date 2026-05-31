@@ -51,8 +51,9 @@ confirmation without polluting the translated configuration tab.
   `static_route`, `vrf`, `route_policy`, `qos.policy`, `management.ntp`,
   `ospf.process`, `bgp.process`, `bfd.session`, `fhrp.vrrp`, `dhcp.pool`,
   `interface.tunnel`, `rip.process`, `isis.process`, `pbr.binding`,
-  `multicast.interface`, `zone`, `address_object`, `service_object`,
-  `security_policy`, or `unknown`.
+  `multicast.interface`, `firewall.nat`, `firewall.ipsec`,
+  `firewall.profile`, `time_range`, `zone`, `address_object`,
+  `service_object`, `security_policy`, or `unknown`.
 - `start_line` / `end_line`: original config line span.
 - `source_lines`: original source config lines.
 - `provides`: resources defined by the module, such as `vlan:10` or `acl:3000`.
@@ -181,6 +182,10 @@ traffic-filter inbound acl 3000
 | `address_object` | Firewall address object | `addr:WEB` | none |
 | `service_object` | Firewall service object | `svc:HTTP` | none |
 | `security_policy` | Firewall rule/policy | `policy:allow-web` | `zone:*`, `addr:*`, `svc:*` |
+| `firewall.nat` | NAT/source-nat/destination-nat policy | `nat-policy:*` | `zone:*`, `addr:*`, `svc:*` where detectable |
+| `firewall.ipsec` | IKE/IPsec/VPN/crypto/tunnel-group block | `ike-peer:*`, `ipsec-policy:*`, `crypto-map:*` | `acl:*`, peer/proposal refs |
+| `firewall.profile` | URL/AV/IPS/application/user profile | `profile:*` | profile binding dependencies later |
+| `time_range` | Time range/schedule object | `time-range:*` | none |
 | `unknown` | Vendor-specific or unsupported | none | none |
 
 The taxonomy is intentionally extensible. A new feature must define its
@@ -304,6 +309,29 @@ separates:
 This gives users line-level evidence for non-OSPF/BGP features instead of
 burying them in `unknown` or one large `qos`/`system` bucket.
 
+## Firewall Advanced Feature Separation
+
+Firewall migration is especially risky because syntax that looks similar can
+carry different session, NAT, security-profile, or VPN semantics. The module
+graph therefore separates high-risk firewall features into typed manual-review
+modules:
+
+- `firewall.nat`: NAT/source-nat/destination-nat blocks. Zone/address/service
+  references are linked where detectable, but the module never becomes
+  automatically deployable.
+- `firewall.ipsec`: IKE/IPsec/VPN/crypto/tunnel-group blocks. Sensitive key
+  material in module source lines is redacted. ACL, peer, proposal, and transform
+  references are recorded when the syntax exposes them.
+- `firewall.profile`: URL filter, antivirus, IPS/intrusion, application, and user
+  profiles. These depend on target-platform signature/profile databases and stay
+  manual-review.
+- `time_range`: schedule/time objects. They are typed so policies can eventually
+  consume them, but they stay manual-review until calendar semantics are proven.
+
+This prevents advanced firewall commands from being hidden inside `unknown` or a
+generic `security_policy` block, while still honoring the rule that uncertain
+equivalence must not enter `deployable_config`.
+
 ## Non-Goals
 
 This layer does not claim semantic equivalence and does not replace the strong
@@ -319,7 +347,8 @@ Anything that cannot be confidently translated must remain in `manual_review`.
 ## Next Steps
 
 1. Split BGP address-family and VRF-aware peer context into submodules.
-2. Split firewall NAT/IPsec/profile features into typed manual-review modules.
+2. Link firewall policy `time-range` and profile references to their provider
+   modules.
 3. Split remaining interface-level routing features such as NAT-on-interface and
    advanced multicast/RP dependencies.
 4. Replace fallback's remaining flat line-by-line paths gradually, one feature

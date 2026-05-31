@@ -107,6 +107,14 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         return _pbr_policy_module_specs_from_block(block)
     if feature == "multicast":
         return _multicast_module_specs_from_block(block)
+    if feature == "firewall_nat":
+        return _firewall_nat_module_specs_from_block(block)
+    if feature == "firewall_ipsec":
+        return _firewall_ipsec_module_specs_from_block(block)
+    if feature == "firewall_profile":
+        return _firewall_profile_module_specs_from_block(block)
+    if feature == "time_range":
+        return _time_range_module_specs_from_block(block)
     if feature == "qos":
         return _qos_module_specs_from_block(block)
     if feature == "bfd":
@@ -557,6 +565,76 @@ def _multicast_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
     ]
 
 
+def _firewall_nat_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    text = "\n".join(block.lines)
+    name = _extract_nat_policy_name(text)
+    return [
+        _ModuleSpec(
+            feature="firewall.nat",
+            start_line=block.start_line,
+            end_line=block.end_line,
+            source_lines=block.lines,
+            provides={f"nat-policy:{name}"} if name else set(),
+            consumes=_extract_security_policy_refs(text),
+            tags={"firewall", "nat"},
+            status="manual_review",
+            manual_review_reason="NAT/source-nat/destination-nat 会改变地址转换和会话行为，跨厂商必须人工复核",
+        )
+    ]
+
+
+def _firewall_ipsec_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    text = "\n".join(block.lines)
+    name = _extract_ipsec_name(text)
+    provides = {name} if name else set()
+    return [
+        _ModuleSpec(
+            feature="firewall.ipsec",
+            start_line=block.start_line,
+            end_line=block.end_line,
+            source_lines=[_redact_ipsec_sensitive_line(line) for line in block.lines],
+            provides=provides,
+            consumes=_extract_ipsec_refs(text),
+            tags={"firewall", "ipsec", "vpn"},
+            status="manual_review",
+            manual_review_reason="IPsec/IKE/VPN 参数、密钥、提议、ACL 和 peer 关系跨厂商语义复杂，需要人工复核",
+        )
+    ]
+
+
+def _firewall_profile_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    text = "\n".join(block.lines)
+    profile_name = _extract_firewall_profile_name(text)
+    return [
+        _ModuleSpec(
+            feature="firewall.profile",
+            start_line=block.start_line,
+            end_line=block.end_line,
+            source_lines=block.lines,
+            provides={f"profile:{profile_name}"} if profile_name else set(),
+            tags=_extract_firewall_profile_tags(text),
+            status="manual_review",
+            manual_review_reason="URL/AV/IPS/application/user/profile 等安全能力依赖目标平台特征库和动作语义，需要人工复核",
+        )
+    ]
+
+
+def _time_range_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    name = _extract_time_range_name(block.lines[0] if block.lines else "")
+    return [
+        _ModuleSpec(
+            feature="time_range",
+            start_line=block.start_line,
+            end_line=block.end_line,
+            source_lines=block.lines,
+            provides={f"time-range:{name}"} if name else set(),
+            tags={"time-range"},
+            status="manual_review",
+            manual_review_reason="时间范围/调度语义和引用点跨厂商差异较大，需要人工复核",
+        )
+    ]
+
+
 def _qos_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
     first = block.lines[0].strip() if block.lines else ""
     text = "\n".join(block.lines)
@@ -839,6 +917,14 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return "pbr"
     if re.match(r"^(?:multicast|pim|igmp|ip\s+multicast-routing)\b", first, re.IGNORECASE):
         return "multicast"
+    if re.match(r"^(?:nat-policy|nat\b|source-nat\b|destination-nat\b|ip\s+nat\b)", first, re.IGNORECASE):
+        return "firewall_nat"
+    if re.match(r"^(?:ike|ipsec|crypto|tunnel-group|vpn)\b", first, re.IGNORECASE):
+        return "firewall_ipsec"
+    if re.match(r"^time-range\b", first, re.IGNORECASE):
+        return "time_range"
+    if re.match(r"^(?:url-filter|antivirus|av-profile|intrusion|ips|profile|application|user-profile)\b", first, re.IGNORECASE):
+        return "firewall_profile"
     if re.match(r"^(?:ntp-service|ntp\s+server)\b", first, re.IGNORECASE):
         return "management.ntp"
     if re.match(r"^(?:snmp-agent|snmp-server)\b", first, re.IGNORECASE):
@@ -900,6 +986,10 @@ def _coupling_relation(feature: str, resource: str) -> str:
         return "pbr_uses_policy" if resource.startswith("route-policy:") else "pbr_uses_interface"
     if feature == "multicast.interface" and resource.startswith("interface:"):
         return "multicast_uses_interface"
+    if feature == "firewall.nat":
+        return "nat_uses_object"
+    if feature == "firewall.ipsec" and resource.startswith("acl:"):
+        return "ipsec_uses_acl"
     if feature == "interface.physical" and resource.startswith("lag:"):
         return "member_of_lag"
     if feature.startswith("interface.") and resource.startswith("vlan:"):
@@ -1345,6 +1435,111 @@ def _extract_multicast_tags(text: str) -> set[str]:
     if re.search(r"\brp-address\b|bsr|ssm|sparse-mode|dense-mode", text, re.IGNORECASE):
         tags.add("control-plane")
     return tags
+
+
+def _extract_nat_policy_name(text: str) -> str:
+    for line in text.splitlines():
+        stripped = line.strip()
+        for pattern in (
+            r"^rule\s+name\s+(\S+)",
+            r"^nat-policy\s+(\S+)",
+            r"^policy\s+name\s+(\S+)",
+            r"^policy\s+(\S+)",
+        ):
+            match = re.match(pattern, stripped, re.IGNORECASE)
+            if match:
+                return match.group(1)
+    return ""
+
+
+def _extract_ipsec_name(text: str) -> str:
+    first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    patterns = (
+        (r"^ike\s+proposal\s+(\S+)", "ike-proposal"),
+        (r"^ike\s+peer\s+(\S+)", "ike-peer"),
+        (r"^ipsec\s+proposal\s+(\S+)", "ipsec-proposal"),
+        (r"^ipsec\s+policy\s+(\S+)\s+(\S+)", "ipsec-policy"),
+        (r"^ipsec\s+profile\s+(\S+)", "ipsec-profile"),
+        (r"^crypto\s+isakmp\s+policy\s+(\S+)", "crypto-isakmp-policy"),
+        (r"^crypto\s+ipsec\s+transform-set\s+(\S+)", "crypto-transform-set"),
+        (r"^crypto\s+map\s+(\S+)\s+(\S+)", "crypto-map"),
+        (r"^crypto\s+ipsec\s+profile\s+(\S+)", "crypto-ipsec-profile"),
+        (r"^tunnel-group\s+(\S+)", "tunnel-group"),
+    )
+    for pattern, prefix in patterns:
+        match = re.match(pattern, first, re.IGNORECASE)
+        if not match:
+            continue
+        if prefix in {"ipsec-policy", "crypto-map"} and len(match.groups()) >= 2:
+            return f"{prefix}:{match.group(1)}:{match.group(2)}"
+        return f"{prefix}:{match.group(1)}"
+    return ""
+
+
+def _extract_ipsec_refs(text: str) -> set[str]:
+    refs: set[str] = set()
+    for line in text.splitlines():
+        stripped = line.strip()
+        for pattern, prefix in (
+            (r"^(?:security\s+acl|match\s+address)\s+(\S+)", "acl"),
+            (r"^ike-peer\s+(\S+)", "ike-peer"),
+            (r"^ike-proposal\s+(\S+)", "ike-proposal"),
+            (r"^(?:proposal|set\s+transform-set)\s+(.+)", "ipsec-proposal"),
+            (r"^(?:remote-address|set\s+peer|address)\s+(\S+)", "peer"),
+        ):
+            match = re.match(pattern, stripped, re.IGNORECASE)
+            if match:
+                value = match.group(1).strip().split()[0]
+                refs.add(f"{prefix}:{value}")
+    return refs
+
+
+def _redact_ipsec_sensitive_line(line: str) -> str:
+    redacted = re.sub(
+        r"(\b(?:pre-shared-key|shared-key|password|secret|key)\b(?:\s+cipher)?\s+)\S+",
+        r"\1<redacted>",
+        line,
+        flags=re.IGNORECASE,
+    )
+    redacted = re.sub(
+        r"(\bcrypto\s+(?:isakmp|ikev1|ikev2)\s+key\s+)\S+",
+        r"\1<redacted>",
+        redacted,
+        flags=re.IGNORECASE,
+    )
+    return redacted
+
+
+def _extract_firewall_profile_name(text: str) -> str:
+    first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    for pattern in (
+        r"^(?:url-filter|antivirus|av-profile|intrusion|ips|application|user-profile)\s+(?:profile\s+)?(\S+)",
+        r"^profile\s+(\S+)",
+    ):
+        match = re.match(pattern, first, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return ""
+
+
+def _extract_firewall_profile_tags(text: str) -> set[str]:
+    tags = {"firewall", "profile"}
+    if re.search(r"\burl-filter\b", text, re.IGNORECASE):
+        tags.add("url-filter")
+    if re.search(r"\b(?:antivirus|av-profile)\b", text, re.IGNORECASE):
+        tags.add("av")
+    if re.search(r"\b(?:intrusion|ips)\b", text, re.IGNORECASE):
+        tags.add("ips")
+    if re.search(r"\bapplication\b", text, re.IGNORECASE):
+        tags.add("application")
+    if re.search(r"\buser\b", text, re.IGNORECASE):
+        tags.add("user")
+    return tags
+
+
+def _extract_time_range_name(first_line: str) -> str:
+    match = re.match(r"^time-range\s+(\S+)", first_line.strip(), re.IGNORECASE)
+    return match.group(1) if match else ""
 
 
 def _extract_qos_acl_refs(text: str) -> list[str]:
