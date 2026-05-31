@@ -41,6 +41,22 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
         return "vlan"
     if _matches_any(first, (r"^voice-vlan\b", r"^voice\s+vlan\b")):
         return "l2_voice_vlan"
+    if _matches_any(first, (r"^dhcp\s+snooping\b",)):
+        return "l2_dhcp_snooping"
+    if _matches_any(first, (r"^ip\s+source\s+check\b", r"^ip\s+source\s+guard\b")):
+        return "l2_source_guard"
+    if _matches_any(first, (r"^arp\s+(?:anti-attack|inspection|detection|check)\b",)):
+        return "l2_arp_security"
+    if _matches_any(first, (r"^port-security\b",)):
+        return "l2_port_security"
+    if _matches_any(first, (r"^storm-control\b", r"^broadcast-suppression\b", r"^multicast-suppression\b", r"^unicast-suppression\b")):
+        return "l2_storm_control"
+    if _matches_any(first, (r"^(?:irf|stack|vss|css)\b",)):
+        return "platform_stack"
+    if _matches_any(first, (r"^vxlan\b",)):
+        return "overlay_vxlan"
+    if _matches_any(first, (r"^(?:evpn|evpn-overlay)\b",)):
+        return "overlay_evpn"
     if _matches_any(first, (r"^lldp\b", r"^cdp\b")):
         return "l2_lldp"
     if _matches_any(first, (r"^mac-address\b", r"^mac\s+address-table\b")):
@@ -100,6 +116,8 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
         return "snmp"
     if _matches_any(first, (r"^nqa\s+test-instance\b", r"^ip\s+sla\b")):
         return "nqa"
+    if _matches_any(first, (r"^mpls\b",)):
+        return "mpls"
     if _matches_any(first, (r"^bfd\b",)):
         return "bfd"
     if _matches_any(first, (r"^stp\b", r"^spanning-tree\b")):
@@ -123,6 +141,10 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
         ),
     ):
         return "firewall_profile"
+    if _matches_any(first, (r"^session\b",)):
+        return "firewall_session"
+    if _matches_any(first, (r"^(?:traffic\s+log|log\s+setting|security-log|log\b)",)):
+        return "firewall_logging"
 
     # A few Huawei/H3C global commands are important to keep visible for audit,
     # but they are not safe to auto-render through generic fallback.

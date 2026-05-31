@@ -1,11 +1,11 @@
 # Product Capability Baseline Coverage
 
-- total: 26
-- covered: 26
-- full: 26
+- total: 34
+- covered: 34
+- full: 34
 - partial: 0
 - missing: 0
-- by_action: {"auto_subset": 11, "identify_only": 1, "manual_review": 14}
+- by_action: {"auto_subset": 11, "identify_only": 1, "manual_review": 22}
 
 ## FIREWALL
 
@@ -14,6 +14,7 @@
 - `firewall.nat`: manual_review; status=covered; matched=firewall.nat; missing=-; modules: firewall.nat
 - `firewall.ipsec`: manual_review; status=covered; matched=firewall.ipsec, interface.tunnel; missing=-; modules: firewall.ipsec, interface.tunnel
 - `firewall.utm_profile`: identify_only; status=covered; matched=firewall.profile, time_range; missing=-; modules: firewall.profile, time_range
+- `firewall.session_logging`: manual_review; status=covered; matched=firewall.logging, firewall.session; missing=-; modules: firewall.session, firewall.logging
 
 ## ROUTER
 
@@ -28,6 +29,10 @@
 - `router.multicast`: manual_review; status=covered; matched=multicast, multicast.interface; missing=-; modules: multicast, multicast.interface
 - `router.bfd`: manual_review; status=covered; matched=bfd.session; missing=-; modules: bfd.session
 - `router.dhcp`: manual_review; status=covered; matched=dhcp.pool; missing=-; modules: dhcp.pool
+- `router.mpls`: manual_review; status=covered; matched=mpls; missing=-; modules: mpls
+- `router.nqa_ip_sla`: manual_review; status=covered; matched=ip_sla, nqa; missing=-; modules: nqa, ip_sla
+- `router.fhrp`: manual_review; status=covered; matched=fhrp.hsrp, fhrp.vrrp; missing=-; modules: fhrp.vrrp, fhrp.hsrp
+- `router.tunnel`: manual_review; status=covered; matched=interface.tunnel; missing=-; modules: interface.tunnel
 
 ## SWITCH
 
@@ -40,4 +45,7 @@
 - `switch.voice_vlan`: manual_review; status=covered; matched=l2.voice_vlan; missing=-; modules: l2.voice_vlan
 - `switch.lldp`: manual_review; status=covered; matched=l2.lldp; missing=-; modules: l2.lldp
 - `switch.mac_table`: manual_review; status=covered; matched=l2.mac_table; missing=-; modules: l2.mac_table
+- `switch.access_security`: manual_review; status=covered; matched=l2.arp_security, l2.dhcp_snooping, l2.port_security, l2.source_guard, l2.storm_control; missing=-; modules: l2.dhcp_snooping, l2.source_guard, l2.arp_security, l2.port_security, l2.storm_control
+- `switch.stack_virtualization`: manual_review; status=covered; matched=platform.stack; missing=-; modules: platform.stack
+- `switch.vxlan_evpn`: manual_review; status=covered; matched=overlay.evpn, overlay.vxlan; missing=-; modules: overlay.vxlan, overlay.evpn
 - `acl_qos`: auto_subset; status=covered; matched=acl, acl_binding, qos.behavior, qos.binding, qos.classifier, qos.policy; missing=-; modules: acl, acl_binding, qos.classifier, qos.behavior, qos.policy, qos.binding

@@ -123,6 +123,8 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         return _l2_manual_review_module_specs_from_block(block, feature)
     if feature == "stp.mstp":
         return _l2_manual_review_module_specs_from_block(block, feature)
+    if feature.startswith(("platform.", "overlay.")) or feature in {"mpls", "nqa", "ip_sla", "firewall.session", "firewall.logging"}:
+        return _generic_manual_review_module_specs_from_block(block, feature)
     if feature == "bfd":
         return _bfd_module_specs_from_block(block)
     if feature == "dhcp.pool":
@@ -720,6 +722,11 @@ def _l2_manual_review_module_specs_from_block(block: ConfigBlock, feature: str) 
         "l2.voice_vlan": "Voice VLAN 的 OUI、LLDP/CDP 联动和接入行为跨厂商差异较大，需要人工复核",
         "l2.lldp": "LLDP/CDP 邻居发现、TLV、MED/voice 等语义跨厂商不同，需要人工复核",
         "l2.mac_table": "静态 MAC、黑洞 MAC、动态学习限制等二层转发表行为需要人工复核",
+        "l2.dhcp_snooping": "DHCP Snooping 会影响绑定表、信任口和下游安全能力，需要人工复核",
+        "l2.source_guard": "IP Source Guard/用户绑定依赖 DHCP Snooping 或静态绑定表，需要人工复核",
+        "l2.arp_security": "ARP inspection/anti-attack 依赖绑定表、VLAN 和信任口语义，需要人工复核",
+        "l2.port_security": "端口安全会影响 MAC 学习、违规动作和接入口行为，需要人工复核",
+        "l2.storm_control": "风暴抑制阈值单位和动作跨厂商差异较大，需要人工复核",
         "stp.mstp": "MSTP region、instance 与 VLAN 映射会影响生成树拓扑，需要人工复核",
     }
     tag = feature.split(".", 1)[-1] if "." in feature else feature
@@ -732,6 +739,31 @@ def _l2_manual_review_module_specs_from_block(block: ConfigBlock, feature: str) 
             tags={"l2", tag},
             status="manual_review",
             manual_review_reason=reason_by_feature.get(feature, "二层高级特性跨厂商语义不确定，需要人工复核"),
+        )
+    ]
+
+
+def _generic_manual_review_module_specs_from_block(block: ConfigBlock, feature: str) -> list[_ModuleSpec]:
+    reason_by_feature = {
+        "platform.stack": "堆叠/虚拟化会影响设备角色、成员链路、接口编号和升级方式，需要人工复核",
+        "overlay.vxlan": "VXLAN VNI、隧道端点和二三层网关语义跨厂商差异较大，需要人工复核",
+        "overlay.evpn": "EVPN 控制平面、RT/RD 和邻居能力需要按目标平台设计确认",
+        "mpls": "MPLS/LDP/TE/VPN 标签转发和控制平面语义复杂，需要人工复核",
+        "nqa": "NQA/IP SLA 探测对象、频率、联动动作和告警语义需要人工复核",
+        "ip_sla": "NQA/IP SLA 探测对象、频率、联动动作和告警语义需要人工复核",
+        "firewall.session": "会话超时、连接限制和状态表行为会影响业务连接，需要人工复核",
+        "firewall.logging": "日志/审计策略涉及级别、目的地、策略命中和合规要求，需要人工复核",
+    }
+    tag = feature.split(".", 1)[-1] if "." in feature else feature
+    return [
+        _ModuleSpec(
+            feature=feature,
+            start_line=block.start_line,
+            end_line=block.end_line,
+            source_lines=block.lines,
+            tags={tag},
+            status="manual_review",
+            manual_review_reason=reason_by_feature.get(feature, "该产品能力跨厂商语义不确定，需要人工复核"),
         )
     ]
 
@@ -846,7 +878,7 @@ def _module_source_lines(block: ConfigBlock, feature: str) -> list[str]:
     for line in block.lines[1:]:
         if (
             _extract_acl_binding_ref(line)
-            or _extract_vrrp_ref(line)
+            or _extract_fhrp_ref(line)
             or _extract_pbr_binding_ref(line)
             or _extract_qos_binding_ref(line)
             or _is_interface_multicast_line(line)
@@ -884,26 +916,27 @@ def _vrrp_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
     interface_name = _extract_interface_name(block.lines[0])
     if not interface_name:
         return []
-    by_group: dict[str, list[tuple[int, str]]] = {}
+    by_group: dict[tuple[str, str], list[tuple[int, str]]] = {}
     for offset, raw_line in enumerate(block.lines[1:], 1):
-        group_id = _extract_vrrp_ref(raw_line)
-        if not group_id:
+        fhrp = _extract_fhrp_ref(raw_line)
+        if not fhrp:
             continue
-        by_group.setdefault(group_id, []).append((block.start_line + offset, raw_line))
+        protocol, group_id = fhrp
+        by_group.setdefault((protocol, group_id), []).append((block.start_line + offset, raw_line))
 
     specs: list[_ModuleSpec] = []
-    for group_id, entries in by_group.items():
+    for (protocol, group_id), entries in by_group.items():
         line_numbers = [line_no for line_no, _ in entries]
         source_lines = [line for _, line in entries]
         specs.append(
             _ModuleSpec(
-                feature="fhrp.vrrp",
+                feature=f"fhrp.{protocol}",
                 start_line=min(line_numbers),
                 end_line=max(line_numbers),
                 source_lines=source_lines,
-                provides={f"vrrp:{interface_name}:{group_id}"},
+                provides={f"{protocol}:{interface_name}:{group_id}"},
                 consumes={f"interface:{interface_name}"},
-                tags={"fhrp", "vrrp", f"group:{group_id}"},
+                tags={"fhrp", protocol, f"group:{group_id}"},
                 status="manual_review",
                 manual_review_reason="FHRP/VRRP/HSRP 的 VIP、优先级、抢占和 track 行为跨厂商差异较大，需要人工复核",
             )
@@ -1030,6 +1063,22 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return _interface_feature(first)
     if re.match(r"^(?:voice-vlan|voice\s+vlan)\b", first, re.IGNORECASE):
         return "l2.voice_vlan"
+    if re.match(r"^dhcp\s+snooping\b", first, re.IGNORECASE):
+        return "l2.dhcp_snooping"
+    if re.match(r"^(?:ip\s+source\s+check|ip\s+source\s+guard)\b", first, re.IGNORECASE):
+        return "l2.source_guard"
+    if re.match(r"^arp\s+(?:anti-attack|inspection|detection|check)\b", first, re.IGNORECASE):
+        return "l2.arp_security"
+    if re.match(r"^port-security\b", first, re.IGNORECASE):
+        return "l2.port_security"
+    if re.match(r"^(?:storm-control|broadcast-suppression|multicast-suppression|unicast-suppression)\b", first, re.IGNORECASE):
+        return "l2.storm_control"
+    if re.match(r"^(?:irf|stack|vss|css)\b", first, re.IGNORECASE):
+        return "platform.stack"
+    if re.match(r"^vxlan\b", first, re.IGNORECASE):
+        return "overlay.vxlan"
+    if re.match(r"^(?:evpn|evpn-overlay)\b", first, re.IGNORECASE):
+        return "overlay.evpn"
     if re.match(r"^(?:lldp|cdp)\b", first, re.IGNORECASE):
         return "l2.lldp"
     if re.match(r"^(?:mac-address|mac\s+address-table)\b", first, re.IGNORECASE):
@@ -1044,6 +1093,12 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return "isis"
     if re.match(r"^bfd\b", first, re.IGNORECASE):
         return "bfd"
+    if re.match(r"^mpls\b", first, re.IGNORECASE):
+        return "mpls"
+    if re.match(r"^nqa\s+test-instance\b", first, re.IGNORECASE):
+        return "nqa"
+    if re.match(r"^ip\s+sla\b", first, re.IGNORECASE):
+        return "ip_sla"
     if re.match(r"^(?:ip\s+pool|ip\s+dhcp\s+pool)\s+\S+", first, re.IGNORECASE):
         return "dhcp.pool"
     if re.match(r"^(?:route-policy|route-map)\b", first, re.IGNORECASE):
@@ -1068,6 +1123,10 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return "time_range"
     if re.match(r"^(?:url-filter|antivirus|av-profile|intrusion|ips|profile|application|user-profile)\b", first, re.IGNORECASE):
         return "firewall_profile"
+    if re.match(r"^session\b", first, re.IGNORECASE):
+        return "firewall.session"
+    if re.match(r"^(?:traffic\s+log|log\s+setting|security-log|log\b)", first, re.IGNORECASE):
+        return "firewall.logging"
     if re.match(r"^(?:ntp-service|ntp\s+server)\b", first, re.IGNORECASE):
         return "management.ntp"
     if re.match(r"^(?:snmp-agent|snmp-server)\b", first, re.IGNORECASE):
@@ -1366,16 +1425,20 @@ def _extract_acl_binding_ref(line: str) -> Optional[tuple[str, str]]:
     return None
 
 
-def _extract_vrrp_ref(line: str) -> str:
+def _extract_fhrp_ref(line: str) -> Optional[tuple[str, str]]:
     stripped = line.strip()
-    for pattern in (
-        r"^vrrp\s+vrid\s+(\S+)\b",
-        r"^standby\s+(\S+)\b",
-    ):
-        match = re.match(pattern, stripped, re.IGNORECASE)
-        if match:
-            return match.group(1)
-    return ""
+    vrrp = re.match(r"^vrrp\s+vrid\s+(\S+)\b", stripped, re.IGNORECASE)
+    if vrrp:
+        return "vrrp", vrrp.group(1)
+    hsrp = re.match(r"^standby\s+(\S+)\b", stripped, re.IGNORECASE)
+    if hsrp:
+        return "hsrp", hsrp.group(1)
+    return None
+
+
+def _extract_vrrp_ref(line: str) -> str:
+    ref = _extract_fhrp_ref(line)
+    return ref[1] if ref else ""
 
 
 def _extract_bfd_name(first_line: str) -> str:

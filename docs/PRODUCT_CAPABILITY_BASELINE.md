@@ -51,33 +51,41 @@ The machine-readable source of truth is
 | switch.voice_vlan | SWITCH | manual_review | l2.voice_vlan |
 | switch.lldp | SWITCH | manual_review | l2.lldp |
 | switch.mac_table | SWITCH | manual_review | l2.mac_table |
+| switch.access_security | SWITCH | manual_review | l2.dhcp_snooping, l2.source_guard, l2.arp_security, l2.port_security, l2.storm_control |
+| switch.stack_virtualization | SWITCH | manual_review | platform.stack |
+| switch.vxlan_evpn | SWITCH | manual_review | overlay.vxlan, overlay.evpn |
 | router.static_route | ROUTER | auto_subset | static_route, static_route.option |
 | router.ospf | ROUTER | auto_subset | ospf.process, ospf.area, ospf.network, ospf.passive_interface, ospf.authentication, ospf.redistribute, ospf.area_special, ospf.interface_tuning |
 | router.bgp | ROUTER | auto_subset | bgp.process, bgp.neighbor, bgp.network, bgp.password, bgp.policy, bgp.redistribute, bgp.attribute |
 | router.rip | ROUTER | manual_review | rip.process, rip.network, rip.unknown |
-| router.isis | ROUTER | manual_review | isis.process, isis.network, isis.unknown |
+| router.isis | ROUTER | manual_review | isis.process, isis.network_entity, isis.interface_tuning, isis.redistribute |
 | router.vrf | ROUTER | auto_subset | vrf |
 | router.route_policy | ROUTER | manual_review | route_policy, route_filter |
 | router.pbr | ROUTER | manual_review | pbr.policy, pbr.binding |
 | router.multicast | ROUTER | manual_review | multicast, multicast.interface |
 | router.bfd | ROUTER | manual_review | bfd.session |
 | router.dhcp | ROUTER | manual_review | dhcp.pool |
+| router.mpls | ROUTER | manual_review | mpls |
+| router.nqa_ip_sla | ROUTER | manual_review | nqa, ip_sla |
+| router.fhrp | ROUTER | manual_review | fhrp.vrrp, fhrp.hsrp |
+| router.tunnel | ROUTER | manual_review | interface.tunnel |
 | firewall.objects | FIREWALL | auto_subset | zone, address_object, service_object, object_group, object_group.member |
 | firewall.policy | FIREWALL | auto_subset | security_policy |
 | firewall.nat | FIREWALL | manual_review | firewall.nat |
 | firewall.ipsec | FIREWALL | manual_review | firewall.ipsec, interface.tunnel |
 | firewall.utm_profile | FIREWALL | identify_only | firewall.profile, time_range |
+| firewall.session_logging | FIREWALL | manual_review | firewall.session, firewall.logging |
 | acl_qos | SWITCH | auto_subset | acl, acl_binding, qos.classifier, qos.behavior, qos.policy, qos.binding |
 
 ## Current Implementation Notes
 
 - The module graph now recognizes product-relevant L2 advanced features:
-  `l2.qinq`, `l2.voice_vlan`, `l2.lldp`, `l2.mac_table`, and `stp.mstp`.
+  `l2.qinq`, `l2.voice_vlan`, `l2.lldp`, `l2.mac_table`, `l2.dhcp_snooping`, `l2.source_guard`, `l2.arp_security`, `l2.port_security`, `l2.storm_control`, and `stp.mstp`.
 - These features default to manual review because vendor semantics affect
-  encapsulation, phone discovery, TLVs, static forwarding behavior, and spanning
+  encapsulation, phone discovery, TLVs, static forwarding behavior, access security, storm control, and spanning
   tree topology.
 - Routing and firewall advanced features are already split into review modules:
-  RIP, IS-IS, PBR, multicast, BFD, DHCP, NAT, IPsec, firewall profiles, and
+  RIP, IS-IS, PBR, multicast, BFD, DHCP, MPLS, NQA/IP SLA, FHRP, tunnels, NAT, IPsec, firewall profiles, session/logging, and
   time ranges.
 - The UI and exported risk report use module graph evidence to show original
   source snippets, reason, action, group, priority, and coupling relations.

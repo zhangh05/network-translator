@@ -111,6 +111,34 @@ PRODUCT_CAPABILITY_BASELINE: tuple[CapabilitySpec, ...] = (
         ("Huawei Ethernet Switching Configuration Guide", "Ruijie Ethernet Switching Configuration"),
     ),
     CapabilitySpec(
+        "switch.access_security",
+        "SWITCH",
+        "Access security",
+        ("l2.dhcp_snooping", "l2.source_guard", "l2.arp_security", "l2.port_security", "l2.storm_control"),
+        "manual_review",
+        SWITCH_PLATFORMS,
+        ("Cisco LAN Switching Security Configuration Guide", "Huawei Ethernet Switching Security Configuration", "H3C Security Configuration Guide", "Ruijie Security Configuration"),
+        "DHCP snooping, ARP inspection, source guard, port security, and storm control are recognized but require review.",
+    ),
+    CapabilitySpec(
+        "switch.stack_virtualization",
+        "SWITCH",
+        "Stacking / chassis virtualization",
+        ("platform.stack",),
+        "manual_review",
+        SWITCH_PLATFORMS,
+        ("Cisco StackWise/VSS configuration guides", "H3C IRF configuration guides", "Huawei CSS/iStack documentation", "Ruijie VSF/VSU documentation"),
+    ),
+    CapabilitySpec(
+        "switch.vxlan_evpn",
+        "SWITCH",
+        "VXLAN / EVPN overlay",
+        ("overlay.vxlan", "overlay.evpn"),
+        "manual_review",
+        SWITCH_PLATFORMS,
+        ("Cisco VXLAN EVPN configuration guides", "Huawei VXLAN configuration guides", "H3C VXLAN configuration guides", "Ruijie VXLAN EVPN documentation"),
+    ),
+    CapabilitySpec(
         "router.static_route",
         "ROUTER",
         "IP routing",
@@ -210,6 +238,42 @@ PRODUCT_CAPABILITY_BASELINE: tuple[CapabilitySpec, ...] = (
         ("Ruijie Device Management Configuration", "Cisco IOS XE IP Addressing Services"),
     ),
     CapabilitySpec(
+        "router.mpls",
+        "ROUTER",
+        "MPLS / label switching",
+        ("mpls",),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("Cisco MPLS Configuration Guide", "Huawei MPLS Configuration Guide", "H3C MPLS Configuration Guide", "Ruijie MPLS Configuration"),
+    ),
+    CapabilitySpec(
+        "router.nqa_ip_sla",
+        "ROUTER",
+        "NQA / IP SLA",
+        ("nqa", "ip_sla"),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("Huawei NQA Configuration Guide", "Cisco IP SLA Configuration Guide", "H3C NQA Configuration Guide", "Ruijie Device Management Configuration"),
+    ),
+    CapabilitySpec(
+        "router.fhrp",
+        "ROUTER",
+        "First-hop redundancy",
+        ("fhrp.vrrp", "fhrp.hsrp"),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("Cisco HSRP Configuration Guide", "Huawei VRRP Configuration Guide", "H3C VRRP Configuration Guide", "Ruijie VRRP Configuration"),
+    ),
+    CapabilitySpec(
+        "router.tunnel",
+        "ROUTER",
+        "Tunnel interfaces",
+        ("interface.tunnel",),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("Cisco Tunnel Interface Configuration Guide", "Huawei GRE/IPsec tunnel documentation", "H3C Tunnel Configuration Guide", "Ruijie Tunnel Configuration"),
+    ),
+    CapabilitySpec(
         "firewall.objects",
         "FIREWALL",
         "Objects",
@@ -253,6 +317,15 @@ PRODUCT_CAPABILITY_BASELINE: tuple[CapabilitySpec, ...] = (
         "identify_only",
         FIREWALL_PLATFORMS,
         ("DPtech Firewall Technical White Paper", "Hillstone StoneOS product guide", "Huawei USG support guide"),
+    ),
+    CapabilitySpec(
+        "firewall.session_logging",
+        "FIREWALL",
+        "Session and audit logging",
+        ("firewall.session", "firewall.logging"),
+        "manual_review",
+        FIREWALL_PLATFORMS,
+        ("Huawei USG logging/session guides", "Hillstone StoneOS logging/session documentation", "Topsec firewall audit documentation", "DPtech firewall logging documentation"),
     ),
     CapabilitySpec(
         "acl_qos",
@@ -325,6 +398,33 @@ stp region-configuration
     ),
     "switch.lldp": ("huawei", "lldp enable\n"),
     "switch.mac_table": ("huawei", "mac-address static 0011-2233-4455 GigabitEthernet0/0/1 vlan 10\n"),
+    "switch.access_security": (
+        "huawei",
+        """dhcp snooping enable
+#
+ip source check user-bind enable
+#
+arp anti-attack check user-bind enable
+#
+port-security enable
+#
+storm-control broadcast min-rate 1000 max-rate 2000
+""",
+    ),
+    "switch.stack_virtualization": (
+        "h3c",
+        """irf member 1 priority 32
+#
+stack enable
+""",
+    ),
+    "switch.vxlan_evpn": (
+        "h3c",
+        """vxlan 10010
+#
+evpn-overlay enable
+""",
+    ),
     "router.static_route": (
         "huawei",
         """ip route-static 10.0.20.0 255.255.255.0 10.0.10.254
@@ -414,6 +514,42 @@ interface GigabitEthernet0/0/2
  default-router 10.0.10.1
 """,
     ),
+    "router.mpls": (
+        "huawei",
+        """mpls lsr-id 1.1.1.1
+mpls
+""",
+    ),
+    "router.nqa_ip_sla": (
+        "huawei",
+        """nqa test-instance admin ping1
+ test-type icmp
+ destination-address ipv4 10.0.0.1
+#
+ip sla 10
+ icmp-echo 10.0.0.1
+""",
+    ),
+    "router.fhrp": (
+        "mixed",
+        """interface Vlanif10
+ ip address 10.0.10.1 255.255.255.0
+ vrrp vrid 1 virtual-ip 10.0.10.254
+#
+interface Vlan20
+ ip address 10.0.20.1 255.255.255.0
+ standby 1 ip 10.0.20.254
+""",
+    ),
+    "router.tunnel": (
+        "huawei",
+        """interface Tunnel0/0/0
+ ip address 10.255.1.1 255.255.255.252
+ tunnel-protocol gre
+ source 10.0.0.1
+ destination 10.0.0.2
+""",
+    ),
     "firewall.objects": (
         "huawei_usg",
         """security-zone name trust
@@ -473,6 +609,15 @@ ipsec policy VPN 1 isakmp
 #
 url-filter profile WEB-FILTER
  category block gambling
+""",
+    ),
+    "firewall.session_logging": (
+        "hillstone",
+        """session timeout tcp 3600
+#
+traffic log enable
+#
+log setting security-policy enable
 """,
     ),
     "acl_qos": (

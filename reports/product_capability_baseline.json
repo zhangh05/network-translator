@@ -1,13 +1,13 @@
 {
   "summary": {
-    "total": 26,
-    "covered": 26,
-    "full": 26,
+    "total": 34,
+    "covered": 34,
+    "full": 34,
     "partial": 0,
     "missing": 0,
     "by_action": {
       "auto_subset": 11,
-      "manual_review": 14,
+      "manual_review": 22,
       "identify_only": 1
     }
   },
@@ -308,6 +308,114 @@
         ],
         "matched_features": [
           "l2.mac_table"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "switch.access_security",
+        "domain": "SWITCH",
+        "product_area": "Access security",
+        "module_features": [
+          "l2.dhcp_snooping",
+          "l2.source_guard",
+          "l2.arp_security",
+          "l2.port_security",
+          "l2.storm_control"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco LAN Switching Security Configuration Guide",
+          "Huawei Ethernet Switching Security Configuration",
+          "H3C Security Configuration Guide",
+          "Ruijie Security Configuration"
+        ],
+        "notes": "DHCP snooping, ARP inspection, source guard, port security, and storm control are recognized but require review.",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "l2.arp_security",
+          "l2.dhcp_snooping",
+          "l2.port_security",
+          "l2.source_guard",
+          "l2.storm_control"
+        ],
+        "matched_features": [
+          "l2.arp_security",
+          "l2.dhcp_snooping",
+          "l2.port_security",
+          "l2.source_guard",
+          "l2.storm_control"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "switch.stack_virtualization",
+        "domain": "SWITCH",
+        "product_area": "Stacking / chassis virtualization",
+        "module_features": [
+          "platform.stack"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco StackWise/VSS configuration guides",
+          "H3C IRF configuration guides",
+          "Huawei CSS/iStack documentation",
+          "Ruijie VSF/VSU documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "h3c",
+        "observed_features": [
+          "platform.stack"
+        ],
+        "matched_features": [
+          "platform.stack"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "switch.vxlan_evpn",
+        "domain": "SWITCH",
+        "product_area": "VXLAN / EVPN overlay",
+        "module_features": [
+          "overlay.vxlan",
+          "overlay.evpn"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco VXLAN EVPN configuration guides",
+          "Huawei VXLAN configuration guides",
+          "H3C VXLAN configuration guides",
+          "Ruijie VXLAN EVPN documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "h3c",
+        "observed_features": [
+          "overlay.evpn",
+          "overlay.vxlan"
+        ],
+        "matched_features": [
+          "overlay.evpn",
+          "overlay.vxlan"
         ],
         "missing_module_features": [],
         "coverage_status": "covered"
@@ -757,6 +865,137 @@
         ],
         "missing_module_features": [],
         "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.mpls",
+        "domain": "ROUTER",
+        "product_area": "MPLS / label switching",
+        "module_features": [
+          "mpls"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco MPLS Configuration Guide",
+          "Huawei MPLS Configuration Guide",
+          "H3C MPLS Configuration Guide",
+          "Ruijie MPLS Configuration"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "mpls"
+        ],
+        "matched_features": [
+          "mpls"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.nqa_ip_sla",
+        "domain": "ROUTER",
+        "product_area": "NQA / IP SLA",
+        "module_features": [
+          "nqa",
+          "ip_sla"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Huawei NQA Configuration Guide",
+          "Cisco IP SLA Configuration Guide",
+          "H3C NQA Configuration Guide",
+          "Ruijie Device Management Configuration"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "ip_sla",
+          "nqa"
+        ],
+        "matched_features": [
+          "ip_sla",
+          "nqa"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.fhrp",
+        "domain": "ROUTER",
+        "product_area": "First-hop redundancy",
+        "module_features": [
+          "fhrp.vrrp",
+          "fhrp.hsrp"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco HSRP Configuration Guide",
+          "Huawei VRRP Configuration Guide",
+          "H3C VRRP Configuration Guide",
+          "Ruijie VRRP Configuration"
+        ],
+        "notes": "",
+        "probe_vendor": "mixed",
+        "observed_features": [
+          "fhrp.hsrp",
+          "fhrp.vrrp",
+          "interface.svi"
+        ],
+        "matched_features": [
+          "fhrp.hsrp",
+          "fhrp.vrrp"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.tunnel",
+        "domain": "ROUTER",
+        "product_area": "Tunnel interfaces",
+        "module_features": [
+          "interface.tunnel"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco Tunnel Interface Configuration Guide",
+          "Huawei GRE/IPsec tunnel documentation",
+          "H3C Tunnel Configuration Guide",
+          "Ruijie Tunnel Configuration"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "interface.tunnel"
+        ],
+        "matched_features": [
+          "interface.tunnel"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       }
     ],
     "FIREWALL": [
@@ -925,6 +1164,40 @@
         "matched_features": [
           "firewall.profile",
           "time_range"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "firewall.session_logging",
+        "domain": "FIREWALL",
+        "product_area": "Session and audit logging",
+        "module_features": [
+          "firewall.session",
+          "firewall.logging"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "Huawei USG logging/session guides",
+          "Hillstone StoneOS logging/session documentation",
+          "Topsec firewall audit documentation",
+          "DPtech firewall logging documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "hillstone",
+        "observed_features": [
+          "firewall.logging",
+          "firewall.session"
+        ],
+        "matched_features": [
+          "firewall.logging",
+          "firewall.session"
         ],
         "missing_module_features": [],
         "coverage_status": "covered"
