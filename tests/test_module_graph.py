@@ -540,6 +540,83 @@ info-center loghost 10.0.0.2
     assert "<redacted>" in assembly.manual_review_config
 
 
+def test_bfd_module_extracts_session_and_stays_manual_review():
+    config = """bfd SESSION1 bind peer-ip 10.0.0.2 source-ip 10.0.0.1
+ discriminator local 1
+ discriminator remote 2
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    bfd = graph.by_feature("bfd.session")[0]
+
+    assert bfd.status == "manual_review"
+    assert "bfd:SESSION1" in bfd.provides
+    assert "peer:10.0.0.2" in bfd.consumes
+    assert "source:10.0.0.1" in bfd.consumes
+    assert "bfd session" in bfd.manual_review_reason.lower()
+
+
+def test_vrrp_is_split_from_interface_and_kept_manual_review_with_interface_dependency():
+    config = """vlan batch 10
+#
+interface Vlanif10
+ ip address 10.0.10.1 255.255.255.0
+ vrrp vrid 1 virtual-ip 10.0.10.254
+ vrrp vrid 1 priority 120
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    svi = graph.by_feature("interface.svi")[0]
+    vrrp = graph.by_feature("fhrp.vrrp")[0]
+
+    assert "vrrp vrid" not in "\n".join(svi.source_lines)
+    assert vrrp.status == "manual_review"
+    assert "interface:Vlanif10" in vrrp.consumes
+    assert "vrrp:Vlanif10:1" in vrrp.provides
+    assert svi.module_id in vrrp.depends_on
+    assert any(coupling["relation"] == "fhrp_uses_interface" for coupling in graph.to_dict()["couplings"])
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+
+    assert "vrrp vrid" not in assembly.deployable_config
+    assert "vrrp vrid 1 virtual-ip 10.0.10.254" in assembly.manual_review_config
+
+
+def test_dhcp_pool_module_extracts_pool_and_gateway():
+    config = """ip pool LAN
+ network 10.0.10.0 mask 255.255.255.0
+ gateway-list 10.0.10.1
+ dns-list 10.0.0.53
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    dhcp = graph.by_feature("dhcp.pool")[0]
+
+    assert dhcp.status == "manual_review"
+    assert "dhcp-pool:LAN" in dhcp.provides
+    assert "subnet:10.0.10.0/255.255.255.0" in dhcp.provides
+    assert "gateway:10.0.10.1" in dhcp.consumes
+
+
+def test_tunnel_module_extracts_endpoints_and_stays_manual_review_for_gre():
+    config = """interface Tunnel0/0/0
+ tunnel-protocol gre
+ source 10.0.0.1
+ destination 10.0.0.2
+ ip address 172.16.0.1 255.255.255.252
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    tunnel = graph.by_feature("interface.tunnel")[0]
+
+    assert tunnel.status == "manual_review"
+    assert "tunnel: Tunnel0/0/0" not in tunnel.provides
+    assert "tunnel:Tunnel0/0/0" in tunnel.provides
+    assert "source:10.0.0.1" in tunnel.consumes
+    assert "destination:10.0.0.2" in tunnel.consumes
+    assert "gre" in tunnel.tags
+
+
 def test_device_identity_is_separate_from_generic_system_module():
     graph = build_module_graph("sysname CORE-SW\nclock timezone CST add 08:00:00\n", vendor="huawei")
 

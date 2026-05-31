@@ -13,6 +13,7 @@ translation, the source config can be decomposed into auditable modules:
 - Interface modules split by kind
 - ACL definition and ACL binding modules
 - Routing modules such as static route, VRF, OSPF, BGP, and route-policy
+- Resiliency/service modules such as BFD, FHRP/VRRP, DHCP pool, and tunnel
 - QoS and management-plane modules
 - Firewall object and policy modules
 - Manual-review modules for unsupported or vendor-specific features
@@ -47,7 +48,8 @@ confirmation without polluting the translated configuration tab.
 - `feature`: normalized feature type, for example `device_identity`, `vlan`,
   `interface.svi`, `interface.physical`, `acl`, `acl_binding`,
   `static_route`, `vrf`, `route_policy`, `qos.policy`, `management.ntp`,
-  `ospf.process`, `bgp.process`, `zone`, `address_object`, `service_object`,
+  `ospf.process`, `bgp.process`, `bfd.session`, `fhrp.vrrp`, `dhcp.pool`,
+  `interface.tunnel`, `zone`, `address_object`, `service_object`,
   `security_policy`, or `unknown`.
 - `start_line` / `end_line`: original config line span.
 - `source_lines`: original source config lines.
@@ -131,6 +133,7 @@ traffic-filter inbound acl 3000
 | `interface.physical` | Physical port | `interface:GE0/0/1` | `vlan:*`, `lag:*` |
 | `interface.lag` | Link aggregation interface | `interface:Eth-Trunk1`, `lag:1` | none |
 | `interface.loopback` | Loopback interface | `interface:LoopBack0` | none |
+| `interface.tunnel` | Tunnel/GRE/IPsec-like interface | `interface:Tunnel0/0/0`, `tunnel:Tunnel0/0/0` | `source:*`, `destination:*` |
 | `acl` | ACL definition | `acl:3000` | objects or time ranges later |
 | `acl_binding` | ACL bind point | none | `acl:3000`, `interface:*` |
 | `static_route` | Basic static route | `route:dst:mask:nexthop` | optional `vrf:*` |
@@ -150,6 +153,9 @@ traffic-filter inbound acl 3000
 | `bgp.policy` | BGP route-policy/route-map/filter binding | none | `bgp:65000` |
 | `bgp.redistribute` | BGP redistribution/default route | none | `bgp:65000` |
 | `bgp.attribute` | BGP attribute tuning | none | `bgp:65000` |
+| `bfd.session` | BFD session and endpoint binding | `bfd:SESSION1` | `peer:*`, `source:*`, optional `interface:*` |
+| `fhrp.vrrp` | VRRP/HSRP/FHRP virtual gateway behavior | `vrrp:Vlanif10:1` | `interface:Vlanif10` |
+| `dhcp.pool` | DHCP pool scope/options | `dhcp-pool:LAN`, `subnet:*` | `gateway:*` |
 | `route_policy` | Route-policy/route-map block | `route-policy:EXPORT` | `acl:*` |
 | `qos.classifier` | QoS classifier | `qos-classifier:C1` | `acl:*` |
 | `qos.behavior` | QoS behavior/action body | `qos-behavior:B1` | none |
@@ -187,6 +193,12 @@ is decomposed into:
 During module translation, `acl_binding` is rendered with explicit interface
 context. This prevents duplicate output such as two `ip access-group` lines and
 keeps binding semantics separate from interface address/configuration semantics.
+
+The same rule applies to FHRP. `vrrp vrid ...` / `standby ...` lines are split
+out of `interface.svi` into `fhrp.vrrp`, because VIP, priority, preempt, and
+track behavior often differ by platform. The SVI remains the interface/IP
+provider; the FHRP module consumes the interface and stays manual-review until a
+domain-specific validator can prove semantic equivalence.
 
 ## OSPF Risk Separation
 
@@ -257,6 +269,17 @@ separates:
 - `management.ntp`, `management.snmp`, `management.logging`,
   `management.aaa`: management-plane features are split so sensitive SNMP/AAA
   values can be redacted and reviewed without hiding safe NTP/loghost context.
+- `bfd.session`: BFD endpoint/session modules. They are manual-review because
+  timers, discriminators, interface binding, and routing-protocol linkage are
+  not equivalent across vendors by syntax alone.
+- `fhrp.vrrp`: VRRP/HSRP/FHRP lines detached from SVI modules with an explicit
+  `fhrp_uses_interface` coupling.
+- `dhcp.pool`: DHCP pool scope/gateway/options. It provides pool/subnet
+  resources but stays manual-review until excluded ranges, leases, options, and
+  relay behavior are validated.
+- `interface.tunnel`: Tunnel/GRE-like interface modules. They record tunnel
+  source/destination and protocol tags, but stay manual-review because routing,
+  MTU, keepalive, and encapsulation semantics are coupled.
 
 This gives users line-level evidence for non-OSPF/BGP features instead of
 burying them in `unknown` or one large `qos`/`system` bucket.
@@ -277,6 +300,7 @@ Anything that cannot be confidently translated must remain in `manual_review`.
 
 1. Split BGP address-family and VRF-aware peer context into submodules.
 2. Split firewall NAT/IPsec/profile features into typed manual-review modules.
-3. Split BFD, VRRP, DHCP, tunnel, and interface-level routing features.
+3. Split interface-level routing features such as PBR, NAT-on-interface, and
+   multicast controls.
 4. Replace fallback's remaining flat line-by-line paths gradually, one feature
    family at a time.

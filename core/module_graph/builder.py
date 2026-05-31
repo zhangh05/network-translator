@@ -101,6 +101,10 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         return _route_policy_module_specs_from_block(block)
     if feature == "qos":
         return _qos_module_specs_from_block(block)
+    if feature == "bfd":
+        return _bfd_module_specs_from_block(block)
+    if feature == "dhcp.pool":
+        return _dhcp_pool_module_specs_from_block(block)
     if feature.startswith("management."):
         return _management_module_specs_from_block(block, feature)
 
@@ -130,6 +134,10 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         if _has_trunk(text):
             tags.add("trunk")
             consumes.update(f"vlan:{vlan_id}" for vlan_id in _extract_interface_vlan_refs(text))
+        if feature == "interface.tunnel" and name:
+            provides.add(f"tunnel:{name}")
+            consumes.update(_extract_tunnel_endpoint_refs(text))
+            tags.update(_extract_tunnel_tags(text))
     elif feature == "ospf":
         process_id = _extract_ospf_process(text)
         if process_id:
@@ -157,7 +165,7 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
             provides.add(f"vrf:{vrf_name}")
         tags.update(_extract_vrf_tags(text))
 
-    status = "manual_review" if feature in _MANUAL_REVIEW_FEATURES else "translatable"
+    status = "manual_review" if feature in _MANUAL_REVIEW_FEATURES or feature == "interface.tunnel" else "translatable"
     reason = ""
     if status == "manual_review":
         reason = _manual_review_reason(feature, block.lines[0])
@@ -178,6 +186,7 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
 
     if feature.startswith("interface."):
         specs.extend(_acl_binding_specs_from_interface(block))
+        specs.extend(_vrrp_specs_from_interface(block))
 
     return specs
 
@@ -468,12 +477,59 @@ def _management_module_specs_from_block(block: ConfigBlock, feature: str) -> lis
     ]
 
 
+def _bfd_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    text = "\n".join(block.lines)
+    name = _extract_bfd_name(block.lines[0] if block.lines else "")
+    consumes = _extract_bfd_endpoint_refs(text)
+    return [
+        _ModuleSpec(
+            feature="bfd.session",
+            start_line=block.start_line,
+            end_line=block.end_line,
+            source_lines=block.lines,
+            provides={f"bfd:{name}"} if name else set(),
+            consumes=consumes,
+            tags={"bfd"},
+            status="manual_review",
+            manual_review_reason="bfd session 跨厂商检测间隔、会话绑定和联动语义需要人工复核",
+        )
+    ]
+
+
+def _dhcp_pool_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    text = "\n".join(block.lines)
+    pool_name = _extract_dhcp_pool_name(block.lines[0] if block.lines else "")
+    provides: set[str] = set()
+    consumes: set[str] = set()
+    if pool_name:
+        provides.add(f"dhcp-pool:{pool_name}")
+    subnet = _extract_dhcp_subnet(text)
+    if subnet:
+        provides.add(f"subnet:{subnet}")
+    gateway = _extract_dhcp_gateway(text)
+    if gateway:
+        consumes.add(f"gateway:{gateway}")
+    return [
+        _ModuleSpec(
+            feature="dhcp.pool",
+            start_line=block.start_line,
+            end_line=block.end_line,
+            source_lines=block.lines,
+            provides=provides,
+            consumes=consumes,
+            tags={"dhcp"},
+            status="manual_review",
+            manual_review_reason="DHCP 地址池、网关、DNS、租期与排除地址跨厂商语义需要人工复核",
+        )
+    ]
+
+
 def _module_source_lines(block: ConfigBlock, feature: str) -> list[str]:
     if not feature.startswith("interface."):
         return block.lines
     filtered = [block.lines[0]]
     for line in block.lines[1:]:
-        if _extract_acl_binding_ref(line):
+        if _extract_acl_binding_ref(line) or _extract_vrrp_ref(line):
             continue
         filtered.append(line)
     return filtered
@@ -498,6 +554,37 @@ def _acl_binding_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
                 source_lines=[raw_line],
                 consumes={f"interface:{interface_name}", f"acl:{acl_id}"},
                 tags={direction},
+            )
+        )
+    return specs
+
+
+def _vrrp_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
+    interface_name = _extract_interface_name(block.lines[0])
+    if not interface_name:
+        return []
+    by_group: dict[str, list[tuple[int, str]]] = {}
+    for offset, raw_line in enumerate(block.lines[1:], 1):
+        group_id = _extract_vrrp_ref(raw_line)
+        if not group_id:
+            continue
+        by_group.setdefault(group_id, []).append((block.start_line + offset, raw_line))
+
+    specs: list[_ModuleSpec] = []
+    for group_id, entries in by_group.items():
+        line_numbers = [line_no for line_no, _ in entries]
+        source_lines = [line for _, line in entries]
+        specs.append(
+            _ModuleSpec(
+                feature="fhrp.vrrp",
+                start_line=min(line_numbers),
+                end_line=max(line_numbers),
+                source_lines=source_lines,
+                provides={f"vrrp:{interface_name}:{group_id}"},
+                consumes={f"interface:{interface_name}"},
+                tags={"fhrp", "vrrp", f"group:{group_id}"},
+                status="manual_review",
+                manual_review_reason="FHRP/VRRP/HSRP 的 VIP、优先级、抢占和 track 行为跨厂商差异较大，需要人工复核",
             )
         )
     return specs
@@ -543,6 +630,10 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return "ospf"
     if re.match(r"^(bgp|router\s+bgp)\b", first, re.IGNORECASE):
         return "bgp"
+    if re.match(r"^bfd\b", first, re.IGNORECASE):
+        return "bfd"
+    if re.match(r"^(?:ip\s+pool|ip\s+dhcp\s+pool)\s+\S+", first, re.IGNORECASE):
+        return "dhcp.pool"
     if re.match(r"^(?:route-policy|route-map)\b", first, re.IGNORECASE):
         return "route_policy"
     if re.match(r"^(?:ntp-service|ntp\s+server)\b", first, re.IGNORECASE):
@@ -596,6 +687,12 @@ def _coupling_relation(feature: str, resource: str) -> str:
         return "qos_classifier_uses_acl"
     if feature == "qos.policy":
         return "qos_policy_uses_part"
+    if feature == "fhrp.vrrp" and resource.startswith("interface:"):
+        return "fhrp_uses_interface"
+    if feature == "bfd.session":
+        return "bfd_uses_endpoint"
+    if feature == "dhcp.pool" and resource.startswith("gateway:"):
+        return "dhcp_pool_uses_gateway"
     if feature == "interface.physical" and resource.startswith("lag:"):
         return "member_of_lag"
     if feature.startswith("interface.") and resource.startswith("vlan:"):
@@ -614,6 +711,8 @@ def _manual_review_reason(feature: str, first_line: str) -> str:
         return "认证/授权/账号配置跨厂商语义差异较大，需要人工复核"
     if feature == "qos":
         return "QoS 策略体跨厂商语义差异较大，需要人工复核"
+    if feature == "interface.tunnel":
+        return "Tunnel/GRE/IPsec 等隧道接口涉及封装、源/目的、MTU 和路由联动，需要人工复核"
     return "该模块需要人工复核"
 
 
@@ -747,6 +846,99 @@ def _extract_acl_binding_ref(line: str) -> Optional[tuple[str, str]]:
             direction = "inbound" if direction == "in" else "outbound" if direction == "out" else direction
             return match.group(acl_group), direction
     return None
+
+
+def _extract_vrrp_ref(line: str) -> str:
+    stripped = line.strip()
+    for pattern in (
+        r"^vrrp\s+vrid\s+(\S+)\b",
+        r"^standby\s+(\S+)\b",
+    ):
+        match = re.match(pattern, stripped, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return ""
+
+
+def _extract_bfd_name(first_line: str) -> str:
+    match = re.match(r"^bfd\s+(\S+)", first_line.strip(), re.IGNORECASE)
+    return match.group(1) if match else ""
+
+
+def _extract_bfd_endpoint_refs(text: str) -> set[str]:
+    refs: set[str] = set()
+    for line in text.splitlines():
+        stripped = line.strip()
+        peer = re.search(r"\bpeer-ip\s+(\S+)", stripped, re.IGNORECASE)
+        source = re.search(r"\bsource-ip\s+(\S+)", stripped, re.IGNORECASE)
+        interface = re.search(r"\binterface\s+(\S+)", stripped, re.IGNORECASE)
+        if peer:
+            refs.add(f"peer:{peer.group(1)}")
+        if source:
+            refs.add(f"source:{source.group(1)}")
+        if interface:
+            refs.add(f"interface:{interface.group(1)}")
+    return refs
+
+
+def _extract_tunnel_endpoint_refs(text: str) -> set[str]:
+    refs: set[str] = set()
+    for line in text.splitlines():
+        stripped = line.strip()
+        for keyword, prefix in (("source", "source"), ("destination", "destination"), ("tunnel source", "source"), ("tunnel destination", "destination")):
+            match = re.match(rf"^{re.escape(keyword)}\s+(\S+)", stripped, re.IGNORECASE)
+            if match:
+                refs.add(f"{prefix}:{match.group(1)}")
+    return refs
+
+
+def _extract_tunnel_tags(text: str) -> set[str]:
+    tags = {"tunnel"}
+    for line in text.splitlines():
+        match = re.match(r"^\s*tunnel-protocol\s+(\S+)", line, re.IGNORECASE)
+        if match:
+            tags.add(match.group(1).lower())
+        match = re.match(r"^\s*tunnel\s+mode\s+(\S+)", line, re.IGNORECASE)
+        if match:
+            tags.add(match.group(1).lower())
+    return tags
+
+
+def _extract_dhcp_pool_name(first_line: str) -> str:
+    for pattern in (
+        r"^ip\s+pool\s+(\S+)",
+        r"^ip\s+dhcp\s+pool\s+(\S+)",
+    ):
+        match = re.match(pattern, first_line.strip(), re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return ""
+
+
+def _extract_dhcp_subnet(text: str) -> str:
+    for line in text.splitlines():
+        stripped = line.strip()
+        for pattern in (
+            r"^network\s+(\S+)\s+mask\s+(\S+)",
+            r"^network\s+(\S+)\s+(\S+)",
+        ):
+            match = re.match(pattern, stripped, re.IGNORECASE)
+            if match:
+                return f"{match.group(1)}/{match.group(2)}"
+    return ""
+
+
+def _extract_dhcp_gateway(text: str) -> str:
+    for line in text.splitlines():
+        stripped = line.strip()
+        for pattern in (
+            r"^gateway-list\s+(\S+)",
+            r"^default-router\s+(\S+)",
+        ):
+            match = re.match(pattern, stripped, re.IGNORECASE)
+            if match:
+                return match.group(1)
+    return ""
 
 
 def _extract_ospf_process(text: str) -> str:
