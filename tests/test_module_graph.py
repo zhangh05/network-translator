@@ -93,7 +93,7 @@ def test_vendor_specific_unknown_feature_becomes_manual_review_module():
     review_modules = graph.manual_review_modules()
 
     assert any("voice-vlan" in "\n".join(module.source_lines) for module in review_modules)
-    assert any(module.feature == "unknown" for module in review_modules)
+    assert any(module.feature == "l2.voice_vlan" for module in review_modules)
     assert all(module.manual_review_reason for module in review_modules)
 
 

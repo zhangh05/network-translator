@@ -119,6 +119,10 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         return _time_range_module_specs_from_block(block)
     if feature == "qos":
         return _qos_module_specs_from_block(block)
+    if feature.startswith("l2."):
+        return _l2_manual_review_module_specs_from_block(block, feature)
+    if feature == "stp.mstp":
+        return _l2_manual_review_module_specs_from_block(block, feature)
     if feature == "bfd":
         return _bfd_module_specs_from_block(block)
     if feature == "dhcp.pool":
@@ -710,6 +714,28 @@ def _qos_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
     ]
 
 
+def _l2_manual_review_module_specs_from_block(block: ConfigBlock, feature: str) -> list[_ModuleSpec]:
+    reason_by_feature = {
+        "l2.qinq": "QinQ/VLAN stacking/VLAN mapping 会改变二层标签封装和透传边界，需要人工复核",
+        "l2.voice_vlan": "Voice VLAN 的 OUI、LLDP/CDP 联动和接入行为跨厂商差异较大，需要人工复核",
+        "l2.lldp": "LLDP/CDP 邻居发现、TLV、MED/voice 等语义跨厂商不同，需要人工复核",
+        "l2.mac_table": "静态 MAC、黑洞 MAC、动态学习限制等二层转发表行为需要人工复核",
+        "stp.mstp": "MSTP region、instance 与 VLAN 映射会影响生成树拓扑，需要人工复核",
+    }
+    tag = feature.split(".", 1)[-1] if "." in feature else feature
+    return [
+        _ModuleSpec(
+            feature=feature,
+            start_line=block.start_line,
+            end_line=block.end_line,
+            source_lines=block.lines,
+            tags={"l2", tag},
+            status="manual_review",
+            manual_review_reason=reason_by_feature.get(feature, "二层高级特性跨厂商语义不确定，需要人工复核"),
+        )
+    ]
+
+
 def _management_module_specs_from_block(block: ConfigBlock, feature: str) -> list[_ModuleSpec]:
     status = "manual_review" if feature in {"management.snmp", "management.aaa"} else "translatable"
     source_lines = [_redact_management_sensitive_line(line) for line in block.lines]
@@ -999,7 +1025,15 @@ def _normalize_feature(block: ConfigBlock) -> str:
     if re.match(r"^(sysname|hostname)\b", first, re.IGNORECASE):
         return "device_identity"
     if re.match(r"^interface\b", first, re.IGNORECASE):
+        if re.search(r"\b(qinq|dot1q-tunnel|vlan-stacking)\b", text, re.IGNORECASE):
+            return "l2.qinq"
         return _interface_feature(first)
+    if re.match(r"^(?:voice-vlan|voice\s+vlan)\b", first, re.IGNORECASE):
+        return "l2.voice_vlan"
+    if re.match(r"^(?:lldp|cdp)\b", first, re.IGNORECASE):
+        return "l2.lldp"
+    if re.match(r"^(?:mac-address|mac\s+address-table)\b", first, re.IGNORECASE):
+        return "l2.mac_table"
     if re.match(r"^(ospf|router\s+ospf)\b", first, re.IGNORECASE):
         return "ospf"
     if re.match(r"^(bgp|router\s+bgp)\b", first, re.IGNORECASE):
@@ -1050,8 +1084,10 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return "service_object"
     if re.match(r"^security-policy\b|^policy\s+name\b|^policy\s+\S+", first, re.IGNORECASE):
         return "security_policy"
+    if re.match(r"^stp\s+region-configuration\b", first, re.IGNORECASE) or re.search(r"\b(instance\s+\d+\s+vlan|region-name|revision-level)\b", text, re.IGNORECASE):
+        return "stp.mstp"
     if re.search(r"\bvoice-vlan\b", text, re.IGNORECASE):
-        return "unknown"
+        return "l2.voice_vlan"
     return block.feature
 
 

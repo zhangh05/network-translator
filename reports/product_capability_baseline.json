@@ -1,0 +1,606 @@
+{
+  "summary": {
+    "total": 26,
+    "covered": 26,
+    "missing": 0
+  },
+  "missing_capabilities": [],
+  "domains": {
+    "SWITCH": [
+      {
+        "capability_id": "system.management",
+        "domain": "SWITCH",
+        "product_area": "Basic configuration and management",
+        "module_features": [
+          "device_identity",
+          "management.ntp",
+          "management.logging",
+          "management.snmp",
+          "management.aaa"
+        ],
+        "default_action": "auto_subset",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos",
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco IOS XE configuration guides",
+          "H3C configuration guides",
+          "Huawei VRP configuration guides",
+          "Ruijie RGOS configuration guide"
+        ],
+        "notes": "Secrets and AAA policies remain manual review."
+      },
+      {
+        "capability_id": "switch.vlan",
+        "domain": "SWITCH",
+        "product_area": "Ethernet switching",
+        "module_features": [
+          "vlan",
+          "interface.svi"
+        ],
+        "default_action": "auto_subset",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Huawei Ethernet Switching Configuration Guide",
+          "Cisco LAN Switching Configuration Guide",
+          "H3C Layer 2 LAN Switching Configuration Guide",
+          "Ruijie Ethernet Switching Configuration"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "switch.trunk_access",
+        "domain": "SWITCH",
+        "product_area": "Ethernet switching",
+        "module_features": [
+          "interface.physical",
+          "interface.lag"
+        ],
+        "default_action": "auto_subset",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Huawei Ethernet Switching Configuration Guide",
+          "Cisco LAN Switching Configuration Guide",
+          "H3C Layer 2 LAN Switching Configuration Guide",
+          "Ruijie Ethernet Switching Configuration"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "switch.lacp",
+        "domain": "SWITCH",
+        "product_area": "Link aggregation",
+        "module_features": [
+          "interface.lag",
+          "interface.physical"
+        ],
+        "default_action": "auto_subset",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Huawei Ethernet Switching Configuration Guide",
+          "H3C Layer 2 LAN Switching Configuration Guide",
+          "Ruijie Ethernet Switching Configuration"
+        ],
+        "notes": "Member binding is tracked as module coupling."
+      },
+      {
+        "capability_id": "switch.stp_mstp",
+        "domain": "SWITCH",
+        "product_area": "STP/RSTP/MSTP",
+        "module_features": [
+          "stp",
+          "stp.mstp"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Huawei Ethernet Switching Configuration Guide",
+          "Cisco LAN Switching Configuration Guide",
+          "Ruijie Ethernet Switching Configuration"
+        ],
+        "notes": "Edge-port subset can translate; MST regions and instance mapping require review."
+      },
+      {
+        "capability_id": "switch.qinq",
+        "domain": "SWITCH",
+        "product_area": "QinQ / VLAN mapping",
+        "module_features": [
+          "l2.qinq"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Huawei Ethernet Switching Configuration Guide",
+          "Ruijie Ethernet Switching Configuration"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "switch.voice_vlan",
+        "domain": "SWITCH",
+        "product_area": "Voice VLAN",
+        "module_features": [
+          "l2.voice_vlan"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Huawei Ethernet Switching Configuration Guide",
+          "Ruijie Ethernet Switching Configuration"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "switch.lldp",
+        "domain": "SWITCH",
+        "product_area": "Neighbor discovery",
+        "module_features": [
+          "l2.lldp"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Ruijie Ethernet Switching Configuration",
+          "Cisco LAN Switching Configuration Guide",
+          "Huawei Ethernet Switching Configuration Guide"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "switch.mac_table",
+        "domain": "SWITCH",
+        "product_area": "MAC table",
+        "module_features": [
+          "l2.mac_table"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Huawei Ethernet Switching Configuration Guide",
+          "Ruijie Ethernet Switching Configuration"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "acl_qos",
+        "domain": "SWITCH",
+        "product_area": "ACL and QoS",
+        "module_features": [
+          "acl",
+          "acl_binding",
+          "qos.classifier",
+          "qos.behavior",
+          "qos.policy",
+          "qos.binding"
+        ],
+        "default_action": "auto_subset",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos",
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "H3C ACL and QoS Configuration Guide",
+          "Cisco IOS XE QoS Configuration Guide",
+          "Ruijie ACL and QoS Configuration"
+        ],
+        "notes": ""
+      }
+    ],
+    "ROUTER": [
+      {
+        "capability_id": "router.static_route",
+        "domain": "ROUTER",
+        "product_area": "IP routing",
+        "module_features": [
+          "static_route",
+          "static_route.option"
+        ],
+        "default_action": "auto_subset",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco IOS XE IP Routing Configuration Guide",
+          "H3C Layer 3 IP Routing Configuration Guide",
+          "Huawei VRP IP Routing Configuration",
+          "Ruijie IP Routing Configuration"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "router.ospf",
+        "domain": "ROUTER",
+        "product_area": "IP routing",
+        "module_features": [
+          "ospf.process",
+          "ospf.area",
+          "ospf.network",
+          "ospf.passive_interface",
+          "ospf.authentication",
+          "ospf.redistribute",
+          "ospf.area_special",
+          "ospf.interface_tuning"
+        ],
+        "default_action": "auto_subset",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco IOS XE IP Routing Configuration Guide",
+          "Huawei VRP IP Routing Configuration",
+          "Ruijie IP Routing Configuration"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "router.bgp",
+        "domain": "ROUTER",
+        "product_area": "IP routing",
+        "module_features": [
+          "bgp.process",
+          "bgp.neighbor",
+          "bgp.network",
+          "bgp.password",
+          "bgp.policy",
+          "bgp.redistribute",
+          "bgp.attribute"
+        ],
+        "default_action": "auto_subset",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco IOS XE IP Routing Configuration Guide",
+          "Huawei VRP IP Routing Configuration",
+          "Ruijie IP Routing Configuration"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "router.rip",
+        "domain": "ROUTER",
+        "product_area": "IP routing",
+        "module_features": [
+          "rip.process",
+          "rip.network",
+          "rip.unknown"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "H3C Layer 3 IP Routing Configuration Guide",
+          "Ruijie IP Routing Configuration"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "router.isis",
+        "domain": "ROUTER",
+        "product_area": "IP routing",
+        "module_features": [
+          "isis.process",
+          "isis.network",
+          "isis.unknown"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Huawei VRP IP Routing Configuration",
+          "Ruijie IP Routing Configuration"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "router.vrf",
+        "domain": "ROUTER",
+        "product_area": "VPN/VRF",
+        "module_features": [
+          "vrf"
+        ],
+        "default_action": "auto_subset",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco IOS XE IP Routing Configuration Guide",
+          "Huawei VRP IP Routing Configuration",
+          "Ruijie IP Routing Configuration"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "router.route_policy",
+        "domain": "ROUTER",
+        "product_area": "Routing policies",
+        "module_features": [
+          "route_policy",
+          "route_filter"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Ruijie IP Routing Configuration",
+          "H3C ACL and QoS Configuration Guide",
+          "Cisco IOS XE IP Routing Configuration Guide"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "router.pbr",
+        "domain": "ROUTER",
+        "product_area": "Policy-based routing",
+        "module_features": [
+          "pbr.policy",
+          "pbr.binding"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Ruijie IP Routing Configuration",
+          "Cisco IOS XE IP Routing Configuration Guide"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "router.multicast",
+        "domain": "ROUTER",
+        "product_area": "Multicast",
+        "module_features": [
+          "multicast",
+          "multicast.interface"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Ruijie Multicast Configuration",
+          "H3C IP Multicast Configuration Guide"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "router.bfd",
+        "domain": "ROUTER",
+        "product_area": "Resilience",
+        "module_features": [
+          "bfd.session"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Ruijie Device Management Configuration",
+          "Huawei VRP Reliability Configuration"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "router.dhcp",
+        "domain": "ROUTER",
+        "product_area": "IP services",
+        "module_features": [
+          "dhcp.pool"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Ruijie Device Management Configuration",
+          "Cisco IOS XE IP Addressing Services"
+        ],
+        "notes": ""
+      }
+    ],
+    "FIREWALL": [
+      {
+        "capability_id": "firewall.objects",
+        "domain": "FIREWALL",
+        "product_area": "Objects",
+        "module_features": [
+          "zone",
+          "address_object",
+          "service_object",
+          "object_group",
+          "object_group.member"
+        ],
+        "default_action": "auto_subset",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "Huawei USG Quick Configuration Guide",
+          "Hillstone StoneOS User Manual",
+          "DPtech Firewall Technical White Paper"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "firewall.policy",
+        "domain": "FIREWALL",
+        "product_area": "Security policy",
+        "module_features": [
+          "security_policy"
+        ],
+        "default_action": "auto_subset",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "Huawei USG Quick Configuration Guide",
+          "Hillstone StoneOS User Manual",
+          "DPtech Firewall Technical White Paper",
+          "Topsec Firewall product documentation"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "firewall.nat",
+        "domain": "FIREWALL",
+        "product_area": "NAT",
+        "module_features": [
+          "firewall.nat"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "Huawei USG Quick Configuration Guide",
+          "DPtech Firewall Technical White Paper",
+          "Hillstone StoneOS User Manual"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "firewall.ipsec",
+        "domain": "FIREWALL",
+        "product_area": "IPsec / VPN",
+        "module_features": [
+          "firewall.ipsec",
+          "interface.tunnel"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "Huawei USG VPN Guide",
+          "Hillstone StoneOS User Manual",
+          "DPtech VPN Security Gateway Technical White Paper"
+        ],
+        "notes": ""
+      },
+      {
+        "capability_id": "firewall.utm_profile",
+        "domain": "FIREWALL",
+        "product_area": "UTM / application security",
+        "module_features": [
+          "firewall.profile",
+          "time_range"
+        ],
+        "default_action": "identify_only",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "DPtech Firewall Technical White Paper",
+          "Hillstone StoneOS product guide",
+          "Huawei USG support guide"
+        ],
+        "notes": ""
+      }
+    ]
+  }
+}

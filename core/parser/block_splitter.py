@@ -39,6 +39,12 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
         return "system"
     if _matches_any(first, (r"^vlan\s+batch\b", r"^vlan\s+\d+", r"^vlan\b")):
         return "vlan"
+    if _matches_any(first, (r"^voice-vlan\b", r"^voice\s+vlan\b")):
+        return "l2_voice_vlan"
+    if _matches_any(first, (r"^lldp\b", r"^cdp\b")):
+        return "l2_lldp"
+    if _matches_any(first, (r"^mac-address\b", r"^mac\s+address-table\b")):
+        return "l2_mac_table"
     if _matches_any(first, (r"^interface\b",)):
         return "interface"
     if _matches_any(first, (r"^object-group\b",)):
