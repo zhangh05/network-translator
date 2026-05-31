@@ -140,7 +140,8 @@ traffic-filter inbound acl 3000
 | `interface.tunnel` | Tunnel/GRE/IPsec-like interface | `interface:Tunnel0/0/0`, `tunnel:Tunnel0/0/0` | `source:*`, `destination:*` |
 | `acl` | ACL definition | `acl:3000` | optional `time-range:*`, `object-group:*` |
 | `acl_binding` | ACL bind point | none | `acl:3000`, `interface:*` |
-| `object_group` | Cisco/ASA-style object-group | `object-group:WEB` | member dependencies later |
+| `object_group` | Cisco/ASA-style object-group container | `object-group:WEB` | none |
+| `object_group.member` | Object-group member line | none | `object-group:WEB` |
 | `static_route` | Basic static route | `route:dst:mask:nexthop` | optional `vrf:*` |
 | `static_route.option` | Static route with track/BFD/tag/description/preference | `route:dst:mask:nexthop` | optional `vrf:*` |
 | `vrf` | VRF/VPN instance | `vrf:CUST-A` | route-target dependencies later |
@@ -342,6 +343,11 @@ modules:
 - `object_group` is separated from ACLs. ACL modules may consume both
   `object-group:*` and `time-range:*`, making advanced ACL review evidence
   explicit instead of hiding it in a generic ACL block.
+- `object_group.member` splits each `network-object`, `service-object`, or
+  `port-object` line from the parent container. The parent provides the object
+  group name; each member consumes that parent and remains manual-review. This
+  lets the review UI expand object groups without pretending their member syntax
+  is automatically portable.
 
 This prevents advanced firewall commands from being hidden inside `unknown` or a
 generic `security_policy` block, while still honoring the rule that uncertain
@@ -362,8 +368,8 @@ Anything that cannot be confidently translated must remain in `manual_review`.
 ## Next Steps
 
 1. Split BGP address-family and VRF-aware peer context into submodules.
-2. Split object-group members into address/service submodules where syntax is
-   rich enough to avoid overclaiming equivalence.
+2. Normalize object-group member tags further for ASA/Hillstone/Topsec variants
+   without overclaiming cross-vendor equivalence.
 3. Split remaining interface-level routing features such as NAT-on-interface and
    advanced multicast/RP dependencies.
 4. Replace fallback's remaining flat line-by-line paths gradually, one feature

@@ -1033,3 +1033,39 @@ bgp 65000
     assert "route-filter:EXPORT" in bgp_policy.consumes
     assert route_filter.module_id in bgp_policy.depends_on
     assert any(coupling["relation"] == "bgp_uses_route_filter" for coupling in graph.to_dict()["couplings"])
+
+
+def test_network_object_group_members_are_split_for_review():
+    config = """object-group network WEB-SERVERS
+ network-object host 10.1.1.10
+ network-object 10.1.2.0 255.255.255.0
+"""
+    graph = build_module_graph(config, vendor="cisco")
+
+    parent = graph.by_feature("object_group")[0]
+    members = graph.by_feature("object_group.member")
+
+    assert parent.status == "manual_review"
+    assert "object-group:WEB-SERVERS" in parent.provides
+    assert parent.source_lines == ["object-group network WEB-SERVERS"]
+    assert len(members) == 2
+    assert all(member.status == "manual_review" for member in members)
+    assert all("object-group:WEB-SERVERS" in member.consumes for member in members)
+    assert parent.module_id in members[0].depends_on
+    assert any(coupling["relation"] == "object_group_has_member" for coupling in graph.to_dict()["couplings"])
+
+
+def test_service_object_group_members_are_split_for_review():
+    config = """object-group service WEB-SVC
+ service-object tcp destination eq 443
+ port-object eq 80
+"""
+    graph = build_module_graph(config, vendor="cisco")
+
+    parent = graph.by_feature("object_group")[0]
+    members = graph.by_feature("object_group.member")
+
+    assert "service" in parent.tags
+    assert len(members) == 2
+    assert all("service" in member.tags for member in members)
+    assert all("object-group:WEB-SVC" in member.consumes for member in members)

@@ -125,6 +125,8 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         return _dhcp_pool_module_specs_from_block(block)
     if feature.startswith("management."):
         return _management_module_specs_from_block(block, feature)
+    if feature == "object_group":
+        return _object_group_module_specs_from_block(block)
 
     if feature == "device_identity":
         provides.add("device:hostname")
@@ -135,10 +137,6 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         if acl_name:
             provides.add(f"acl:{acl_name}")
         consumes.update(_extract_acl_refs(text))
-    elif feature == "object_group":
-        object_group_name = _extract_object_group_name(text)
-        if object_group_name:
-            provides.add(f"object-group:{object_group_name}")
     elif feature.startswith("interface."):
         name = _extract_interface_name(block.lines[0])
         if name:
@@ -778,6 +776,43 @@ def _dhcp_pool_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
     ]
 
 
+def _object_group_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    name = _extract_object_group_name("\n".join(block.lines))
+    group_key = f"object-group:{name}" if name else ""
+    tags = _extract_object_group_tags(block.lines[0] if block.lines else "")
+    specs = [
+        _ModuleSpec(
+            feature="object_group",
+            start_line=block.start_line,
+            end_line=block.start_line,
+            source_lines=[block.lines[0]] if block.lines else [],
+            provides={group_key} if group_key else set(),
+            tags=tags,
+            status="manual_review",
+            manual_review_reason="对象组成员和跨厂商对象语义需要人工复核",
+        )
+    ]
+
+    for offset, raw_line in enumerate(block.lines[1:], 1):
+        stripped = raw_line.strip()
+        if not stripped:
+            continue
+        line_no = block.start_line + offset
+        specs.append(
+            _ModuleSpec(
+                feature="object_group.member",
+                start_line=line_no,
+                end_line=line_no,
+                source_lines=[raw_line],
+                consumes={group_key} if group_key else set(),
+                tags=tags.union(_extract_object_group_member_tags(stripped)),
+                status="manual_review",
+                manual_review_reason="对象组成员需要确认目标平台对象类型、端口范围和引用语义",
+            )
+        )
+    return specs
+
+
 def _module_source_lines(block: ConfigBlock, feature: str) -> list[str]:
     if not feature.startswith("interface."):
         return block.lines
@@ -1056,6 +1091,8 @@ def _coupling_relation(feature: str, resource: str) -> str:
         return "acl_uses_time_range"
     if feature == "acl" and resource.startswith("object-group:"):
         return "acl_uses_object_group"
+    if feature == "object_group.member" and resource.startswith("object-group:"):
+        return "object_group_has_member"
     if feature == "qos.classifier" and resource.startswith("acl:"):
         return "qos_classifier_uses_acl"
     if feature == "qos.policy":
@@ -1179,6 +1216,32 @@ def _extract_object_group_name(text: str) -> str:
     first = next((line.strip() for line in text.splitlines() if line.strip()), "")
     match = re.match(r"^object-group\s+(?:network|service|protocol|icmp-type)?\s*(\S+)", first, re.IGNORECASE)
     return match.group(1) if match else ""
+
+
+def _extract_object_group_tags(first_line: str) -> set[str]:
+    tags = {"object-group"}
+    lower = first_line.lower()
+    if "network" in lower:
+        tags.add("network")
+    if "service" in lower:
+        tags.add("service")
+    if "protocol" in lower:
+        tags.add("protocol")
+    if "icmp" in lower:
+        tags.add("icmp")
+    return tags
+
+
+def _extract_object_group_member_tags(line: str) -> set[str]:
+    tags: set[str] = set()
+    lower = line.lower()
+    if "host" in lower or "network-object" in lower:
+        tags.add("network")
+    if "service-object" in lower or "port-object" in lower or re.search(r"\b(tcp|udp|icmp)\b", lower):
+        tags.add("service")
+    if "range" in lower:
+        tags.add("range")
+    return tags
 
 
 def _extract_interface_name(first_line: str) -> str:
