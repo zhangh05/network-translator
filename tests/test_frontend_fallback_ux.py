@@ -303,3 +303,17 @@ class TestManualReviewTab:
             html = f.read()
         assert "object_group.member" in html, "manual review tab should recognize object-group member modules"
         assert "对象组成员" in html, "object-group member modules should be displayed with a user-facing label"
+
+    def test_copy_report_includes_manual_review_checklist(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "function _manualReviewChecklistLines" in html, \
+            "copy/export report should share a user-facing manual-review checklist builder"
+        assert "--- 人工复核清单 ---" in html, \
+            "copied risk report should include a dedicated manual-review checklist section"
+
+    def test_export_report_includes_manual_review_checklist(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "manual_review_checklist" in html, \
+            "exported JSON report should include user-facing manual review checklist"
