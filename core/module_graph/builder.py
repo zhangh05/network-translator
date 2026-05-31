@@ -101,6 +101,8 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         return _isis_module_specs_from_block(block)
     if feature == "route":
         return _static_route_module_specs_from_block(block)
+    if feature == "route_filter":
+        return _route_filter_module_specs_from_block(block)
     if feature == "route_policy":
         return _route_policy_module_specs_from_block(block)
     if feature == "pbr":
@@ -204,6 +206,7 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         specs.extend(_acl_binding_specs_from_interface(block))
         specs.extend(_vrrp_specs_from_interface(block))
         specs.extend(_pbr_binding_specs_from_interface(block))
+        specs.extend(_qos_binding_specs_from_interface(block))
         specs.extend(_multicast_specs_from_interface(block))
 
     return specs
@@ -346,13 +349,15 @@ def _bgp_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
 
         risky_feature = _bgp_risky_feature(stripped)
         if risky_feature:
+            consumes = {process_key}
+            consumes.update(_extract_bgp_policy_refs(stripped))
             specs.append(
                 _ModuleSpec(
                     feature=risky_feature,
                     start_line=line_no,
                     end_line=line_no,
                     source_lines=[_redact_bgp_sensitive_line(raw_line)],
-                    consumes={process_key},
+                    consumes=consumes,
                     status="manual_review",
                     manual_review_reason=_bgp_manual_review_reason(risky_feature, _redact_bgp_sensitive_line(stripped)),
                 )
@@ -518,6 +523,7 @@ def _route_policy_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpe
     text = "\n".join(block.lines)
     name = _extract_route_policy_name(text)
     consumes = {f"acl:{acl}" for acl in _extract_route_policy_acl_refs(text)}
+    consumes.update(f"route-filter:{name}" for name in _extract_route_policy_filter_refs(text))
     return [
         _ModuleSpec(
             feature="route_policy",
@@ -529,6 +535,30 @@ def _route_policy_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpe
             tags={"routing", "policy"},
             status="manual_review",
             manual_review_reason="路由策略会影响路由传播和选路，需要人工复核",
+        )
+    ]
+
+
+def _route_filter_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    text = "\n".join(block.lines)
+    name = _extract_route_filter_name(text)
+    tags = {"routing", "filter"}
+    if re.search(r"\bprefix\b|ip-prefix", text, re.IGNORECASE):
+        tags.add("prefix")
+    if re.search(r"\bas-path\b", text, re.IGNORECASE):
+        tags.add("as-path")
+    if re.search(r"\bcommunity\b", text, re.IGNORECASE):
+        tags.add("community")
+    return [
+        _ModuleSpec(
+            feature="route_filter",
+            start_line=block.start_line,
+            end_line=block.end_line,
+            source_lines=block.lines,
+            provides={f"route-filter:{name}"} if name else set(),
+            tags=tags,
+            status="manual_review",
+            manual_review_reason="路由过滤器会影响路由匹配和传播范围，需要人工复核",
         )
     ]
 
@@ -646,6 +676,7 @@ def _qos_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
     classifier = re.match(r"^traffic\s+classifier\s+(\S+)", first, re.IGNORECASE)
     behavior = re.match(r"^traffic\s+behavior\s+(\S+)", first, re.IGNORECASE)
     policy = re.match(r"^traffic\s+policy\s+(\S+)", first, re.IGNORECASE)
+    cisco_policy = re.match(r"^policy-map\s+(\S+)", first, re.IGNORECASE)
     if classifier:
         feature = "qos.classifier"
         provides.add(f"qos-classifier:{classifier.group(1)}")
@@ -657,6 +688,9 @@ def _qos_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         feature = "qos.policy"
         provides.add(f"qos-policy:{policy.group(1)}")
         consumes.update(_extract_qos_policy_refs(text))
+    elif cisco_policy:
+        feature = "qos.policy"
+        provides.add(f"qos-policy:{cisco_policy.group(1)}")
 
     return [
         _ModuleSpec(
@@ -748,6 +782,7 @@ def _module_source_lines(block: ConfigBlock, feature: str) -> list[str]:
             _extract_acl_binding_ref(line)
             or _extract_vrrp_ref(line)
             or _extract_pbr_binding_ref(line)
+            or _extract_qos_binding_ref(line)
             or _is_interface_multicast_line(line)
         ):
             continue
@@ -835,6 +870,32 @@ def _pbr_binding_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
     return specs
 
 
+def _qos_binding_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
+    interface_name = _extract_interface_name(block.lines[0])
+    if not interface_name:
+        return []
+    specs: list[_ModuleSpec] = []
+    for offset, raw_line in enumerate(block.lines[1:], 1):
+        binding = _extract_qos_binding_ref(raw_line)
+        if not binding:
+            continue
+        policy_name, direction = binding
+        line_no = block.start_line + offset
+        specs.append(
+            _ModuleSpec(
+                feature="qos.binding",
+                start_line=line_no,
+                end_line=line_no,
+                source_lines=[raw_line],
+                consumes={f"interface:{interface_name}", f"qos-policy:{policy_name}"},
+                tags={"qos", direction},
+                status="manual_review",
+                manual_review_reason="接口 QoS 策略绑定会影响流量分类、限速和队列行为，需要人工复核",
+            )
+        )
+    return specs
+
+
 def _multicast_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
     interface_name = _extract_interface_name(block.lines[0])
     if not interface_name:
@@ -913,6 +974,12 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return "dhcp.pool"
     if re.match(r"^(?:route-policy|route-map)\b", first, re.IGNORECASE):
         return "route_policy"
+    if re.match(
+        r"^(?:ip\s+(?:ip-prefix|prefix-list)|(?:ip\s+)?prefix-list|(?:ip\s+)?as-path-filter|(?:ip\s+)?community-filter)\b",
+        first,
+        re.IGNORECASE,
+    ):
+        return "route_filter"
     if re.match(r"^(?:policy-based-route|ip\s+policy-based-route)\b", first, re.IGNORECASE):
         return "pbr"
     if re.match(r"^(?:multicast|pim|igmp|ip\s+multicast-routing)\b", first, re.IGNORECASE):
@@ -972,10 +1039,14 @@ def _coupling_relation(feature: str, resource: str) -> str:
         return "route_uses_vrf"
     if feature == "route_policy" and resource.startswith("acl:"):
         return "policy_uses_acl"
+    if feature == "route_policy" and resource.startswith("route-filter:"):
+        return "policy_uses_route_filter"
     if feature == "qos.classifier" and resource.startswith("acl:"):
         return "qos_classifier_uses_acl"
     if feature == "qos.policy":
         return "qos_policy_uses_part"
+    if feature == "qos.binding":
+        return "binds_qos_to_interface" if resource.startswith(("interface:", "qos-policy:")) else "qos_binding_uses_resource"
     if feature == "fhrp.vrrp" and resource.startswith("interface:"):
         return "fhrp_uses_interface"
     if feature == "bfd.session":
@@ -997,6 +1068,10 @@ def _coupling_relation(feature: str, resource: str) -> str:
     if feature.startswith("ospf."):
         return "ospf_submodule_uses_process"
     if feature.startswith("bgp."):
+        if resource.startswith("route-policy:"):
+            return "bgp_uses_route_policy"
+        if resource.startswith("route-filter:"):
+            return "bgp_uses_route_filter"
         return "bgp_submodule_uses_process"
     if feature.startswith("rip."):
         return "rip_submodule_uses_process"
@@ -1294,7 +1369,7 @@ def _extract_bgp_neighbor(line: str) -> str:
 def _bgp_risky_feature(line: str) -> str:
     if re.search(r"\bpassword\b|authentication-key|keychain", line, re.IGNORECASE):
         return "bgp.password"
-    if re.search(r"\b(route-policy|route-map|filter-policy|prefix-list|as-path-filter|community-filter)\b", line, re.IGNORECASE):
+    if re.search(r"\b(route-policy|route-map|filter-policy|prefix-list|ip-prefix|as-path-filter|community-filter)\b", line, re.IGNORECASE):
         return "bgp.policy"
     if re.match(r"^(?:import-route|redistribute|default-route-advertise)\b", line, re.IGNORECASE):
         return "bgp.redistribute"
@@ -1311,6 +1386,27 @@ def _bgp_manual_review_reason(feature: str, line: str) -> str:
         "bgp.attribute": "BGP 属性调优可能影响选路，需要人工复核",
     }
     return f"{reasons.get(feature, 'BGP 子命令需要人工复核')}: {line}"
+
+
+def _extract_bgp_policy_refs(line: str) -> set[str]:
+    refs: set[str] = set()
+    for pattern in (
+        r"\broute-policy\s+(\S+)",
+        r"\broute-map\s+(\S+)",
+    ):
+        match = re.search(pattern, line, re.IGNORECASE)
+        if match:
+            refs.add(f"route-policy:{match.group(1)}")
+    for pattern in (
+        r"\bip-prefix\s+(\S+)",
+        r"\bprefix-list\s+(\S+)",
+        r"\bas-path-filter\s+(\S+)",
+        r"\bcommunity-filter\s+(\S+)",
+    ):
+        match = re.search(pattern, line, re.IGNORECASE)
+        if match:
+            refs.add(f"route-filter:{match.group(1)}")
+    return refs
 
 
 def _redact_bgp_sensitive_line(line: str) -> str:
@@ -1388,6 +1484,39 @@ def _extract_route_policy_acl_refs(text: str) -> list[str]:
     return _unique(refs)
 
 
+def _extract_route_policy_filter_refs(text: str) -> list[str]:
+    refs: list[str] = []
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        for pattern in (
+            r"^if-match\s+ip-prefix\s+(\S+)",
+            r"^match\s+ip\s+address\s+prefix-list\s+(\S+)",
+            r"^if-match\s+as-path-filter\s+(\S+)",
+            r"^if-match\s+community-filter\s+(\S+)",
+            r"^match\s+as-path\s+(\S+)",
+            r"^match\s+community\s+(\S+)",
+        ):
+            match = re.match(pattern, line, re.IGNORECASE)
+            if match:
+                refs.append(match.group(1))
+    return _unique(refs)
+
+
+def _extract_route_filter_name(text: str) -> str:
+    first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    for pattern in (
+        r"^ip\s+ip-prefix\s+(\S+)",
+        r"^ip\s+prefix-list\s+(\S+)",
+        r"^prefix-list\s+(\S+)",
+        r"^(?:ip\s+)?as-path-filter\s+(\S+)",
+        r"^(?:ip\s+)?community-filter\s+(\S+)",
+    ):
+        match = re.match(pattern, first, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return ""
+
+
 def _extract_pbr_policy_name(text: str) -> str:
     first = next((line.strip() for line in text.splitlines() if line.strip()), "")
     for pattern in (
@@ -1411,6 +1540,22 @@ def _extract_pbr_binding_ref(line: str) -> str:
         if match:
             return match.group(1)
     return ""
+
+
+def _extract_qos_binding_ref(line: str) -> Optional[tuple[str, str]]:
+    stripped = line.strip()
+    patterns = (
+        (r"^traffic-policy\s+(\S+)\s+(inbound|outbound)\b", 1, 2),
+        (r"^service-policy\s+(input|output)\s+(\S+)\b", 2, 1),
+    )
+    for pattern, policy_group, direction_group in patterns:
+        match = re.match(pattern, stripped, re.IGNORECASE)
+        if not match:
+            continue
+        direction = match.group(direction_group).lower()
+        direction = "inbound" if direction == "input" else "outbound" if direction == "output" else direction
+        return match.group(policy_group), direction
+    return None
 
 
 def _is_interface_multicast_line(line: str) -> bool:

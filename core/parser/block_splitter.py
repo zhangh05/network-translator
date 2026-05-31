@@ -45,6 +45,16 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
         return "acl"
     if _matches_any(first, (r"^ip\s+route-static\b", r"^ip\s+route\b", r"^ipv6\s+route")):
         return "route"
+    if _matches_any(
+        first,
+        (
+            r"^ip\s+(?:ip-prefix|prefix-list)\b",
+            r"^(?:ip\s+)?prefix-list\b",
+            r"^(?:ip\s+)?as-path-filter\b",
+            r"^(?:ip\s+)?community-filter\b",
+        ),
+    ):
+        return "route_filter"
     if _matches_any(first, (r"^(?:rip|router\s+rip)\b",)):
         return "rip"
     if _matches_any(first, (r"^(?:isis|is-is|router\s+isis|router\s+is-is)\b",)):

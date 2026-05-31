@@ -822,3 +822,137 @@ antivirus profile AV-STRICT
     assert len(profiles) == 2
     assert {"profile:WEB-FILTER", "profile:AV-STRICT"}.issubset({item for module in profiles for item in module.provides})
     assert all(module.status == "manual_review" for module in profiles)
+
+
+def test_interface_qos_binding_links_policy_to_interface():
+    config = """traffic classifier WEB
+ if-match acl 3000
+#
+traffic behavior LIMIT
+ car cir 10240
+#
+traffic policy EDGE-QOS
+ classifier WEB behavior LIMIT
+#
+interface GigabitEthernet0/0/1
+ traffic-policy EDGE-QOS inbound
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    binding = graph.by_feature("qos.binding")[0]
+    policy = graph.by_feature("qos.policy")[0]
+    interface = graph.by_feature("interface.physical")[0]
+
+    assert binding.status == "manual_review"
+    assert {"interface:GigabitEthernet0/0/1", "qos-policy:EDGE-QOS"}.issubset(set(binding.consumes))
+    assert policy.module_id in binding.depends_on
+    assert interface.module_id in binding.depends_on
+    assert any(coupling["relation"] == "binds_qos_to_interface" for coupling in graph.to_dict()["couplings"])
+    assert not any("traffic-policy EDGE-QOS inbound" in line for line in interface.source_lines)
+
+
+def test_cisco_service_policy_binding_links_policy_to_interface():
+    config = """policy-map WAN-QOS
+ class class-default
+  police 1000000
+#
+interface GigabitEthernet0/1
+ service-policy input WAN-QOS
+"""
+    graph = build_module_graph(config, vendor="cisco")
+
+    binding = graph.by_feature("qos.binding")[0]
+
+    assert binding.status == "manual_review"
+    assert {"interface:GigabitEthernet0/1", "qos-policy:WAN-QOS"}.issubset(set(binding.consumes))
+    assert "inbound" in binding.tags
+    assert any(coupling["relation"] == "binds_qos_to_interface" for coupling in graph.to_dict()["couplings"])
+
+
+def test_bgp_policy_line_links_to_route_policy_provider():
+    config = """route-policy EXPORT permit node 10
+ if-match acl 3000
+ apply local-preference 200
+#
+bgp 65000
+ peer 10.0.0.2 as-number 65001
+ peer 10.0.0.2 route-policy EXPORT export
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    route_policy = graph.by_feature("route_policy")[0]
+    bgp_policy = graph.by_feature("bgp.policy")[0]
+
+    assert "route-policy:EXPORT" in route_policy.provides
+    assert "route-policy:EXPORT" in bgp_policy.consumes
+    assert route_policy.module_id in bgp_policy.depends_on
+    assert any(coupling["relation"] == "bgp_uses_route_policy" for coupling in graph.to_dict()["couplings"])
+
+
+def test_cisco_bgp_route_map_line_links_to_route_policy_provider():
+    config = """route-map EXPORT permit 10
+ match ip address 3000
+ set local-preference 200
+#
+router bgp 65000
+ neighbor 10.0.0.2 remote-as 65001
+ neighbor 10.0.0.2 route-map EXPORT out
+"""
+    graph = build_module_graph(config, vendor="cisco")
+
+    bgp_policy = graph.by_feature("bgp.policy")[0]
+
+    assert "route-policy:EXPORT" in bgp_policy.consumes
+    assert any(coupling["relation"] == "bgp_uses_route_policy" for coupling in graph.to_dict()["couplings"])
+
+
+def test_route_policy_links_to_prefix_filter_provider():
+    config = """ip ip-prefix EXPORT index 10 permit 10.0.0.0 24
+#
+route-policy EXPORT permit node 10
+ if-match ip-prefix EXPORT
+ apply local-preference 200
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    route_filter = graph.by_feature("route_filter")[0]
+    route_policy = graph.by_feature("route_policy")[0]
+
+    assert "route-filter:EXPORT" in route_filter.provides
+    assert "route-filter:EXPORT" in route_policy.consumes
+    assert route_filter.module_id in route_policy.depends_on
+    assert any(coupling["relation"] == "policy_uses_route_filter" for coupling in graph.to_dict()["couplings"])
+
+
+def test_cisco_route_map_links_to_prefix_list_provider():
+    config = """ip prefix-list EXPORT seq 10 permit 10.0.0.0/24
+#
+route-map EXPORT permit 10
+ match ip address prefix-list EXPORT
+ set local-preference 200
+"""
+    graph = build_module_graph(config, vendor="cisco")
+
+    route_filter = graph.by_feature("route_filter")[0]
+    route_policy = graph.by_feature("route_policy")[0]
+
+    assert "route-filter:EXPORT" in route_filter.provides
+    assert "route-filter:EXPORT" in route_policy.consumes
+    assert route_filter.module_id in route_policy.depends_on
+
+
+def test_bgp_direct_prefix_filter_links_to_route_filter_provider():
+    config = """ip ip-prefix EXPORT index 10 permit 10.0.0.0 24
+#
+bgp 65000
+ peer 10.0.0.2 as-number 65001
+ peer 10.0.0.2 ip-prefix EXPORT export
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    bgp_policy = graph.by_feature("bgp.policy")[0]
+    route_filter = graph.by_feature("route_filter")[0]
+
+    assert "route-filter:EXPORT" in bgp_policy.consumes
+    assert route_filter.module_id in bgp_policy.depends_on
+    assert any(coupling["relation"] == "bgp_uses_route_filter" for coupling in graph.to_dict()["couplings"])

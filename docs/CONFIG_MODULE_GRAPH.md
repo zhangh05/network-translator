@@ -48,9 +48,10 @@ confirmation without polluting the translated configuration tab.
 - `module_id`: stable source-order identifier.
 - `feature`: normalized feature type, for example `device_identity`, `vlan`,
   `interface.svi`, `interface.physical`, `acl`, `acl_binding`,
-  `static_route`, `vrf`, `route_policy`, `qos.policy`, `management.ntp`,
-  `ospf.process`, `bgp.process`, `bfd.session`, `fhrp.vrrp`, `dhcp.pool`,
-  `interface.tunnel`, `rip.process`, `isis.process`, `pbr.binding`,
+  `static_route`, `vrf`, `route_filter`, `route_policy`, `qos.policy`,
+  `qos.binding`, `management.ntp`, `ospf.process`, `bgp.process`,
+  `bfd.session`, `fhrp.vrrp`, `dhcp.pool`, `interface.tunnel`,
+  `rip.process`, `isis.process`, `pbr.binding`,
   `multicast.interface`, `firewall.nat`, `firewall.ipsec`,
   `firewall.profile`, `time_range`, `zone`, `address_object`,
   `service_object`, `security_policy`, or `unknown`.
@@ -153,7 +154,7 @@ traffic-filter inbound acl 3000
 | `bgp.neighbor` | Basic BGP neighbor AS mapping | `bgp:65000:neighbor:10.0.0.2` | `bgp:65000` |
 | `bgp.network` | BGP network statement | none | `bgp:65000` |
 | `bgp.password` | BGP neighbor authentication | none | `bgp:65000` |
-| `bgp.policy` | BGP route-policy/route-map/filter binding | none | `bgp:65000` |
+| `bgp.policy` | BGP route-policy/route-map/filter binding | none | `bgp:65000`, optional `route-policy:*`, `route-filter:*` |
 | `bgp.redistribute` | BGP redistribution/default route | none | `bgp:65000` |
 | `bgp.attribute` | BGP attribute tuning | none | `bgp:65000` |
 | `rip.process` | RIP process/version context | `rip:default` or `rip:*` | none |
@@ -170,10 +171,12 @@ traffic-filter inbound acl 3000
 | `pbr.binding` | Interface PBR binding | none | `interface:*`, `route-policy:*` |
 | `multicast` | Global multicast/PIM/IGMP controls | none | RP/interface dependencies later |
 | `multicast.interface` | Interface PIM/IGMP controls | none | `interface:*` |
-| `route_policy` | Route-policy/route-map block | `route-policy:EXPORT` | `acl:*` |
+| `route_filter` | Prefix-list/ip-prefix/as-path/community filter | `route-filter:EXPORT` | none |
+| `route_policy` | Route-policy/route-map block | `route-policy:EXPORT` | `acl:*`, `route-filter:*` |
 | `qos.classifier` | QoS classifier | `qos-classifier:C1` | `acl:*` |
 | `qos.behavior` | QoS behavior/action body | `qos-behavior:B1` | none |
 | `qos.policy` | QoS policy joining classifier and behavior | `qos-policy:P1` | `qos-classifier:*`, `qos-behavior:*` |
+| `qos.binding` | Interface QoS policy binding | none | `interface:*`, `qos-policy:*` |
 | `management.ntp` | NTP server/source settings | none | none |
 | `management.snmp` | SNMP community/host settings | none | none |
 | `management.logging` | Loghost/info-center settings | none | none |
@@ -263,7 +266,8 @@ is decomposed into:
 - `bgp.neighbor`: basic peer AS relationship.
 - `bgp.network`: network announcement.
 - `bgp.password`: manual review with secret value redacted.
-- `bgp.policy`: manual review.
+- `bgp.policy`: manual review, with route-policy/route-map and direct
+  prefix-list/ip-prefix/as-path/community filter references linked when present.
 - `bgp.redistribute`: manual review.
 
 Only the low-risk process/neighbor/network pieces may enter `deployable_config`.
@@ -280,10 +284,14 @@ separates:
   `description`, `preference`, or similar behavior-changing options. These
   require manual review.
 - `vrf`: VRF/VPN instance provider. VRF-aware routes consume `vrf:<name>`.
+- `route_filter`: prefix-list/ip-prefix/as-path/community filters. These are
+  separate providers because route-policy and BGP may reference them directly.
 - `route_policy`: route-policy/route-map blocks. These stay manual-review and
-  link to referenced ACLs where possible.
+  link to referenced ACLs and route filters where possible.
 - `qos.classifier`, `qos.behavior`, `qos.policy`: QoS parts are separated so
   policy joins can be audited instead of flattened.
+- `qos.binding`: interface-level `traffic-policy` / `service-policy` bindings
+  are detached from interface modules and linked to `qos-policy:*`.
 - `management.ntp`, `management.snmp`, `management.logging`,
   `management.aaa`: management-plane features are split so sensitive SNMP/AAA
   values can be redacted and reviewed without hiding safe NTP/loghost context.
