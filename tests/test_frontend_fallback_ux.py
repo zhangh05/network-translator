@@ -317,3 +317,21 @@ class TestManualReviewTab:
             html = f.read()
         assert "manual_review_checklist" in html, \
             "exported JSON report should include user-facing manual review checklist"
+
+    def test_manual_review_tab_derives_review_priority(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "function _reviewPriorityForItem" in html, \
+            "manual review items should derive a user-facing review priority"
+        for label in ("必须处理", "需要确认", "信息提示"):
+            assert label in html, f"manual review priority should include {label}"
+
+    def test_manual_review_tab_sorts_by_review_priority(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "function _sortManualReviewItems" in html, \
+            "manual review items should share one priority-aware sort helper"
+        assert "_sortManualReviewItems(_manualReviewItems(r))" in html, \
+            "manual review renderer/checklist should sort items before grouping"
+        assert "review-priority--must" in html and "review-priority--confirm" in html, \
+            "manual review cards should expose priority classes for scanning"

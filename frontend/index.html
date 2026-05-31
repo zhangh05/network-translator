@@ -271,6 +271,10 @@
   .review-item{margin:10px 0;border:1px solid var(--br);border-radius:10px;overflow:hidden;background:var(--s1)}
   .review-item__hd{padding:8px 12px;background:var(--s2);font-size:12px;font-weight:700;color:var(--t1);display:flex;gap:8px;align-items:center}
   .review-item__tag{font-size:11px;color:var(--am);font-weight:600}
+  .review-priority{font-size:11px;font-weight:700;border-radius:999px;padding:2px 8px;margin-left:auto}
+  .review-priority--must{background:#fee2e2;color:var(--rd)}
+  .review-priority--confirm{background:#fff7ed;color:var(--am)}
+  .review-priority--info{background:#e0f2fe;color:#0369a1}
   .review-item__bd{padding:10px 12px;font-size:12px;color:var(--t2)}
   .review-row{margin:8px 0}
   .review-row b{display:block;color:var(--t1);margin-bottom:4px}
@@ -771,6 +775,24 @@ function _moduleCouplingLabel(name){
     interface_uses_multicast:"接口启用组播能力"
   }[n]||name||"关联关系"
 }
+function _reviewPriorityForItem(it){
+  var raw=((it&&it.priority)||(it&&it.severity)||(it&&it.risk_level)||(it&&it.status)||"").toLowerCase();
+  var txt=[raw,(it&&it.reason)||"",((it&&it.feature)||"").toLowerCase()].join(" ");
+  if(raw==="must"||raw==="critical"||raw==="fatal"||raw==="high"||txt.indexOf("unsupported")!==-1||txt.indexOf("未迁移")!==-1||txt.indexOf("不支持")!==-1){
+    return{rank:0,key:"must",label:"必须处理"}
+  }
+  if(raw==="info"||raw==="low"||raw==="notice"){
+    return{rank:2,key:"info",label:"信息提示"}
+  }
+  return{rank:1,key:"confirm",label:"需要确认"}
+}
+function _sortManualReviewItems(items){
+  return (items||[]).slice().sort(function(a,b){
+    var pa=_reviewPriorityForItem(a),pb=_reviewPriorityForItem(b);
+    if(pa.rank!==pb.rank)return pa.rank-pb.rank;
+    return String(a.group||"").localeCompare(String(b.group||""),"zh-CN")||String(a.feature||"").localeCompare(String(b.feature||""),"zh-CN")
+  })
+}
 function _moduleGraphReviewItems(r){
   var graph=(r&&r.module_graph)||{};
   var modules=graph.modules||[];
@@ -793,6 +815,7 @@ function _moduleGraphReviewItems(r){
       lines:lines,
       action:_reviewActionForFeature(m.feature),
       meta:meta,
+      severity:m.review_priority||m.risk_level||m.severity||m.status,
       span:"原配置第 "+m.start_line+"-"+m.end_line+" 行"
     })
   });
@@ -800,17 +823,18 @@ function _moduleGraphReviewItems(r){
 }
 function _manualReviewItems(r){
   var items=[],seen={};
-  function add(feature,reason,lines,action,meta,span){
+  function add(feature,reason,lines,action,meta,span,severity){
     lines=(lines||[]).filter(function(x){return x&&String(x).trim()}).slice(0,8);
     meta=(meta||[]).filter(function(x){return x&&String(x).trim()});
     var key=[feature||"未分类",reason||"",lines.join("\n"),meta.join("\n"),span||""].join("|");
     if(seen[key])return null;seen[key]=true;
-    var item={feature:feature||"未分类",group:_reviewGroupForFeature(feature),reason:reason||_reviewReasonForFeature(feature),lines:lines,action:action||_reviewActionForFeature(feature),meta:meta,span:span||""};
+    var item={feature:feature||"未分类",group:_reviewGroupForFeature(feature),reason:reason||_reviewReasonForFeature(feature),lines:lines,action:action||_reviewActionForFeature(feature),meta:meta,span:span||"",severity:severity||""};
+    item.priority=_reviewPriorityForItem(item).key;
     items.push(item);
     return item
   }
   _moduleGraphReviewItems(r).forEach(function(m){
-    var item=add(m.feature,m.reason,m.lines,m.action,m.meta,m.span);
+    var item=add(m.feature,m.reason,m.lines,m.action,m.meta,m.span,m.severity);
     if(item)item.group=m.group||item.group
   });
   (r.analyzer_results||[]).forEach(function(a){
@@ -820,22 +844,22 @@ function _manualReviewItems(r){
     (a.missing_context||[]).forEach(function(x){lines.push(x)});
     (a.rules||[]).slice(0,5).forEach(function(rule){(rule.source_lines||[]).forEach(function(x){lines.push(x)})});
     if(a.manual_review_required||lines.length||["warning","high","critical","fatal"].indexOf((a.risk_level||"").toLowerCase())!==-1){
-      add(_friendlyFeatureName(a.feature),a.summary||(a.notes&&a.notes[0])||_reviewReasonForFeature(a.feature),lines,_reviewActionForFeature(a.feature))
+      add(_friendlyFeatureName(a.feature),a.summary||(a.notes&&a.notes[0])||_reviewReasonForFeature(a.feature),lines,_reviewActionForFeature(a.feature),[], "", a.risk_level)
     }
   });
   _visibleCapabilityGaps(r.capability_gaps||[]).forEach(function(g){
-    add(_friendlyFeatureName(g.feature),g.suggestion||_reviewReasonForFeature(g.feature),g.source_lines||[],_reviewActionForFeature(g.feature))
+    add(_friendlyFeatureName(g.feature),g.suggestion||_reviewReasonForFeature(g.feature),g.source_lines||[],_reviewActionForFeature(g.feature),[], "", g.severity||g.status)
   });
   (r.risk_signals||[]).forEach(function(s){
-    add(_friendlyFeatureName(s.feature||"风险信号"),s.message||_reviewReasonForFeature(s.feature),s.source_lines||[],_reviewActionForFeature(s.feature))
+    add(_friendlyFeatureName(s.feature||"风险信号"),s.message||_reviewReasonForFeature(s.feature),s.source_lines||[],_reviewActionForFeature(s.feature),[], "", s.severity)
   });
   _extractManualReviewCommands(r).forEach(function(cmd){
-    add("未迁移命令",_reviewReasonForFeature("unsupported",true),[cmd],"确认该命令是否需要在目标设备重建；如需要，请手工转换后再上线。")
+    add("未迁移命令",_reviewReasonForFeature("unsupported",true),[cmd],"确认该命令是否需要在目标设备重建；如需要，请手工转换后再上线。",[], "", "high")
   });
   return items
 }
 function _manualReviewChecklistLines(r){
-  var items=_manualReviewItems(r);
+  var items=_sortManualReviewItems(_manualReviewItems(r));
   if(!items.length)return["无人工复核项"];
   var groups={},order=[];
   items.forEach(function(it){var g=it.group||"未支持能力";if(!groups[g]){groups[g]=[];order.push(g)}groups[g].push(it)});
@@ -844,7 +868,8 @@ function _manualReviewChecklistLines(r){
     lines.push("");
     lines.push("["+g+"] "+groups[g].length+" 项");
     groups[g].forEach(function(it,i){
-      lines.push("  "+(i+1)+". "+it.feature+(it.span?" ("+it.span+")":""));
+      var pri=_reviewPriorityForItem(it);
+      lines.push("  "+(i+1)+". ["+pri.label+"] "+it.feature+(it.span?" ("+it.span+")":""));
       lines.push("     原因: "+it.reason);
       if((it.meta||[]).length)lines.push("     关联: "+it.meta.join(" | "));
       if((it.lines||[]).length)lines.push("     原配置: "+it.lines.slice(0,3).join(" / "));
@@ -854,12 +879,12 @@ function _manualReviewChecklistLines(r){
   return lines
 }
 function _renderManualReviewTab(r){
-  var items=_manualReviewItems(r);
+  var items=_sortManualReviewItems(_manualReviewItems(r));
   if(!items.length)return'<div class="review-intro"><b>人工复核</b><br>未发现需要单独人工确认的原配置片段。仍建议按变更流程抽查关键业务。</div>';
   var groups={},order=[];
   items.forEach(function(it){var g=it.group||"未支持能力";if(!groups[g]){groups[g]=[];order.push(g)}groups[g].push(it)});
   var idx=0;
-  function card(it){idx+=1;return'<div class="review-item"><div class="review-item__hd"><span>复核项 '+idx+'</span><span class="review-item__tag">'+esc(it.feature)+'</span></div><div class="review-item__bd">'+
+  function card(it){idx+=1;var pri=_reviewPriorityForItem(it);return'<div class="review-item"><div class="review-item__hd"><span>复核项 '+idx+'</span><span class="review-item__tag">'+esc(it.feature)+'</span><span class="review-priority review-priority--'+pri.key+'">'+pri.label+'</span></div><div class="review-item__bd">'+
       (it.span?'<div class="review-row"><b>位置</b>'+esc(it.span)+'</div>':"")+
       '<div class="review-row"><b>原因</b>'+esc(it.reason)+'</div>'+
       (it.meta&&it.meta.length?'<div class="review-row"><b>模块关联</b><pre class="review-src">'+esc(it.meta.join("\n"))+'</pre></div>':"")+
