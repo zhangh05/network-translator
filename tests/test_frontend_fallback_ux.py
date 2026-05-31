@@ -335,3 +335,20 @@ class TestManualReviewTab:
             "manual review renderer/checklist should sort items before grouping"
         assert "review-priority--must" in html and "review-priority--confirm" in html, \
             "manual review cards should expose priority classes for scanning"
+
+    def test_manual_review_tab_has_group_filter_controls(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "function _setReviewGroupFilter" in html, \
+            "manual review tab should provide a group filter interaction"
+        assert "review-filter__btn" in html and "data-review-group-id" in html, \
+            "manual review filter should render stable per-group buttons"
+        assert "全部" in html, "manual review filter should include an all-items button"
+
+    def test_manual_review_group_filter_does_not_change_export_scope(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "manual_review_checklist:_manualReviewChecklistLines(r)" in html, \
+            "exported checklist should remain based on all manual-review items"
+        assert "_manualReviewChecklistLines" in html and "_setReviewGroupFilter" in html, \
+            "filtering should be a view concern, separate from report export"
