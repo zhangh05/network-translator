@@ -48,9 +48,9 @@ confirmation without polluting the translated configuration tab.
 - `module_id`: stable source-order identifier.
 - `feature`: normalized feature type, for example `device_identity`, `vlan`,
   `interface.svi`, `interface.physical`, `acl`, `acl_binding`,
-  `static_route`, `vrf`, `route_filter`, `route_policy`, `qos.policy`,
-  `qos.binding`, `management.ntp`, `ospf.process`, `bgp.process`,
-  `bfd.session`, `fhrp.vrrp`, `dhcp.pool`, `interface.tunnel`,
+  `object_group`, `static_route`, `vrf`, `route_filter`, `route_policy`,
+  `qos.policy`, `qos.binding`, `management.ntp`, `ospf.process`,
+  `bgp.process`, `bfd.session`, `fhrp.vrrp`, `dhcp.pool`, `interface.tunnel`,
   `rip.process`, `isis.process`, `pbr.binding`,
   `multicast.interface`, `firewall.nat`, `firewall.ipsec`,
   `firewall.profile`, `time_range`, `zone`, `address_object`,
@@ -138,8 +138,9 @@ traffic-filter inbound acl 3000
 | `interface.lag` | Link aggregation interface | `interface:Eth-Trunk1`, `lag:1` | none |
 | `interface.loopback` | Loopback interface | `interface:LoopBack0` | none |
 | `interface.tunnel` | Tunnel/GRE/IPsec-like interface | `interface:Tunnel0/0/0`, `tunnel:Tunnel0/0/0` | `source:*`, `destination:*` |
-| `acl` | ACL definition | `acl:3000` | objects or time ranges later |
+| `acl` | ACL definition | `acl:3000` | optional `time-range:*`, `object-group:*` |
 | `acl_binding` | ACL bind point | none | `acl:3000`, `interface:*` |
+| `object_group` | Cisco/ASA-style object-group | `object-group:WEB` | member dependencies later |
 | `static_route` | Basic static route | `route:dst:mask:nexthop` | optional `vrf:*` |
 | `static_route.option` | Static route with track/BFD/tag/description/preference | `route:dst:mask:nexthop` | optional `vrf:*` |
 | `vrf` | VRF/VPN instance | `vrf:CUST-A` | route-target dependencies later |
@@ -184,7 +185,7 @@ traffic-filter inbound acl 3000
 | `zone` | Firewall zone | `zone:trust` | interface bindings later |
 | `address_object` | Firewall address object | `addr:WEB` | none |
 | `service_object` | Firewall service object | `svc:HTTP` | none |
-| `security_policy` | Firewall rule/policy | `policy:allow-web` | `zone:*`, `addr:*`, `svc:*` |
+| `security_policy` | Firewall rule/policy | `policy:allow-web` | `zone:*`, `addr:*`, `svc:*`, optional `time-range:*`, `profile:*` |
 | `firewall.nat` | NAT/source-nat/destination-nat policy | `nat-policy:*` | `zone:*`, `addr:*`, `svc:*` where detectable |
 | `firewall.ipsec` | IKE/IPsec/VPN/crypto/tunnel-group block | `ike-peer:*`, `ipsec-policy:*`, `crypto-map:*` | `acl:*`, peer/proposal refs |
 | `firewall.profile` | URL/AV/IPS/application/user profile | `profile:*` | profile binding dependencies later |
@@ -335,6 +336,12 @@ modules:
   manual-review.
 - `time_range`: schedule/time objects. They are typed so policies can eventually
   consume them, but they stay manual-review until calendar semantics are proven.
+- `security_policy` now links detectable `time-range`/`schedule` and profile
+  references to their provider modules, so the review view can show exactly
+  which security rule depends on which schedule or inspection profile.
+- `object_group` is separated from ACLs. ACL modules may consume both
+  `object-group:*` and `time-range:*`, making advanced ACL review evidence
+  explicit instead of hiding it in a generic ACL block.
 
 This prevents advanced firewall commands from being hidden inside `unknown` or a
 generic `security_policy` block, while still honoring the rule that uncertain
@@ -355,8 +362,8 @@ Anything that cannot be confidently translated must remain in `manual_review`.
 ## Next Steps
 
 1. Split BGP address-family and VRF-aware peer context into submodules.
-2. Link firewall policy `time-range` and profile references to their provider
-   modules.
+2. Split object-group members into address/service submodules where syntax is
+   rich enough to avoid overclaiming equivalence.
 3. Split remaining interface-level routing features such as NAT-on-interface and
    advanced multicast/RP dependencies.
 4. Replace fallback's remaining flat line-by-line paths gradually, one feature

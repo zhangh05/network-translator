@@ -41,6 +41,8 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
         return "vlan"
     if _matches_any(first, (r"^interface\b",)):
         return "interface"
+    if _matches_any(first, (r"^object-group\b",)):
+        return "object_group"
     if _matches_any(first, (r"^acl\s+(name|number)\b", r"^ip\s+access-list\b", r"^access-list\b")):
         return "acl"
     if _matches_any(first, (r"^ip\s+route-static\b", r"^ip\s+route\b", r"^ipv6\s+route")):

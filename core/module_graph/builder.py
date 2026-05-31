@@ -134,6 +134,11 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         acl_name = _extract_acl_identifier(text)
         if acl_name:
             provides.add(f"acl:{acl_name}")
+        consumes.update(_extract_acl_refs(text))
+    elif feature == "object_group":
+        object_group_name = _extract_object_group_name(text)
+        if object_group_name:
+            provides.add(f"object-group:{object_group_name}")
     elif feature.startswith("interface."):
         name = _extract_interface_name(block.lines[0])
         if name:
@@ -980,6 +985,8 @@ def _normalize_feature(block: ConfigBlock) -> str:
         re.IGNORECASE,
     ):
         return "route_filter"
+    if re.match(r"^object-group\b", first, re.IGNORECASE):
+        return "object_group"
     if re.match(r"^(?:policy-based-route|ip\s+policy-based-route)\b", first, re.IGNORECASE):
         return "pbr"
     if re.match(r"^(?:multicast|pim|igmp|ip\s+multicast-routing)\b", first, re.IGNORECASE):
@@ -1033,6 +1040,10 @@ def _coupling_relation(feature: str, resource: str) -> str:
         return "binds_acl_to_interface"
     if feature == "acl_binding" and resource.startswith("interface:"):
         return "binds_acl_to_interface"
+    if feature == "security_policy" and resource.startswith("time-range:"):
+        return "policy_uses_time_range"
+    if feature == "security_policy" and resource.startswith("profile:"):
+        return "policy_uses_profile"
     if feature == "security_policy":
         return "policy_uses_object"
     if feature == "static_route" and resource.startswith("vrf:"):
@@ -1041,6 +1052,10 @@ def _coupling_relation(feature: str, resource: str) -> str:
         return "policy_uses_acl"
     if feature == "route_policy" and resource.startswith("route-filter:"):
         return "policy_uses_route_filter"
+    if feature == "acl" and resource.startswith("time-range:"):
+        return "acl_uses_time_range"
+    if feature == "acl" and resource.startswith("object-group:"):
+        return "acl_uses_object_group"
     if feature == "qos.classifier" and resource.startswith("acl:"):
         return "qos_classifier_uses_acl"
     if feature == "qos.policy":
@@ -1136,6 +1151,34 @@ def _extract_acl_identifier(text: str) -> str:
         if match:
             return match.group(1)
     return ""
+
+
+def _extract_acl_refs(text: str) -> set[str]:
+    refs: set[str] = set()
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        for pattern in (
+            r"\btime-range\s+(\S+)",
+            r"\btime\s+(\S+)",
+        ):
+            match = re.search(pattern, line, re.IGNORECASE)
+            if match:
+                refs.add(f"time-range:{match.group(1)}")
+        for pattern in (
+            r"\bobject-group\s+(\S+)",
+            r"\bsource\s+object-group\s+(\S+)",
+            r"\bdestination\s+object-group\s+(\S+)",
+        ):
+            match = re.search(pattern, line, re.IGNORECASE)
+            if match:
+                refs.add(f"object-group:{match.group(1)}")
+    return refs
+
+
+def _extract_object_group_name(text: str) -> str:
+    first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    match = re.match(r"^object-group\s+(?:network|service|protocol|icmp-type)?\s*(\S+)", first, re.IGNORECASE)
+    return match.group(1) if match else ""
 
 
 def _extract_interface_name(first_line: str) -> str:
@@ -1831,6 +1874,12 @@ def _extract_security_policy_refs(text: str) -> set[str]:
         match = re.match(r"^service\s+(\S+)", stripped, re.IGNORECASE)
         if match and match.group(1).lower() != "any":
             refs.add(f"svc:{match.group(1)}")
+        match = re.match(r"^(?:time-range|schedule)\s+(\S+)", stripped, re.IGNORECASE)
+        if match:
+            refs.add(f"time-range:{match.group(1)}")
+        match = re.match(r"^(?:profile|url-filter\s+profile|antivirus\s+profile|av-profile|ips\s+profile)\s+(\S+)", stripped, re.IGNORECASE)
+        if match:
+            refs.add(f"profile:{match.group(1)}")
 
         inline = re.match(
             r"^policy\s+\S+\s+from\s+(\S+)\s+to\s+(\S+)(?:\s+source\s+(\S+))?(?:\s+destination\s+(\S+))?(?:\s+service\s+(\S+))?",
@@ -1846,6 +1895,35 @@ def _extract_security_policy_refs(text: str) -> set[str]:
                 refs.add(f"addr:{inline.group(4)}")
             if inline.group(5) and inline.group(5).lower() != "any":
                 refs.add(f"svc:{inline.group(5)}")
+            refs.update(_extract_inline_policy_schedule_refs(stripped))
+            refs.update(_extract_inline_policy_profile_refs(stripped))
+    return refs
+
+
+def _extract_inline_policy_schedule_refs(line: str) -> set[str]:
+    refs: set[str] = set()
+    for pattern in (
+        r"\bschedule\s+(\S+)",
+        r"\btime-range\s+(\S+)",
+    ):
+        match = re.search(pattern, line, re.IGNORECASE)
+        if match:
+            refs.add(f"time-range:{match.group(1)}")
+    return refs
+
+
+def _extract_inline_policy_profile_refs(line: str) -> set[str]:
+    refs: set[str] = set()
+    for pattern in (
+        r"\bprofile\s+(\S+)",
+        r"\burl-filter\s+profile\s+(\S+)",
+        r"\bantivirus\s+profile\s+(\S+)",
+        r"\bav-profile\s+(\S+)",
+        r"\bips\s+profile\s+(\S+)",
+    ):
+        match = re.search(pattern, line, re.IGNORECASE)
+        if match:
+            refs.add(f"profile:{match.group(1)}")
     return refs
 
 

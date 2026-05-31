@@ -658,6 +658,83 @@ security-policy
     assert any(coupling["relation"] == "policy_uses_object" for coupling in graph.to_dict()["couplings"])
 
 
+def test_firewall_policy_uses_time_range_and_security_profiles():
+    config = """time-range WORK
+ period-range 08:00 to 18:00 working-day
+#
+url-filter profile WEB-FILTER
+ category block gambling
+#
+antivirus profile AV-STRICT
+ scan enable
+#
+security-policy
+ rule name allow-web
+  source-zone trust
+  destination-zone untrust
+  service HTTP
+  time-range WORK
+  profile WEB-FILTER
+  antivirus profile AV-STRICT
+  action permit
+"""
+    graph = build_module_graph(config, vendor="huawei_usg")
+
+    policy = graph.by_feature("security_policy")[0]
+    time_range = graph.by_feature("time_range")[0]
+    profiles = graph.by_feature("firewall.profile")
+
+    assert "time-range:WORK" in policy.consumes
+    assert {"profile:WEB-FILTER", "profile:AV-STRICT"}.issubset(set(policy.consumes))
+    assert time_range.module_id in policy.depends_on
+    assert {profile.module_id for profile in profiles}.issubset(set(policy.depends_on))
+    couplings = graph.to_dict()["couplings"]
+    assert any(coupling["relation"] == "policy_uses_time_range" for coupling in couplings)
+    assert any(coupling["relation"] == "policy_uses_profile" for coupling in couplings)
+
+
+def test_inline_firewall_policy_uses_schedule_and_profile_refs():
+    config = """time-range WORK
+ periodic weekdays 08:00 to 18:00
+#
+url-filter profile WEB-FILTER
+#
+policy p1 from trust to untrust source SRC destination DST service HTTP schedule WORK profile WEB-FILTER action permit
+"""
+    graph = build_module_graph(config, vendor="hillstone")
+
+    policy = graph.by_feature("security_policy")[0]
+
+    assert "time-range:WORK" in policy.consumes
+    assert "profile:WEB-FILTER" in policy.consumes
+    assert any(coupling["relation"] == "policy_uses_time_range" for coupling in graph.to_dict()["couplings"])
+    assert any(coupling["relation"] == "policy_uses_profile" for coupling in graph.to_dict()["couplings"])
+
+
+def test_acl_uses_time_range_and_object_group_refs():
+    config = """time-range WORK
+ periodic weekdays 08:00 to 18:00
+#
+object-group network WEB-SERVERS
+ network-object host 10.1.1.10
+#
+ip access-list extended WEB-IN
+ permit tcp object-group WEB-SERVERS any eq 443 time-range WORK
+"""
+    graph = build_module_graph(config, vendor="cisco")
+
+    acl = graph.by_feature("acl")[0]
+    time_range = graph.by_feature("time_range")[0]
+    object_group = graph.by_feature("object_group")[0]
+
+    assert "time-range:WORK" in acl.consumes
+    assert "object-group:WEB-SERVERS" in acl.consumes
+    assert time_range.module_id in acl.depends_on
+    assert object_group.module_id in acl.depends_on
+    assert any(coupling["relation"] == "acl_uses_time_range" for coupling in graph.to_dict()["couplings"])
+    assert any(coupling["relation"] == "acl_uses_object_group" for coupling in graph.to_dict()["couplings"])
+
+
 def test_interface_kinds_are_split_into_specific_module_features():
     config = """interface LoopBack0
  ip address 10.0.0.1 255.255.255.255
