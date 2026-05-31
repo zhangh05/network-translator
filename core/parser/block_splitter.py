@@ -39,6 +39,10 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
         return "system"
     if _matches_any(first, (r"^vlan\s+batch\b", r"^vlan\s+\d+", r"^vlan\b")):
         return "vlan"
+    if _matches_any(first, (r"^poe\b", r"^power\s+inline\b")):
+        return "l2_poe"
+    if _matches_any(first, (r"^(?:loopback-detection|loop-detect|loopback\s+detect)\b",)):
+        return "l2_loop_detection"
     if _matches_any(first, (r"^voice-vlan\b", r"^voice\s+vlan\b")):
         return "l2_voice_vlan"
     if _matches_any(first, (r"^dhcp\s+snooping\b",)):
@@ -67,8 +71,12 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
         return "object_group"
     if _matches_any(first, (r"^acl\s+(name|number)\b", r"^ip\s+access-list\b", r"^access-list\b")):
         return "acl"
-    if _matches_any(first, (r"^ip\s+route-static\b", r"^ip\s+route\b", r"^ipv6\s+route")):
+    if _matches_any(first, (r"^ipv6\s+(?:route-static|route)\b",)):
+        return "ipv6_route"
+    if _matches_any(first, (r"^ip\s+route-static\b", r"^ip\s+route\b")):
         return "route"
+    if _matches_any(first, (r"^ipv6\s+access-list\b", r"^acl\s+ipv6\b")):
+        return "ipv6_acl"
     if _matches_any(
         first,
         (
@@ -81,6 +89,10 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
         return "route_filter"
     if _matches_any(first, (r"^(?:rip|router\s+rip)\b",)):
         return "rip"
+    if _matches_any(first, (r"^(?:ospfv3|router\s+ospfv3|ipv6\s+router\s+ospf)\b",)):
+        return "ospfv3"
+    if _matches_any(first, (r"^(?:eigrp|router\s+eigrp)\b",)):
+        return "eigrp"
     if _matches_any(first, (r"^(?:isis|is-is|router\s+isis|router\s+is-is)\b",)):
         return "isis"
     if _matches_any(first, (r"^ip\s+vpn-instance\b", r"^vrf\s+definition\b", r"^ip\s+vrf\b")):
@@ -120,6 +132,8 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
         return "mpls"
     if _matches_any(first, (r"^bfd\b",)):
         return "bfd"
+    if _matches_any(first, (r"^(?:dhcp\s+relay|ip\s+helper-address|dhcp\s+select\s+relay)\b",)):
+        return "dhcp_relay"
     if _matches_any(first, (r"^stp\b", r"^spanning-tree\b")):
         return "stp"
     if _matches_any(first, (r"^(?:nat-policy|nat\b|source-nat\b|destination-nat\b|ip\s+nat\b)",)):

@@ -123,7 +123,18 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         return _l2_manual_review_module_specs_from_block(block, feature)
     if feature == "stp.mstp":
         return _l2_manual_review_module_specs_from_block(block, feature)
-    if feature.startswith(("platform.", "overlay.")) or feature in {"mpls", "nqa", "ip_sla", "firewall.session", "firewall.logging"}:
+    if feature.startswith(("platform.", "overlay.")) or feature in {
+        "mpls",
+        "nqa",
+        "ip_sla",
+        "firewall.session",
+        "firewall.logging",
+        "ipv6.static_route",
+        "ospfv3.process",
+        "ipv6.acl",
+        "dhcp.relay",
+        "eigrp",
+    }:
         return _generic_manual_review_module_specs_from_block(block, feature)
     if feature == "bfd":
         return _bfd_module_specs_from_block(block)
@@ -727,6 +738,8 @@ def _l2_manual_review_module_specs_from_block(block: ConfigBlock, feature: str) 
         "l2.arp_security": "ARP inspection/anti-attack 依赖绑定表、VLAN 和信任口语义，需要人工复核",
         "l2.port_security": "端口安全会影响 MAC 学习、违规动作和接入口行为，需要人工复核",
         "l2.storm_control": "风暴抑制阈值单位和动作跨厂商差异较大，需要人工复核",
+        "l2.poe": "PoE 供电功率、优先级、检测模式和故障动作跨厂商差异较大，需要人工复核",
+        "l2.loop_detection": "环路检测/Loopback Detection 会影响端口阻断和告警动作，需要人工复核",
         "stp.mstp": "MSTP region、instance 与 VLAN 映射会影响生成树拓扑，需要人工复核",
     }
     tag = feature.split(".", 1)[-1] if "." in feature else feature
@@ -753,6 +766,11 @@ def _generic_manual_review_module_specs_from_block(block: ConfigBlock, feature: 
         "ip_sla": "NQA/IP SLA 探测对象、频率、联动动作和告警语义需要人工复核",
         "firewall.session": "会话超时、连接限制和状态表行为会影响业务连接，需要人工复核",
         "firewall.logging": "日志/审计策略涉及级别、目的地、策略命中和合规要求，需要人工复核",
+        "ipv6.static_route": "IPv6 静态路由前缀、下一跳和 VRF 语义需要人工复核",
+        "ospfv3.process": "OSPFv3/IPv6 OSPF 的进程、接口绑定、认证和区域语义需要人工复核",
+        "ipv6.acl": "IPv6 ACL 的协议、扩展头、端口和绑定语义需要人工复核",
+        "dhcp.relay": "DHCP Relay/helper 地址和接口绑定行为跨厂商不同，需要人工复核",
+        "eigrp": "EIGRP 是 Cisco 特有路由协议，迁移到非 Cisco 平台必须重新设计或人工确认",
     }
     tag = feature.split(".", 1)[-1] if "." in feature else feature
     return [
@@ -1063,6 +1081,10 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return _interface_feature(first)
     if re.match(r"^(?:voice-vlan|voice\s+vlan)\b", first, re.IGNORECASE):
         return "l2.voice_vlan"
+    if re.match(r"^(?:poe|power\s+inline)\b", first, re.IGNORECASE):
+        return "l2.poe"
+    if re.match(r"^(?:loopback-detection|loop-detect|loopback\s+detect)\b", first, re.IGNORECASE):
+        return "l2.loop_detection"
     if re.match(r"^dhcp\s+snooping\b", first, re.IGNORECASE):
         return "l2.dhcp_snooping"
     if re.match(r"^(?:ip\s+source\s+check|ip\s+source\s+guard)\b", first, re.IGNORECASE):
@@ -1089,10 +1111,20 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return "bgp"
     if re.match(r"^(?:rip|router\s+rip)\b", first, re.IGNORECASE):
         return "rip"
+    if re.match(r"^(?:ospfv3|router\s+ospfv3|ipv6\s+router\s+ospf)\b", first, re.IGNORECASE):
+        return "ospfv3.process"
+    if re.match(r"^(?:eigrp|router\s+eigrp)\b", first, re.IGNORECASE):
+        return "eigrp"
     if re.match(r"^(?:isis|is-is|router\s+isis|router\s+is-is)\b", first, re.IGNORECASE):
         return "isis"
     if re.match(r"^bfd\b", first, re.IGNORECASE):
         return "bfd"
+    if re.match(r"^ipv6\s+(?:route-static|route)\b", first, re.IGNORECASE):
+        return "ipv6.static_route"
+    if re.match(r"^ipv6\s+access-list\b|^acl\s+ipv6\b", first, re.IGNORECASE):
+        return "ipv6.acl"
+    if re.match(r"^(?:dhcp\s+relay|ip\s+helper-address|dhcp\s+select\s+relay)\b", first, re.IGNORECASE):
+        return "dhcp.relay"
     if re.match(r"^mpls\b", first, re.IGNORECASE):
         return "mpls"
     if re.match(r"^nqa\s+test-instance\b", first, re.IGNORECASE):

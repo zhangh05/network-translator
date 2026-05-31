@@ -1,13 +1,13 @@
 {
   "summary": {
-    "total": 34,
-    "covered": 34,
-    "full": 34,
+    "total": 38,
+    "covered": 38,
+    "full": 38,
     "partial": 0,
     "missing": 0,
     "by_action": {
       "auto_subset": 11,
-      "manual_review": 22,
+      "manual_review": 26,
       "identify_only": 1
     }
   },
@@ -416,6 +416,40 @@
         "matched_features": [
           "overlay.evpn",
           "overlay.vxlan"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "switch.edge_services",
+        "domain": "SWITCH",
+        "product_area": "Edge services",
+        "module_features": [
+          "l2.poe",
+          "l2.loop_detection"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco PoE and UDLD/loop detection guides",
+          "Huawei PoE and loop detection documentation",
+          "H3C PoE and loopback detection guides",
+          "Ruijie PoE and loop prevention documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "l2.loop_detection",
+          "l2.poe"
+        ],
+        "matched_features": [
+          "l2.loop_detection",
+          "l2.poe"
         ],
         "missing_module_features": [],
         "coverage_status": "covered"
@@ -993,6 +1027,99 @@
         ],
         "matched_features": [
           "interface.tunnel"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.ipv6_routing",
+        "domain": "ROUTER",
+        "product_area": "IPv6 routing and filtering",
+        "module_features": [
+          "ipv6.static_route",
+          "ospfv3.process",
+          "ipv6.acl"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco IPv6 Routing Configuration Guide",
+          "Huawei IPv6 Configuration Guide",
+          "H3C IPv6 Configuration Guide",
+          "Ruijie IPv6 Configuration"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "ipv6.acl",
+          "ipv6.static_route",
+          "ospfv3.process"
+        ],
+        "matched_features": [
+          "ipv6.acl",
+          "ipv6.static_route",
+          "ospfv3.process"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.dhcp_relay",
+        "domain": "ROUTER",
+        "product_area": "DHCP relay",
+        "module_features": [
+          "dhcp.relay"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco DHCP Relay Configuration Guide",
+          "Huawei DHCP Relay Configuration Guide",
+          "H3C DHCP Relay Configuration Guide",
+          "Ruijie DHCP Configuration"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "dhcp.relay"
+        ],
+        "matched_features": [
+          "dhcp.relay"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.eigrp",
+        "domain": "ROUTER",
+        "product_area": "Cisco-specific EIGRP",
+        "module_features": [
+          "eigrp"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe"
+        ],
+        "evidence_refs": [
+          "Cisco EIGRP Configuration Guide"
+        ],
+        "notes": "Cisco-specific routing protocol; non-Cisco migration requires redesign or explicit review.",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "eigrp"
+        ],
+        "matched_features": [
+          "eigrp"
         ],
         "missing_module_features": [],
         "coverage_status": "covered"

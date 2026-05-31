@@ -139,6 +139,15 @@ PRODUCT_CAPABILITY_BASELINE: tuple[CapabilitySpec, ...] = (
         ("Cisco VXLAN EVPN configuration guides", "Huawei VXLAN configuration guides", "H3C VXLAN configuration guides", "Ruijie VXLAN EVPN documentation"),
     ),
     CapabilitySpec(
+        "switch.edge_services",
+        "SWITCH",
+        "Edge services",
+        ("l2.poe", "l2.loop_detection"),
+        "manual_review",
+        SWITCH_PLATFORMS,
+        ("Cisco PoE and UDLD/loop detection guides", "Huawei PoE and loop detection documentation", "H3C PoE and loopback detection guides", "Ruijie PoE and loop prevention documentation"),
+    ),
+    CapabilitySpec(
         "router.static_route",
         "ROUTER",
         "IP routing",
@@ -272,6 +281,34 @@ PRODUCT_CAPABILITY_BASELINE: tuple[CapabilitySpec, ...] = (
         "manual_review",
         ROUTER_PLATFORMS,
         ("Cisco Tunnel Interface Configuration Guide", "Huawei GRE/IPsec tunnel documentation", "H3C Tunnel Configuration Guide", "Ruijie Tunnel Configuration"),
+    ),
+    CapabilitySpec(
+        "router.ipv6_routing",
+        "ROUTER",
+        "IPv6 routing and filtering",
+        ("ipv6.static_route", "ospfv3.process", "ipv6.acl"),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("Cisco IPv6 Routing Configuration Guide", "Huawei IPv6 Configuration Guide", "H3C IPv6 Configuration Guide", "Ruijie IPv6 Configuration"),
+    ),
+    CapabilitySpec(
+        "router.dhcp_relay",
+        "ROUTER",
+        "DHCP relay",
+        ("dhcp.relay",),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("Cisco DHCP Relay Configuration Guide", "Huawei DHCP Relay Configuration Guide", "H3C DHCP Relay Configuration Guide", "Ruijie DHCP Configuration"),
+    ),
+    CapabilitySpec(
+        "router.eigrp",
+        "ROUTER",
+        "Cisco-specific EIGRP",
+        ("eigrp",),
+        "manual_review",
+        ("cisco_ios_xe",),
+        ("Cisco EIGRP Configuration Guide",),
+        "Cisco-specific routing protocol; non-Cisco migration requires redesign or explicit review.",
     ),
     CapabilitySpec(
         "firewall.objects",
@@ -425,6 +462,13 @@ stack enable
 evpn-overlay enable
 """,
     ),
+    "switch.edge_services": (
+        "huawei",
+        """poe enable
+#
+loopback-detection enable
+""",
+    ),
     "router.static_route": (
         "huawei",
         """ip route-static 10.0.20.0 255.255.255.0 10.0.10.254
@@ -548,6 +592,29 @@ interface Vlan20
  tunnel-protocol gre
  source 10.0.0.1
  destination 10.0.0.2
+""",
+    ),
+    "router.ipv6_routing": (
+        "huawei",
+        """ipv6 route-static 2001:db8:10:: 64 2001:db8::1
+#
+ospfv3 1
+ router-id 1.1.1.1
+ area 0
+#
+ipv6 access-list V6-FILTER
+ permit tcp any any eq 443
+""",
+    ),
+    "router.dhcp_relay": (
+        "huawei",
+        "dhcp relay server-address 10.0.0.10\n",
+    ),
+    "router.eigrp": (
+        "cisco",
+        """router eigrp 100
+ network 10.0.0.0
+ passive-interface default
 """,
     ),
     "firewall.objects": (

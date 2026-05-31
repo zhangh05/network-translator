@@ -1,11 +1,11 @@
 # Product Capability Baseline Coverage
 
-- total: 34
-- covered: 34
-- full: 34
+- total: 38
+- covered: 38
+- full: 38
 - partial: 0
 - missing: 0
-- by_action: {"auto_subset": 11, "identify_only": 1, "manual_review": 22}
+- by_action: {"auto_subset": 11, "identify_only": 1, "manual_review": 26}
 
 ## FIREWALL
 
@@ -33,6 +33,9 @@
 - `router.nqa_ip_sla`: manual_review; status=covered; matched=ip_sla, nqa; missing=-; modules: nqa, ip_sla
 - `router.fhrp`: manual_review; status=covered; matched=fhrp.hsrp, fhrp.vrrp; missing=-; modules: fhrp.vrrp, fhrp.hsrp
 - `router.tunnel`: manual_review; status=covered; matched=interface.tunnel; missing=-; modules: interface.tunnel
+- `router.ipv6_routing`: manual_review; status=covered; matched=ipv6.acl, ipv6.static_route, ospfv3.process; missing=-; modules: ipv6.static_route, ospfv3.process, ipv6.acl
+- `router.dhcp_relay`: manual_review; status=covered; matched=dhcp.relay; missing=-; modules: dhcp.relay
+- `router.eigrp`: manual_review; status=covered; matched=eigrp; missing=-; modules: eigrp
 
 ## SWITCH
 
@@ -48,4 +51,5 @@
 - `switch.access_security`: manual_review; status=covered; matched=l2.arp_security, l2.dhcp_snooping, l2.port_security, l2.source_guard, l2.storm_control; missing=-; modules: l2.dhcp_snooping, l2.source_guard, l2.arp_security, l2.port_security, l2.storm_control
 - `switch.stack_virtualization`: manual_review; status=covered; matched=platform.stack; missing=-; modules: platform.stack
 - `switch.vxlan_evpn`: manual_review; status=covered; matched=overlay.evpn, overlay.vxlan; missing=-; modules: overlay.vxlan, overlay.evpn
+- `switch.edge_services`: manual_review; status=covered; matched=l2.loop_detection, l2.poe; missing=-; modules: l2.poe, l2.loop_detection
 - `acl_qos`: auto_subset; status=covered; matched=acl, acl_binding, qos.behavior, qos.binding, qos.classifier, qos.policy; missing=-; modules: acl, acl_binding, qos.classifier, qos.behavior, qos.policy, qos.binding

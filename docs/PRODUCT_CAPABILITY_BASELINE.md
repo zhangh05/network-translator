@@ -54,6 +54,7 @@ The machine-readable source of truth is
 | switch.access_security | SWITCH | manual_review | l2.dhcp_snooping, l2.source_guard, l2.arp_security, l2.port_security, l2.storm_control |
 | switch.stack_virtualization | SWITCH | manual_review | platform.stack |
 | switch.vxlan_evpn | SWITCH | manual_review | overlay.vxlan, overlay.evpn |
+| switch.edge_services | SWITCH | manual_review | l2.poe, l2.loop_detection |
 | router.static_route | ROUTER | auto_subset | static_route, static_route.option |
 | router.ospf | ROUTER | auto_subset | ospf.process, ospf.area, ospf.network, ospf.passive_interface, ospf.authentication, ospf.redistribute, ospf.area_special, ospf.interface_tuning |
 | router.bgp | ROUTER | auto_subset | bgp.process, bgp.neighbor, bgp.network, bgp.password, bgp.policy, bgp.redistribute, bgp.attribute |
@@ -69,6 +70,9 @@ The machine-readable source of truth is
 | router.nqa_ip_sla | ROUTER | manual_review | nqa, ip_sla |
 | router.fhrp | ROUTER | manual_review | fhrp.vrrp, fhrp.hsrp |
 | router.tunnel | ROUTER | manual_review | interface.tunnel |
+| router.ipv6_routing | ROUTER | manual_review | ipv6.static_route, ospfv3.process, ipv6.acl |
+| router.dhcp_relay | ROUTER | manual_review | dhcp.relay |
+| router.eigrp | ROUTER | manual_review | eigrp |
 | firewall.objects | FIREWALL | auto_subset | zone, address_object, service_object, object_group, object_group.member |
 | firewall.policy | FIREWALL | auto_subset | security_policy |
 | firewall.nat | FIREWALL | manual_review | firewall.nat |
@@ -80,12 +84,12 @@ The machine-readable source of truth is
 ## Current Implementation Notes
 
 - The module graph now recognizes product-relevant L2 advanced features:
-  `l2.qinq`, `l2.voice_vlan`, `l2.lldp`, `l2.mac_table`, `l2.dhcp_snooping`, `l2.source_guard`, `l2.arp_security`, `l2.port_security`, `l2.storm_control`, and `stp.mstp`.
+  `l2.qinq`, `l2.voice_vlan`, `l2.lldp`, `l2.mac_table`, `l2.dhcp_snooping`, `l2.source_guard`, `l2.arp_security`, `l2.port_security`, `l2.storm_control`, `l2.poe`, `l2.loop_detection`, and `stp.mstp`.
 - These features default to manual review because vendor semantics affect
   encapsulation, phone discovery, TLVs, static forwarding behavior, access security, storm control, and spanning
   tree topology.
 - Routing and firewall advanced features are already split into review modules:
-  RIP, IS-IS, PBR, multicast, BFD, DHCP, MPLS, NQA/IP SLA, FHRP, tunnels, NAT, IPsec, firewall profiles, session/logging, and
+  RIP, IS-IS, PBR, multicast, BFD, DHCP, DHCP Relay, IPv6 static route, OSPFv3, IPv6 ACL, EIGRP, MPLS, NQA/IP SLA, FHRP, tunnels, NAT, IPsec, firewall profiles, session/logging, and
   time ranges.
 - The UI and exported risk report use module graph evidence to show original
   source snippets, reason, action, group, priority, and coupling relations.
