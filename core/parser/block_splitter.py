@@ -35,6 +35,10 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
     first = lines[0]
     text = "\n".join(lines)
 
+    if _matches_any(first, (r"^(?:stelnet|ssh\b|ip\s+ssh\b)",)):
+        return "management_ssh"
+    if _matches_any(first, (r"^(?:pki\b|crypto\s+pki\b|certificate\b)",)):
+        return "management_pki"
     if _matches_any(first, (r"^(sysname|hostname)\b", r"^(clock|ntp|timezone)\b", r"^return$")):
         return "system"
     if _matches_any(first, (r"^vlan\s+batch\b", r"^vlan\s+\d+", r"^vlan\b")):

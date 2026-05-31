@@ -1,11 +1,11 @@
 # Product Capability Baseline Coverage
 
-- total: 38
-- covered: 38
-- full: 38
+- total: 41
+- covered: 41
+- full: 41
 - partial: 0
 - missing: 0
-- by_action: {"auto_subset": 11, "identify_only": 1, "manual_review": 26}
+- by_action: {"auto_subset": 11, "identify_only": 1, "manual_review": 29}
 
 ## FIREWALL
 
@@ -14,6 +14,7 @@
 - `firewall.nat`: manual_review; status=covered; matched=firewall.nat; missing=-; modules: firewall.nat
 - `firewall.ipsec`: manual_review; status=covered; matched=firewall.ipsec, interface.tunnel; missing=-; modules: firewall.ipsec, interface.tunnel
 - `firewall.utm_profile`: identify_only; status=covered; matched=firewall.profile, time_range; missing=-; modules: firewall.profile, time_range
+- `firewall.threat_profiles`: manual_review; status=covered; matched=firewall.application, firewall.av, firewall.ips, firewall.url_filter, firewall.user_id; missing=-; modules: firewall.ips, firewall.url_filter, firewall.av, firewall.application, firewall.user_id
 - `firewall.session_logging`: manual_review; status=covered; matched=firewall.logging, firewall.session; missing=-; modules: firewall.session, firewall.logging
 
 ## ROUTER
@@ -34,12 +35,14 @@
 - `router.fhrp`: manual_review; status=covered; matched=fhrp.hsrp, fhrp.vrrp; missing=-; modules: fhrp.vrrp, fhrp.hsrp
 - `router.tunnel`: manual_review; status=covered; matched=interface.tunnel; missing=-; modules: interface.tunnel
 - `router.ipv6_routing`: manual_review; status=covered; matched=ipv6.acl, ipv6.static_route, ospfv3.process; missing=-; modules: ipv6.static_route, ospfv3.process, ipv6.acl
-- `router.dhcp_relay`: manual_review; status=covered; matched=dhcp.relay; missing=-; modules: dhcp.relay
+- `router.dhcp_relay`: manual_review; status=covered; matched=dhcp.relay, dhcp.relay.binding; missing=-; modules: dhcp.relay, dhcp.relay.binding
+- `router.ipv6_interface_services`: manual_review; status=covered; matched=ipv6.interface, ipv6.nd_ra; missing=-; modules: ipv6.interface, ipv6.nd_ra
 - `router.eigrp`: manual_review; status=covered; matched=eigrp; missing=-; modules: eigrp
 
 ## SWITCH
 
 - `system.management`: auto_subset; status=covered; matched=device_identity, management.aaa, management.logging, management.ntp, management.snmp; missing=-; modules: device_identity, management.ntp, management.logging, management.snmp, management.aaa
+- `system.secure_management`: manual_review; status=covered; matched=management.pki, management.ssh; missing=-; modules: management.ssh, management.pki
 - `switch.vlan`: auto_subset; status=covered; matched=interface.svi, vlan; missing=-; modules: vlan, interface.svi
 - `switch.trunk_access`: auto_subset; status=covered; matched=interface.lag, interface.physical; missing=-; modules: interface.physical, interface.lag
 - `switch.lacp`: auto_subset; status=covered; matched=interface.lag, interface.physical; missing=-; modules: interface.lag, interface.physical

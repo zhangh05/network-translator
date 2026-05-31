@@ -115,6 +115,8 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         return _firewall_ipsec_module_specs_from_block(block)
     if feature == "firewall_profile":
         return _firewall_profile_module_specs_from_block(block)
+    if feature in {"firewall.ips", "firewall.url_filter", "firewall.av", "firewall.application", "firewall.user_id"}:
+        return _firewall_profile_module_specs_from_block(block, feature)
     if feature == "time_range":
         return _time_range_module_specs_from_block(block)
     if feature == "qos":
@@ -129,6 +131,11 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         "ip_sla",
         "firewall.session",
         "firewall.logging",
+        "firewall.ips",
+        "firewall.url_filter",
+        "firewall.av",
+        "firewall.application",
+        "firewall.user_id",
         "ipv6.static_route",
         "ospfv3.process",
         "ipv6.acl",
@@ -228,6 +235,8 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         specs.extend(_pbr_binding_specs_from_interface(block))
         specs.extend(_qos_binding_specs_from_interface(block))
         specs.extend(_multicast_specs_from_interface(block))
+        specs.extend(_ipv6_interface_specs_from_interface(block))
+        specs.extend(_dhcp_relay_binding_specs_from_interface(block))
 
     return specs
 
@@ -652,21 +661,42 @@ def _firewall_ipsec_module_specs_from_block(block: ConfigBlock) -> list[_ModuleS
     ]
 
 
-def _firewall_profile_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+def _firewall_profile_module_specs_from_block(block: ConfigBlock, specific_feature: str = "firewall.profile") -> list[_ModuleSpec]:
     text = "\n".join(block.lines)
     profile_name = _extract_firewall_profile_name(text)
-    return [
-        _ModuleSpec(
-            feature="firewall.profile",
-            start_line=block.start_line,
-            end_line=block.end_line,
-            source_lines=block.lines,
-            provides={f"profile:{profile_name}"} if profile_name else set(),
-            tags=_extract_firewall_profile_tags(text),
-            status="manual_review",
-            manual_review_reason="URL/AV/IPS/application/user/profile 等安全能力依赖目标平台特征库和动作语义，需要人工复核",
-        )
-    ]
+    tags = _extract_firewall_profile_tags(text)
+    reason_by_feature = {
+        "firewall.ips": "IPS/入侵防御依赖特征库、动作和例外策略，需要人工复核",
+        "firewall.url_filter": "URL 过滤依赖分类库、动作和旁路策略，需要人工复核",
+        "firewall.av": "反病毒/恶意文件检测依赖引擎、协议代理和动作语义，需要人工复核",
+        "firewall.application": "应用识别/应用组依赖目标平台特征库和策略引用，需要人工复核",
+        "firewall.user_id": "用户识别/用户组策略依赖认证源和目录集成，需要人工复核",
+        "firewall.profile": "URL/AV/IPS/application/user/profile 等安全能力依赖目标平台特征库和动作语义，需要人工复核",
+    }
+    legacy_spec = _ModuleSpec(
+        feature="firewall.profile",
+        start_line=block.start_line,
+        end_line=block.end_line,
+        source_lines=block.lines,
+        provides={f"profile:{profile_name}"} if profile_name else set(),
+        tags=tags,
+        status="manual_review",
+        manual_review_reason=reason_by_feature["firewall.profile"],
+    )
+    if specific_feature == "firewall.profile":
+        return [legacy_spec]
+    specific_spec = _ModuleSpec(
+        feature=specific_feature,
+        start_line=block.start_line,
+        end_line=block.end_line,
+        source_lines=block.lines,
+        tags=tags,
+        status="manual_review",
+        manual_review_reason=reason_by_feature.get(specific_feature, reason_by_feature["firewall.profile"]),
+    )
+    # Keep the legacy profile provider first so existing policy couplings remain stable,
+    # while the specific module gives users a finer security-function label.
+    return [legacy_spec, specific_spec]
 
 
 def _time_range_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
@@ -766,6 +796,11 @@ def _generic_manual_review_module_specs_from_block(block: ConfigBlock, feature: 
         "ip_sla": "NQA/IP SLA 探测对象、频率、联动动作和告警语义需要人工复核",
         "firewall.session": "会话超时、连接限制和状态表行为会影响业务连接，需要人工复核",
         "firewall.logging": "日志/审计策略涉及级别、目的地、策略命中和合规要求，需要人工复核",
+        "firewall.ips": "IPS/入侵防御依赖特征库、动作和例外策略，需要人工复核",
+        "firewall.url_filter": "URL 过滤依赖分类库、动作和旁路策略，需要人工复核",
+        "firewall.av": "反病毒/恶意文件检测依赖引擎、协议代理和动作语义，需要人工复核",
+        "firewall.application": "应用识别/应用组依赖目标平台特征库和策略引用，需要人工复核",
+        "firewall.user_id": "用户识别/用户组策略依赖认证源和目录集成，需要人工复核",
         "ipv6.static_route": "IPv6 静态路由前缀、下一跳和 VRF 语义需要人工复核",
         "ospfv3.process": "OSPFv3/IPv6 OSPF 的进程、接口绑定、认证和区域语义需要人工复核",
         "ipv6.acl": "IPv6 ACL 的协议、扩展头、端口和绑定语义需要人工复核",
@@ -787,11 +822,16 @@ def _generic_manual_review_module_specs_from_block(block: ConfigBlock, feature: 
 
 
 def _management_module_specs_from_block(block: ConfigBlock, feature: str) -> list[_ModuleSpec]:
-    status = "manual_review" if feature in {"management.snmp", "management.aaa"} else "translatable"
+    status = "manual_review" if feature in {"management.snmp", "management.aaa", "management.ssh", "management.pki"} else "translatable"
     source_lines = [_redact_management_sensitive_line(line) for line in block.lines]
     reason = ""
     if status == "manual_review":
-        reason = "管理面配置含认证/社区字/权限语义或敏感值，需要人工复核"
+        if feature == "management.ssh":
+            reason = "SSH/Stelnet 管理入口、认证方式和访问控制涉及管理面安全，需要人工复核"
+        elif feature == "management.pki":
+            reason = "PKI/证书/信任点配置依赖证书链、吊销检查和目标平台证书库，需要人工复核"
+        else:
+            reason = "管理面配置含认证/社区字/权限语义或敏感值，需要人工复核"
     return [
         _ModuleSpec(
             feature=feature,
@@ -900,6 +940,8 @@ def _module_source_lines(block: ConfigBlock, feature: str) -> list[str]:
             or _extract_pbr_binding_ref(line)
             or _extract_qos_binding_ref(line)
             or _is_interface_multicast_line(line)
+            or _is_interface_ipv6_line(line)
+            or _extract_dhcp_relay_binding_ref(line)
         ):
             continue
         filtered.append(line)
@@ -1041,6 +1083,76 @@ def _multicast_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
     ]
 
 
+def _ipv6_interface_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
+    interface_name = _extract_interface_name(block.lines[0])
+    if not interface_name:
+        return []
+    ipv6_entries: list[tuple[int, str]] = []
+    nd_entries: list[tuple[int, str]] = []
+    for offset, raw_line in enumerate(block.lines[1:], 1):
+        stripped = raw_line.strip()
+        line_no = block.start_line + offset
+        if _is_interface_ipv6_nd_ra_line(stripped):
+            nd_entries.append((line_no, raw_line))
+        elif _is_interface_ipv6_line(stripped):
+            ipv6_entries.append((line_no, raw_line))
+    specs: list[_ModuleSpec] = []
+    if ipv6_entries:
+        line_numbers = [line_no for line_no, _ in ipv6_entries]
+        specs.append(
+            _ModuleSpec(
+                feature="ipv6.interface",
+                start_line=min(line_numbers),
+                end_line=max(line_numbers),
+                source_lines=[line for _, line in ipv6_entries],
+                consumes={f"interface:{interface_name}"},
+                tags={"ipv6", "interface"},
+                status="manual_review",
+                manual_review_reason="接口 IPv6 地址/启用状态、链路本地地址和目标平台 IPv6 行为需要人工复核",
+            )
+        )
+    if nd_entries:
+        line_numbers = [line_no for line_no, _ in nd_entries]
+        specs.append(
+            _ModuleSpec(
+                feature="ipv6.nd_ra",
+                start_line=min(line_numbers),
+                end_line=max(line_numbers),
+                source_lines=[line for _, line in nd_entries],
+                consumes={f"interface:{interface_name}"},
+                tags={"ipv6", "nd", "ra"},
+                status="manual_review",
+                manual_review_reason="IPv6 ND/RA 参数会影响邻居发现、默认网关和主机自动配置，需要人工复核",
+            )
+        )
+    return specs
+
+
+def _dhcp_relay_binding_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
+    interface_name = _extract_interface_name(block.lines[0])
+    if not interface_name:
+        return []
+    entries: list[tuple[int, str]] = []
+    for offset, raw_line in enumerate(block.lines[1:], 1):
+        if _extract_dhcp_relay_binding_ref(raw_line):
+            entries.append((block.start_line + offset, raw_line))
+    if not entries:
+        return []
+    line_numbers = [line_no for line_no, _ in entries]
+    return [
+        _ModuleSpec(
+            feature="dhcp.relay.binding",
+            start_line=min(line_numbers),
+            end_line=max(line_numbers),
+            source_lines=[line for _, line in entries],
+            consumes={f"interface:{interface_name}"},
+            tags={"dhcp", "relay", "interface"},
+            status="manual_review",
+            manual_review_reason="接口 DHCP Relay/helper 绑定会影响客户端地址分配路径，需要人工复核",
+        )
+    ]
+
+
 def _attach_dependencies(graph: ModuleGraph) -> None:
     provider_by_key: dict[str, str] = {}
     for module in graph.modules:
@@ -1149,16 +1261,30 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return "multicast"
     if re.match(r"^(?:nat-policy|nat\b|source-nat\b|destination-nat\b|ip\s+nat\b)", first, re.IGNORECASE):
         return "firewall_nat"
+    if re.match(r"^(?:pki\b|crypto\s+pki\b|certificate\b)", first, re.IGNORECASE):
+        return "management.pki"
     if re.match(r"^(?:ike|ipsec|crypto|tunnel-group|vpn)\b", first, re.IGNORECASE):
         return "firewall_ipsec"
     if re.match(r"^time-range\b", first, re.IGNORECASE):
         return "time_range"
-    if re.match(r"^(?:url-filter|antivirus|av-profile|intrusion|ips|profile|application|user-profile)\b", first, re.IGNORECASE):
+    if re.match(r"^(?:intrusion|ips)\b", first, re.IGNORECASE):
+        return "firewall.ips"
+    if re.match(r"^url-filter\b", first, re.IGNORECASE):
+        return "firewall.url_filter"
+    if re.match(r"^(?:antivirus|av-profile)\b", first, re.IGNORECASE):
+        return "firewall.av"
+    if re.match(r"^(?:application|application-group)\b", first, re.IGNORECASE):
+        return "firewall.application"
+    if re.match(r"^(?:user-profile|user-group|user-policy)\b", first, re.IGNORECASE):
+        return "firewall.user_id"
+    if re.match(r"^profile\b", first, re.IGNORECASE):
         return "firewall_profile"
     if re.match(r"^session\b", first, re.IGNORECASE):
         return "firewall.session"
     if re.match(r"^(?:traffic\s+log|log\s+setting|security-log|log\b)", first, re.IGNORECASE):
         return "firewall.logging"
+    if re.match(r"^(?:stelnet|ssh\b|ip\s+ssh\b)", first, re.IGNORECASE):
+        return "management.ssh"
     if re.match(r"^(?:ntp-service|ntp\s+server)\b", first, re.IGNORECASE):
         return "management.ntp"
     if re.match(r"^(?:snmp-agent|snmp-server)\b", first, re.IGNORECASE):
@@ -1180,6 +1306,27 @@ def _normalize_feature(block: ConfigBlock) -> str:
     if re.search(r"\bvoice-vlan\b", text, re.IGNORECASE):
         return "l2.voice_vlan"
     return block.feature
+
+
+def _is_interface_ipv6_line(line: str) -> bool:
+    stripped = line.strip()
+    return bool(re.match(r"^ipv6\b", stripped, re.IGNORECASE))
+
+
+def _is_interface_ipv6_nd_ra_line(line: str) -> bool:
+    stripped = line.strip()
+    return bool(re.match(r"^ipv6\s+nd\b|^ipv6\s+ra\b", stripped, re.IGNORECASE))
+
+
+def _extract_dhcp_relay_binding_ref(line: str) -> bool:
+    stripped = line.strip()
+    return bool(
+        re.match(
+            r"^(?:ip\s+helper-address|dhcp\s+select\s+relay|dhcp\s+relay|ipv6\s+dhcp\s+relay)\b",
+            stripped,
+            re.IGNORECASE,
+        )
+    )
 
 
 def _interface_feature(first_line: str) -> str:

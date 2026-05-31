@@ -37,6 +37,16 @@ PRODUCT_CAPABILITY_BASELINE: tuple[CapabilitySpec, ...] = (
         "Secrets and AAA policies remain manual review.",
     ),
     CapabilitySpec(
+        "system.secure_management",
+        "SWITCH",
+        "Secure management access",
+        ("management.ssh", "management.pki"),
+        "manual_review",
+        SWITCH_PLATFORMS + ROUTER_PLATFORMS + FIREWALL_PLATFORMS,
+        ("Cisco IOS XE Security Configuration Guide", "Huawei PKI and SSH Configuration Guide", "H3C PKI/SSH Configuration Guide", "Firewall secure management documentation"),
+        "SSH/Stelnet and PKI/certificate material are recognized and reviewed; secrets remain redacted.",
+    ),
+    CapabilitySpec(
         "switch.vlan",
         "SWITCH",
         "Ethernet switching",
@@ -295,10 +305,20 @@ PRODUCT_CAPABILITY_BASELINE: tuple[CapabilitySpec, ...] = (
         "router.dhcp_relay",
         "ROUTER",
         "DHCP relay",
-        ("dhcp.relay",),
+        ("dhcp.relay", "dhcp.relay.binding"),
         "manual_review",
         ROUTER_PLATFORMS,
         ("Cisco DHCP Relay Configuration Guide", "Huawei DHCP Relay Configuration Guide", "H3C DHCP Relay Configuration Guide", "Ruijie DHCP Configuration"),
+    ),
+    CapabilitySpec(
+        "router.ipv6_interface_services",
+        "ROUTER",
+        "IPv6 interface services",
+        ("ipv6.interface", "ipv6.nd_ra"),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("Cisco IPv6 First Hop Security and ND documentation", "Huawei IPv6 ND/RA Configuration Guide", "H3C IPv6 Basics Configuration Guide", "Ruijie IPv6 Configuration"),
+        "Interface IPv6 address, ND, RA, and host autoconfiguration behavior must be reviewed per platform.",
     ),
     CapabilitySpec(
         "router.eigrp",
@@ -356,6 +376,16 @@ PRODUCT_CAPABILITY_BASELINE: tuple[CapabilitySpec, ...] = (
         ("DPtech Firewall Technical White Paper", "Hillstone StoneOS product guide", "Huawei USG support guide"),
     ),
     CapabilitySpec(
+        "firewall.threat_profiles",
+        "FIREWALL",
+        "Threat prevention profiles",
+        ("firewall.ips", "firewall.url_filter", "firewall.av", "firewall.application", "firewall.user_id"),
+        "manual_review",
+        FIREWALL_PLATFORMS,
+        ("Huawei USG security profile documentation", "Hillstone StoneOS security profile documentation", "Topsec threat prevention documentation", "DPtech security profile documentation"),
+        "Threat profile semantics depend on signature databases, user identity sources, application libraries, and action defaults.",
+    ),
+    CapabilitySpec(
         "firewall.session_logging",
         "FIREWALL",
         "Session and audit logging",
@@ -384,6 +414,19 @@ info-center loghost 10.0.0.20
 snmp-agent community read cipher SECRET
 aaa
  local-user admin password cipher SECRET
+""",
+    ),
+    "system.secure_management": (
+        "huawei",
+        """stelnet server enable
+#
+ssh user admin authentication-type password
+#
+pki domain CORP
+ certificate request entity ENT
+#
+crypto pki trustpoint TP
+ enrollment terminal
 """,
     ),
     "switch.vlan": (
@@ -608,7 +651,19 @@ ipv6 access-list V6-FILTER
     ),
     "router.dhcp_relay": (
         "huawei",
-        "dhcp relay server-address 10.0.0.10\n",
+        """dhcp relay server-address 10.0.0.10
+#
+interface GigabitEthernet0/0/1
+ ip helper-address 10.0.0.10
+""",
+    ),
+    "router.ipv6_interface_services": (
+        "huawei",
+        """interface GigabitEthernet0/0/1
+ ipv6 enable
+ ipv6 address 2001:db8:10::1/64
+ ipv6 nd ra halt
+""",
     ),
     "router.eigrp": (
         "cisco",
@@ -676,6 +731,24 @@ ipsec policy VPN 1 isakmp
 #
 url-filter profile WEB-FILTER
  category block gambling
+""",
+    ),
+    "firewall.threat_profiles": (
+        "huawei_usg",
+        """ips profile IPS-PROFILE
+ signature-set critical
+#
+url-filter profile WEB-FILTER
+ category block gambling
+#
+antivirus profile AV-PROFILE
+ scan-mode proxy
+#
+application-group APP-GRP
+ application HTTP
+#
+user-profile EMPLOYEE
+ user-group staff
 """,
     ),
     "firewall.session_logging": (

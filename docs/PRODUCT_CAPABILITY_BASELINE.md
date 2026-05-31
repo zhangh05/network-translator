@@ -33,6 +33,7 @@ The baseline is aligned to public vendor product/configuration documentation:
 - `identify_only`: the feature is product-relevant, but current safe behavior is
   recognition, evidence, and manual-review reporting.
 - Secrets, keys, communities, and authentication material are always redacted.
+- SSH/Stelnet, PKI/certificate trust, IPv6 ND/RA, and threat-prevention profiles are surfaced as manual-review modules rather than being silently passed through.
 - Missing firewall policy fields must never become implicit `any`.
 
 ## Capability Map
@@ -43,6 +44,7 @@ The machine-readable source of truth is
 | Capability | Domain | Default | Module features |
 |------------|--------|---------|-----------------|
 | system.management | SWITCH | auto_subset | device_identity, management.ntp, management.logging, management.snmp, management.aaa |
+| system.secure_management | SWITCH | manual_review | management.ssh, management.pki |
 | switch.vlan | SWITCH | auto_subset | vlan, interface.svi |
 | switch.trunk_access | SWITCH | auto_subset | interface.physical, interface.lag |
 | switch.lacp | SWITCH | auto_subset | interface.lag, interface.physical |
@@ -71,16 +73,17 @@ The machine-readable source of truth is
 | router.fhrp | ROUTER | manual_review | fhrp.vrrp, fhrp.hsrp |
 | router.tunnel | ROUTER | manual_review | interface.tunnel |
 | router.ipv6_routing | ROUTER | manual_review | ipv6.static_route, ospfv3.process, ipv6.acl |
-| router.dhcp_relay | ROUTER | manual_review | dhcp.relay |
+| router.dhcp_relay | ROUTER | manual_review | dhcp.relay, dhcp.relay.binding |
+| router.ipv6_interface_services | ROUTER | manual_review | ipv6.interface, ipv6.nd_ra |
 | router.eigrp | ROUTER | manual_review | eigrp |
 | firewall.objects | FIREWALL | auto_subset | zone, address_object, service_object, object_group, object_group.member |
 | firewall.policy | FIREWALL | auto_subset | security_policy |
 | firewall.nat | FIREWALL | manual_review | firewall.nat |
 | firewall.ipsec | FIREWALL | manual_review | firewall.ipsec, interface.tunnel |
 | firewall.utm_profile | FIREWALL | identify_only | firewall.profile, time_range |
+| firewall.threat_profiles | FIREWALL | manual_review | firewall.ips, firewall.url_filter, firewall.av, firewall.application, firewall.user_id |
 | firewall.session_logging | FIREWALL | manual_review | firewall.session, firewall.logging |
 | acl_qos | SWITCH | auto_subset | acl, acl_binding, qos.classifier, qos.behavior, qos.policy, qos.binding |
-
 ## Current Implementation Notes
 
 - The module graph now recognizes product-relevant L2 advanced features:
@@ -89,7 +92,7 @@ The machine-readable source of truth is
   encapsulation, phone discovery, TLVs, static forwarding behavior, access security, storm control, and spanning
   tree topology.
 - Routing and firewall advanced features are already split into review modules:
-  RIP, IS-IS, PBR, multicast, BFD, DHCP, DHCP Relay, IPv6 static route, OSPFv3, IPv6 ACL, EIGRP, MPLS, NQA/IP SLA, FHRP, tunnels, NAT, IPsec, firewall profiles, session/logging, and
+  RIP, IS-IS, PBR, multicast, BFD, DHCP, DHCP Relay, IPv6 interface services, IPv6 static route, OSPFv3, IPv6 ACL, EIGRP, MPLS, NQA/IP SLA, FHRP, tunnels, NAT, IPsec, firewall threat profiles, session/logging, and
   time ranges.
 - The UI and exported risk report use module graph evidence to show original
   source snippets, reason, action, group, priority, and coupling relations.

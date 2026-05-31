@@ -1,13 +1,13 @@
 {
   "summary": {
-    "total": 38,
-    "covered": 38,
-    "full": 38,
+    "total": 41,
+    "covered": 41,
+    "full": 41,
     "partial": 0,
     "missing": 0,
     "by_action": {
       "auto_subset": 11,
-      "manual_review": 26,
+      "manual_review": 29,
       "identify_only": 1
     }
   },
@@ -57,6 +57,48 @@
           "management.logging",
           "management.ntp",
           "management.snmp"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "system.secure_management",
+        "domain": "SWITCH",
+        "product_area": "Secure management access",
+        "module_features": [
+          "management.ssh",
+          "management.pki"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos",
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos",
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "Cisco IOS XE Security Configuration Guide",
+          "Huawei PKI and SSH Configuration Guide",
+          "H3C PKI/SSH Configuration Guide",
+          "Firewall secure management documentation"
+        ],
+        "notes": "SSH/Stelnet and PKI/certificate material are recognized and reviewed; secrets remain redacted.",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "management.pki",
+          "management.ssh"
+        ],
+        "matched_features": [
+          "management.pki",
+          "management.ssh"
         ],
         "missing_module_features": [],
         "coverage_status": "covered"
@@ -1073,7 +1115,8 @@
         "domain": "ROUTER",
         "product_area": "DHCP relay",
         "module_features": [
-          "dhcp.relay"
+          "dhcp.relay",
+          "dhcp.relay.binding"
         ],
         "default_action": "manual_review",
         "vendor_platforms": [
@@ -1091,10 +1134,48 @@
         "notes": "",
         "probe_vendor": "huawei",
         "observed_features": [
-          "dhcp.relay"
+          "dhcp.relay",
+          "dhcp.relay.binding",
+          "interface.physical"
         ],
         "matched_features": [
-          "dhcp.relay"
+          "dhcp.relay",
+          "dhcp.relay.binding"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.ipv6_interface_services",
+        "domain": "ROUTER",
+        "product_area": "IPv6 interface services",
+        "module_features": [
+          "ipv6.interface",
+          "ipv6.nd_ra"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco IPv6 First Hop Security and ND documentation",
+          "Huawei IPv6 ND/RA Configuration Guide",
+          "H3C IPv6 Basics Configuration Guide",
+          "Ruijie IPv6 Configuration"
+        ],
+        "notes": "Interface IPv6 address, ND, RA, and host autoconfiguration behavior must be reviewed per platform.",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "interface.physical",
+          "ipv6.interface",
+          "ipv6.nd_ra"
+        ],
+        "matched_features": [
+          "ipv6.interface",
+          "ipv6.nd_ra"
         ],
         "missing_module_features": [],
         "coverage_status": "covered"
@@ -1286,11 +1367,56 @@
         "probe_vendor": "topsec",
         "observed_features": [
           "firewall.profile",
+          "firewall.url_filter",
           "time_range"
         ],
         "matched_features": [
           "firewall.profile",
           "time_range"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "firewall.threat_profiles",
+        "domain": "FIREWALL",
+        "product_area": "Threat prevention profiles",
+        "module_features": [
+          "firewall.ips",
+          "firewall.url_filter",
+          "firewall.av",
+          "firewall.application",
+          "firewall.user_id"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "Huawei USG security profile documentation",
+          "Hillstone StoneOS security profile documentation",
+          "Topsec threat prevention documentation",
+          "DPtech security profile documentation"
+        ],
+        "notes": "Threat profile semantics depend on signature databases, user identity sources, application libraries, and action defaults.",
+        "probe_vendor": "huawei_usg",
+        "observed_features": [
+          "firewall.application",
+          "firewall.av",
+          "firewall.ips",
+          "firewall.profile",
+          "firewall.url_filter",
+          "firewall.user_id"
+        ],
+        "matched_features": [
+          "firewall.application",
+          "firewall.av",
+          "firewall.ips",
+          "firewall.url_filter",
+          "firewall.user_id"
         ],
         "missing_module_features": [],
         "coverage_status": "covered"
