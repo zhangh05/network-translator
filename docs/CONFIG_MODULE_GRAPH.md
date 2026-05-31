@@ -12,7 +12,8 @@ translation, the source config can be decomposed into auditable modules:
 - VLAN modules
 - Interface modules split by kind
 - ACL definition and ACL binding modules
-- Routing modules such as OSPF and BGP
+- Routing modules such as static route, VRF, OSPF, BGP, and route-policy
+- QoS and management-plane modules
 - Firewall object and policy modules
 - Manual-review modules for unsupported or vendor-specific features
 
@@ -45,6 +46,7 @@ confirmation without polluting the translated configuration tab.
 - `module_id`: stable source-order identifier.
 - `feature`: normalized feature type, for example `device_identity`, `vlan`,
   `interface.svi`, `interface.physical`, `acl`, `acl_binding`,
+  `static_route`, `vrf`, `route_policy`, `qos.policy`, `management.ntp`,
   `ospf.process`, `bgp.process`, `zone`, `address_object`, `service_object`,
   `security_policy`, or `unknown`.
 - `start_line` / `end_line`: original config line span.
@@ -131,6 +133,9 @@ traffic-filter inbound acl 3000
 | `interface.loopback` | Loopback interface | `interface:LoopBack0` | none |
 | `acl` | ACL definition | `acl:3000` | objects or time ranges later |
 | `acl_binding` | ACL bind point | none | `acl:3000`, `interface:*` |
+| `static_route` | Basic static route | `route:dst:mask:nexthop` | optional `vrf:*` |
+| `static_route.option` | Static route with track/BFD/tag/description/preference | `route:dst:mask:nexthop` | optional `vrf:*` |
+| `vrf` | VRF/VPN instance | `vrf:CUST-A` | route-target dependencies later |
 | `ospf.process` | OSPF process and router-id | `ospf:1` | none |
 | `ospf.area` | Plain OSPF area declaration | `ospf:1:area:0.0.0.0` | `ospf:1` |
 | `ospf.network` | OSPF network statement | none | `ospf:1`, optional area |
@@ -145,6 +150,14 @@ traffic-filter inbound acl 3000
 | `bgp.policy` | BGP route-policy/route-map/filter binding | none | `bgp:65000` |
 | `bgp.redistribute` | BGP redistribution/default route | none | `bgp:65000` |
 | `bgp.attribute` | BGP attribute tuning | none | `bgp:65000` |
+| `route_policy` | Route-policy/route-map block | `route-policy:EXPORT` | `acl:*` |
+| `qos.classifier` | QoS classifier | `qos-classifier:C1` | `acl:*` |
+| `qos.behavior` | QoS behavior/action body | `qos-behavior:B1` | none |
+| `qos.policy` | QoS policy joining classifier and behavior | `qos-policy:P1` | `qos-classifier:*`, `qos-behavior:*` |
+| `management.ntp` | NTP server/source settings | none | none |
+| `management.snmp` | SNMP community/host settings | none | none |
+| `management.logging` | Loghost/info-center settings | none | none |
+| `management.aaa` | AAA/radius/tacacs/local-user settings | none | none |
 | `zone` | Firewall zone | `zone:trust` | interface bindings later |
 | `address_object` | Firewall address object | `addr:WEB` | none |
 | `service_object` | Firewall service object | `svc:HTTP` | none |
@@ -227,6 +240,27 @@ Only the low-risk process/neighbor/network pieces may enter `deployable_config`.
 Password, route-policy/filter, community, attribute tuning, and redistribution
 stay in `manual_review_config` with source evidence.
 
+## Route, VRF, Policy, QoS, and Management Separation
+
+Routing and switching are broader than OSPF/BGP. The module graph now also
+separates:
+
+- `static_route`: basic destination/mask/next-hop route.
+- `static_route.option`: static routes with `track`, `bfd`, `tag`,
+  `description`, `preference`, or similar behavior-changing options. These
+  require manual review.
+- `vrf`: VRF/VPN instance provider. VRF-aware routes consume `vrf:<name>`.
+- `route_policy`: route-policy/route-map blocks. These stay manual-review and
+  link to referenced ACLs where possible.
+- `qos.classifier`, `qos.behavior`, `qos.policy`: QoS parts are separated so
+  policy joins can be audited instead of flattened.
+- `management.ntp`, `management.snmp`, `management.logging`,
+  `management.aaa`: management-plane features are split so sensitive SNMP/AAA
+  values can be redacted and reviewed without hiding safe NTP/loghost context.
+
+This gives users line-level evidence for non-OSPF/BGP features instead of
+burying them in `unknown` or one large `qos`/`system` bucket.
+
 ## Non-Goals
 
 This layer does not claim semantic equivalence and does not replace the strong
@@ -243,5 +277,6 @@ Anything that cannot be confidently translated must remain in `manual_review`.
 
 1. Split BGP address-family and VRF-aware peer context into submodules.
 2. Split firewall NAT/IPsec/profile features into typed manual-review modules.
-3. Replace fallback's remaining flat line-by-line paths gradually, one feature
+3. Split BFD, VRRP, DHCP, tunnel, and interface-level routing features.
+4. Replace fallback's remaining flat line-by-line paths gradually, one feature
    family at a time.

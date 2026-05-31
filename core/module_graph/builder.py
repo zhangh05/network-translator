@@ -95,6 +95,14 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         return _ospf_module_specs_from_block(block)
     if feature == "bgp":
         return _bgp_module_specs_from_block(block)
+    if feature == "route":
+        return _static_route_module_specs_from_block(block)
+    if feature == "route_policy":
+        return _route_policy_module_specs_from_block(block)
+    if feature == "qos":
+        return _qos_module_specs_from_block(block)
+    if feature.startswith("management."):
+        return _management_module_specs_from_block(block, feature)
 
     if feature == "device_identity":
         provides.add("device:hostname")
@@ -143,8 +151,11 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         if policy_name:
             provides.add(f"policy:{policy_name}")
         consumes.update(_extract_security_policy_refs(text))
-    elif feature == "route":
-        tags.add("routing")
+    elif feature == "vrf":
+        vrf_name = _extract_vrf_name(text)
+        if vrf_name:
+            provides.add(f"vrf:{vrf_name}")
+        tags.update(_extract_vrf_tags(text))
 
     status = "manual_review" if feature in _MANUAL_REVIEW_FEATURES else "translatable"
     reason = ""
@@ -346,6 +357,117 @@ def _bgp_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
     return specs
 
 
+def _static_route_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    specs: list[_ModuleSpec] = []
+    for offset, raw_line in enumerate(block.lines):
+        stripped = raw_line.strip()
+        line_no = block.start_line + offset
+        route_info = _extract_static_route_info(stripped)
+        consumes = set()
+        tags = {"routing", "static"}
+        if route_info.get("vrf"):
+            consumes.add(f"vrf:{route_info['vrf']}")
+            tags.add("vrf")
+        feature = "static_route.option" if _is_static_route_risky(stripped) else "static_route"
+        status = "manual_review" if feature == "static_route.option" else "translatable"
+        reason = ""
+        if status == "manual_review":
+            reason = f"静态路由附加参数可能影响选路或可用性，需要人工复核: {stripped}"
+        provides = set()
+        if route_info.get("destination"):
+            provides.add(f"route:{route_info['destination']}:{route_info.get('mask', '')}:{route_info.get('next_hop', '')}")
+        specs.append(
+            _ModuleSpec(
+                feature=feature,
+                start_line=line_no,
+                end_line=line_no,
+                source_lines=[raw_line],
+                provides=provides,
+                consumes=consumes,
+                tags=tags,
+                status=status,
+                manual_review_reason=reason,
+            )
+        )
+    return specs
+
+
+def _route_policy_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    text = "\n".join(block.lines)
+    name = _extract_route_policy_name(text)
+    consumes = {f"acl:{acl}" for acl in _extract_route_policy_acl_refs(text)}
+    return [
+        _ModuleSpec(
+            feature="route_policy",
+            start_line=block.start_line,
+            end_line=block.end_line,
+            source_lines=block.lines,
+            provides={f"route-policy:{name}"} if name else set(),
+            consumes=consumes,
+            tags={"routing", "policy"},
+            status="manual_review",
+            manual_review_reason="路由策略会影响路由传播和选路，需要人工复核",
+        )
+    ]
+
+
+def _qos_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    first = block.lines[0].strip() if block.lines else ""
+    text = "\n".join(block.lines)
+    feature = "qos"
+    provides: set[str] = set()
+    consumes: set[str] = set()
+    tags = {"qos"}
+
+    classifier = re.match(r"^traffic\s+classifier\s+(\S+)", first, re.IGNORECASE)
+    behavior = re.match(r"^traffic\s+behavior\s+(\S+)", first, re.IGNORECASE)
+    policy = re.match(r"^traffic\s+policy\s+(\S+)", first, re.IGNORECASE)
+    if classifier:
+        feature = "qos.classifier"
+        provides.add(f"qos-classifier:{classifier.group(1)}")
+        consumes.update(f"acl:{acl}" for acl in _extract_qos_acl_refs(text))
+    elif behavior:
+        feature = "qos.behavior"
+        provides.add(f"qos-behavior:{behavior.group(1)}")
+    elif policy:
+        feature = "qos.policy"
+        provides.add(f"qos-policy:{policy.group(1)}")
+        consumes.update(_extract_qos_policy_refs(text))
+
+    return [
+        _ModuleSpec(
+            feature=feature,
+            start_line=block.start_line,
+            end_line=block.end_line,
+            source_lines=block.lines,
+            provides=provides,
+            consumes=consumes,
+            tags=tags,
+            status="manual_review",
+            manual_review_reason="QoS 分类/行为/策略跨厂商语义差异较大，需要人工复核",
+        )
+    ]
+
+
+def _management_module_specs_from_block(block: ConfigBlock, feature: str) -> list[_ModuleSpec]:
+    status = "manual_review" if feature in {"management.snmp", "management.aaa"} else "translatable"
+    source_lines = [_redact_management_sensitive_line(line) for line in block.lines]
+    reason = ""
+    if status == "manual_review":
+        reason = "管理面配置含认证/社区字/权限语义或敏感值，需要人工复核"
+    return [
+        _ModuleSpec(
+            feature=feature,
+            start_line=block.start_line,
+            end_line=block.end_line,
+            source_lines=source_lines,
+            tags={"management"},
+            status=status,
+            manual_review_reason=reason,
+        )
+    ]
+
+
 def _module_source_lines(block: ConfigBlock, feature: str) -> list[str]:
     if not feature.startswith("interface."):
         return block.lines
@@ -421,6 +543,16 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return "ospf"
     if re.match(r"^(bgp|router\s+bgp)\b", first, re.IGNORECASE):
         return "bgp"
+    if re.match(r"^(?:route-policy|route-map)\b", first, re.IGNORECASE):
+        return "route_policy"
+    if re.match(r"^(?:ntp-service|ntp\s+server)\b", first, re.IGNORECASE):
+        return "management.ntp"
+    if re.match(r"^(?:snmp-agent|snmp-server)\b", first, re.IGNORECASE):
+        return "management.snmp"
+    if re.match(r"^(?:info-center|logging)\b", first, re.IGNORECASE):
+        return "management.logging"
+    if re.match(r"^(?:aaa|local-user|radius|radius-server|tacacs|tacacs-server)\b", first, re.IGNORECASE):
+        return "management.aaa"
     if re.match(r"^security-zone\s+name\b|^zone\s+name\b|^zone\s+\S+", first, re.IGNORECASE):
         return "zone"
     if re.match(r"^ip\s+address-set\b|^address\s+name\b|^address\s+\S+", first, re.IGNORECASE):
@@ -456,6 +588,14 @@ def _coupling_relation(feature: str, resource: str) -> str:
         return "binds_acl_to_interface"
     if feature == "security_policy":
         return "policy_uses_object"
+    if feature == "static_route" and resource.startswith("vrf:"):
+        return "route_uses_vrf"
+    if feature == "route_policy" and resource.startswith("acl:"):
+        return "policy_uses_acl"
+    if feature == "qos.classifier" and resource.startswith("acl:"):
+        return "qos_classifier_uses_acl"
+    if feature == "qos.policy":
+        return "qos_policy_uses_part"
     if feature == "interface.physical" and resource.startswith("lag:"):
         return "member_of_lag"
     if feature.startswith("interface.") and resource.startswith("vlan:"):
@@ -664,6 +804,102 @@ def _bgp_manual_review_reason(feature: str, line: str) -> str:
 
 def _redact_bgp_sensitive_line(line: str) -> str:
     return re.sub(r"(\b(?:password|authentication-key|keychain)\b(?:\s+cipher)?\s+)\S+", r"\1<redacted>", line, flags=re.IGNORECASE)
+
+
+def _extract_static_route_info(line: str) -> dict[str, str]:
+    tokens = line.split()
+    if len(tokens) < 2:
+        return {}
+    if len(tokens) >= 6 and tokens[0].lower() == "ip" and tokens[1].lower() == "route-static":
+        index = 2
+        info: dict[str, str] = {}
+        if index < len(tokens) and tokens[index].lower() == "vpn-instance" and index + 1 < len(tokens):
+            info["vrf"] = tokens[index + 1]
+            index += 2
+        if index + 2 < len(tokens):
+            info["destination"] = tokens[index]
+            info["mask"] = tokens[index + 1]
+            info["next_hop"] = tokens[index + 2]
+        return info
+    if len(tokens) >= 5 and tokens[0].lower() == "ip" and tokens[1].lower() == "route":
+        return {"destination": tokens[2], "mask": tokens[3], "next_hop": tokens[4]}
+    return {}
+
+
+def _is_static_route_risky(line: str) -> bool:
+    return bool(re.search(r"\b(track|bfd|tag|description|preference|permanent|name)\b", line, re.IGNORECASE))
+
+
+def _extract_vrf_name(text: str) -> str:
+    first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    for pattern in (
+        r"^ip\s+vpn-instance\s+(\S+)",
+        r"^vrf\s+definition\s+(\S+)",
+    ):
+        match = re.match(pattern, first, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return ""
+
+
+def _extract_vrf_tags(text: str) -> set[str]:
+    tags: set[str] = {"vrf"}
+    if re.search(r"\broute-distinguisher\b|^\s*rd\s+", text, re.IGNORECASE | re.MULTILINE):
+        tags.add("rd")
+    if re.search(r"\b(vpn-target|route-target)\b", text, re.IGNORECASE):
+        tags.add("route-target")
+    return tags
+
+
+def _extract_route_policy_name(text: str) -> str:
+    first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    for pattern in (
+        r"^route-policy\s+(\S+)",
+        r"^route-map\s+(\S+)",
+    ):
+        match = re.match(pattern, first, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return ""
+
+
+def _extract_route_policy_acl_refs(text: str) -> list[str]:
+    refs: list[str] = []
+    for raw_line in text.splitlines():
+        line = raw_line.strip()
+        for pattern in (
+            r"^if-match\s+acl\s+(\S+)",
+            r"^match\s+ip\s+address\s+(\S+)",
+        ):
+            match = re.match(pattern, line, re.IGNORECASE)
+            if match:
+                refs.append(match.group(1))
+    return _unique(refs)
+
+
+def _extract_qos_acl_refs(text: str) -> list[str]:
+    refs: list[str] = []
+    for raw_line in text.splitlines():
+        match = re.match(r"^\s*if-match\s+acl\s+(\S+)", raw_line, re.IGNORECASE)
+        if match:
+            refs.append(match.group(1))
+    return _unique(refs)
+
+
+def _extract_qos_policy_refs(text: str) -> set[str]:
+    refs: set[str] = set()
+    for raw_line in text.splitlines():
+        match = re.match(r"^\s*classifier\s+(\S+)\s+behavior\s+(\S+)", raw_line, re.IGNORECASE)
+        if match:
+            refs.add(f"qos-classifier:{match.group(1)}")
+            refs.add(f"qos-behavior:{match.group(2)}")
+    return refs
+
+
+def _redact_management_sensitive_line(line: str) -> str:
+    redacted = re.sub(r"(\b(?:password|secret|shared-key|key)\b(?:\s+cipher)?\s+)\S+", r"\1<redacted>", line, flags=re.IGNORECASE)
+    redacted = re.sub(r"(\bcommunity\s+(?:read|write)?\s*(?:cipher)?\s*)\S+", r"\1<redacted>", redacted, flags=re.IGNORECASE)
+    return redacted
 
 
 def _is_ospf_process_line(line: str) -> bool:

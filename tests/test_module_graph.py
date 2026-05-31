@@ -436,6 +436,110 @@ def test_cisco_bgp_submodules_keep_password_and_route_map_out_of_deployable():
     assert "redistribute connected" in assembly.manual_review_config
 
 
+def test_static_route_modules_track_vrf_dependency_and_risky_options():
+    config = """ip vpn-instance CUST-A
+ ipv4-family
+  route-distinguisher 65000:1
+#
+ip route-static 0.0.0.0 0.0.0.0 10.0.0.1
+ip route-static vpn-instance CUST-A 10.10.0.0 255.255.255.0 10.0.0.2
+ip route-static 10.20.0.0 255.255.255.0 10.0.0.3 track 1 tag 200
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    vrf = graph.by_feature("vrf")[0]
+    routes = graph.by_feature("static_route")
+    risky = graph.by_feature("static_route.option")[0]
+
+    assert "vrf:CUST-A" in vrf.provides
+    assert len(routes) == 2
+    assert any("vrf:CUST-A" in route.consumes for route in routes)
+    assert risky.status == "manual_review"
+    assert "track 1 tag 200" in "\n".join(risky.source_lines)
+    assert any(coupling["relation"] == "route_uses_vrf" for coupling in graph.to_dict()["couplings"])
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+
+    assert "ip route 0.0.0.0 0.0.0.0 10.0.0.1" in assembly.deployable_config
+    assert "track 1 tag 200" not in assembly.deployable_config
+    assert "track 1 tag 200" in assembly.manual_review_config
+
+
+def test_route_policy_module_links_acl_and_stays_manual_review():
+    config = """acl number 3000
+ rule 5 permit ip
+#
+route-policy EXPORT permit node 10
+ if-match acl 3000
+ apply local-preference 200
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    acl = graph.by_feature("acl")[0]
+    policy = graph.by_feature("route_policy")[0]
+
+    assert "route-policy:EXPORT" in policy.provides
+    assert "acl:3000" in policy.consumes
+    assert policy.status == "manual_review"
+    assert acl.module_id in policy.depends_on
+    assert any(coupling["relation"] == "policy_uses_acl" for coupling in graph.to_dict()["couplings"])
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+
+    assert "route-policy EXPORT" not in assembly.deployable_config
+    assert "route-policy EXPORT" in assembly.manual_review_config
+
+
+def test_qos_modules_link_classifier_behavior_policy_and_acl():
+    config = """acl number 3000
+ rule 5 permit ip
+#
+traffic classifier C1
+ if-match acl 3000
+#
+traffic behavior B1
+ remark dscp af31
+#
+traffic policy P1
+ classifier C1 behavior B1
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    classifier = graph.by_feature("qos.classifier")[0]
+    behavior = graph.by_feature("qos.behavior")[0]
+    policy = graph.by_feature("qos.policy")[0]
+
+    assert "qos-classifier:C1" in classifier.provides
+    assert "acl:3000" in classifier.consumes
+    assert "qos-behavior:B1" in behavior.provides
+    assert {"qos-classifier:C1", "qos-behavior:B1"}.issubset(set(policy.consumes))
+    assert policy.status == "manual_review"
+    assert any(coupling["relation"] == "qos_policy_uses_part" for coupling in graph.to_dict()["couplings"])
+
+
+def test_management_modules_split_ntp_snmp_and_redact_snmp_secret():
+    config = """ntp-service unicast-server 10.0.0.1
+snmp-agent community read cipher SECRET_COMMUNITY
+info-center loghost 10.0.0.2
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assert graph.by_feature("management.ntp")[0].status == "translatable"
+    snmp = graph.by_feature("management.snmp")[0]
+    logging = graph.by_feature("management.logging")[0]
+
+    assert snmp.status == "manual_review"
+    assert "SECRET_COMMUNITY" not in "\n".join(snmp.source_lines)
+    assert "<redacted>" in "\n".join(snmp.source_lines)
+    assert logging.status == "translatable"
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+
+    assert "ntp server 10.0.0.1" in assembly.deployable_config
+    assert "SECRET_COMMUNITY" not in assembly.manual_review_config
+    assert "<redacted>" in assembly.manual_review_config
+
+
 def test_device_identity_is_separate_from_generic_system_module():
     graph = build_module_graph("sysname CORE-SW\nclock timezone CST add 08:00:00\n", vendor="huawei")
 
