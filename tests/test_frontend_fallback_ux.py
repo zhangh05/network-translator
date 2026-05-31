@@ -274,3 +274,32 @@ class TestManualReviewTab:
             "manual review should extract original commands from MANUAL_REVIEW comments"
         assert "unsupported source command" in html, \
             "manual review should parse unsupported source command comments"
+
+    def test_manual_review_tab_groups_items_by_user_categories(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "function _reviewGroupForFeature" in html, \
+            "manual review tab should map technical features into user-facing groups"
+        for label in ("接口与 VLAN", "路由与转发", "ACL 与安全策略", "防火墙对象", "QoS 与流量策略", "未支持能力"):
+            assert label in html, f"manual review grouping should include {label}"
+
+    def test_manual_review_tab_shows_summary_counts(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "复核总数" in html, "manual review tab should show total review item count"
+        assert "review-summary" in html, "manual review summary should have a dedicated CSS class"
+        assert "review-group__count" in html, "manual review groups should show per-group counts"
+
+    def test_manual_review_tab_translates_coupling_relations(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "function _moduleCouplingLabel" in html, \
+            "manual review tab should translate module coupling names"
+        for label in ("对象组成员", "ACL 引用对象组", "策略使用时间段", "BGP 引用路由策略", "QoS 绑定接口"):
+            assert label in html, f"manual review coupling label should include {label}"
+
+    def test_manual_review_tab_has_object_group_member_labels(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "object_group.member" in html, "manual review tab should recognize object-group member modules"
+        assert "对象组成员" in html, "object-group member modules should be displayed with a user-facing label"
