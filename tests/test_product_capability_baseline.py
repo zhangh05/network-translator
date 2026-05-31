@@ -120,3 +120,62 @@ def test_product_capability_report_script_path_documented():
 
     assert "scripts/report_product_capability_baseline.py" in doc
     assert "reports/product_capability_baseline.json" in doc
+
+
+def _capability(report, capability_id):
+    for specs in report["domains"].values():
+        for spec in specs:
+            if spec["capability_id"] == capability_id:
+                return spec
+    raise AssertionError(f"missing capability {capability_id}")
+
+
+def test_coverage_report_uses_real_module_graph_probe_samples():
+    report = capability_coverage_report()
+
+    rip = _capability(report, "router.rip")
+    assert rip["probe_vendor"]
+    assert "rip.process" in rip["observed_features"]
+    assert rip["matched_features"]
+    assert rip["coverage_status"] == "covered"
+
+    firewall_utm = _capability(report, "firewall.utm_profile")
+    assert {"firewall.profile", "time_range"}.issubset(set(firewall_utm["observed_features"]))
+    assert firewall_utm["coverage_status"] == "covered"
+
+
+def test_coverage_report_exposes_missing_module_features_per_capability():
+    report = capability_coverage_report()
+
+    ospf = _capability(report, "router.ospf")
+    assert "missing_module_features" in ospf
+    assert "matched_features" in ospf
+    assert set(ospf["matched_features"]).issubset(set(ospf["module_features"]))
+    assert ospf["coverage_status"] in {"covered", "partial", "missing"}
+
+
+def test_coverage_report_has_action_summary_for_release_review():
+    report = capability_coverage_report()
+    actions = report["summary"]["by_action"]
+
+    assert actions["auto_subset"] >= 1
+    assert actions["manual_review"] >= 1
+    assert actions["identify_only"] >= 1
+
+
+def test_coverage_report_distinguishes_partial_from_full_coverage():
+    report = capability_coverage_report()
+    summary = report["summary"]
+
+    assert "full" in summary
+    assert "partial" in summary
+    assert summary["full"] + summary["partial"] + summary["missing"] == summary["total"]
+    assert summary["partial"] == 0
+
+
+def test_product_capability_probe_suite_has_no_partial_or_missing_modules():
+    report = capability_coverage_report()
+
+    assert report["summary"]["missing"] == 0
+    assert report["summary"]["partial"] == 0
+    assert report["summary"]["full"] == report["summary"]["total"]

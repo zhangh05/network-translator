@@ -2,7 +2,14 @@
   "summary": {
     "total": 26,
     "covered": 26,
-    "missing": 0
+    "full": 26,
+    "partial": 0,
+    "missing": 0,
+    "by_action": {
+      "auto_subset": 11,
+      "manual_review": 14,
+      "identify_only": 1
+    }
   },
   "missing_capabilities": [],
   "domains": {
@@ -35,7 +42,24 @@
           "Huawei VRP configuration guides",
           "Ruijie RGOS configuration guide"
         ],
-        "notes": "Secrets and AAA policies remain manual review."
+        "notes": "Secrets and AAA policies remain manual review.",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "device_identity",
+          "management.aaa",
+          "management.logging",
+          "management.ntp",
+          "management.snmp"
+        ],
+        "matched_features": [
+          "device_identity",
+          "management.aaa",
+          "management.logging",
+          "management.ntp",
+          "management.snmp"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "switch.vlan",
@@ -58,7 +82,18 @@
           "H3C Layer 2 LAN Switching Configuration Guide",
           "Ruijie Ethernet Switching Configuration"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "interface.svi",
+          "vlan"
+        ],
+        "matched_features": [
+          "interface.svi",
+          "vlan"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "switch.trunk_access",
@@ -81,7 +116,18 @@
           "H3C Layer 2 LAN Switching Configuration Guide",
           "Ruijie Ethernet Switching Configuration"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "interface.lag",
+          "interface.physical"
+        ],
+        "matched_features": [
+          "interface.lag",
+          "interface.physical"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "switch.lacp",
@@ -103,7 +149,18 @@
           "H3C Layer 2 LAN Switching Configuration Guide",
           "Ruijie Ethernet Switching Configuration"
         ],
-        "notes": "Member binding is tracked as module coupling."
+        "notes": "Member binding is tracked as module coupling.",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "interface.lag",
+          "interface.physical"
+        ],
+        "matched_features": [
+          "interface.lag",
+          "interface.physical"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "switch.stp_mstp",
@@ -125,7 +182,18 @@
           "Cisco LAN Switching Configuration Guide",
           "Ruijie Ethernet Switching Configuration"
         ],
-        "notes": "Edge-port subset can translate; MST regions and instance mapping require review."
+        "notes": "Edge-port subset can translate; MST regions and instance mapping require review.",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "stp",
+          "stp.mstp"
+        ],
+        "matched_features": [
+          "stp",
+          "stp.mstp"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "switch.qinq",
@@ -145,7 +213,16 @@
           "Huawei Ethernet Switching Configuration Guide",
           "Ruijie Ethernet Switching Configuration"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "l2.qinq"
+        ],
+        "matched_features": [
+          "l2.qinq"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "switch.voice_vlan",
@@ -165,7 +242,16 @@
           "Huawei Ethernet Switching Configuration Guide",
           "Ruijie Ethernet Switching Configuration"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "l2.voice_vlan"
+        ],
+        "matched_features": [
+          "l2.voice_vlan"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "switch.lldp",
@@ -186,7 +272,16 @@
           "Cisco LAN Switching Configuration Guide",
           "Huawei Ethernet Switching Configuration Guide"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "l2.lldp"
+        ],
+        "matched_features": [
+          "l2.lldp"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "switch.mac_table",
@@ -206,7 +301,16 @@
           "Huawei Ethernet Switching Configuration Guide",
           "Ruijie Ethernet Switching Configuration"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "l2.mac_table"
+        ],
+        "matched_features": [
+          "l2.mac_table"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "acl_qos",
@@ -236,7 +340,27 @@
           "Cisco IOS XE QoS Configuration Guide",
           "Ruijie ACL and QoS Configuration"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "acl",
+          "acl_binding",
+          "interface.physical",
+          "qos.behavior",
+          "qos.binding",
+          "qos.classifier",
+          "qos.policy"
+        ],
+        "matched_features": [
+          "acl",
+          "acl_binding",
+          "qos.behavior",
+          "qos.binding",
+          "qos.classifier",
+          "qos.policy"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       }
     ],
     "ROUTER": [
@@ -261,7 +385,18 @@
           "Huawei VRP IP Routing Configuration",
           "Ruijie IP Routing Configuration"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "static_route",
+          "static_route.option"
+        ],
+        "matched_features": [
+          "static_route",
+          "static_route.option"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "router.ospf",
@@ -289,7 +424,30 @@
           "Huawei VRP IP Routing Configuration",
           "Ruijie IP Routing Configuration"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "ospf.area",
+          "ospf.area_special",
+          "ospf.authentication",
+          "ospf.interface_tuning",
+          "ospf.network",
+          "ospf.passive_interface",
+          "ospf.process",
+          "ospf.redistribute"
+        ],
+        "matched_features": [
+          "ospf.area",
+          "ospf.area_special",
+          "ospf.authentication",
+          "ospf.interface_tuning",
+          "ospf.network",
+          "ospf.passive_interface",
+          "ospf.process",
+          "ospf.redistribute"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "router.bgp",
@@ -316,7 +474,28 @@
           "Huawei VRP IP Routing Configuration",
           "Ruijie IP Routing Configuration"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "bgp.attribute",
+          "bgp.neighbor",
+          "bgp.network",
+          "bgp.password",
+          "bgp.policy",
+          "bgp.process",
+          "bgp.redistribute"
+        ],
+        "matched_features": [
+          "bgp.attribute",
+          "bgp.neighbor",
+          "bgp.network",
+          "bgp.password",
+          "bgp.policy",
+          "bgp.process",
+          "bgp.redistribute"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "router.rip",
@@ -338,7 +517,21 @@
           "H3C Layer 3 IP Routing Configuration Guide",
           "Ruijie IP Routing Configuration"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "rip.network",
+          "rip.process",
+          "rip.redistribute",
+          "rip.unknown"
+        ],
+        "matched_features": [
+          "rip.network",
+          "rip.process",
+          "rip.unknown"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "router.isis",
@@ -346,8 +539,9 @@
         "product_area": "IP routing",
         "module_features": [
           "isis.process",
-          "isis.network",
-          "isis.unknown"
+          "isis.network_entity",
+          "isis.interface_tuning",
+          "isis.redistribute"
         ],
         "default_action": "manual_review",
         "vendor_platforms": [
@@ -360,7 +554,22 @@
           "Huawei VRP IP Routing Configuration",
           "Ruijie IP Routing Configuration"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "isis.interface_tuning",
+          "isis.network_entity",
+          "isis.process",
+          "isis.redistribute"
+        ],
+        "matched_features": [
+          "isis.interface_tuning",
+          "isis.network_entity",
+          "isis.process",
+          "isis.redistribute"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "router.vrf",
@@ -381,7 +590,16 @@
           "Huawei VRP IP Routing Configuration",
           "Ruijie IP Routing Configuration"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "vrf"
+        ],
+        "matched_features": [
+          "vrf"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "router.route_policy",
@@ -403,7 +621,18 @@
           "H3C ACL and QoS Configuration Guide",
           "Cisco IOS XE IP Routing Configuration Guide"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "route_filter",
+          "route_policy"
+        ],
+        "matched_features": [
+          "route_filter",
+          "route_policy"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "router.pbr",
@@ -424,7 +653,19 @@
           "Ruijie IP Routing Configuration",
           "Cisco IOS XE IP Routing Configuration Guide"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "interface.physical",
+          "pbr.binding",
+          "pbr.policy"
+        ],
+        "matched_features": [
+          "pbr.binding",
+          "pbr.policy"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "router.multicast",
@@ -445,7 +686,19 @@
           "Ruijie Multicast Configuration",
           "H3C IP Multicast Configuration Guide"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "interface.physical",
+          "multicast",
+          "multicast.interface"
+        ],
+        "matched_features": [
+          "multicast",
+          "multicast.interface"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "router.bfd",
@@ -465,7 +718,16 @@
           "Ruijie Device Management Configuration",
           "Huawei VRP Reliability Configuration"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "bfd.session"
+        ],
+        "matched_features": [
+          "bfd.session"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "router.dhcp",
@@ -485,7 +747,16 @@
           "Ruijie Device Management Configuration",
           "Cisco IOS XE IP Addressing Services"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "dhcp.pool"
+        ],
+        "matched_features": [
+          "dhcp.pool"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       }
     ],
     "FIREWALL": [
@@ -512,7 +783,24 @@
           "Hillstone StoneOS User Manual",
           "DPtech Firewall Technical White Paper"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "huawei_usg",
+        "observed_features": [
+          "address_object",
+          "object_group",
+          "object_group.member",
+          "service_object",
+          "zone"
+        ],
+        "matched_features": [
+          "address_object",
+          "object_group",
+          "object_group.member",
+          "service_object",
+          "zone"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "firewall.policy",
@@ -534,7 +822,16 @@
           "DPtech Firewall Technical White Paper",
           "Topsec Firewall product documentation"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "huawei_usg",
+        "observed_features": [
+          "security_policy"
+        ],
+        "matched_features": [
+          "security_policy"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "firewall.nat",
@@ -555,7 +852,16 @@
           "DPtech Firewall Technical White Paper",
           "Hillstone StoneOS User Manual"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "huawei_usg",
+        "observed_features": [
+          "firewall.nat"
+        ],
+        "matched_features": [
+          "firewall.nat"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "firewall.ipsec",
@@ -577,7 +883,18 @@
           "Hillstone StoneOS User Manual",
           "DPtech VPN Security Gateway Technical White Paper"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "huawei_usg",
+        "observed_features": [
+          "firewall.ipsec",
+          "interface.tunnel"
+        ],
+        "matched_features": [
+          "firewall.ipsec",
+          "interface.tunnel"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       },
       {
         "capability_id": "firewall.utm_profile",
@@ -599,7 +916,18 @@
           "Hillstone StoneOS product guide",
           "Huawei USG support guide"
         ],
-        "notes": ""
+        "notes": "",
+        "probe_vendor": "topsec",
+        "observed_features": [
+          "firewall.profile",
+          "time_range"
+        ],
+        "matched_features": [
+          "firewall.profile",
+          "time_range"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
       }
     ]
   }

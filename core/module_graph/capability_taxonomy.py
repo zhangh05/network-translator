@@ -150,7 +150,7 @@ PRODUCT_CAPABILITY_BASELINE: tuple[CapabilitySpec, ...] = (
         "router.isis",
         "ROUTER",
         "IP routing",
-        ("isis.process", "isis.network", "isis.unknown"),
+        ("isis.process", "isis.network_entity", "isis.interface_tuning", "isis.redistribute"),
         "manual_review",
         ROUTER_PLATFORMS,
         ("Huawei VRP IP Routing Configuration", "Ruijie IP Routing Configuration"),
@@ -265,6 +265,237 @@ PRODUCT_CAPABILITY_BASELINE: tuple[CapabilitySpec, ...] = (
     ),
 )
 
+CAPABILITY_PROBE_CONFIGS: dict[str, tuple[str, str]] = {
+    "system.management": (
+        "huawei",
+        """sysname EDGE-SW
+ntp-service unicast-server 10.0.0.10
+info-center loghost 10.0.0.20
+snmp-agent community read cipher SECRET
+aaa
+ local-user admin password cipher SECRET
+""",
+    ),
+    "switch.vlan": (
+        "huawei",
+        """vlan batch 10 20
+#
+interface Vlanif10
+ ip address 10.0.10.1 255.255.255.0
+""",
+    ),
+    "switch.trunk_access": (
+        "huawei",
+        """interface GigabitEthernet0/0/1
+ port link-type trunk
+ port trunk allow-pass vlan 10 20
+#
+interface Eth-Trunk1
+ mode lacp-static
+""",
+    ),
+    "switch.lacp": (
+        "huawei",
+        """interface Eth-Trunk1
+ mode lacp-static
+#
+interface GigabitEthernet0/0/1
+ eth-trunk 1
+""",
+    ),
+    "switch.stp_mstp": (
+        "huawei",
+        """stp enable
+#
+stp region-configuration
+ region-name CORE
+ instance 1 vlan 10
+""",
+    ),
+    "switch.qinq": (
+        "huawei",
+        """interface GigabitEthernet0/0/2
+ port link-type dot1q-tunnel
+ qinq enable
+""",
+    ),
+    "switch.voice_vlan": (
+        "huawei",
+        "voice-vlan mac-address 0027-0000-0000 mask ffff-0000-0000\n",
+    ),
+    "switch.lldp": ("huawei", "lldp enable\n"),
+    "switch.mac_table": ("huawei", "mac-address static 0011-2233-4455 GigabitEthernet0/0/1 vlan 10\n"),
+    "router.static_route": (
+        "huawei",
+        """ip route-static 10.0.20.0 255.255.255.0 10.0.10.254
+ip route-static 0.0.0.0 0.0.0.0 10.0.10.1 preference 10
+""",
+    ),
+    "router.ospf": (
+        "huawei",
+        """ospf 1
+ router-id 1.1.1.1
+ area 0
+ network 10.0.0.0 0.0.0.255
+ area 1 stub
+ passive-interface Vlan10
+ area 0 authentication message-digest
+ cost 10
+ redistribute static
+""",
+    ),
+    "router.bgp": (
+        "cisco",
+        """router bgp 65000
+ bgp router-id 1.1.1.1
+ neighbor 10.0.0.2 remote-as 65001
+ network 10.10.10.0 mask 255.255.255.0
+ neighbor 10.0.0.2 password SECRET
+ neighbor 10.0.0.2 route-map EXPORT out
+ neighbor 10.0.0.2 update-source Loopback0
+ redistribute static
+""",
+    ),
+    "router.rip": (
+        "cisco",
+        """router rip
+ version 2
+ network 10.0.0.0
+ redistribute static
+""",
+    ),
+    "router.isis": (
+        "huawei",
+        """isis 1
+ network-entity 49.0001.0000.0000.0001.00
+ cost-style wide
+ import-route static
+""",
+    ),
+    "router.vrf": (
+        "cisco",
+        """vrf definition MGMT
+ rd 65000:1
+ route-target export 65000:1
+""",
+    ),
+    "router.route_policy": (
+        "cisco",
+        """ip prefix-list PL permit 10.0.0.0/24
+#
+route-map EXPORT permit 10
+ match ip address prefix-list PL
+""",
+    ),
+    "router.pbr": (
+        "huawei",
+        """policy-based-route PBR permit node 10
+ if-match acl 3000
+ apply ip-address next-hop 10.0.0.254
+#
+interface GigabitEthernet0/0/1
+ ip policy-based-route PBR
+""",
+    ),
+    "router.multicast": (
+        "cisco",
+        """ip multicast-routing
+#
+interface GigabitEthernet0/0/2
+ ip pim sparse-mode
+ igmp enable
+""",
+    ),
+    "router.bfd": ("huawei", "bfd SESSION1 bind peer-ip 10.0.0.2 source-ip 10.0.0.1\n"),
+    "router.dhcp": (
+        "cisco",
+        """ip dhcp pool LAN
+ network 10.0.10.0 255.255.255.0
+ default-router 10.0.10.1
+""",
+    ),
+    "firewall.objects": (
+        "huawei_usg",
+        """security-zone name trust
+#
+ip address-set SRC type object
+ address 0 10.0.0.10 mask 255.255.255.255
+#
+ip service-set HTTP type object
+ service 0 protocol tcp destination-port 80
+#
+object-group ip address WEB-GRP
+ network-object host 10.0.0.10
+""",
+    ),
+    "firewall.policy": (
+        "huawei_usg",
+        """security-policy
+ rule name allow-web
+  source-zone trust
+  destination-zone untrust
+  source-address SRC
+  destination-address DST
+  service HTTP
+  action permit
+""",
+    ),
+    "firewall.nat": (
+        "huawei_usg",
+        """nat-policy
+ rule name srcnat
+  source-zone trust
+  destination-zone untrust
+  action source-nat easy-ip
+""",
+    ),
+    "firewall.ipsec": (
+        "huawei_usg",
+        """interface Tunnel1
+ ip address 10.255.1.1 255.255.255.252
+ tunnel-protocol ipsec
+ source 10.0.0.1
+ destination 10.0.0.2
+#
+ike peer VPN-PEER
+ pre-shared-key cipher SECRET
+ remote-address 10.0.0.2
+#
+ipsec policy VPN 1 isakmp
+ security acl 3000
+ ike-peer VPN-PEER
+""",
+    ),
+    "firewall.utm_profile": (
+        "topsec",
+        """time-range WORK
+ period-range 08:00 to 18:00 working-day
+#
+url-filter profile WEB-FILTER
+ category block gambling
+""",
+    ),
+    "acl_qos": (
+        "huawei",
+        """acl number 3000
+ rule 5 permit ip source any destination any
+#
+traffic classifier WEB
+ if-match acl 3000
+#
+traffic behavior LIMIT
+ car cir 10240
+#
+traffic policy EDGE-QOS
+ classifier WEB behavior LIMIT
+#
+interface GigabitEthernet0/0/1
+ traffic-filter inbound acl 3000
+ traffic-policy EDGE-QOS inbound
+""",
+    ),
+}
+
 
 def baseline_by_domain() -> dict[str, list[CapabilitySpec]]:
     grouped: dict[str, list[CapabilitySpec]] = {}
@@ -278,18 +509,57 @@ def known_module_features() -> set[str]:
 
 
 def capability_coverage_report() -> dict:
-    covered_features = known_module_features()
-    missing_capabilities = [
-        spec.capability_id
-        for spec in PRODUCT_CAPABILITY_BASELINE
-        if not any(feature in covered_features for feature in spec.module_features)
-    ]
+    probed_specs = [_spec_with_probe_result(spec) for spec in PRODUCT_CAPABILITY_BASELINE]
+    missing_capabilities = [spec["capability_id"] for spec in probed_specs if spec["coverage_status"] == "missing"]
+    full_count = sum(1 for spec in probed_specs if spec["coverage_status"] == "covered")
+    partial_count = sum(1 for spec in probed_specs if spec["coverage_status"] == "partial")
+    by_action: dict[str, int] = {}
+    for spec in PRODUCT_CAPABILITY_BASELINE:
+        by_action[spec.default_action] = by_action.get(spec.default_action, 0) + 1
+    grouped: dict[str, list[dict]] = {}
+    for spec in probed_specs:
+        grouped.setdefault(spec["domain"], []).append(spec)
     return {
         "summary": {
             "total": len(PRODUCT_CAPABILITY_BASELINE),
             "covered": len(PRODUCT_CAPABILITY_BASELINE) - len(missing_capabilities),
+            "full": full_count,
+            "partial": partial_count,
             "missing": len(missing_capabilities),
+            "by_action": by_action,
         },
         "missing_capabilities": missing_capabilities,
-        "domains": {domain: [spec.to_dict() for spec in specs] for domain, specs in baseline_by_domain().items()},
+        "domains": grouped,
     }
+
+
+def _spec_with_probe_result(spec: CapabilitySpec) -> dict:
+    data = spec.to_dict()
+    vendor, config = CAPABILITY_PROBE_CONFIGS.get(spec.capability_id, ("", ""))
+    observed = _probe_module_features(vendor, config) if config else set()
+    expected = set(spec.module_features)
+    matched = expected & observed
+    missing = expected - observed
+    if matched and missing:
+        coverage_status = "partial"
+    elif matched:
+        coverage_status = "covered"
+    else:
+        coverage_status = "missing"
+    data.update(
+        {
+            "probe_vendor": vendor,
+            "observed_features": sorted(observed),
+            "matched_features": sorted(matched),
+            "missing_module_features": sorted(missing),
+            "coverage_status": coverage_status,
+        }
+    )
+    return data
+
+
+def _probe_module_features(vendor: str, config: str) -> set[str]:
+    from core.module_graph.builder import build_module_graph
+
+    graph = build_module_graph(config, vendor=vendor)
+    return {module.feature for module in graph.modules}

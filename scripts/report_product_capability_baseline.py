@@ -22,7 +22,10 @@ def main() -> int:
         "",
         f"- total: {report['summary']['total']}",
         f"- covered: {report['summary']['covered']}",
+        f"- full: {report['summary']['full']}",
+        f"- partial: {report['summary']['partial']}",
         f"- missing: {report['summary']['missing']}",
+        f"- by_action: {json.dumps(report['summary']['by_action'], ensure_ascii=False, sort_keys=True)}",
         "",
     ]
     for domain, specs in sorted(report["domains"].items()):
@@ -31,7 +34,12 @@ def main() -> int:
         for spec in specs:
             action = spec["default_action"]
             features = ", ".join(spec["module_features"])
-            lines.append(f"- `{spec['capability_id']}`: {action}; modules: {features}")
+            matched = ", ".join(spec["matched_features"]) or "-"
+            missing = ", ".join(spec["missing_module_features"]) or "-"
+            lines.append(
+                f"- `{spec['capability_id']}`: {action}; status={spec['coverage_status']}; "
+                f"matched={matched}; missing={missing}; modules: {features}"
+            )
         lines.append("")
     md_path.write_text("\n".join(lines), encoding="utf-8")
     print(f"wrote {json_path}")

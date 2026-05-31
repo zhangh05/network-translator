@@ -98,3 +98,16 @@ Outputs:
 The report is intentionally breadth-oriented. It confirms that the project has a
 named module feature for every product-baseline capability; it does not claim
 full semantic equivalence.
+
+The JSON and Markdown reports are generated from probe configurations that run
+through `build_module_graph()`. Each capability includes:
+
+- `observed_features`: module features actually produced by the probe config.
+- `matched_features`: baseline module features observed in the probe output.
+- `missing_module_features`: baseline module features not observed by the probe.
+- `coverage_status`: `covered`, `partial`, or `missing`.
+
+`covered` means at least one auditable module exists for that product capability.
+`partial` means the capability is visible but not all listed subfeatures are
+covered by the current probe. It must not be interpreted as production-grade
+semantic equivalence.
