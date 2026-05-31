@@ -95,10 +95,18 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         return _ospf_module_specs_from_block(block)
     if feature == "bgp":
         return _bgp_module_specs_from_block(block)
+    if feature == "rip":
+        return _rip_module_specs_from_block(block)
+    if feature == "isis":
+        return _isis_module_specs_from_block(block)
     if feature == "route":
         return _static_route_module_specs_from_block(block)
     if feature == "route_policy":
         return _route_policy_module_specs_from_block(block)
+    if feature == "pbr":
+        return _pbr_policy_module_specs_from_block(block)
+    if feature == "multicast":
+        return _multicast_module_specs_from_block(block)
     if feature == "qos":
         return _qos_module_specs_from_block(block)
     if feature == "bfd":
@@ -187,6 +195,8 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
     if feature.startswith("interface."):
         specs.extend(_acl_binding_specs_from_interface(block))
         specs.extend(_vrrp_specs_from_interface(block))
+        specs.extend(_pbr_binding_specs_from_interface(block))
+        specs.extend(_multicast_specs_from_interface(block))
 
     return specs
 
@@ -366,6 +376,101 @@ def _bgp_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
     return specs
 
 
+def _rip_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    process_id = _extract_rip_process("\n".join(block.lines))
+    process_key = f"rip:{process_id}" if process_id else "rip:default"
+    specs = [
+        _ModuleSpec(
+            feature="rip.process",
+            start_line=block.start_line,
+            end_line=block.start_line,
+            source_lines=[block.lines[0]],
+            provides={process_key},
+            tags={"routing", "rip"},
+            status="manual_review",
+            manual_review_reason="RIP 版本、度量、认证和网络声明跨厂商语义需要人工复核",
+        )
+    ]
+
+    for offset, raw_line in enumerate(block.lines[1:], 1):
+        stripped = raw_line.strip()
+        line_no = block.start_line + offset
+        if re.match(r"^network\s+\S+", stripped, re.IGNORECASE):
+            specs.append(
+                _ModuleSpec(
+                    feature="rip.network",
+                    start_line=line_no,
+                    end_line=line_no,
+                    source_lines=[raw_line],
+                    consumes={process_key},
+                    tags={"routing", "rip"},
+                    status="manual_review",
+                    manual_review_reason="RIP network 声明可能受版本、自动汇总和接口范围影响，需要人工复核",
+                )
+            )
+            continue
+        feature = "rip.redistribute" if re.match(r"^(?:redistribute|import-route)\b", stripped, re.IGNORECASE) else "rip.unknown"
+        specs.append(
+            _ModuleSpec(
+                feature=feature,
+                start_line=line_no,
+                end_line=line_no,
+                source_lines=[raw_line],
+                consumes={process_key},
+                tags={"routing", "rip"},
+                status="manual_review",
+                manual_review_reason=f"RIP 子命令无法确定等价转换，需要人工复核: {stripped}",
+            )
+        )
+    return specs
+
+
+def _isis_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    process_id = _extract_isis_process("\n".join(block.lines))
+    process_key = f"isis:{process_id}" if process_id else "isis:default"
+    specs = [
+        _ModuleSpec(
+            feature="isis.process",
+            start_line=block.start_line,
+            end_line=block.start_line,
+            source_lines=[block.lines[0]],
+            provides={process_key},
+            tags={"routing", "isis"},
+            status="manual_review",
+            manual_review_reason="IS-IS 进程、Level、NET、认证和度量语义复杂，需要人工复核",
+        )
+    ]
+
+    for offset, raw_line in enumerate(block.lines[1:], 1):
+        stripped = raw_line.strip()
+        line_no = block.start_line + offset
+        if re.match(r"^network-entity\s+\S+", stripped, re.IGNORECASE):
+            feature = "isis.network_entity"
+            reason = "IS-IS network-entity/NET 需要按目标平台格式人工确认"
+        elif re.match(r"^(?:import-route|redistribute)\b", stripped, re.IGNORECASE):
+            feature = "isis.redistribute"
+            reason = "IS-IS 重分发会影响路由传播，需要人工复核"
+        elif re.search(r"\b(cost-style|circuit-type|level-|authentication|metric)\b", stripped, re.IGNORECASE):
+            feature = "isis.interface_tuning"
+            reason = "IS-IS 度量、Level 或认证调优需要人工复核"
+        else:
+            feature = "isis.unknown"
+            reason = f"IS-IS 子命令无法确定等价转换，需要人工复核: {stripped}"
+        specs.append(
+            _ModuleSpec(
+                feature=feature,
+                start_line=line_no,
+                end_line=line_no,
+                source_lines=[raw_line],
+                consumes={process_key},
+                tags={"routing", "isis"},
+                status="manual_review",
+                manual_review_reason=reason,
+            )
+        )
+    return specs
+
+
 def _static_route_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
     specs: list[_ModuleSpec] = []
     for offset, raw_line in enumerate(block.lines):
@@ -416,6 +521,38 @@ def _route_policy_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpe
             tags={"routing", "policy"},
             status="manual_review",
             manual_review_reason="路由策略会影响路由传播和选路，需要人工复核",
+        )
+    ]
+
+
+def _pbr_policy_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    name = _extract_pbr_policy_name("\n".join(block.lines))
+    return [
+        _ModuleSpec(
+            feature="pbr.policy",
+            start_line=block.start_line,
+            end_line=block.end_line,
+            source_lines=block.lines,
+            provides={f"pbr:{name}"} if name else set(),
+            tags={"routing", "pbr"},
+            status="manual_review",
+            manual_review_reason="PBR 策略会改变转发路径和下一跳选择，需要人工复核",
+        )
+    ]
+
+
+def _multicast_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    tags = {"routing", "multicast"}
+    tags.update(_extract_multicast_tags("\n".join(block.lines)))
+    return [
+        _ModuleSpec(
+            feature="multicast",
+            start_line=block.start_line,
+            end_line=block.end_line,
+            source_lines=block.lines,
+            tags=tags,
+            status="manual_review",
+            manual_review_reason="组播/PIM/IGMP 配置依赖 RP、接口、ASM/SSM 和平台模式，需要人工复核",
         )
     ]
 
@@ -529,7 +666,12 @@ def _module_source_lines(block: ConfigBlock, feature: str) -> list[str]:
         return block.lines
     filtered = [block.lines[0]]
     for line in block.lines[1:]:
-        if _extract_acl_binding_ref(line) or _extract_vrrp_ref(line):
+        if (
+            _extract_acl_binding_ref(line)
+            or _extract_vrrp_ref(line)
+            or _extract_pbr_binding_ref(line)
+            or _is_interface_multicast_line(line)
+        ):
             continue
         filtered.append(line)
     return filtered
@@ -590,6 +732,59 @@ def _vrrp_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
     return specs
 
 
+def _pbr_binding_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
+    interface_name = _extract_interface_name(block.lines[0])
+    if not interface_name:
+        return []
+    specs: list[_ModuleSpec] = []
+    for offset, raw_line in enumerate(block.lines[1:], 1):
+        policy_name = _extract_pbr_binding_ref(raw_line)
+        if not policy_name:
+            continue
+        line_no = block.start_line + offset
+        specs.append(
+            _ModuleSpec(
+                feature="pbr.binding",
+                start_line=line_no,
+                end_line=line_no,
+                source_lines=[raw_line],
+                consumes={f"interface:{interface_name}", f"route-policy:{policy_name}"},
+                tags={"routing", "pbr"},
+                status="manual_review",
+                manual_review_reason="接口 PBR 绑定会改变该接口入方向转发路径，需要人工复核",
+            )
+        )
+    return specs
+
+
+def _multicast_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
+    interface_name = _extract_interface_name(block.lines[0])
+    if not interface_name:
+        return []
+    entries: list[tuple[int, str]] = []
+    for offset, raw_line in enumerate(block.lines[1:], 1):
+        if _is_interface_multicast_line(raw_line):
+            entries.append((block.start_line + offset, raw_line))
+    if not entries:
+        return []
+    line_numbers = [line_no for line_no, _ in entries]
+    source_lines = [line for _, line in entries]
+    tags = {"routing", "multicast"}
+    tags.update(_extract_multicast_tags("\n".join(source_lines)))
+    return [
+        _ModuleSpec(
+            feature="multicast.interface",
+            start_line=min(line_numbers),
+            end_line=max(line_numbers),
+            source_lines=source_lines,
+            consumes={f"interface:{interface_name}"},
+            tags=tags,
+            status="manual_review",
+            manual_review_reason="接口组播/PIM/IGMP 行为依赖组播域、RP 和接口模式，需要人工复核",
+        )
+    ]
+
+
 def _attach_dependencies(graph: ModuleGraph) -> None:
     provider_by_key: dict[str, str] = {}
     for module in graph.modules:
@@ -630,12 +825,20 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return "ospf"
     if re.match(r"^(bgp|router\s+bgp)\b", first, re.IGNORECASE):
         return "bgp"
+    if re.match(r"^(?:rip|router\s+rip)\b", first, re.IGNORECASE):
+        return "rip"
+    if re.match(r"^(?:isis|is-is|router\s+isis|router\s+is-is)\b", first, re.IGNORECASE):
+        return "isis"
     if re.match(r"^bfd\b", first, re.IGNORECASE):
         return "bfd"
     if re.match(r"^(?:ip\s+pool|ip\s+dhcp\s+pool)\s+\S+", first, re.IGNORECASE):
         return "dhcp.pool"
     if re.match(r"^(?:route-policy|route-map)\b", first, re.IGNORECASE):
         return "route_policy"
+    if re.match(r"^(?:policy-based-route|ip\s+policy-based-route)\b", first, re.IGNORECASE):
+        return "pbr"
+    if re.match(r"^(?:multicast|pim|igmp|ip\s+multicast-routing)\b", first, re.IGNORECASE):
+        return "multicast"
     if re.match(r"^(?:ntp-service|ntp\s+server)\b", first, re.IGNORECASE):
         return "management.ntp"
     if re.match(r"^(?:snmp-agent|snmp-server)\b", first, re.IGNORECASE):
@@ -693,6 +896,10 @@ def _coupling_relation(feature: str, resource: str) -> str:
         return "bfd_uses_endpoint"
     if feature == "dhcp.pool" and resource.startswith("gateway:"):
         return "dhcp_pool_uses_gateway"
+    if feature == "pbr.binding":
+        return "pbr_uses_policy" if resource.startswith("route-policy:") else "pbr_uses_interface"
+    if feature == "multicast.interface" and resource.startswith("interface:"):
+        return "multicast_uses_interface"
     if feature == "interface.physical" and resource.startswith("lag:"):
         return "member_of_lag"
     if feature.startswith("interface.") and resource.startswith("vlan:"):
@@ -701,6 +908,10 @@ def _coupling_relation(feature: str, resource: str) -> str:
         return "ospf_submodule_uses_process"
     if feature.startswith("bgp."):
         return "bgp_submodule_uses_process"
+    if feature.startswith("rip."):
+        return "rip_submodule_uses_process"
+    if feature.startswith("isis."):
+        return "isis_submodule_uses_process"
     return "depends_on"
 
 
@@ -953,6 +1164,24 @@ def _extract_bgp_asn(text: str) -> str:
     return match.group(1) if match else ""
 
 
+def _extract_rip_process(text: str) -> str:
+    first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    match = re.match(r"^rip\s+(\S+)", first, re.IGNORECASE)
+    return match.group(1) if match else ""
+
+
+def _extract_isis_process(text: str) -> str:
+    first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    for pattern in (
+        r"^(?:isis|is-is)\s+(\S+)",
+        r"^router\s+(?:isis|is-is)\s+(\S+)",
+    ):
+        match = re.match(pattern, first, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return ""
+
+
 def _is_bgp_process_line(line: str) -> bool:
     return bool(re.match(r"^(?:bgp\s+)?router-id\b|^ipv4-family\b|^address-family\b", line, re.IGNORECASE))
 
@@ -1067,6 +1296,55 @@ def _extract_route_policy_acl_refs(text: str) -> list[str]:
             if match:
                 refs.append(match.group(1))
     return _unique(refs)
+
+
+def _extract_pbr_policy_name(text: str) -> str:
+    first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    for pattern in (
+        r"^(?:policy-based-route|ip\s+policy-based-route)\s+(\S+)",
+        r"^route-map\s+(\S+)",
+    ):
+        match = re.match(pattern, first, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return ""
+
+
+def _extract_pbr_binding_ref(line: str) -> str:
+    stripped = line.strip()
+    for pattern in (
+        r"^ip\s+policy\s+route-map\s+(\S+)",
+        r"^ip\s+policy-based-route\s+(\S+)",
+        r"^policy-based-route\s+(\S+)",
+    ):
+        match = re.match(pattern, stripped, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return ""
+
+
+def _is_interface_multicast_line(line: str) -> bool:
+    stripped = line.strip()
+    return bool(
+        re.match(
+            r"^(?:ip\s+pim\b|pim\b|igmp\b|ip\s+igmp\b|multicast\b)",
+            stripped,
+            re.IGNORECASE,
+        )
+    )
+
+
+def _extract_multicast_tags(text: str) -> set[str]:
+    tags: set[str] = set()
+    if re.search(r"\bpim\b", text, re.IGNORECASE):
+        tags.add("pim")
+    if re.search(r"\bigmp\b", text, re.IGNORECASE):
+        tags.add("igmp")
+    if re.search(r"\bmulticast\b", text, re.IGNORECASE):
+        tags.add("multicast")
+    if re.search(r"\brp-address\b|bsr|ssm|sparse-mode|dense-mode", text, re.IGNORECASE):
+        tags.add("control-plane")
+    return tags
 
 
 def _extract_qos_acl_refs(text: str) -> list[str]:

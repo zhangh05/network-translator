@@ -14,6 +14,7 @@ translation, the source config can be decomposed into auditable modules:
 - ACL definition and ACL binding modules
 - Routing modules such as static route, VRF, OSPF, BGP, and route-policy
 - Resiliency/service modules such as BFD, FHRP/VRRP, DHCP pool, and tunnel
+- Additional routing-control modules such as RIP, IS-IS, PBR, and multicast
 - QoS and management-plane modules
 - Firewall object and policy modules
 - Manual-review modules for unsupported or vendor-specific features
@@ -49,7 +50,8 @@ confirmation without polluting the translated configuration tab.
   `interface.svi`, `interface.physical`, `acl`, `acl_binding`,
   `static_route`, `vrf`, `route_policy`, `qos.policy`, `management.ntp`,
   `ospf.process`, `bgp.process`, `bfd.session`, `fhrp.vrrp`, `dhcp.pool`,
-  `interface.tunnel`, `zone`, `address_object`, `service_object`,
+  `interface.tunnel`, `rip.process`, `isis.process`, `pbr.binding`,
+  `multicast.interface`, `zone`, `address_object`, `service_object`,
   `security_policy`, or `unknown`.
 - `start_line` / `end_line`: original config line span.
 - `source_lines`: original source config lines.
@@ -153,9 +155,20 @@ traffic-filter inbound acl 3000
 | `bgp.policy` | BGP route-policy/route-map/filter binding | none | `bgp:65000` |
 | `bgp.redistribute` | BGP redistribution/default route | none | `bgp:65000` |
 | `bgp.attribute` | BGP attribute tuning | none | `bgp:65000` |
+| `rip.process` | RIP process/version context | `rip:default` or `rip:*` | none |
+| `rip.network` | RIP network statement | none | `rip:*` |
+| `rip.redistribute` | RIP redistribution | none | `rip:*` |
+| `isis.process` | IS-IS process context | `isis:1` or `isis:*` | none |
+| `isis.network_entity` | IS-IS NET/network-entity | none | `isis:*` |
+| `isis.interface_tuning` | IS-IS level/cost/auth tuning | none | `isis:*` |
+| `isis.redistribute` | IS-IS redistribution | none | `isis:*` |
 | `bfd.session` | BFD session and endpoint binding | `bfd:SESSION1` | `peer:*`, `source:*`, optional `interface:*` |
 | `fhrp.vrrp` | VRRP/HSRP/FHRP virtual gateway behavior | `vrrp:Vlanif10:1` | `interface:Vlanif10` |
 | `dhcp.pool` | DHCP pool scope/options | `dhcp-pool:LAN`, `subnet:*` | `gateway:*` |
+| `pbr.policy` | Policy-based routing policy block | `pbr:PBR1` | ACL/nexthop dependencies later |
+| `pbr.binding` | Interface PBR binding | none | `interface:*`, `route-policy:*` |
+| `multicast` | Global multicast/PIM/IGMP controls | none | RP/interface dependencies later |
+| `multicast.interface` | Interface PIM/IGMP controls | none | `interface:*` |
 | `route_policy` | Route-policy/route-map block | `route-policy:EXPORT` | `acl:*` |
 | `qos.classifier` | QoS classifier | `qos-classifier:C1` | `acl:*` |
 | `qos.behavior` | QoS behavior/action body | `qos-behavior:B1` | none |
@@ -280,6 +293,13 @@ separates:
 - `interface.tunnel`: Tunnel/GRE-like interface modules. They record tunnel
   source/destination and protocol tags, but stay manual-review because routing,
   MTU, keepalive, and encapsulation semantics are coupled.
+- `rip.*` and `isis.*`: legacy/IGP routing protocols are typed instead of
+  `unknown`, but remain manual-review until process, metric, authentication, and
+  redistribution equivalence can be validated.
+- `pbr.policy` and `pbr.binding`: PBR is split from interface modules so users can
+  see exactly which interface consumes which policy. It stays manual-review.
+- `multicast` and `multicast.interface`: PIM/IGMP lines are separated from
+  ordinary interface configuration and kept manual-review.
 
 This gives users line-level evidence for non-OSPF/BGP features instead of
 burying them in `unknown` or one large `qos`/`system` bucket.
@@ -300,7 +320,7 @@ Anything that cannot be confidently translated must remain in `manual_review`.
 
 1. Split BGP address-family and VRF-aware peer context into submodules.
 2. Split firewall NAT/IPsec/profile features into typed manual-review modules.
-3. Split interface-level routing features such as PBR, NAT-on-interface, and
-   multicast controls.
+3. Split remaining interface-level routing features such as NAT-on-interface and
+   advanced multicast/RP dependencies.
 4. Replace fallback's remaining flat line-by-line paths gradually, one feature
    family at a time.

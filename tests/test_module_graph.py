@@ -678,3 +678,77 @@ interface GigabitEthernet0/0/1
     assert "lag:1" in physical.consumes
     assert lag.module_id in physical.depends_on
     assert any(coupling["relation"] == "member_of_lag" for coupling in graph.to_dict()["couplings"])
+
+
+def test_rip_block_is_split_into_process_network_and_redistribute_review_modules():
+    config = """router rip
+ version 2
+ network 10.0.0.0
+ redistribute static
+"""
+    graph = build_module_graph(config, vendor="cisco")
+
+    assert graph.by_feature("rip.process")
+    assert graph.by_feature("rip.network")
+    assert graph.by_feature("rip.redistribute")[0].status == "manual_review"
+    assert "rip:default" in graph.by_feature("rip.process")[0].provides
+    assert "rip:default" in graph.by_feature("rip.network")[0].consumes
+
+
+def test_isis_block_is_typed_manual_review_with_network_entity():
+    config = """isis 1
+ network-entity 49.0001.0000.0000.0001.00
+ cost-style wide
+ import-route static
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    process = graph.by_feature("isis.process")[0]
+    net = graph.by_feature("isis.network_entity")[0]
+    tuning = graph.by_feature("isis.interface_tuning")[0]
+    redistribute = graph.by_feature("isis.redistribute")[0]
+
+    assert process.status == "manual_review"
+    assert "isis:1" in process.provides
+    assert "isis:1" in net.consumes
+    assert tuning.status == "manual_review"
+    assert redistribute.status == "manual_review"
+
+
+def test_pbr_policy_and_interface_binding_are_split_with_route_policy_dependency():
+    config = """route-map PBR permit 10
+ match ip address 3000
+ set ip next-hop 10.0.0.254
+#
+interface GigabitEthernet0/0/1
+ ip address 10.0.0.1 255.255.255.0
+ ip policy route-map PBR
+"""
+    graph = build_module_graph(config, vendor="cisco")
+
+    interface = graph.by_feature("interface.physical")[0]
+    binding = graph.by_feature("pbr.binding")[0]
+
+    assert "ip policy route-map" not in "\n".join(interface.source_lines)
+    assert binding.status == "manual_review"
+    assert "interface:GigabitEthernet0/0/1" in binding.consumes
+    assert "route-policy:PBR" in binding.consumes
+    assert any(coupling["relation"] == "pbr_uses_policy" for coupling in graph.to_dict()["couplings"])
+
+
+def test_multicast_interface_lines_are_split_from_interface_and_reviewed():
+    config = """interface GigabitEthernet0/0/2
+ ip address 10.0.20.1 255.255.255.0
+ ip pim sparse-mode
+ igmp enable
+"""
+    graph = build_module_graph(config, vendor="cisco")
+
+    interface = graph.by_feature("interface.physical")[0]
+    multicast = graph.by_feature("multicast.interface")[0]
+
+    assert "pim" not in "\n".join(interface.source_lines).lower()
+    assert multicast.status == "manual_review"
+    assert "interface:GigabitEthernet0/0/2" in multicast.consumes
+    assert "pim" in multicast.tags
+    assert "igmp" in multicast.tags
