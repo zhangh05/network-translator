@@ -145,9 +145,9 @@ The following must NOT be auto-translated (semantic risk too high):
 | Source | Target | Conditions |
 |--------|--------|------------|
 | `traffic-policy P inbound` (Huawei/H3C) | Cisco | `service-policy input P` (binding only) |
-| `traffic-policy P outbound` (Huawei/H3C) | Cisco | **MANUAL_REVIEW** — outbound direction semantics differ across platforms |
+| `traffic-policy P outbound` (Huawei/H3C) | Cisco | `service-policy output P` (binding only) |
 | `service-policy input P` (Cisco) | Huawei/H3C | `traffic-policy P inbound` (binding only) |
-| `service-policy output P` (Cisco) | Huawei/H3C | **MANUAL_REVIEW** — outbound direction semantics differ across platforms |
+| `service-policy output P` (Cisco) | Huawei/H3C | `traffic-policy P outbound` (binding only) |
 
 **Everything inside `traffic-policy / traffic-classifier / traffic-behavior / car / remark dscp / queue / policy-map / class-map / police / priority / bandwidth / shape`** → MANUAL_REVIEW.
 
@@ -348,7 +348,8 @@ Known evaluation gaps are documented in `docs/FALLBACK_GAP_ANALYSIS.md` (8 gaps 
 | 2026-05-24 Batch I-C | ACL/QoS: H3C→Huawei packet-filter, Cisco named ACL header, Huawei ACL rule→Cisco, object-group/manual_review guards, 32 new tests (59 total) |
 | 2026-05-25 Batch I-D | FIREWALL: Topsec→Huawei USG (zone/address/policy), Hillstone→Topsec (zone/address/policy), DPtech completeness, dangerous feature guards, address mask netmask format, Topsec routing fix (non-Topsec/Hillstone sources to Topsec → MANUAL_REVIEW), 84 firewall tests |
 | 2026-05-25 Batch I-E | Realistic samples: Cisco→Huawei trunk/access/SVI/ACL/OSPF/NTP/AAA, Huawei→Cisco Vlanif/ACL/OSPF/SNMP/AAA, Topsec→Huawei USG complete policy, Hillstone→Topsec complete policy. Fix: no switchport (Cisco routed-port) dropped in Huawei output, BGP neighbor password redacted in MANUAL_REVIEW. New test file: 21 realistic tests |
-| 2026-05-25 Batch I-F | Firewall service objects (Topsec↔Huawei USG↔Hillstone), route-policy skeleton (Cisco↔Huawei), QoS binding (Huawei inbound only, outbound MANUAL_REVIEW), NAT guard (all NAT → MANUAL_REVIEW). Updated QoS section to clarify inbound-only binding support. Hillstone service format: `service NAME proto PORT` without `dst-port` keyword per Batch I-F spec. Added route-policy skeleton to ROUTER domain section. |
+| 2026-05-25 Batch I-F | Firewall service objects (Topsec↔Huawei USG↔Hillstone), route-policy skeleton (Cisco↔Huawei), QoS binding safe subset, NAT guard (all NAT → MANUAL_REVIEW). Hillstone service format: `service NAME proto PORT` without `dst-port` keyword per Batch I-F spec. Added route-policy skeleton to ROUTER domain section. |
+| 2026-06-01 QoS binding convergence | `traffic-policy P outbound` now maps to `service-policy output P`; `service-policy output P` maps to `traffic-policy P outbound`. QoS policy bodies remain MANUAL_REVIEW. |
 | 2026-05-25 Batch K-A | SWITCH: trunk allowed vlan add/remove/all/none, access vlan↔port default vlan, native vlan↔pvid, interface range → MANUAL_REVIEW, STP bpdu-protection→spanning-tree bpduguard, undo port trunk permit vlan→undo port trunk allow-pass vlan. 49 new tests (1371/0/3 CI). |
 | 2026-05-25 Batch K-B | ROUTER: static route name/tag/preference/distance/track/bfd → MANUAL_REVIEW, OSPF area authentication → MANUAL_REVIEW, BGP update-source→connect-interface MANUAL_REVIEW, BGP ebgp-multihop → MANUAL_REVIEW, BGP password redaction (`peer` direction + `.+` eat-all regex), route-policy set community → redacted + MANUAL_REVIEW, VRF import/export policy → MANUAL_REVIEW. Bugfix: passive-interface/silent-interface preserve original interface name case. 30 new tests (1925/0/23 CI). |
 | 2026-05-25 Batch K-C | FIREWALL: Hillstone address range (two IP non-netmask) -> Huawei USG MANUAL_REVIEW (BUGFIX: was wrongly auto-translated as `mask 9`). Hillstone address `host` keyword -> Huawei USG MANUAL_REVIEW (was producing invalid `mask host`). Plus 12 regression tests for address-group/service-set/zone-bind/nat dangerous guards. 14 new tests (1939/0/23 CI). |

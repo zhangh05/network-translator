@@ -190,9 +190,8 @@ def test_huawei_traffic_policy_outbound_to_cisco():
         "interface Vlanif10\n traffic-policy PBR-LAN-OUT outbound\n",
         "huawei", "cisco",
     )
-    assert "MANUAL_REVIEW" in result, \
-        "outbound direction: platform QoS model differences require human review"
-    assert "service-policy output" not in result or "MANUAL_REVIEW" in result
+    assert "service-policy output PBR-LAN-OUT" in result
+    assert "MANUAL_REVIEW unsupported source command: traffic-policy PBR-LAN-OUT outbound" not in result
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -452,7 +451,8 @@ def test_cisco_service_policy_input_to_huawei():
 
 def test_cisco_service_policy_output_to_huawei_manual_review():
     result = RuleBasedTranslator().translate("interface Vlanif10\n service-policy output QOS-POLICY\n", "cisco", "huawei")
-    assert "MANUAL_REVIEW" in result
+    assert "traffic-policy QOS-POLICY outbound" in result
+    assert "MANUAL_REVIEW unsupported source command: service-policy output QOS-POLICY" not in result
 
 
 def test_huawei_traffic_policy_inbound_to_cisco_preserves_interface():
@@ -464,8 +464,7 @@ def test_huawei_traffic_policy_inbound_to_cisco_preserves_interface():
 def test_huawei_traffic_policy_outbound_to_cisco_preserves_interface():
     result = RuleBasedTranslator().translate("interface Vlanif10\n traffic-policy PBR-LAN-OUT outbound\n", "huawei", "cisco")
     assert "interface Vlan10" in result
-    assert "MANUAL_REVIEW" in result, \
-        "outbound direction: platform QoS model differences require human review"
+    assert "service-policy output PBR-LAN-OUT" in result
 
 
 # ─────────────────────────────────────────────────────────────────────────────

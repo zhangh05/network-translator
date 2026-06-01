@@ -219,8 +219,8 @@ def test_rule_translator_converts_huawei_interface_acl_and_policy_bindings_to_ci
     assert "ip access-group D-ACL-OA out" in result
     assert "ip access-group 3000 in" in result
     assert "service-policy input PBR-LAN-OUT" in result
-    assert "MANUAL_REVIEW" in result, \
-        "outbound: platform QoS model differences require human review"
+    assert "service-policy output SETDSCP" in result
+    assert "MANUAL_REVIEW unsupported source command: traffic-policy SETDSCP outbound" not in result
 
 
 def test_rule_translator_converts_huawei_snmp_trap_source_and_v3_hosts_to_cisco():

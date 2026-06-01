@@ -119,9 +119,8 @@ def translate_cisco_service_policy_to_huawei(
     m = re.match(r"service-policy\s+(input|output)\s+(\S+)", stripped, re.IGNORECASE)
     if m:
         direction = m.group(1).lower()
-        if direction == "output":
-            return None
-        return indent + f"traffic-policy {m.group(2)} inbound"
+        target_direction = "inbound" if direction == "input" else "outbound"
+        return indent + f"traffic-policy {m.group(2)} {target_direction}"
     return None
 
 
@@ -137,8 +136,6 @@ def translate_huawei_traffic_policy_to_cisco(
     m = re.match(r"traffic-policy\s+(\S+)\s+(inbound|outbound)", stripped, re.IGNORECASE)
     if m:
         direction = m.group(2).lower()
-        if direction == "outbound":
-            return None
         return indent + f"service-policy {_direction_to_cisco_qos(direction)} {m.group(1)}"
     return None
 

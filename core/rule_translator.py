@@ -366,8 +366,6 @@ class RuleBasedTranslator:
             return indent + f"ip access-group {m.group(2)} {self._direction_to_cisco(m.group(1))}"
         m = re.match(r"traffic-policy\s+(\S+)\s+(inbound|outbound)", stripped, re.IGNORECASE)
         if m:
-            if m.group(2).lower() == "outbound":
-                return indent + manual_review_comment(stripped, "cisco", indent)
             return indent + f"service-policy {self._direction_to_cisco_qos(m.group(2))} {m.group(1)}"
         m = re.match(r"packet-filter\s+(\S+)\s+(inbound|outbound)", stripped, re.IGNORECASE)
         if m:
@@ -498,6 +496,12 @@ class RuleBasedTranslator:
         rv = acl.translate_cisco_access_group_to_h3c(stripped, lower, indent, from_vendor)
         if rv is not None:
             return rv
+
+        rv = acl.translate_cisco_service_policy_to_huawei(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+        if lower.startswith("service-policy "):
+            return indent + manual_review_comment(stripped, "h3c", indent)
 
         rv = acl.translate_ruijie_access_group_to_h3c(stripped, lower, indent, from_vendor)
         if rv is not None:

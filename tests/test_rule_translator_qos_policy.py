@@ -3,7 +3,8 @@
 
 Covers:
 - Huawei traffic-policy P inbound -> Cisco service-policy input P (binding only)
-- Cisco service-policy input P -> Huawei traffic-policy P inbound (binding only)
+- Huawei traffic-policy P outbound -> Cisco service-policy output P (binding only)
+- Cisco service-policy input/output P -> Huawei traffic-policy P inbound/outbound (binding only)
 - Policy body (class-map/policy-map/car/remark/queue/priority/police): MANUAL_REVIEW
 """
 
@@ -45,13 +46,21 @@ class TestHuaweiTrafficPolicyToCisco:
         assert "service-policy input P" in result, \
             f"Expected service-policy input P: {result}"
 
-    def test_huawei_traffic_policy_outbound_manual_review(self):
+    def test_huawei_traffic_policy_outbound_auto(self):
         result = RuleBasedTranslator().translate(
             "traffic-policy P outbound\n",
             "huawei", "cisco",
         )
-        assert "MANUAL_REVIEW" in result, \
-            "outbound traffic-policy should be MANUAL_REVIEW"
+        assert "service-policy output P" in result, \
+            f"Expected service-policy output P: {result}"
+
+    def test_h3c_traffic_policy_outbound_auto(self):
+        result = RuleBasedTranslator().translate(
+            "traffic-policy P outbound\n",
+            "h3c", "cisco",
+        )
+        assert "service-policy output P" in result, \
+            f"Expected service-policy output P: {result}"
 
     def test_huawei_traffic_policy_body_manual_review(self):
         config = """traffic-policy P inbound
@@ -73,13 +82,21 @@ class TestCiscoServicePolicyToHuawei:
         assert "traffic-policy P inbound" in result, \
             f"Expected traffic-policy P inbound: {result}"
 
-    def test_cisco_service_policy_output_manual_review(self):
+    def test_cisco_service_policy_output_auto(self):
         result = RuleBasedTranslator().translate(
             "service-policy output P\n",
             "cisco", "huawei",
         )
-        assert "MANUAL_REVIEW" in result, \
-            "outbound service-policy should be MANUAL_REVIEW"
+        assert "traffic-policy P outbound" in result, \
+            f"Expected traffic-policy P outbound: {result}"
+
+    def test_cisco_service_policy_output_to_h3c_auto(self):
+        result = RuleBasedTranslator().translate(
+            "service-policy output P\n",
+            "cisco", "h3c",
+        )
+        assert "traffic-policy P outbound" in result, \
+            f"Expected traffic-policy P outbound: {result}"
 
     def test_cisco_policy_map_body_manual_review(self):
         config = """policy-map PM-TEST
