@@ -648,7 +648,24 @@ E("plist").addEventListener("focusout",function(e){
 E("addproj").addEventListener("click",function(){saveActive();createProject()});
 E("sbtn").addEventListener("click",function(){E("source").value=S;E("cc").textContent=S.length;saveActive()});
 
-function _renderValidationTab(v){
+function _renderModuleCoverage(r){
+  var cov=(r&&r.module_translation_coverage)||((r&&r.module_translations&&r.module_translations.coverage)||{});
+  if(!cov||!cov.total_modules)return"";
+  var missing=cov.missing_module_ids||[];
+  var ok=!!cov.all_modules_accounted&&!missing.length;
+  var rows=[
+    ["总模块",cov.total_modules||0],
+    ["已翻译",cov.translated_modules||0],
+    ["部分翻译",cov.partial_modules||0],
+    ["人工复核",cov.manual_review_modules||0],
+    ["未覆盖",missing.length],
+  ];
+  return'<div class="val-sec"><div class="val-sec__hd">模块翻译覆盖</div>'+
+    '<table class="val-tbl">'+rows.map(function(row){return'<tr><td class="val-k">'+esc(row[0])+'</td><td class="val-v">'+esc(String(row[1]))+'</td></tr>'}).join("")+"</table>"+
+    '<div class="'+(ok?"ok":"err")+'" style="margin-top:8px">'+(ok?"所有模块都有处理结果":"存在未覆盖模块，请不要上线；缺失模块: "+missing.join(", "))+"</div>"+
+    "</div>"
+}
+function _renderValidationTab(v,r){
   if(!v||typeof v!=="object")return"<pre>"+esc(JSON.stringify(v,null,2))+"</pre>";
   var errs=v.errors||[];
   var warns=v.warnings||[];
@@ -678,6 +695,7 @@ function _renderValidationTab(v){
     html+='<div class="val-sec"><div class="val-sec__hd">警告详情</div><ul class="val-list val-list--warn">'+
       warns.map(function(w){return"<li>"+esc(w)+"</li>"}).join("")+"</ul></div>";
   }
+  html+=_renderModuleCoverage(r);
   html+='<details class="val-raw"><summary class="val-toggle">查看原始 JSON</summary><pre>'+esc(JSON.stringify(v,null,2))+"</pre></details>";
   html+="</div>";
   return html
@@ -1194,7 +1212,7 @@ function RN(){
     translated:esc(clean)||"",
     review:_renderManualReviewTab(r),
     risk:_renderRiskTabGrouped(r),
-    validation:_renderValidationTab(r.validation||r.semantic_validation||{}),
+    validation:_renderValidationTab(r.validation||r.semantic_validation||{},r),
     diff:_renderDiffTab(r.diff||""),
   };
   if(tab==="trace"){

@@ -403,3 +403,29 @@ class TestManualReviewResourceLabels:
             html = f.read()
         for label in ("VLAN", "接口", "ACL", "路由策略", "路由过滤器", "安全域", "地址对象", "服务对象"):
             assert label in html, f"resource labels should cover common module resource type: {label}"
+
+
+class TestModuleTranslationCoverageView:
+    def test_validation_tab_renders_module_translation_coverage(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "function _renderModuleCoverage" in html, \
+            "validation tab should render module-level translation coverage"
+        for label in ("模块翻译覆盖", "总模块", "已翻译", "部分翻译", "人工复核", "未覆盖"):
+            assert label in html, f"module coverage view should expose label: {label}"
+
+    def test_validation_tab_passes_full_result_to_module_coverage_renderer(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "validation:_renderValidationTab(r.validation||r.semantic_validation||{},r)" in html, \
+            "validation renderer needs full result to read module_translation_coverage"
+        assert "module_translation_coverage" in html and "module_translations" in html, \
+            "module coverage renderer should support both API coverage locations"
+
+    def test_module_coverage_explains_unaccounted_modules_as_blocking(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "存在未覆盖模块" in html, \
+            "missing module ids should be explained as a blocking coverage issue"
+        assert "所有模块都有处理结果" in html, \
+            "accounted modules should show a reassuring user-facing message"
