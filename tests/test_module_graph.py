@@ -1243,3 +1243,151 @@ domain corp
     assert all(module.status == "manual_review" for module in radius_modules)
     assert "radius-scheme:RAD1" in domain_binding.consumes
     assert "RadiusKey" not in "\n".join(line for module in radius_modules for line in module.source_lines)
+
+
+def test_route_policy_body_is_semantic_near_not_deployable():
+    config = """ip ip-prefix EXPORT index 10 permit 10.0.0.0 24
+#
+route-policy EXPORT permit node 10
+ if-match ip-prefix EXPORT
+ apply local-preference 200
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+    route_policy = next(result for result in assembly.results if result.feature == "route_policy")
+
+    assert route_policy.status == "semantic_near"
+    assert route_policy.suggested_lines
+    assert "route-map EXPORT permit 10" in "\n".join(route_policy.suggested_lines)
+    assert "match ip address prefix-list EXPORT" in "\n".join(route_policy.suggested_lines)
+    assert "set local-preference 200" in "\n".join(route_policy.suggested_lines)
+    assert "route-map EXPORT" not in assembly.deployable_config
+    assert "route-policy EXPORT" in assembly.manual_review_config
+
+
+def test_bgp_policy_reference_is_semantic_near_with_target_neighbor_shape():
+    config = """route-policy EXPORT permit node 10
+ if-match acl 3000
+#
+bgp 65000
+ peer 10.0.0.2 as-number 65001
+ peer 10.0.0.2 route-policy EXPORT export
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+    bgp_policy = next(result for result in assembly.results if result.feature == "bgp.policy")
+
+    assert bgp_policy.status == "semantic_near"
+    assert "neighbor 10.0.0.2 route-map EXPORT out" in "\n".join(bgp_policy.suggested_lines)
+    assert "route-policy EXPORT export" not in assembly.deployable_config
+    assert "route-policy EXPORT export" in assembly.manual_review_config
+
+
+def test_fhrp_vrrp_is_semantic_near_with_hsrp_skeleton():
+    config = """vlan batch 10
+#
+interface Vlanif10
+ ip address 10.0.10.1 255.255.255.0
+ vrrp vrid 1 virtual-ip 10.0.10.254
+ vrrp vrid 1 priority 120
+ vrrp vrid 1 preempt-mode timer delay 30
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+    fhrp = next(result for result in assembly.results if result.feature == "fhrp.vrrp")
+
+    assert fhrp.status == "semantic_near"
+    suggested = "\n".join(fhrp.suggested_lines)
+    assert "interface Vlan10" in suggested
+    assert "standby 1 ip 10.0.10.254" in suggested
+    assert "standby 1 priority 120" in suggested
+    assert "vrrp vrid" not in assembly.deployable_config
+    assert "vrrp vrid 1 virtual-ip 10.0.10.254" in assembly.manual_review_config
+
+
+def test_dhcp_relay_binding_is_semantic_near_with_helper_address_suggestion():
+    config = """interface Vlanif10
+ ip address 10.0.10.1 255.255.255.0
+ dhcp select relay
+ dhcp relay server-ip 10.0.0.10
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+    relay = next(result for result in assembly.results if result.feature == "dhcp.relay.binding")
+
+    assert relay.status == "semantic_near"
+    assert "ip helper-address 10.0.0.10" in "\n".join(relay.suggested_lines)
+    assert "dhcp relay" not in assembly.deployable_config
+    assert "dhcp relay server-ip 10.0.0.10" in assembly.manual_review_config
+
+
+def test_management_snmp_is_semantic_near_and_redacted():
+    config = """snmp-agent community read cipher SECRET_COMMUNITY
+snmp-agent sys-info contact noc@example.invalid
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+    snmp = next(result for result in assembly.results if result.feature == "management.snmp")
+
+    assert snmp.status == "semantic_near"
+    suggested = "\n".join(snmp.suggested_lines)
+    assert "snmp-server community <redacted> RO" in suggested
+    assert "SECRET_COMMUNITY" not in suggested
+    assert "SECRET_COMMUNITY" not in assembly.manual_review_config
+    assert "snmp-server community" not in assembly.deployable_config
+
+
+def test_static_route_option_is_semantic_near_with_base_route_suggestion():
+    config = """ip route-static 10.20.0.0 255.255.255.0 10.0.0.3 track 1 tag 200 description WAN
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+    route = next(result for result in assembly.results if result.feature == "static_route.option")
+
+    assert route.status == "semantic_near"
+    assert "ip route 10.20.0.0 255.255.255.0 10.0.0.3" in "\n".join(route.suggested_lines)
+    assert "track 1" not in assembly.deployable_config
+    assert "track 1 tag 200" in assembly.manual_review_config
+
+
+def test_lacp_tuning_is_semantic_near_with_timer_suggestion():
+    config = """interface Eth-Trunk10
+ lacp timeout fast
+ lacp preempt enable
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+    lacp = next(result for result in assembly.results if result.feature == "lacp.tuning")
+
+    assert lacp.status == "semantic_near"
+    suggested = "\n".join(lacp.suggested_lines)
+    assert "lacp rate fast" in suggested
+    assert "confirm LACP preempt" in suggested
+    assert "lacp timeout fast" not in assembly.deployable_config
+
+
+def test_mstp_region_is_semantic_near_with_mst_configuration_suggestion():
+    config = """stp region-configuration
+ region-name CORE
+ revision-level 1
+ instance 1 vlan 10 20
+ active region-configuration
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+    mstp = next(result for result in assembly.results if result.feature == "stp.mstp")
+
+    assert mstp.status == "semantic_near"
+    suggested = "\n".join(mstp.suggested_lines)
+    assert "spanning-tree mst configuration" in suggested
+    assert "name CORE" in suggested
+    assert "instance 1 vlan 10 20" in suggested
+    assert "stp region-configuration" not in assembly.deployable_config

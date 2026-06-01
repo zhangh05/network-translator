@@ -337,12 +337,28 @@ def _source_review_lines(module: ConfigModule, reason: str = "") -> list[str]:
 
 
 def _semantic_near_result(module: ConfigModule, from_vendor: str, to_vendor: str) -> ModuleTranslationResult | None:
-    if not module.feature.startswith("qos."):
-        return None
-    suggested = _qos_suggested_lines(module, from_vendor, to_vendor)
+    suggested: list[str] = []
+    if module.feature.startswith("qos."):
+        suggested = _qos_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature == "route_policy":
+        suggested = _route_policy_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature == "bgp.policy":
+        suggested = _bgp_policy_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature.startswith("fhrp."):
+        suggested = _fhrp_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature in ("dhcp.relay", "dhcp.relay.binding"):
+        suggested = _dhcp_relay_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature in ("management.ntp", "management.snmp", "management.logging"):
+        suggested = _management_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature == "static_route.option":
+        suggested = _static_route_option_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature == "lacp.tuning":
+        suggested = _lacp_tuning_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature == "stp.mstp":
+        suggested = _mstp_suggested_lines(module, from_vendor, to_vendor)
     if not suggested:
         return None
-    reason = module.manual_review_reason or "QoS 策略体已生成语义相近建议，动作细节需人工确认"
+    reason = module.manual_review_reason or "该模块已生成语义相近建议，动作细节需人工确认"
     return ModuleTranslationResult(
         module_id=module.module_id,
         feature=module.feature,
@@ -413,6 +429,232 @@ def _qos_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str)
             lines.append(" # confirm classifier/behavior mapping manually")
         return lines
     return []
+
+
+def _route_policy_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    name = _first_resource_value(module.provides, "route-policy:") or _extract_route_policy_name(source_text)
+    seq = _extract_first(r"\b(?:node|permit|deny)\s+(\d+)\b", module.source_lines[0] if module.source_lines else "")
+    seq = seq or "10"
+    action = "deny" if re.search(r"\bdeny\b", module.source_lines[0] if module.source_lines else "", re.IGNORECASE) else "permit"
+    acl = _extract_first(r"\b(?:if-match\s+acl|match\s+ip\s+address)\s+(\S+)", source_text)
+    prefix = _extract_first(r"\b(?:if-match\s+ip-prefix|match\s+ip\s+address\s+prefix-list)\s+(\S+)", source_text)
+    local_pref = _extract_first(r"\b(?:apply|set)\s+local-preference\s+(\S+)", source_text)
+    med = _extract_first(r"\b(?:apply|set)\s+(?:cost|metric|med)\s+(\S+)", source_text)
+
+    if target == "cisco":
+        lines = [f"route-map {name} {action} {seq}"]
+        if prefix:
+            lines.append(f" match ip address prefix-list {prefix}")
+        elif acl:
+            lines.append(f" match ip address {acl}")
+        if local_pref:
+            lines.append(f" set local-preference {local_pref}")
+        if med:
+            lines.append(f" set metric {med}")
+        if len(lines) == 1:
+            lines.append(" ! confirm match/set clauses manually")
+        return lines
+
+    lines = [f"route-policy {name} {action} node {seq}"]
+    if prefix:
+        lines.append(f" if-match ip-prefix {prefix}")
+    elif acl:
+        lines.append(f" if-match acl {acl}")
+    if local_pref:
+        lines.append(f" apply local-preference {local_pref}")
+    if med:
+        lines.append(f" apply cost {med}")
+    if len(lines) == 1:
+        lines.append(" # confirm match/apply clauses manually")
+    return lines
+
+
+def _bgp_policy_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    target = (to_vendor or "").lower()
+    lines: list[str] = []
+    for raw_line in module.source_lines:
+        line = raw_line.strip()
+        peer = _extract_first(r"\bpeer\s+(\S+)\s+route-policy\s+(\S+)\s+(import|export)\b", line)
+        if peer:
+            match = re.search(r"\bpeer\s+(\S+)\s+route-policy\s+(\S+)\s+(import|export)\b", line, re.IGNORECASE)
+            if match and target == "cisco":
+                direction = "in" if match.group(3).lower() == "import" else "out"
+                lines.append(f"neighbor {match.group(1)} route-map {match.group(2)} {direction}")
+            elif match:
+                lines.append(f"peer {match.group(1)} route-policy {match.group(2)} {match.group(3)}")
+            continue
+        match = re.search(r"\bneighbor\s+(\S+)\s+route-map\s+(\S+)\s+(in|out)\b", line, re.IGNORECASE)
+        if match and target != "cisco":
+            direction = "import" if match.group(3).lower() == "in" else "export"
+            lines.append(f"peer {match.group(1)} route-policy {match.group(2)} {direction}")
+        elif match:
+            lines.append(f"neighbor {match.group(1)} route-map {match.group(2)} {match.group(3)}")
+    if not lines:
+        lines.append("# confirm BGP policy attachment manually" if target != "cisco" else "! confirm BGP policy attachment manually")
+    return lines
+
+
+def _fhrp_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    target = (to_vendor or "").lower()
+    source_text = "\n".join(module.source_lines)
+    interface = _first_resource_value(module.consumes, "interface:")
+    vlan_id = _extract_first(r"(?:Vlanif|Vlan|Vlan-interface)(\d+)", interface)
+    group = _extract_first(r"\b(?:vrid|standby)\s+(\S+)", source_text) or _extract_first(r":(\S+)$", _first_resource_value(module.provides, "vrrp:") or _first_resource_value(module.provides, "hsrp:")) or "1"
+    vip = _extract_first(r"\b(?:virtual-ip|ip)\s+(\d+\.\d+\.\d+\.\d+)", source_text)
+    priority = _extract_first(r"\bpriority\s+(\d+)", source_text)
+    preempt = bool(re.search(r"\b(?:preempt|preempt-mode)\b", source_text, re.IGNORECASE))
+    if target == "cisco":
+        if not vlan_id:
+            return []
+        lines = [f"interface Vlan{vlan_id}"]
+        if vip:
+            lines.append(f" standby {group} ip {vip}")
+        if priority:
+            lines.append(f" standby {group} priority {priority}")
+        if preempt:
+            lines.append(f" standby {group} preempt")
+        if len(lines) == 1:
+            lines.append(f" ! confirm HSRP group {group} manually")
+        return lines
+    if not vlan_id:
+        return []
+    lines = [f"interface Vlanif{vlan_id}"]
+    if vip:
+        lines.append(f" vrrp vrid {group} virtual-ip {vip}")
+    if priority:
+        lines.append(f" vrrp vrid {group} priority {priority}")
+    if preempt:
+        lines.append(f" vrrp vrid {group} preempt-mode")
+    if len(lines) == 1:
+        lines.append(f" # confirm VRRP group {group} manually")
+    return lines
+
+
+def _dhcp_relay_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    target = (to_vendor or "").lower()
+    source_text = "\n".join(module.source_lines)
+    servers = _unique(re.findall(r"\b(?:server-ip|server-address|helper-address|destination)\s+(\d+\.\d+\.\d+\.\d+)", source_text, flags=re.IGNORECASE))
+    if not servers:
+        return []
+    if target == "cisco":
+        return [f"ip helper-address {server}" for server in servers]
+    if target in ("huawei", "h3c", "ruijie"):
+        keyword = "dhcp relay server-address" if target in ("h3c", "ruijie") else "dhcp relay server-ip"
+        return [f"{keyword} {server}" for server in servers]
+    return []
+
+
+def _management_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    target = (to_vendor or "").lower()
+    source_text = "\n".join(module.source_lines)
+    if module.feature == "management.snmp":
+        if re.search(r"\bcommunity\b", source_text, re.IGNORECASE):
+            if target == "cisco":
+                return ["snmp-server community <redacted> RO"]
+            return ["snmp-agent community read cipher <redacted>"]
+        return []
+    if module.feature == "management.logging":
+        hosts = _unique(re.findall(r"\b(?:loghost|logging\s+host)\s+(\d+\.\d+\.\d+\.\d+)", source_text, flags=re.IGNORECASE))
+        if target == "cisco":
+            return [f"logging host {host}" for host in hosts]
+        return [f"info-center loghost {host}" for host in hosts]
+    if module.feature == "management.ntp":
+        servers = _unique(re.findall(r"\b(?:unicast-server|ntp\s+server)\s+(\d+\.\d+\.\d+\.\d+)", source_text, flags=re.IGNORECASE))
+        if target == "cisco":
+            return [f"ntp server {server}" for server in servers]
+        return [f"ntp-service unicast-server {server}" for server in servers]
+    return []
+
+
+def _static_route_option_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    line = next((item.strip() for item in module.source_lines if item.strip()), "")
+    match = re.search(
+        r"\bip\s+route-static\s+(?:vpn-instance\s+(\S+)\s+)?(\d+\.\d+\.\d+\.\d+)\s+(\d+\.\d+\.\d+\.\d+)\s+(\d+\.\d+\.\d+\.\d+)",
+        line,
+        re.IGNORECASE,
+    )
+    target = (to_vendor or "").lower()
+    if match and target == "cisco":
+        vrf, dest, mask, nexthop = match.groups()
+        prefix = f"ip route vrf {vrf}" if vrf else "ip route"
+        return [f"{prefix} {dest} {mask} {nexthop}", "! confirm track/BFD/tag/preference/description options manually"]
+    match = re.search(
+        r"\bip\s+route(?:\s+vrf\s+(\S+))?\s+(\d+\.\d+\.\d+\.\d+)\s+(\d+\.\d+\.\d+\.\d+)\s+(\d+\.\d+\.\d+\.\d+)",
+        line,
+        re.IGNORECASE,
+    )
+    if match:
+        vrf, dest, mask, nexthop = match.groups()
+        prefix = f"ip route-static vpn-instance {vrf}" if vrf else "ip route-static"
+        return [f"{prefix} {dest} {mask} {nexthop}", "# confirm track/BFD/tag/preference/description options manually"]
+    return []
+
+
+def _lacp_tuning_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    lines: list[str] = []
+    if re.search(r"\btimeout\s+fast\b", source_text, re.IGNORECASE):
+        lines.append("lacp rate fast" if target == "cisco" else "lacp timeout fast")
+    if re.search(r"\btimeout\s+slow\b", source_text, re.IGNORECASE):
+        lines.append("lacp rate normal" if target == "cisco" else "lacp timeout slow")
+    if re.search(r"\bpreempt\b", source_text, re.IGNORECASE):
+        lines.append("! confirm LACP preempt behavior manually" if target == "cisco" else "# confirm LACP preempt behavior manually")
+    if re.search(r"\bpriority\s+(\d+)", source_text, re.IGNORECASE):
+        priority = _extract_first(r"\bpriority\s+(\d+)", source_text)
+        lines.append(f"lacp port-priority {priority}" if target == "cisco" else f"lacp priority {priority}")
+    return lines
+
+
+def _mstp_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    name = _extract_first(r"\b(?:region-name|name)\s+(\S+)", source_text)
+    revision = _extract_first(r"\b(?:revision-level|revision)\s+(\S+)", source_text)
+    instances = re.findall(r"\binstance\s+(\d+)\s+vlan\s+(.+)", source_text, flags=re.IGNORECASE)
+    if target == "cisco":
+        lines = ["spanning-tree mst configuration"]
+        if name:
+            lines.append(f" name {name}")
+        if revision:
+            lines.append(f" revision {revision}")
+        lines.extend(f" instance {instance} vlan {vlans.strip()}" for instance, vlans in instances)
+        if len(lines) == 1:
+            lines.append(" ! confirm MST region manually")
+        return lines
+    lines = ["stp region-configuration"]
+    if name:
+        lines.append(f" region-name {name}")
+    if revision:
+        lines.append(f" revision-level {revision}")
+    lines.extend(f" instance {instance} vlan {vlans.strip()}" for instance, vlans in instances)
+    lines.append(" active region-configuration")
+    return lines
+
+
+def _extract_route_policy_name(text: str) -> str:
+    first = next((line.strip() for line in text.splitlines() if line.strip()), "")
+    for pattern in (
+        r"^route-policy\s+(\S+)",
+        r"^route-map\s+(\S+)",
+    ):
+        match = re.match(pattern, first, re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return "POLICY"
+
+
+def _unique(values) -> list[str]:
+    seen: set[str] = set()
+    output: list[str] = []
+    for value in values:
+        if value in seen:
+            continue
+        seen.add(value)
+        output.append(value)
+    return output
 
 
 def _first_word_after(line: str, keyword: str) -> str:

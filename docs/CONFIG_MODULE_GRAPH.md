@@ -129,6 +129,20 @@ This gives the UI three separate buckets:
 showing a likely target shape, but it still raises a review signal and keeps the
 translation non-deployable until the reviewer confirms the module.
 
+Current semantic-near families:
+
+| Module family | Example source | Suggested target shape | Why not deployable |
+|---|---|---|---|
+| QoS policy body | `traffic policy` / `policy-map` | `policy-map` or `traffic policy` skeleton | classifier/action/default-class behavior can differ |
+| Route policy | `route-policy` / `route-map` | match/set skeleton | match order, community, continue/call, and attribute side effects need review |
+| BGP policy attachment | `peer ... route-policy` / `neighbor ... route-map` | peer/neighbor attachment skeleton | route direction and referenced policy semantics need review |
+| Static route options | `track`, `bfd`, `tag`, `preference`, `description` | base route plus option warning | route liveness and preference behavior differs |
+| FHRP | VRRP/HSRP VIP, priority, preempt | HSRP/VRRP group skeleton | preempt, track, timers, and active/standby behavior differ |
+| DHCP relay | helper/server relay lines | helper/server-address skeleton | relay source, VRF, option-82, and server group behavior differ |
+| LACP tuning | timeout, priority, preempt | LACP timer/priority skeleton | timer and preempt behavior affects convergence |
+| MSTP region | region name, revision, instance VLAN map | MST configuration skeleton | region consistency affects topology and outage risk |
+| Management SNMP/logging/NTP | community/loghost/server lines | redacted or host-only skeleton | secrets and management-plane policy need review |
+
 ## Example
 
 ```text
