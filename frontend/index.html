@@ -785,30 +785,33 @@ function _semanticConfirmPoint(m){
   return"确认目标厂商语法表达的业务作用与原模块一致。";
 }
 function _semanticJudgment(m){
+  if(m.status==="semantic_near")return"语义相近：系统给出了目标厂商建议写法，但该建议不会进入可部署配置；请确认策略体、动作或厂商差异后再决定是否采用。";
   if(m.status==="partial")return"语义相近：系统已生成可确定的目标配置，剩余子命令未自动合入，需要人工确认后再决定是否补充。";
   return"功能等价：系统认为该模块作用已按目标厂商语法表达，并已纳入翻译后配置。";
 }
 function _semanticNearMatches(r){
   var results=((r&&r.module_translations&&r.module_translations.results)||[]);
-  var partial=[],translated=[];
+  var near=[],partial=[],translated=[];
   results.forEach(function(m){
-    if(!(m.source_lines||[]).length||!(m.translated_lines||[]).length)return;
+    var targetLines=(m.status==="semantic_near"?(m.suggested_lines||[]):(m.translated_lines||[]));
+    if(!(m.source_lines||[]).length||!targetLines.length)return;
     if(m.status==="manual_review"||m.status==="unsupported")return;
-    if(m.status==="partial")partial.push(m);else translated.push(m)
+    if(m.status==="semantic_near")near.push(m);else if(m.status==="partial")partial.push(m);else translated.push(m)
   });
-  return partial.concat(translated).slice(0,80)
+  return near.concat(partial).concat(translated).slice(0,80)
 }
 function _renderSemanticNearTab(r){
   var items=_semanticNearMatches(r);
-  var total=((r&&r.module_translations&&r.module_translations.results)||[]).filter(function(m){return (m.source_lines||[]).length&&(m.translated_lines||[]).length&&m.status!=="manual_review"&&m.status!=="unsupported"}).length;
+  var total=((r&&r.module_translations&&r.module_translations.results)||[]).filter(function(m){var targetLines=(m.status==="semantic_near"?(m.suggested_lines||[]):(m.translated_lines||[]));return (m.source_lines||[]).length&&targetLines.length&&m.status!=="manual_review"&&m.status!=="unsupported"}).length;
   if(!items.length)return'<div class="empty">暂无语义相近模块。完全无法确定的内容请查看“人工复核”。</div>';
   var cards=items.map(function(m,i){
-    var status=m.status==="partial"?"需要确认":"已纳入可部署配置";
-    var cls=m.status==="partial"?"diff--confirm":"diff--normal";
+    var targetLines=m.status==="semantic_near"?(m.suggested_lines||[]):(m.translated_lines||[]);
+    var status=m.status==="semantic_near"?"语义相近":(m.status==="partial"?"需要确认":"已纳入可部署配置");
+    var cls=(m.status==="partial"||m.status==="semantic_near")?"diff--confirm":"diff--normal";
     return'<div class="ds '+cls+'"><div class="ds__hd">模块 '+(i+1)+' · '+esc(_friendlyFeatureName(m.feature))+' <span class="ds__cnt">'+esc(status)+'</span></div>'+
       '<div class="semantic-card">'+
       '<div class="semantic-col"><b>原配置模块</b><pre>'+esc((m.source_lines||[]).join("\n"))+'</pre></div>'+
-      '<div class="semantic-col"><b>建议目标配置</b><pre>'+esc((m.translated_lines||[]).join("\n"))+'</pre></div>'+
+      '<div class="semantic-col"><b>建议目标配置</b><pre>'+esc(targetLines.join("\n"))+'</pre></div>'+
       '<div class="semantic-note"><b>语义判断</b><br>'+esc(_semanticJudgment(m))+'</div>'+
       '<div class="semantic-note"><b>确认点</b><pre>'+esc(_semanticConfirmPoint(m))+'</pre></div>'+
       "</div></div>"

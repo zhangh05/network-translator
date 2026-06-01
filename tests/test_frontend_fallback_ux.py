@@ -241,6 +241,8 @@ class TestUserFriendlyRiskAndSemanticTabs:
         assert "function _renderSemanticNearTab" in html, "semantic tab needs a dedicated renderer"
         assert "module_translations" in html and "translated_lines" in html and "source_lines" in html, \
             "semantic tab should derive near matches from module translation evidence"
+        assert "suggested_lines" in html and "semantic_near" in html, \
+            "semantic tab should show non-deployable suggested target lines for conservative modules"
 
     def test_raw_diff_is_not_primary_user_tab(self):
         with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:

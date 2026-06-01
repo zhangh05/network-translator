@@ -291,6 +291,7 @@ class TestCollectRiskSignals:
                 "total_modules": 3,
                 "result_modules": 3,
                 "manual_review_modules": 1,
+                "semantic_near_modules": 0,
                 "partial_modules": 0,
                 "missing_module_ids": [],
                 "all_modules_accounted": True,
@@ -310,6 +311,43 @@ class TestCollectRiskSignals:
         ]
 
         assert module_signals
+        assert risk_info["decision"].manual_review_required is True
+        assert risk_info["decision"].deployable is False
+
+    def test_semantic_near_module_translation_requires_confirmation(self):
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "config_text": "traffic policy P\n classifier C behavior B\n",
+            "from_vendor": "huawei",
+            "to_vendor": "cisco",
+            "features": ["qos"],
+            "analyzer_results": [],
+            "capability_gaps": [],
+            "capability_gap_severity": "info",
+            "module_translation_coverage": {
+                "total_modules": 2,
+                "result_modules": 2,
+                "manual_review_modules": 0,
+                "semantic_near_modules": 1,
+                "partial_modules": 0,
+                "missing_module_ids": [],
+                "all_modules_accounted": True,
+            },
+        }.get(k, d)})()
+        result = type("R", (), {"valid": True, "errors": [], "warnings": []})()
+        risk_info = node._collect_risk_signals(
+            state, result,
+            config_content="policy-map P",
+            source_config="traffic policy P",
+            to_vendor="cisco",
+            features=["qos"],
+        )
+        module_signals = [
+            s for s in risk_info["signals"]
+            if s["source"] == "manual_review" and s["feature"] == "module_coverage"
+        ]
+
+        assert module_signals
+        assert "semantic_near=1" in module_signals[0]["message"]
         assert risk_info["decision"].manual_review_required is True
         assert risk_info["decision"].deployable is False
 

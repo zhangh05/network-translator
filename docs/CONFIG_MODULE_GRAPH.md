@@ -86,6 +86,49 @@ confirmation without polluting the translated configuration tab.
 - `text`: source modules rendered with audit headers. This is not target-vendor
   output. It is a deterministic source-order/dependency-order assembly view.
 
+`ModuleTranslationResult`:
+
+- `status`: `translated`, `partial`, `semantic_near`, `manual_review`, or
+  `unsupported`.
+- `translated_lines`: target-vendor lines that are trusted enough to enter
+  `deployable_config`.
+- `suggested_lines`: target-vendor-like lines shown only in the "配置语义相近"
+  view. They are evidence for reviewer judgment, not deployable output.
+- `manual_review_lines`: source evidence and reason comments for anything that
+  still needs confirmation.
+
+## Conservative Semantic-Near Layer
+
+Some features are simple at the binding level but risky at the policy-body level.
+For example, an interface-level QoS binding can be mapped by direction:
+
+```text
+traffic-policy SETDSCP outbound
+```
+
+can become:
+
+```text
+service-policy output SETDSCP
+```
+
+That binding is safe enough for `deployable_config`. The referenced QoS
+classifier, behavior, and policy body are different: DSCP rewrite, policing,
+queueing, matching mode, and default-class behavior can vary by platform. For
+those modules the translator may produce `semantic_near` results with
+`suggested_lines`, such as a `policy-map` skeleton, but those suggested lines
+must not be merged into `deployable_config`.
+
+This gives the UI three separate buckets:
+
+- `deployable_config`: trusted target config only.
+- "配置语义相近": source module + suggested target config + confirmation point.
+- `manual_review_config`: source evidence when no safe suggestion exists.
+
+`semantic_near` is intentionally conservative. It reduces blind manual review by
+showing a likely target shape, but it still raises a review signal and keeps the
+translation non-deployable until the reviewer confirms the module.
+
 ## Example
 
 ```text

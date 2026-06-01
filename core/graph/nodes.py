@@ -1203,6 +1203,7 @@ class ValidateNode(Node):
         missing_module_ids = module_coverage.get("missing_module_ids") or []
         manual_review_modules = int(module_coverage.get("manual_review_modules") or 0)
         partial_modules = int(module_coverage.get("partial_modules") or 0)
+        semantic_near_modules = int(module_coverage.get("semantic_near_modules") or 0)
         if missing_module_ids:
             signals.append(RiskSignal(
                 source=RiskSource.MANUAL_REVIEW,
@@ -1212,14 +1213,15 @@ class ValidateNode(Node):
                 deployability_impact=True,
                 manual_review_impact=True,
             ))
-        elif manual_review_modules or partial_modules:
+        elif manual_review_modules or partial_modules or semantic_near_modules:
             signals.append(RiskSignal(
                 source=RiskSource.MANUAL_REVIEW,
                 feature="module_coverage",
                 severity=RiskSeverity.WARNING,
                 message=(
                     "模块翻译需要人工复核："
-                    f"manual_review={manual_review_modules}, partial={partial_modules}"
+                    f"manual_review={manual_review_modules}, partial={partial_modules}, "
+                    f"semantic_near={semantic_near_modules}"
                 ),
                 deployability_impact=True,
                 manual_review_impact=True,

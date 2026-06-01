@@ -1238,8 +1238,8 @@ def _qos_binding_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
                 source_lines=[raw_line],
                 consumes={f"interface:{interface_name}", f"qos-policy:{policy_name}"},
                 tags={"qos", direction},
-                status="manual_review",
-                manual_review_reason="接口 QoS 策略绑定会影响流量分类、限速和队列行为，需要人工复核",
+                status="translatable",
+                manual_review_reason="QoS 绑定可确定转换；对应策略体动作仍需在语义相近模块中确认",
             )
         )
     return specs

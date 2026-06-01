@@ -920,7 +920,7 @@ interface GigabitEthernet0/0/1
     policy = graph.by_feature("qos.policy")[0]
     interface = graph.by_feature("interface.physical")[0]
 
-    assert binding.status == "manual_review"
+    assert binding.status == "translatable"
     assert {"interface:GigabitEthernet0/0/1", "qos-policy:EDGE-QOS"}.issubset(set(binding.consumes))
     assert policy.module_id in binding.depends_on
     assert interface.module_id in binding.depends_on
@@ -940,10 +940,38 @@ interface GigabitEthernet0/1
 
     binding = graph.by_feature("qos.binding")[0]
 
-    assert binding.status == "manual_review"
+    assert binding.status == "translatable"
     assert {"interface:GigabitEthernet0/1", "qos-policy:WAN-QOS"}.issubset(set(binding.consumes))
     assert "inbound" in binding.tags
     assert any(coupling["relation"] == "binds_qos_to_interface" for coupling in graph.to_dict()["couplings"])
+
+
+def test_qos_binding_is_deployable_but_policy_body_is_semantic_near():
+    config = """traffic classifier WEB
+ if-match acl 3000
+#
+traffic behavior SETDSCP
+ remark dscp 46
+#
+traffic policy SETDSCP
+ classifier WEB behavior SETDSCP
+#
+interface Vlanif105
+ traffic-policy SETDSCP outbound
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+    by_feature = {result.feature: result for result in assembly.results}
+
+    assert "service-policy output SETDSCP" in assembly.deployable_config
+    assert "traffic classifier WEB" not in assembly.deployable_config
+
+    assert by_feature["qos.binding"].status == "translated"
+    assert by_feature["qos.policy"].status == "semantic_near"
+    assert by_feature["qos.policy"].suggested_lines
+    assert "policy-map SETDSCP" in "\n".join(by_feature["qos.policy"].suggested_lines)
+    assert assembly.coverage["semantic_near_modules"] >= 1
 
 
 def test_bgp_policy_line_links_to_route_policy_provider():

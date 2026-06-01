@@ -15,6 +15,7 @@ class ModuleTranslationResult:
     status: str
     source_lines: list[str]
     translated_lines: list[str] = field(default_factory=list)
+    suggested_lines: list[str] = field(default_factory=list)
     manual_review_lines: list[str] = field(default_factory=list)
     provides: list[str] = field(default_factory=list)
     consumes: list[str] = field(default_factory=list)
@@ -81,6 +82,7 @@ def _translation_coverage(graph: ModuleGraph, results: list[ModuleTranslationRes
         "result_modules": len(result_ids),
         "translated_modules": status_counts.get("translated", 0),
         "partial_modules": status_counts.get("partial", 0),
+        "semantic_near_modules": status_counts.get("semantic_near", 0),
         "manual_review_modules": status_counts.get("manual_review", 0),
         "unsupported_modules": status_counts.get("unsupported", 0),
         "missing_module_ids": missing,
@@ -97,6 +99,9 @@ def _translate_module(
 ) -> ModuleTranslationResult:
     source_text = "\n".join(module.source_lines)
     if module.status == "manual_review":
+        semantic_near = _semantic_near_result(module, from_vendor, to_vendor)
+        if semantic_near is not None:
+            return semantic_near
         return ModuleTranslationResult(
             module_id=module.module_id,
             feature=module.feature,
@@ -329,6 +334,102 @@ def _source_review_lines(module: ConfigModule, reason: str = "") -> list[str]:
     lines = [f"# MODULE_REVIEW {module.module_id} {module.feature}: {reason_text}"]
     lines.extend(f"# SOURCE line {module.start_line + idx}: {line}" for idx, line in enumerate(module.source_lines))
     return lines
+
+
+def _semantic_near_result(module: ConfigModule, from_vendor: str, to_vendor: str) -> ModuleTranslationResult | None:
+    if not module.feature.startswith("qos."):
+        return None
+    suggested = _qos_suggested_lines(module, from_vendor, to_vendor)
+    if not suggested:
+        return None
+    reason = module.manual_review_reason or "QoS 策略体已生成语义相近建议，动作细节需人工确认"
+    return ModuleTranslationResult(
+        module_id=module.module_id,
+        feature=module.feature,
+        status="semantic_near",
+        source_lines=module.source_lines,
+        suggested_lines=suggested,
+        manual_review_lines=_source_review_lines(module, reason),
+        provides=module.provides,
+        consumes=module.consumes,
+        depends_on=module.depends_on,
+        reason=reason,
+    )
+
+
+def _qos_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    if module.feature == "qos.classifier":
+        name = _first_resource_value(module.provides, "qos-classifier:") or _first_word_after(module.source_lines[0], "classifier")
+        acl_refs = [item.split(":", 1)[1] for item in module.consumes if item.startswith("acl:")]
+        if target == "cisco":
+            lines = [f"class-map match-all {name}"]
+            lines.extend(f" match access-group {acl}" for acl in acl_refs)
+            if len(lines) == 1:
+                lines.append(" ! confirm match conditions manually")
+            return lines
+        return [f"traffic classifier {name}", *[f" if-match acl {acl}" for acl in acl_refs]]
+
+    if module.feature == "qos.behavior":
+        name = _first_resource_value(module.provides, "qos-behavior:") or _first_word_after(module.source_lines[0], "behavior")
+        dscp = _extract_first(r"\b(?:remark|set)\s+dscp\s+(\S+)", source_text)
+        cir = _extract_first(r"\b(?:car|police)\s+(?:cir\s+)?(\d+)", source_text)
+        if target == "cisco":
+            lines = [f"policy-map {name}", " class class-default"]
+            if dscp:
+                lines.append(f"  set dscp {dscp}")
+            if cir:
+                lines.append(f"  police {cir}")
+            if len(lines) == 2:
+                lines.append("  ! confirm QoS action manually")
+            return lines
+        lines = [f"traffic behavior {name}"]
+        if dscp:
+            lines.append(f" remark dscp {dscp}")
+        if cir:
+            lines.append(f" car cir {cir}")
+        if len(lines) == 1:
+            lines.append(" # confirm QoS action manually")
+        return lines
+
+    if module.feature == "qos.policy":
+        name = _first_resource_value(module.provides, "qos-policy:") or _first_word_after(module.source_lines[0], "policy")
+        pairs = _extract_qos_policy_pairs(source_text)
+        if target == "cisco":
+            lines = [f"policy-map {name}"]
+            if pairs:
+                for classifier, behavior in pairs:
+                    lines.append(f" class {classifier}")
+                    lines.append(f"  ! confirm behavior {behavior} actions manually")
+            else:
+                lines.append(" class class-default")
+                lines.append("  ! confirm QoS actions manually")
+            return lines
+        lines = [f"traffic policy {name}"]
+        if pairs:
+            lines.extend(f" classifier {classifier} behavior {behavior}" for classifier, behavior in pairs)
+        else:
+            lines.append(" # confirm classifier/behavior mapping manually")
+        return lines
+    return []
+
+
+def _first_word_after(line: str, keyword: str) -> str:
+    m = re.search(rf"\b{re.escape(keyword)}\s+(\S+)", line or "", re.IGNORECASE)
+    return m.group(1) if m else "UNNAMED"
+
+
+def _extract_first(pattern: str, text: str) -> str:
+    m = re.search(pattern, text or "", re.IGNORECASE)
+    return m.group(1) if m else ""
+
+
+def _extract_qos_policy_pairs(text: str) -> list[tuple[str, str]]:
+    pairs: list[tuple[str, str]] = []
+    for m in re.finditer(r"\bclassifier\s+(\S+)\s+behavior\s+(\S+)", text or "", re.IGNORECASE):
+        pairs.append((m.group(1), m.group(2)))
+    return pairs
 
 
 def _dedupe_adjacent_blank_lines(lines: list[str]) -> list[str]:
