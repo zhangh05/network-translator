@@ -210,6 +210,7 @@ traffic-filter inbound acl 3000
 | `interface.lag` | Link aggregation interface | `interface:Eth-Trunk1`, `lag:1` | none |
 | `interface.loopback` | Loopback interface | `interface:LoopBack0` | none |
 | `interface.tunnel` | Tunnel/GRE/IPsec-like interface | `interface:Tunnel0/0/0`, `tunnel:Tunnel0/0/0` | `source:*`, `destination:*` |
+| `interface.range` | Batch interface range declaration | none | none |
 | `acl` | ACL definition | `acl:3000` | optional `time-range:*`, `object-group:*` |
 | `acl_binding` | ACL bind point | none | `acl:3000`, `interface:*` |
 | `object_group` | Cisco/ASA-style object-group container | `object-group:WEB` | none |
@@ -241,6 +242,7 @@ traffic-filter inbound acl 3000
 | `bfd.session` | BFD session and endpoint binding | `bfd:SESSION1` | `peer:*`, `source:*`, optional `interface:*` |
 | `fhrp.vrrp` | VRRP/HSRP/FHRP virtual gateway behavior | `vrrp:Vlanif10:1` | `interface:Vlanif10` |
 | `dhcp.pool` | DHCP pool scope/options | `dhcp-pool:LAN`, `subnet:*` | `gateway:*` |
+| `track` | Track/NQA/IP SLA probe object | none | none |
 | `pbr.policy` | Policy-based routing policy block | `pbr:PBR1` | ACL/nexthop dependencies later |
 | `pbr.binding` | Interface PBR binding | none | `interface:*`, `route-policy:*` |
 | `multicast` | Global multicast/PIM/IGMP controls | none | RP/interface dependencies later |
@@ -255,6 +257,7 @@ traffic-filter inbound acl 3000
 | `management.snmp` | SNMP community/host settings | none | none |
 | `management.logging` | Loghost/info-center settings | none | none |
 | `management.aaa` | AAA/radius/tacacs/local-user settings | none | none |
+| `management.line` | VTY/Console/AUX management entry point | none | none |
 | `access.auth_profile` | NAC/authentication profile | `auth-profile:*` | optional `dot1x-profile:*`, `mac-access-profile:*`, `domain:*` |
 | `access.dot1x` | 802.1X profile/global command | optional `dot1x-profile:*` | none |
 | `access.mac_auth` | MAC authentication/MAB profile/global command | optional `mac-access-profile:*` | none |

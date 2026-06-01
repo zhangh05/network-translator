@@ -71,6 +71,9 @@ _GENERIC_MANUAL_REVIEW_FEATURES = {
     "ipv6.acl",
     "dhcp.relay",
     "eigrp",
+    "track",
+    "management.line",
+    "interface.range",
 }
 
 _ACCESS_AUTH_FEATURES = {
@@ -911,14 +914,18 @@ def _generic_manual_review_module_specs_from_block(block: ConfigBlock, feature: 
         "ipv6.acl": "IPv6 ACL 的协议、扩展头、端口和绑定语义需要人工复核",
         "dhcp.relay": "DHCP Relay/helper 地址和接口绑定行为跨厂商不同，需要人工复核",
         "eigrp": "EIGRP 是 Cisco 特有路由协议，迁移到非 Cisco 平台必须重新设计或人工确认",
+        "track": "Track/NQA/IP SLA 探测对象、联动动作和告警语义需要人工复核",
+        "management.line": "VTY/Console/AUX 管理入口、认证方式和访问控制涉及管理面安全，需要人工复核",
+        "interface.range": "接口批量 range 声明的展开方式、成员接口连续性和子命令作用域跨厂商不同，需要人工复核",
     }
     tag = feature.split(".", 1)[-1] if "." in feature else feature
+    source_lines = [_redact_management_sensitive_line(line) for line in block.lines] if feature == "management.line" else block.lines
     return [
         _ModuleSpec(
             feature=feature,
             start_line=block.start_line,
             end_line=block.end_line,
-            source_lines=block.lines,
+            source_lines=source_lines,
             tags={tag},
             status="manual_review",
             manual_review_reason=reason_by_feature.get(feature, "该产品能力跨厂商语义不确定，需要人工复核"),
@@ -1716,6 +1723,10 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return "management.logging"
     if re.match(r"^(?:aaa|local-user|radius|radius-server|tacacs|tacacs-server)\b", first, re.IGNORECASE):
         return "management.aaa"
+    if re.match(r"^(?:line\s+(?:vty|con|aux)|user-interface\s+(?:vty|console|aux))\b", first, re.IGNORECASE):
+        return "management.line"
+    if re.match(r"^track\b", first, re.IGNORECASE):
+        return "track"
     if re.match(r"^security-zone\s+name\b|^zone\s+name\b|^zone\s+\S+", first, re.IGNORECASE):
         return "zone"
     if re.match(r"^ip\s+address-set\b|^address\s+name\b|^address\s+\S+", first, re.IGNORECASE):
@@ -1754,6 +1765,8 @@ def _extract_dhcp_relay_binding_ref(line: str) -> bool:
 
 def _interface_feature(first_line: str) -> str:
     name = _extract_interface_name(first_line)
+    if re.match(r"^range\b", name, re.IGNORECASE):
+        return "interface.range"
     if _extract_svi_vlan(name):
         return "interface.svi"
     if re.match(r"^(?:LoopBack|Loopback)\d+", name, re.IGNORECASE):
@@ -2206,6 +2219,8 @@ def _bgp_risky_feature(line: str) -> str:
         return "bgp.evpn"
     if re.search(r"(?:address-family|ipv4-family)\s+\S*\s*(?:flowspec|flow)\b", line, re.IGNORECASE):
         return "bgp.flowspec"
+    if re.match(r"^(?:address-family|ipv4-family|ipv6-family|l2vpn-family)\b", line, re.IGNORECASE):
+        return "bgp.address_family"
     if re.search(r"\bpassword\b|authentication-key|keychain", line, re.IGNORECASE):
         return "bgp.password"
     if re.search(r"\b(route-policy|route-map|filter-policy|prefix-list|ip-prefix|as-path-filter|community-filter)\b", line, re.IGNORECASE):

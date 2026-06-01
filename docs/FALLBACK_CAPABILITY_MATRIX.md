@@ -93,6 +93,32 @@ Test file: `tests/test_rule_translator_management.py`
 
 **Safety rule**: access-authentication commands must not pass through as executable fallback output. Shared keys and cipher values are always `<redacted>`.
 
+### Management line (VTY/Console/AUX) — ALWAYS MANUAL_REVIEW
+
+管理入口 line vty/con/aux 和 user-interface vty/console/aux 涉及管理面安全。认证方式、传输协议、会话超时和访问控制列表跨厂商语义不同，不自动生成可执行配置。
+
+| Command pattern | Module feature | Behavior |
+|-----------------|----------------|----------|
+| `line vty 0 4` / `line con 0` / `line aux 0` | `management.line` | MANUAL_REVIEW, semantic_near skeleton |
+| `user-interface vty 0 4` / `user-interface console 0` | `management.line` | MANUAL_REVIEW, semantic_near skeleton, password redacted |
+
+### Interface range — ALWAYS MANUAL_REVIEW
+
+接口批量 range 声明的展开方式和子命令作用域跨厂商不同，不自动生成可执行配置。
+
+| Command pattern | Module feature | Behavior |
+|-----------------|----------------|----------|
+| `interface range Gi0/0/1 to Gi0/0/24` | `interface.range` | MANUAL_REVIEW, semantic_near skeleton |
+
+### Track objects — ALWAYS MANUAL_REVIEW
+
+Track/NQA/IP SLA 探测对象的类型、联动动作和告警语义跨厂商不同，不自动生成可执行配置。
+
+| Command pattern | Module feature | Behavior |
+|-----------------|----------------|----------|
+| `track 1 ip route 10.0.0.0/8 reachability` | `track` | MANUAL_REVIEW, semantic_near skeleton |
+| `track track1 interface Gi0/0/1 line-protocol` | `track` | MANUAL_REVIEW, semantic_near skeleton |
+
 ## ACL / QoS Plane
 
 Source files: `core/fallback/acl_rules.py`, `core/fallback/switch_rules.py`

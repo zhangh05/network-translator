@@ -801,10 +801,12 @@ function _semanticJudgment(m){
 function _semanticGroupForFeature(feature){
   var f=(feature||"").toLowerCase();
   if(f.indexOf("ipv6")!==-1||f.indexOf("ospfv3")!==-1||f.indexOf("ripng")!==-1||f.indexOf("dhcpv6")!==-1)return"IPv6";
-  if(f.indexOf("firewall")!==-1||f.indexOf("security")!==-1||f.indexOf("acl")!==-1||f.indexOf("object")!==-1||f.indexOf("ipsec")!==-1||f.indexOf("nat")!==-1)return"安全";
+  if(f.indexOf("access")!==-1||f.indexOf("dot1x")!==-1||f.indexOf("mab")!==-1||f.indexOf("portal")!==-1)return"准入认证";
+  if(f.indexOf("firewall")!==-1||f.indexOf("ipsec")!==-1||f.indexOf("nat")!==-1)return"防火墙";
+  if(f.indexOf("acl")!==-1||f.indexOf("security")!==-1||f.indexOf("object")!==-1||f.indexOf("zone")!==-1)return"安全";
   if(f.indexOf("route")!==-1||f.indexOf("bgp")!==-1||f.indexOf("ospf")!==-1||f.indexOf("isis")!==-1||f.indexOf("rip")!==-1||f.indexOf("pbr")!==-1||f.indexOf("mpls")!==-1||f.indexOf("segment")!==-1||f.indexOf("bfd")!==-1)return"路由";
   if(f.indexOf("l2")!==-1||f.indexOf("vlan")!==-1||f.indexOf("lacp")!==-1||f.indexOf("stp")!==-1||f.indexOf("monitor")!==-1||f.indexOf("oam")!==-1)return"二层";
-  if(f.indexOf("access")!==-1||f.indexOf("management")!==-1||f.indexOf("aaa")!==-1)return"管理/准入";
+  if(f.indexOf("management")!==-1||f.indexOf("aaa")!==-1)return"管理";
   if(f.indexOf("qos")!==-1)return"QoS";
   return"其他";
 }
@@ -853,7 +855,7 @@ function _renderSemanticNearTab(r){
   var total=allItems.length;
   if(!items.length)return'<div class="empty">暂无语义相近模块。完全无法确定的内容请查看“人工复核”。</div>';
   var filter=R.semanticFilter||"all",query=R.semanticSearch||"";
-  var filters=[['all','全部'],['confirm','需要确认'],['deployable','已纳入可部署'],['high','高风险'],['路由','路由'],['安全','安全'],['二层','二层'],['IPv6','IPv6']];
+  var filters=[['all','全部'],['confirm','需要确认'],['deployable','已纳入可部署'],['high','高风险'],['路由','路由'],['安全','安全'],['防火墙','防火墙'],['准入认证','准入认证'],['二层','二层'],['管理','管理'],['IPv6','IPv6']];
   var toolbar='<div class="semantic-toolbar"><input id="semantic-search" class="semantic-search" placeholder="搜索模块、命令、确认点" value="'+esc(query)+'" oninput="_setSemanticSearch(this.value)">'+filters.map(function(x){return'<button class="semantic-filter '+(filter===x[0]?'on':'')+'" data-semantic-filter="'+esc(x[0])+'" onclick="_setSemanticFilter(\''+esc(x[0])+'\')">'+esc(x[1])+'</button>'}).join('')+'</div>';
   var cards=items.map(function(m,i){
     var targetLines=m.status==="semantic_near"?(m.suggested_lines||[]):(m.translated_lines||[]);
@@ -911,11 +913,12 @@ function _reviewActionForFeature(feature){
 }
 function _reviewGroupForFeature(feature){
   var f=(feature||"").toLowerCase();
-  if(f.indexOf("access.")!==-1||f.indexOf("access-auth")!==-1||f.indexOf("dot1x")!==-1||f.indexOf("mab")!==-1)return"准入认证";
+  if(f.indexOf("access.")!==-1||f.indexOf("access-auth")!==-1||f.indexOf("dot1x")!==-1||f.indexOf("mab")!==-1||f.indexOf("portal")!==-1)return"准入认证";
+  if(f.indexOf("firewall")!==-1||f.indexOf("ipsec")!==-1||f.indexOf("nat")!==-1)return"防火墙";
   if(f.indexOf("aaa")!==-1||f.indexOf("auth")!==-1||f.indexOf("snmp")!==-1||f.indexOf("ntp")!==-1||f.indexOf("management")!==-1)return"管理面";
   if(f.indexOf("qos")!==-1||f.indexOf("traffic")!==-1||f.indexOf("policy.binding")!==-1)return"QoS 与流量策略";
   if(f.indexOf("object_group")!==-1||f.indexOf("address_object")!==-1||f.indexOf("service_object")!==-1)return"防火墙对象";
-  if(f.indexOf("acl")!==-1||f.indexOf("security")!==-1||f.indexOf("firewall")!==-1||f.indexOf("zone")!==-1)return"ACL 与安全策略";
+  if(f.indexOf("acl")!==-1||f.indexOf("security")!==-1||f.indexOf("zone")!==-1)return"ACL 与安全策略";
   if(f.indexOf("ospf")!==-1||f.indexOf("bgp")!==-1||f.indexOf("route")!==-1||f.indexOf("vrf")!==-1||f.indexOf("rip")!==-1||f.indexOf("isis")!==-1||f.indexOf("pbr")!==-1||f.indexOf("bfd")!==-1||f.indexOf("multicast")!==-1)return"路由与转发";
   if(f.indexOf("interface")!==-1||f.indexOf("vlan")!==-1||f.indexOf("lag")!==-1||f.indexOf("port_channel")!==-1||f.indexOf("fhrp")!==-1||f.indexOf("dhcp")!==-1)return"接口与 VLAN";
   return"未支持能力"

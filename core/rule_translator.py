@@ -240,6 +240,9 @@ class RuleBasedTranslator:
         if from_vendor == "cisco" and lower.startswith(("policy-map ", "class ", "class-map ", "priority", "police ", "trust", "rate-limit")):
             return indent + manual_review_comment(stripped, "huawei", indent)
 
+        if lower.startswith("interface range "):
+            return indent + manual_review_comment(stripped, "huawei", indent)
+
         return stripped if from_vendor in ("h3c", "huawei") else indent + stripped
 
     def _to_cisco(self, stripped: str, lower: str, indent: str, from_vendor: str, state: Dict):
@@ -340,6 +343,8 @@ class RuleBasedTranslator:
                 return manual_review_comment(stripped, "cisco", indent)
 
         if from_vendor in ("huawei", "h3c"):
+            return manual_review_comment(stripped, "cisco", indent)
+        if lower.startswith("interface range "):
             return manual_review_comment(stripped, "cisco", indent)
         return stripped
 
@@ -535,6 +540,9 @@ class RuleBasedTranslator:
             if not (lower.startswith("stp edged-port") or lower.startswith("spanning-tree portfast")):
                 return indent + manual_review_comment(stripped, "h3c", indent)
 
+        if lower.startswith("interface range "):
+            return indent + manual_review_comment(stripped, "h3c", indent)
+
         return indent + stripped
 
     def _to_ruijie(self, stripped: str, lower: str, indent: str, from_vendor: str, state: Dict):
@@ -592,6 +600,8 @@ class RuleBasedTranslator:
             return indent + manual_review_comment(stripped, "ruijie", indent)
         fv = (from_vendor or "").lower()
         if fv in ("cisco", "huawei", "h3c"):
+            return manual_review_comment(stripped, "ruijie", indent)
+        if lower.startswith("interface range "):
             return manual_review_comment(stripped, "ruijie", indent)
         return stripped
 

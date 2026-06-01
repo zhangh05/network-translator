@@ -110,7 +110,7 @@ PYTHONPATH=. python3 scripts/ci_quality_gates.py --full --json ci-report.json
 
 ```
 Layer 1: 524 passed, 20 skipped in 0.88s  → PASS (zero-tolerance, no failures)
-Layer 2: 1795 passed, 10 skipped in ~45s  → PASS (0 pre-existing, 0 regressions)
+Layer 2: 1821 passed, 10 skipped in ~36s  → PASS (0 pre-existing, 0 regressions)
 ```
 
 ## Sample Run Output

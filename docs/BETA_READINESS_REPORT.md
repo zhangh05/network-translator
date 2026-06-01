@@ -69,8 +69,8 @@ THEN this is a production blocker requiring manual review
 | Criterion | Status | Evidence |
 |-----------|--------|----------|
 | Validator core (Layer 1) | ✅ PASS | 524 passed, 0 failures |
-| Full test suite | ✅ PASS | 2319 passed, 0 known pre-existing failures, 0 regressions |
-| CI quality gates | ✅ PASS | CI gate --full: 2319 passed, 0 known tolerated, 0 regressions |
+| Full test suite | ✅ PASS | 2345 passed, 0 known pre-existing failures, 0 regressions |
+| CI quality gates | ✅ PASS | CI gate --full: 2345 passed, 0 known tolerated, 0 regressions |
 | LLM config security | ✅ PASS | `mask_api_key()` never logs full key; tests confirm |
 | Audit schema v1.0 | ✅ PASS | All batch/audit outputs include schema_version, run_id, commit_hash, generated_at |
 | 6-chain domain coverage | ✅ PASS | SWITCH/ROUTER/FIREWALL each represented; residue is known/expected |
@@ -162,7 +162,7 @@ PYTHONPATH=. python3 scripts/ci_quality_gates.py --full
 | LLM config convergence | ✅ PASS | 2026-05-25 |
 | 6-chain domain coverage | ✅ PASS | 2026-05-25 |
 | Validator core tests | ✅ PASS | 2026-05-25 |
-| CI quality gates (2319 tests) | ✅ PASS | 2026-05-25 |
+| CI quality gates (2345 tests) | ✅ PASS | 2026-05-25 |
 | Security sanitization (all output paths) | ✅ PASS | 2026-05-25 (unified `redact_sensitive_output()` covers both LLM and fallback) |
 | Audit traceability | ✅ PASS | 2026-05-25 |
 | Fallback report 3-layer separation | ✅ PASS | 2026-05-25 |
@@ -173,7 +173,7 @@ PYTHONPATH=. python3 scripts/ci_quality_gates.py --full
 **Verdict**: `BETA_READY = YES (conditional)` for pilot deployment.
 
 CI gate criteria for Beta READY:
-- ✅ CI gate exit 0 — 2319 passed, 0 regressions
+- ✅ CI gate exit 0 — 2345 passed, 0 regressions
 - ✅ All 13 known tolerated failures resolved (Batch J-A: yaml/flask/requests deps installed, readyz checks added)
 - ✅ LLM output redaction implemented (unified `redact_sensitive_output()` in `project_store.py` covers both LLM and fallback paths, all API paths)
 - ⚠️ **GitHub Actions runner not yet validated (primary blocking)**

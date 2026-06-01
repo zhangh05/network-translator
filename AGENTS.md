@@ -20,7 +20,7 @@ Beta 冻结状态：不得新增 parser/renderer/graph pipeline 或大功能。
 
 | 条件 | 状态 |
 |------|------|
-| 本地 CI gate pass | ✅ 2319 passed, 0 regressions |
+| 本地 CI gate pass | ✅ 2345 passed, 0 regressions |
 | 浏览器本地验收 pass | ✅ Batch I-I: 4 样例跨 6 厂商对 |
 | 输出脱敏 P0 已修 | ✅ 统一 redact_sensitive_output() 全路径覆盖 |
 | 内网访问 pass | ✅ 0.0.0.0:5008 |

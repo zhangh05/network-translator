@@ -101,8 +101,8 @@
 | `tests/test_output_redaction.py` | **47 passed** — 16 种模式匹配 + 无假阳性 + 幂等性 + 递归结构 + cipher 上下文 + ProjectStore 集成 |
 | `tests/test_project_store.py` + `test_translation_reuse.py` + `test_frontend_fallback_ux.py` + `test_fallback_user_report_quality.py` | **124 passed** |
 | fallback 相关套件* | **多文件覆盖** — rule_translator + realistic fallback + switch/router/firewall 多厂商 |
-| CI gate (--full) | **2319 passed / 0 known tolerated / 30 skipped** |
-| 全量测试 (`pytest tests/`) | **2320 passed / 0 failed / 29 skipped** |
+| CI gate (--full) | **2345 passed / 0 known tolerated / 30 skipped** |
+| 全量测试 (`pytest tests/`) | **2346 passed / 0 failed / 29 skipped** |
 
 > *fallback 套件包含：test_fallback_user_report_quality.py、test_realistic_fallback_report.py、test_safe_fallback_and_block_splitter.py、test_rule_translator_*.py 等
 
@@ -146,7 +146,7 @@ BETA_READY = YES (conditional)
 
 | 条件 | 状态 |
 |------|------|
-| 本地 CI gate pass | ✅ 2319 passed, 0 regressions |
+| 本地 CI gate pass | ✅ 2345 passed, 0 regressions |
 | 浏览器本地验收 pass | ✅ 4 样例跨 6 厂商对，Batch I-I |
 | 输出脱敏 P0 已修 | ✅ 统一 redact_sensitive_output() |
 | 内网访问 pass | ✅ 0.0.0.0:5008 |

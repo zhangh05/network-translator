@@ -382,7 +382,9 @@ def _semantic_near_result(module: ConfigModule, from_vendor: str, to_vendor: str
         suggested = _l2_security_monitor_suggested_lines(module, from_vendor, to_vendor)
     elif module.feature.startswith(("platform.", "overlay.")):
         suggested = _platform_overlay_suggested_lines(module, from_vendor, to_vendor)
-    elif module.feature in {"nqa", "ip_sla", "eigrp", "dhcp.pool"} or module.feature.startswith("interface.tunnel"):
+    elif module.feature == "interface.range":
+        suggested = _interface_range_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature in {"nqa", "ip_sla", "eigrp", "dhcp.pool", "track"} or module.feature.startswith("interface.tunnel"):
         suggested = _service_tunnel_suggested_lines(module, from_vendor, to_vendor)
     elif module.feature.startswith("management.") or module.feature == "telemetry.flow":
         suggested = _management_advanced_suggested_lines(module, from_vendor, to_vendor)
@@ -1139,6 +1141,30 @@ def _platform_overlay_suggested_lines(module: ConfigModule, from_vendor: str, to
     return []
 
 
+def _interface_range_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    first = module.source_lines[0].strip() if module.source_lines else ""
+    range_spec = _extract_first(r"^interface\s+range\s+(.+)$", first)
+    if target == "cisco":
+        lines = [f"interface range {range_spec}" if range_spec else "interface range <confirm-range>"]
+        lines.append(_comment_for(target, "confirm range member expansion and sub-command scope manually"))
+        return lines
+    lines = ["port-group <confirm-group>"]
+    for raw_line in module.source_lines[1:]:
+        stripped = raw_line.strip()
+        if not stripped:
+            continue
+        if re.match(r"^(description|shutdown|no shutdown)\b", stripped, re.IGNORECASE):
+            lines.append(f" {stripped}")
+        elif re.match(r"^switchport\s+mode\s+access\b", stripped, re.IGNORECASE):
+            lines.append(" port link-type access")
+        elif re.match(r"^switchport\s+mode\s+trunk\b", stripped, re.IGNORECASE):
+            lines.append(" port link-type trunk")
+    lines.append(_comment_for(target, "confirm port-group members, interface range expansion, and sub-commands manually"))
+    return lines
+
+
 def _service_tunnel_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
     source_text = "\n".join(module.source_lines)
     target = (to_vendor or "").lower()
@@ -1149,6 +1175,17 @@ def _service_tunnel_suggested_lines(module: ConfigModule, from_vendor: str, to_v
         sla_id = _extract_first(r"\bip\s+sla\s+(\S+)", source_text) or "1"
         dest = _extract_first(r"\bicmp-echo\s+(\d+\.\d+\.\d+\.\d+)", source_text) or "<target-ip>"
         return [f"nqa test-instance admin sla{sla_id}", " test-type icmp", f" destination-address ipv4 {dest}", _comment_for(target, "confirm frequency, timeout, threshold, and track binding manually")]
+    if module.feature == "track":
+        first = module.source_lines[0].strip() if module.source_lines else ""
+        track_id = _extract_first(r"^track\s+(\S+)", first) or "1"
+        track_type = _extract_first(r"^track\s+\S+\s+(.+)$", first) or ""
+        if target == "cisco":
+            lines = [f"track {track_id} {track_type}" if track_type else f"track {track_id}"]
+            lines.append(_comment_for(target, "confirm track object type, threshold, delay, and downstream action manually"))
+            return lines
+        lines = [f"track track{track_id} {track_type}" if track_type else f"track track{track_id}"]
+        lines.append(_comment_for(target, "confirm track object type, threshold, delay, and downstream action manually"))
+        return lines
     if module.feature == "eigrp":
         asn = _extract_first(r"\b(?:router\s+)?eigrp\s+(\S+)", source_text) or "<asn>"
         network = _extract_first(r"\bnetwork\s+(\S+)", source_text)
@@ -1217,6 +1254,44 @@ def _management_advanced_suggested_lines(module: ConfigModule, from_vendor: str,
         if target == "cisco":
             return ["flow exporter EXPORTER", f" destination {dest}", f" transport udp {port}", _comment_for(target, "confirm NetFlow/IPFIX version, sampling, and interface binding manually")]
         return [f"ip netstream export host {dest} {port}", "# confirm NetStream/sFlow version, sampler, and interface binding manually"]
+    if module.feature == "management.line":
+        first = module.source_lines[0].strip() if module.source_lines else ""
+        line_type_match = re.search(r"\b(vty|con|aux|console)\b", first, re.IGNORECASE)
+        line_type = line_type_match.group(1).lower() if line_type_match else "vty"
+        line_range = _extract_first(r"\b(?:vty|con|aux|console)\s+(.+)$", first)
+        if target == "cisco":
+            cisco_type = "con" if line_type in ("console", "con") else line_type
+            lines = [f"line {cisco_type} {line_range}" if line_range else f"line {cisco_type}"]
+        else:
+            huawei_type = "console" if line_type in ("con", "console") else line_type
+            lines = [f"user-interface {huawei_type} {line_range}" if line_range else f"user-interface {huawei_type}"]
+        for raw_line in module.source_lines[1:]:
+            stripped = raw_line.strip()
+            if not stripped:
+                continue
+            if re.match(r"^transport\s+input\s+ssh\b", stripped, re.IGNORECASE):
+                if target == "cisco":
+                    lines.append(" transport input ssh")
+                else:
+                    lines.append(" protocol inbound ssh")
+            elif re.match(r"^login\s+local\b", stripped, re.IGNORECASE):
+                if target == "cisco":
+                    lines.append(" login local")
+                else:
+                    lines.append(" authentication-mode aaa")
+            elif re.match(r"^authentication-mode\s+aaa\b", stripped, re.IGNORECASE):
+                if target == "cisco":
+                    lines.append(" login authentication default")
+                else:
+                    lines.append(" authentication-mode aaa")
+            elif re.match(r"^exec-timeout\b", stripped, re.IGNORECASE):
+                timeout = _extract_first(r"exec-timeout\s+(.+)", stripped)
+                if target == "cisco":
+                    lines.append(f" exec-timeout {timeout}" if timeout else " exec-timeout 10 0")
+                else:
+                    lines.append(f" idle-timeout {timeout}" if timeout else " idle-timeout 10 0")
+        lines.append(_comment_for(target, "confirm VTY/Console access control, authentication, and session limits manually"))
+        return lines
     return []
 
 

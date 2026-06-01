@@ -1,7 +1,7 @@
 # Fallback Gap Analysis
 
 > **Generated**: `scripts/evaluate_corpus_fallback.py` against `corpus/sanitized_samples/`
-> **Date**: 2026-05-25
+> **Date**: 2026-06-02
 > **Pass rate**: 22/24 (91.7%) — 2 known active gaps
 
 ## Summary
@@ -97,5 +97,6 @@ Summary report (Markdown): `reports/CORPUS_FALLBACK_EVAL.md`
 
 | Date | Change |
 |------|--------|
+| 2026-06-02 | Batch M expansion: added interface.range, track, management.line module types with semantic_near; rule_translator interface range guard; frontend filter split. Pass rate unchanged 22/24 (91.7%) |
 | 2026-05-25 | Batch M close: 22/24 pass rate (91.7%); 4 gaps resolved, 2 active (GAP-RT-01, GAP-FW-03) |
 | 2026-05-25 | Initial analysis from Batch L-B corpus evaluation: 8 gaps across all 3 domains |

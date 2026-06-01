@@ -1,13 +1,14 @@
 {
   "date": "2026-05-25",
-  "batch": "J-A + Module Semantic-Near Expansion",
+  "batch": "J-A + Module Semantic-Near Expansion + Batch M Closure",
   "beta_ready": "YES_CONDITIONAL",
   "base_commit": "9ac480b",
   "latest_commits": [
     "9ac480b",
     "7f42106",
     "40edc94",
-    "5ddcd43"
+    "5ddcd43",
+    "34af85a"
   ],
   "domains": [
     "SWITCH",
@@ -163,13 +164,13 @@
     },
     "ci_gate": {
       "file": "scripts/ci_quality_gates.py --full",
-      "passed": 2319,
+      "passed": 2345,
       "known_tolerated_failures": 0,
       "skipped": 30
     },
     "full_suite": {
       "file": "pytest tests/",
-      "passed": 2320,
+      "passed": 2346,
       "failed": 0,
       "skipped": 29
     }
