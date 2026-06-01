@@ -366,6 +366,18 @@ def _semantic_near_result(module: ConfigModule, from_vendor: str, to_vendor: str
         suggested = _multicast_suggested_lines(module, from_vendor, to_vendor)
     elif module.feature.startswith("access."):
         suggested = _access_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature in {"route_filter", "pbr.policy", "pbr.binding"}:
+        suggested = _policy_filter_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature in {"object_group", "object_group.member", "acl.object_group", "acl.time_range", "time_range"}:
+        suggested = _object_time_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature.startswith(("ipv6.", "ospfv3.", "ripng.", "dhcpv6.")):
+        suggested = _ipv6_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature in {"bfd.session", "mpls.ldp", "mpls.te", "mpls.l3vpn", "segment_routing", "segment_routing.binding"}:
+        suggested = _transport_control_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature.startswith("firewall."):
+        suggested = _advanced_firewall_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature.startswith(("l2.", "monitor.", "oam.", "security.")):
+        suggested = _l2_security_monitor_suggested_lines(module, from_vendor, to_vendor)
     if not suggested:
         return None
     reason = module.manual_review_reason or "该模块已生成语义相近建议，动作细节需人工确认"
@@ -774,6 +786,201 @@ def _access_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: s
         return lines
     if module.feature == "access.portal":
         return [_comment_for(target, "confirm portal server and redirect behavior manually")]
+    return []
+
+
+def _policy_filter_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    if module.feature == "route_filter":
+        name = _first_resource_value(module.provides, "route-filter:") or _extract_route_filter_name(source_text)
+        prefix = _extract_first(r"\b(?:permit|deny)\s+(\d+\.\d+\.\d+\.\d+)\s+(?:\d+\s+)?(\d+)?", source_text)
+        if target == "cisco":
+            lines = [f"ip prefix-list {name} seq 10 permit {prefix or '<confirm-prefix>'}"]
+            lines.append("! confirm prefix length, ge/le, AS-path/community filters manually")
+            return lines
+        return [f"ip ip-prefix {name} index 10 permit {prefix or '<confirm-prefix>'}", "# confirm prefix length and filter type manually"]
+
+    if module.feature == "pbr.policy":
+        name = _first_resource_value(module.provides, "pbr:") or _first_word_after(module.source_lines[0] if module.source_lines else "", "policy-based-route")
+        seq = _extract_first(r"\bnode\s+(\d+)", source_text) or "10"
+        acl = _extract_first(r"\b(?:if-match\s+acl|match\s+ip\s+address)\s+(\S+)", source_text)
+        nexthop = _extract_first(r"\b(?:apply\s+next-hop|set\s+ip\s+next-hop)\s+(\d+\.\d+\.\d+\.\d+)", source_text)
+        if target == "cisco":
+            lines = [f"route-map {name} permit {seq}"]
+            if acl:
+                lines.append(f" match ip address {acl}")
+            if nexthop:
+                lines.append(f" set ip next-hop {nexthop}")
+            lines.append(" ! confirm PBR track/fallback/default-next-hop manually")
+            return lines
+        lines = [f"policy-based-route {name} permit node {seq}"]
+        if acl:
+            lines.append(f" if-match acl {acl}")
+        if nexthop:
+            lines.append(f" apply next-hop {nexthop}")
+        lines.append(" # confirm PBR track/fallback/default-next-hop manually")
+        return lines
+
+    if module.feature == "pbr.binding":
+        policy = _first_resource_value(module.consumes, "route-policy:") or _extract_first(r"\b(?:policy-based-route|route-map)\s+(\S+)", source_text) or "<confirm-policy>"
+        if target == "cisco":
+            return [f"ip policy route-map {policy}", "! confirm inbound interface PBR behavior manually"]
+        return [f"ip policy-based-route {policy}", "# confirm inbound interface PBR behavior manually"]
+    return []
+
+
+def _object_time_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    comment = _comment_for(target, "confirm object/time-range references and platform support manually")
+    if module.feature == "object_group":
+        name = _first_resource_value(module.provides, "object-group:") or _extract_first(r"\bobject-group\s+(?:network|service)?\s*(\S+)", source_text) or "<confirm-object-group>"
+        kind = "service" if "service" in {tag.lower() for tag in module.tags} else "network"
+        return [f"object-group {kind} {name}", comment]
+    if module.feature == "object_group.member":
+        host = _extract_first(r"\bhost\s+(\d+\.\d+\.\d+\.\d+)", source_text)
+        port = _extract_first(r"\b(?:eq|destination-port)\s+(\S+)", source_text)
+        if host:
+            return [f" host {host}", comment]
+        if port:
+            return [f" port-object eq {port}", comment]
+        return [" <confirm-object-group-member>", comment]
+    if module.feature in {"time_range", "acl.time_range"}:
+        name = _first_resource_value(module.provides, "time-range:") or _extract_first(r"\btime-range\s+(\S+)", source_text) or _extract_first(r"\btime\s+(\S+)", source_text) or "<confirm-time-range>"
+        return [f"time-range {name}", comment]
+    if module.feature == "acl.object_group":
+        name = _extract_first(r"\bobject-group\s+(\S+)", source_text) or "<confirm-object-group>"
+        return [f"object-group {name}", comment]
+    return []
+
+
+def _ipv6_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    if module.feature == "ipv6.static_route":
+        prefix = _extract_first(r"\bipv6\s+(?:route-static|route)\s+(\S+)", source_text) or "<prefix>"
+        length = _extract_first(r"\bipv6\s+(?:route-static|route)\s+\S+\s+(\d{1,3})\b", source_text)
+        nexthop = _extract_first(r"\bipv6\s+(?:route-static|route)\s+\S+\s+\d{1,3}\s+(\S+)", source_text)
+        dest = f"{prefix}/{length}" if length and "/" not in prefix else prefix
+        return [f"ipv6 route {dest} {nexthop or '<next-hop>'}" if target == "cisco" else f"ipv6 route-static {dest} {nexthop or '<next-hop>'}", _comment_for(target, "confirm IPv6 VRF/preference/tag options manually")]
+    if module.feature == "ipv6.interface":
+        addr = _extract_first(r"\bipv6\s+address\s+(\S+)", source_text) or "<confirm-ipv6-prefix>"
+        return ["ipv6 enable" if target != "cisco" else "ipv6 enable", f"ipv6 address {addr}", _comment_for(target, "confirm link-local and RA behavior manually")]
+    if module.feature == "ipv6.nd_ra":
+        if target == "cisco":
+            return ["ipv6 nd ra suppress", "! confirm RA interval, flags, and lifetime manually"]
+        return ["ipv6 nd ra halt", "# confirm RA interval, flags, and lifetime manually"]
+    if module.feature == "ipv6.acl":
+        name = _extract_first(r"\b(?:ipv6\s+access-list|acl\s+ipv6)\s+(\S+)", source_text) or "V6-ACL"
+        return [f"ipv6 access-list {name}", _comment_for(target, "confirm IPv6 ACL entries, extension headers, and bindings manually")]
+    if module.feature == "ospfv3.process":
+        process = _extract_first(r"\b(?:ospfv3|ospf|router\s+ospfv3|ipv6\s+router\s+ospf)\s+(\S+)", source_text) or "1"
+        return [f"ipv6 router ospf {process}" if target == "cisco" else f"ospfv3 {process}", _comment_for(target, "confirm OSPFv3 area/interface/authentication manually")]
+    if module.feature == "ripng.process":
+        process = _extract_first(r"\b(?:ripng|router\s+ripng)\s+(\S+)", source_text) or "RIPNG"
+        return [f"ipv6 router rip {process}" if target == "cisco" else f"ripng {process}", _comment_for(target, "confirm RIPng interface enablement and redistribution manually")]
+    if module.feature == "dhcpv6.pool":
+        name = _extract_first(r"\b(?:ipv6\s+dhcp\s+pool|dhcpv6\s+pool)\s+(\S+)", source_text) or "V6POOL"
+        prefix = _extract_first(r"\b(?:address\s+prefix|prefix-delegation)\s+(\S+)", source_text)
+        lines = [f"ipv6 dhcp pool {name}" if target == "cisco" else f"dhcpv6 pool {name}"]
+        if prefix:
+            lines.append(f" address prefix {prefix}")
+        lines.append(_comment_for(target, "confirm DNS, lease, IA_NA/PD, and relay behavior manually"))
+        return lines
+    if module.feature in {"dhcpv6.relay", "dhcpv6.relay.binding"}:
+        server = _extract_first(r"\b(?:destination|server-address)\s+([0-9a-fA-F:]+)", source_text) or "<server-ipv6>"
+        return [f"ipv6 dhcp relay destination {server}", _comment_for(target, "confirm relay interface/source and VRF manually")]
+    return []
+
+
+def _transport_control_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    if module.feature == "bfd.session":
+        peer = _extract_first(r"\bpeer-ip\s+(\d+\.\d+\.\d+\.\d+)", source_text) or "<peer-ip>"
+        return [f"bfd-template single-hop BFD-{peer}", " bfd interval 300 min_rx 300 multiplier 3", _comment_for(target, "confirm BFD discriminator, binding, and timers manually")]
+    if module.feature == "mpls.ldp":
+        return ["mpls ldp", "mpls ip" if target == "cisco" else "mpls ldp enable", _comment_for(target, "confirm LSR ID, interfaces, and label distribution manually")]
+    if module.feature == "mpls.te":
+        return ["mpls traffic-eng tunnels", _comment_for(target, "confirm RSVP/TE constraints, bandwidth, and protection manually")]
+    if module.feature == "mpls.l3vpn":
+        vrf = _extract_first(r"\b(?:ip\s+vpn-instance|vrf\s+definition)\s+(\S+)", source_text) or "<vrf>"
+        rd = _extract_first(r"\b(?:route-distinguisher|rd)\s+(\S+)", source_text)
+        lines = [f"vrf definition {vrf}" if target == "cisco" else f"ip vpn-instance {vrf}"]
+        if rd:
+            lines.append(f" rd {rd}" if target == "cisco" else f" route-distinguisher {rd}")
+        lines.append(_comment_for(target, "confirm route-target import/export and PE-CE routing manually"))
+        return lines
+    if module.feature in {"segment_routing", "segment_routing.binding"}:
+        if target == "cisco":
+            return ["segment-routing mpls", " ! confirm SRGB, SID allocation, and IGP binding manually"]
+        return ["segment-routing", " mpls", "# confirm SRGB, SID allocation, and IGP binding manually"]
+    return []
+
+
+def _advanced_firewall_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    if module.feature == "firewall.nat":
+        name = _extract_first(r"\brule\s+name\s+(\S+)", source_text) or _extract_first(r"\bnat-policy\s+(\S+)", source_text) or "NAT1"
+        return [f"nat policy {name}", _comment_for(target, "confirm original/translated address, zones, service, and no implicit any manually")]
+    if module.feature == "firewall.ipsec":
+        name = _extract_first(r"\b(?:ipsec\s+policy|crypto\s+map)\s+(\S+)", source_text) or _extract_first(r"\b(?:ike\s+proposal|isakmp\s+policy)\s+(\S+)", source_text) or "VPN"
+        if target == "cisco":
+            return [f"crypto map {name} 10 ipsec-isakmp", " ! confirm IKE proposal, transform-set, peer, ACL, and PSK manually"]
+        return [f"ipsec policy {name} 10 isakmp", "# confirm IKE proposal, transform-set, peer, ACL, and PSK manually"]
+    if module.feature in {"firewall.profile", "firewall.url_filter", "firewall.av", "firewall.application", "firewall.user_id"}:
+        name = _extract_first(r"\b(?:profile|application-group|user-profile)\s+(\S+)", source_text) or "PROFILE"
+        return [f"security profile {name}", _comment_for(target, "confirm profile engine, category/signature database, and action manually")]
+    if module.feature == "firewall.ips":
+        name = _extract_first(r"\bips\s+profile\s+(\S+)", source_text) or "IPS-PROFILE"
+        return [f"ips policy {name}", _comment_for(target, "confirm IPS signature set, exceptions, and action manually")]
+    if module.feature == "firewall.ha":
+        return ["redundancy", _comment_for(target, "confirm HA role, heartbeat, session sync, and interface mapping manually")]
+    if module.feature == "firewall.vsys":
+        name = _extract_first(r"\b(?:virtual-system|vsys)\s+(\S+)", source_text) or "VSYS1"
+        return [f"context {name}", _comment_for(target, "confirm virtual-system resource, route, policy, and interface allocation manually")]
+    if module.feature.startswith("firewall."):
+        family = module.feature.split(".", 1)[1].replace("_", "-")
+        return [f"{family} profile <confirm-name>", _comment_for(target, f"confirm {family} feature semantics and licensing manually")]
+    return []
+
+
+def _l2_security_monitor_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    if module.feature == "l2.private_vlan":
+        vlan = _extract_first(r"\b(?:private-vlan|pvlan)\s+(?:primary\s+)?(\d+)", source_text) or "<vlan>"
+        return [f"private-vlan {vlan}", _comment_for(target, "confirm primary/isolated/community VLAN mapping manually")]
+    if module.feature == "l2.vlan_mapping":
+        src = _extract_first(r"\bvlan\s+mapping\s+(\d+)", source_text) or "<src-vlan>"
+        dst = _extract_first(r"\bmap-vlan\s+(\d+)", source_text) or "<dst-vlan>"
+        return [f"vlan mapping {src} {dst}", _comment_for(target, "confirm ingress/egress VLAN translation scope manually")]
+    if module.feature == "l2.dhcp_snooping":
+        return ["ip dhcp snooping", _comment_for(target, "confirm trusted interfaces, option-82, and binding database manually")]
+    if module.feature == "l2.source_guard":
+        return ["ip verify source", _comment_for(target, "confirm DHCP snooping/static binding dependency manually")]
+    if module.feature == "l2.arp_security":
+        return ["ip arp inspection vlan <confirm-vlan>", _comment_for(target, "confirm trusted interfaces and binding source manually")]
+    if module.feature == "l2.port_security":
+        return ["switchport port-security", _comment_for(target, "confirm max MAC, violation action, and aging manually")]
+    if module.feature == "l2.storm_control":
+        level = _extract_first(r"\blevel\s+(\S+)", source_text) or "<level>"
+        return [f"storm-control broadcast level {level}", _comment_for(target, "confirm unit, direction, and action manually")]
+    if module.feature == "monitor.span":
+        session = _extract_first(r"\b(?:monitor|span)\s+session\s+(\S+)", source_text) or "1"
+        return [f"monitor session {session} source interface <confirm-source>", f"monitor session {session} destination interface <confirm-destination>", _comment_for(target, "confirm direction and destination port shutdown behavior manually")]
+    if module.feature == "monitor.rspan":
+        return ["monitor session <id> source remote vlan <confirm-vlan>", _comment_for(target, "confirm RSPAN VLAN and cross-device path manually")]
+    if module.feature == "oam.ethernet":
+        return ["ethernet oam", _comment_for(target, "confirm OAM mode, remote loopback, and link-fault action manually")]
+    if module.feature == "oam.cfm":
+        return ["ethernet cfm", _comment_for(target, "confirm maintenance domain, level, MEP/MIP, and CCM timers manually")]
+    if module.feature == "security.urpf":
+        return ["ip verify unicast source reachable-via rx", _comment_for(target, "confirm strict/loose mode and ACL exceptions manually")]
+    if module.feature.startswith("l2."):
+        return [f"{module.feature.replace('.', ' ')} <confirm-settings>", _comment_for(target, "confirm L2 feature semantics and failure action manually")]
     return []
 
 

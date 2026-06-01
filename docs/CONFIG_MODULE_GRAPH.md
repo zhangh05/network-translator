@@ -146,6 +146,11 @@ Current semantic-near families:
 | RIP / IS-IS | process, network/NET, redistribute, metric style | process/network/redistribute skeleton | metric, level, auth, and redistribution behavior need review |
 | Multicast | RP and interface PIM/IGMP lines | RP, PIM, and IGMP skeleton | ASM/SSM, RP/BSR, interface mode, and querier behavior differ |
 | Access authentication | 802.1X, MAB, portal, radius domain, interface binding | AAA and interface access-session skeleton | fail action, critical VLAN, server groups, and auth order need review |
+| Route filters / PBR | prefix-list, object/time ACL references, policy-based-route | prefix-list, route-map, and interface PBR skeleton | filter order, object model, next-hop fallback, and time conditions need review |
+| IPv6 routing/services | IPv6 static route, interface IPv6, ND/RA, IPv6 ACL, OSPFv3/RIPng, DHCPv6 | IPv6 route/interface/ACL/protocol/relay skeleton | link-local, RA flags, DHCPv6 mode, address-family, and VRF behavior differ |
+| BFD / MPLS / Segment Routing | BFD sessions, MPLS LDP/TE/L3VPN, SR binding | BFD template, MPLS, VRF, and SR skeleton | timers, labels, RD/RT, RSVP/SR policy, and IGP binding need review |
+| Advanced firewall services | NAT, IPsec, IPS/URL/AV/app profiles, HA, vsys | NAT/IPsec/profile/HA/vsys skeleton | no implicit any, engines/licensing, crypto, session sync, and policy binding need review |
+| L2 security / OAM / monitoring | PVLAN, VLAN mapping, DHCP snooping, source guard, ARP inspection, SPAN, OAM, uRPF | target feature skeleton with confirmation points | trust boundaries, failure actions, thresholds, and traffic-copy behavior differ |
 
 ## Example
 

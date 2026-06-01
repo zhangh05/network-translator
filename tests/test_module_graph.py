@@ -231,7 +231,7 @@ def test_translate_module_graph_separates_deployable_and_manual_review_outputs()
     assert "MANUAL_REVIEW" not in assembly.deployable_config
     assert "voice-vlan" in assembly.manual_review_config
     assert any(item.module_id for item in assembly.results)
-    assert any(item.status == "manual_review" for item in assembly.results)
+    assert any(item.status in {"manual_review", "semantic_near"} for item in assembly.results)
 
 
 def test_translate_module_graph_preserves_dependency_order_in_deployable_config():
@@ -1110,7 +1110,7 @@ def test_module_translation_assembly_reports_complete_coverage():
     assert coverage["result_modules"] == len(graph.modules)
     assert coverage["missing_module_ids"] == []
     assert coverage["translated_modules"] > 0
-    assert coverage["manual_review_modules"] > 0
+    assert coverage["manual_review_modules"] + coverage["semantic_near_modules"] > 0
     assert coverage["all_modules_accounted"] is True
 
 
