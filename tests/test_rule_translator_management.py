@@ -514,3 +514,35 @@ def test_cisco_tacacs_key_to_huawei_manual_review():
     executable = "\n".join(_executable_lines(result))
     assert "TacKey!" not in executable
     assert "MANUAL_REVIEW" in result
+
+
+def test_huawei_access_authentication_profile_to_cisco_manual_review():
+    result = RuleBasedTranslator().translate("authentication-profile name dot1x_authen_profile\n", "huawei", "cisco")
+    executable = "\n".join(_executable_lines(result))
+    assert "authentication-profile" not in executable
+    assert "MANUAL_REVIEW" in result
+
+
+def test_cisco_access_session_to_huawei_manual_review():
+    result = RuleBasedTranslator().translate("authentication port-control auto\nmab\ndot1x pae authenticator\n", "cisco", "huawei")
+    executable = "\n".join(_executable_lines(result))
+    assert "authentication port-control" not in executable
+    assert "mab" not in executable
+    assert "dot1x" not in executable
+    assert result.count("MANUAL_REVIEW") >= 3
+
+
+def test_portal_and_radius_domain_to_cisco_manual_review_redacts_key():
+    cfg = """portal server PORTAL ip 10.10.10.10
+radius scheme RAD1
+ key authentication cipher RadiusKey
+domain corp
+ authentication lan-access radius-scheme RAD1
+"""
+    result = RuleBasedTranslator().translate(cfg, "h3c", "cisco")
+    executable = "\n".join(_executable_lines(result))
+    assert "portal server" not in executable
+    assert "radius scheme" not in executable
+    assert "domain corp" not in executable
+    assert "RadiusKey" not in result
+    assert "<redacted>" in result

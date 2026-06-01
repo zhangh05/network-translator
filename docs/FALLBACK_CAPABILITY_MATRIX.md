@@ -78,6 +78,21 @@ Test file: `tests/test_rule_translator_management.py`
 
 **Principle**: No password, secret, key, or credential value may appear in `deployable_config` as plain text. All must be `<redacted>`.
 
+### Access authentication / NAC — ALWAYS MANUAL_REVIEW
+
+准入认证不是简单语法替换能力。802.1X、MAC 认证、Portal、RADIUS scheme/domain、失败动作、critical VLAN、接口授权模式会共同决定终端能否入网。本项目当前只做**识别、拆模块、关联证据、脱敏、人工复核**，不自动生成等价可执行配置。
+
+| Command pattern | Module feature | Behavior |
+|-----------------|----------------|----------|
+| `authentication-profile name NAME` | `access.auth_profile` | MANUAL_REVIEW, provides `auth-profile:NAME` |
+| `dot1x-access-profile NAME` / `dot1x ...` | `access.dot1x` | MANUAL_REVIEW |
+| `mac-access-profile NAME` / `mac-authentication ...` / `mab` | `access.mac_auth` | MANUAL_REVIEW |
+| `portal server NAME ...` | `access.portal` | MANUAL_REVIEW |
+| `radius scheme NAME` / `domain NAME` / `authentication lan-access radius-scheme NAME` | `access.radius_binding` | MANUAL_REVIEW, secrets redacted |
+| Interface `authentication-profile NAME`, `dot1x enable`, `mac-authentication enable`, `authentication port-control`, `access-session ...` | `access.interface_binding` | MANUAL_REVIEW, linked to `interface:*` and `auth-profile:*` where detectable |
+
+**Safety rule**: access-authentication commands must not pass through as executable fallback output. Shared keys and cipher values are always `<redacted>`.
+
 ## ACL / QoS Plane
 
 Source files: `core/fallback/acl_rules.py`, `core/fallback/switch_rules.py`
@@ -296,7 +311,7 @@ Required fields per direction:
 | `tests/test_safe_fallback_and_block_splitter.py` | Infrastructure (safe fallback guard, splitter) |
 | `tests/test_rule_translator_switch_multivendor.py` | SWITCH (12 direction pairs + negatives) |
 | `tests/test_rule_translator_router_multivendor.py` | ROUTER (static/OSPF/BGP/VRF multi-direction) |
-| `tests/test_rule_translator_management.py` | MANAGEMENT (NTP/logging/SNMP/AAA/hostname) — 79 tests |
+| `tests/test_rule_translator_management.py` | MANAGEMENT (NTP/logging/SNMP/AAA/access-auth/hostname) — 82 tests |
 | `tests/test_rule_translator_acl_binding.py` | ACL and interface binding — 59 tests |
 | `tests/test_realistic_fallback_report.py` | Fallback report structure and redaction — 27 tests |
 | `tests/test_rule_translator_realistic_samples.py` | 6 end-to-end realistic samples |

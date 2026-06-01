@@ -183,6 +183,12 @@ traffic-filter inbound acl 3000
 | `management.snmp` | SNMP community/host settings | none | none |
 | `management.logging` | Loghost/info-center settings | none | none |
 | `management.aaa` | AAA/radius/tacacs/local-user settings | none | none |
+| `access.auth_profile` | NAC/authentication profile | `auth-profile:*` | optional `dot1x-profile:*`, `mac-access-profile:*`, `domain:*` |
+| `access.dot1x` | 802.1X profile/global command | optional `dot1x-profile:*` | none |
+| `access.mac_auth` | MAC authentication/MAB profile/global command | optional `mac-access-profile:*` | none |
+| `access.portal` | Portal authentication server/profile | `portal:*` | none |
+| `access.radius_binding` | RADIUS scheme/domain lan-access binding | `radius-scheme:*`, `domain:*` | optional `radius-scheme:*` |
+| `access.interface_binding` | Interface NAC binding | none | `interface:*`, optional `auth-profile:*`, `domain:*` |
 | `zone` | Firewall zone | `zone:trust` | interface bindings later |
 | `address_object` | Firewall address object | `addr:WEB` | none |
 | `service_object` | Firewall service object | `svc:HTTP` | none |

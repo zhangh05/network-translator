@@ -134,6 +134,10 @@ class RuleBasedTranslator:
         if rv is not None:
             return rv
 
+        rv = mgmt.translate_access_auth_to_manual_review(stripped, lower, indent, "huawei")
+        if rv is not None:
+            return rv
+
         rv = mgmt.translate_aaa_to_huawei(stripped, lower, indent, from_vendor)
         if rv is not None:
             return rv
@@ -248,6 +252,10 @@ class RuleBasedTranslator:
             return rv
 
         rv = mgmt.translate_logging_to_cisco(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_access_auth_to_manual_review(stripped, lower, indent, "cisco")
         if rv is not None:
             return rv
 
@@ -463,6 +471,10 @@ class RuleBasedTranslator:
         if rv is not None:
             return rv
 
+        rv = mgmt.translate_access_auth_to_manual_review(stripped, lower, indent, "h3c")
+        if rv is not None:
+            return rv
+
         rv = mgmt.translate_aaa_to_h3c(stripped, lower, indent, from_vendor)
         if rv is not None:
             return rv
@@ -531,6 +543,10 @@ class RuleBasedTranslator:
             return rv
 
         rv = mgmt.translate_logging_to_ruijie(stripped, lower, indent, from_vendor)
+        if rv is not None:
+            return rv
+
+        rv = mgmt.translate_access_auth_to_manual_review(stripped, lower, indent, "ruijie")
         if rv is not None:
             return rv
 

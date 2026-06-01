@@ -41,6 +41,37 @@ def _redact_passwords_in_line(line: str, to_vendor: str, indent: str = "") -> st
     return indent + redacted
 
 
+def translate_access_auth_to_manual_review(stripped: str, lower: str, indent: str, to_vendor: str) -> Optional[str]:
+    """Guard NAC/准入认证 commands from leaking as executable fallback config."""
+    if not _is_access_auth_line(lower):
+        return None
+    redacted = _redact_access_auth_line(stripped)
+    return manual_review_comment(redacted, to_vendor, indent)
+
+
+def _is_access_auth_line(lower: str) -> bool:
+    return bool(
+        re.match(
+            r"^(?:authentication-profile\b|dot1x\b|dot1x-access-profile\b|mac-authentication\b|mac-access-profile\b|mab\b|access-session\b|authentication\s+(?:port-control|event|host-mode)\b|portal\b|radius\s+scheme\b|radius-server\s+template\b|key\s+(?:authentication|accounting|authorization)\b|domain\s+\S+\b|access-domain\b|authentication\s+lan-access\b|authorization\s+lan-access\b|accounting\s+lan-access\b)",
+            lower,
+            re.IGNORECASE,
+        )
+    )
+
+
+def _redact_access_auth_line(line: str) -> str:
+    redacted = line
+    patterns = (
+        r"(\bkey\s+(?:authentication|accounting|authorization)\s+(?:cipher\s+)?)(?!<redacted>)\S+",
+        r"(\bradius(?:-server)?\s+(?:shared-key|key)\s+(?:cipher\s+)?)(?!<redacted>)\S+",
+        r"(\bpre-shared-key\s+(?:cipher\s+)?)(?!<redacted>)\S+",
+        r"(\b(?:password|secret|shared-key)\s+(?:cipher\s+)?)(?!<redacted>)\S+",
+    )
+    for pattern in patterns:
+        redacted = re.sub(pattern, r"\1<redacted>", redacted, flags=re.IGNORECASE)
+    return redacted
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 # hostname / sysname
 # ─────────────────────────────────────────────────────────────────────────────

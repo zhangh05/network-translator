@@ -73,6 +73,14 @@ _GENERIC_MANUAL_REVIEW_FEATURES = {
     "eigrp",
 }
 
+_ACCESS_AUTH_FEATURES = {
+    "access.auth_profile",
+    "access.dot1x",
+    "access.mac_auth",
+    "access.portal",
+    "access.radius_binding",
+}
+
 
 _GENERIC_FEATURE_PATTERNS: tuple[tuple[str, str], ...] = (
     ("l2.private_vlan", r"^(?:private-vlan|pvlan)\b"),
@@ -226,6 +234,8 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         return _bfd_module_specs_from_block(block)
     if feature == "dhcp.pool":
         return _dhcp_pool_module_specs_from_block(block)
+    if feature in _ACCESS_AUTH_FEATURES:
+        return _access_module_specs_from_block(block, feature)
     if feature.startswith("management."):
         return _management_module_specs_from_block(block, feature)
     if feature == "object_group":
@@ -325,6 +335,7 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         specs.extend(_dhcpv6_relay_binding_specs_from_interface(block))
         specs.extend(_lacp_tuning_specs_from_interface(block))
         specs.extend(_advanced_interface_specs_from_interface(block))
+        specs.extend(_access_binding_specs_from_interface(block))
 
     return specs
 
@@ -939,6 +950,53 @@ def _management_module_specs_from_block(block: ConfigBlock, feature: str) -> lis
     ]
 
 
+def _access_module_specs_from_block(block: ConfigBlock, feature: str) -> list[_ModuleSpec]:
+    text = "\n".join(block.lines)
+    provides: set[str] = set()
+    consumes: set[str] = set()
+    tags = _access_tags_from_text(text)
+
+    if feature == "access.auth_profile":
+        profile = _extract_access_auth_profile_name(text)
+        if profile:
+            provides.add(f"auth-profile:{profile}")
+        consumes.update(f"dot1x-profile:{name}" for name in _extract_access_named_refs(text, r"\bdot1x-access-profile\s+(\S+)"))
+        consumes.update(f"mac-access-profile:{name}" for name in _extract_access_named_refs(text, r"\bmac-access-profile\s+(\S+)"))
+        consumes.update(f"domain:{name}" for name in _extract_access_named_refs(text, r"\baccess-domain\s+(\S+)"))
+    elif feature == "access.dot1x":
+        for name in _extract_access_profile_names(text, ("dot1x-access-profile", "dot1x")):
+            provides.add(f"dot1x-profile:{name}")
+    elif feature == "access.mac_auth":
+        for name in _extract_access_profile_names(text, ("mac-access-profile", "mac-authentication")):
+            provides.add(f"mac-access-profile:{name}")
+    elif feature == "access.portal":
+        portal = _extract_first_match(text, r"^portal\s+(?:server|web-server)\s+(\S+)")
+        if portal:
+            provides.add(f"portal:{portal}")
+    elif feature == "access.radius_binding":
+        radius = _extract_first_match(text, r"^radius\s+scheme\s+(\S+)")
+        if radius:
+            provides.add(f"radius-scheme:{radius}")
+        domain = _extract_first_match(text, r"^domain\s+(\S+)")
+        if domain:
+            provides.add(f"domain:{domain}")
+        consumes.update(f"radius-scheme:{name}" for name in _extract_access_named_refs(text, r"\bradius-scheme\s+(\S+)"))
+
+    return [
+        _ModuleSpec(
+            feature=feature,
+            start_line=block.start_line,
+            end_line=block.end_line,
+            source_lines=[_redact_access_sensitive_line(line) for line in block.lines],
+            provides=provides,
+            consumes=consumes,
+            tags=tags,
+            status="manual_review",
+            manual_review_reason=_access_manual_review_reason(),
+        )
+    ]
+
+
 def _bfd_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
     text = "\n".join(block.lines)
     name = _extract_bfd_name(block.lines[0] if block.lines else "")
@@ -1036,10 +1094,48 @@ def _module_source_lines(block: ConfigBlock, feature: str) -> list[str]:
             or _is_interface_multicast_line(line)
             or _is_interface_ipv6_line(line)
             or _extract_dhcp_relay_binding_ref(line)
+            or _extract_access_binding_ref(line)
         ):
             continue
         filtered.append(line)
     return filtered
+
+
+def _access_binding_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
+    interface_name = _extract_interface_name(block.lines[0])
+    if not interface_name:
+        return []
+    entries: list[tuple[int, str]] = []
+    consumes = {f"interface:{interface_name}"}
+    tags = {"access-auth"}
+    for offset, raw_line in enumerate(block.lines[1:], 1):
+        if not _extract_access_binding_ref(raw_line):
+            continue
+        stripped = raw_line.strip()
+        line_no = block.start_line + offset
+        entries.append((line_no, raw_line))
+        tags.update(_access_tags_from_text(stripped))
+        profile = _extract_first_match(stripped, r"^authentication-profile\s+(\S+)")
+        if profile:
+            consumes.add(f"auth-profile:{profile}")
+        domain = _extract_first_match(stripped, r"^access-domain\s+(\S+)")
+        if domain:
+            consumes.add(f"domain:{domain}")
+    if not entries:
+        return []
+    line_numbers = [line_no for line_no, _ in entries]
+    return [
+        _ModuleSpec(
+            feature="access.interface_binding",
+            start_line=min(line_numbers),
+            end_line=max(line_numbers),
+            source_lines=[_redact_access_sensitive_line(line) for _, line in entries],
+            consumes=consumes,
+            tags=tags,
+            status="manual_review",
+            manual_review_reason=_access_manual_review_reason(),
+        )
+    ]
 
 
 def _acl_binding_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
@@ -1502,6 +1598,20 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return "l2.lldp"
     if re.match(r"^(?:mac-address|mac\s+address-table)\b", first, re.IGNORECASE):
         return "l2.mac_table"
+    if re.match(r"^authentication-profile\b", first, re.IGNORECASE):
+        return "access.auth_profile"
+    if re.match(r"^(?:dot1x|dot1x-access-profile)\b", first, re.IGNORECASE):
+        return "access.dot1x"
+    if re.match(r"^(?:mac-authentication|mac-access-profile|mab\b)\b", first, re.IGNORECASE):
+        return "access.mac_auth"
+    if re.match(r"^portal\b", first, re.IGNORECASE):
+        return "access.portal"
+    if re.match(
+        r"^(?:radius\s+scheme|radius-server\s+template|domain\s+\S+|authentication\s+lan-access|authorization\s+lan-access|accounting\s+lan-access)\b",
+        first,
+        re.IGNORECASE,
+    ):
+        return "access.radius_binding"
     if re.match(r"^(ospf|router\s+ospf)\b", first, re.IGNORECASE):
         return "ospf"
     if re.match(r"^(bgp|router\s+bgp)\b", first, re.IGNORECASE):
@@ -1658,6 +1768,14 @@ def _interface_feature(first_line: str) -> str:
 
 
 def _coupling_relation(feature: str, resource: str) -> str:
+    if feature == "access.interface_binding" and resource.startswith("auth-profile:"):
+        return "access_binding_uses_auth_profile"
+    if feature == "access.interface_binding" and resource.startswith("interface:"):
+        return "access_binding_uses_interface"
+    if feature.startswith("access.") and resource.startswith("radius-scheme:"):
+        return "access_uses_radius_scheme"
+    if feature.startswith("access.") and resource.startswith("domain:"):
+        return "access_uses_domain"
     if feature == "acl_binding" and resource.startswith("acl:"):
         return "binds_acl_to_interface"
     if feature == "acl_binding" and resource.startswith("interface:"):
@@ -1726,9 +1844,15 @@ def _manual_review_reason(feature: str, first_line: str) -> str:
         return "认证/授权/账号配置跨厂商语义差异较大，需要人工复核"
     if feature == "qos":
         return "QoS 策略体跨厂商语义差异较大，需要人工复核"
+    if feature.startswith("access."):
+        return _access_manual_review_reason()
     if feature == "interface.tunnel":
         return "Tunnel/GRE/IPsec 等隧道接口涉及封装、源/目的、MTU 和路由联动，需要人工复核"
     return "该模块需要人工复核"
+
+
+def _access_manual_review_reason() -> str:
+    return "准入认证涉及 802.1X/MAC/Portal/RADIUS、失败动作和接口绑定策略，跨厂商不能自动等价迁移，需要人工复核"
 
 
 def _extract_vlan_ids(text: str) -> list[str]:
@@ -2431,6 +2555,76 @@ def _redact_management_sensitive_line(line: str) -> str:
     redacted = re.sub(r"(\b(?:password|secret|shared-key|key)\b(?:\s+cipher)?\s+)\S+", r"\1<redacted>", line, flags=re.IGNORECASE)
     redacted = re.sub(r"(\bcommunity\s+(?:read|write)?\s*(?:cipher)?\s*)\S+", r"\1<redacted>", redacted, flags=re.IGNORECASE)
     return redacted
+
+
+def _redact_access_sensitive_line(line: str) -> str:
+    redacted = line
+    patterns = (
+        r"(\bkey\s+(?:authentication|accounting|authorization)\s+(?:cipher\s+)?)(?!<redacted>)\S+",
+        r"(\bradius(?:-server)?\s+(?:shared-key|key)\s+(?:cipher\s+)?)(?!<redacted>)\S+",
+        r"(\bpre-shared-key\s+(?:cipher\s+)?)(?!<redacted>)\S+",
+        r"(\b(?:password|secret|shared-key)\s+(?:cipher\s+)?)(?!<redacted>)\S+",
+        r"(\bcommunity\s+(?:read|write)?\s*(?:cipher)?\s*)(?!<redacted>)\S+",
+    )
+    for pattern in patterns:
+        redacted = re.sub(pattern, r"\1<redacted>", redacted, flags=re.IGNORECASE)
+    return redacted
+
+
+def _extract_access_binding_ref(line: str) -> bool:
+    stripped = line.strip()
+    return bool(
+        re.match(
+            r"^(?:authentication-profile\b|dot1x\b|mac-authentication\b|mab\b|access-session\b|authentication\s+(?:port-control|event|host-mode)\b|access-domain\b|portal\s+(?:enable|auth-network))",
+            stripped,
+            re.IGNORECASE,
+        )
+    )
+
+
+def _access_tags_from_text(text: str) -> set[str]:
+    tags = {"access-auth"}
+    if re.search(r"\bdot1x\b|dot1x-access-profile", text, re.IGNORECASE):
+        tags.add("dot1x")
+    if re.search(r"\bmac-authentication\b|mac-access-profile|\bmab\b", text, re.IGNORECASE):
+        tags.add("mac-auth")
+    if re.search(r"\bmab\b", text, re.IGNORECASE):
+        tags.add("mab")
+    if re.search(r"\bportal\b", text, re.IGNORECASE):
+        tags.add("portal")
+    if re.search(r"\bradius\b|radius-scheme", text, re.IGNORECASE):
+        tags.add("radius")
+    if re.search(r"\bauthentication\s+event\b|fail|critical|next-method", text, re.IGNORECASE):
+        tags.add("fail-policy")
+    return tags
+
+
+def _extract_access_auth_profile_name(text: str) -> str:
+    return _extract_first_match(text, r"^authentication-profile\s+(?:name\s+)?(\S+)")
+
+
+def _extract_access_profile_names(text: str, keywords: tuple[str, ...]) -> list[str]:
+    names: list[str] = []
+    for keyword in keywords:
+        names.extend(_extract_access_named_refs(text, rf"^{re.escape(keyword)}\s+(?:name\s+)?(\S+)"))
+    return _unique(names)
+
+
+def _extract_access_named_refs(text: str, pattern: str) -> list[str]:
+    refs: list[str] = []
+    for raw_line in text.splitlines():
+        match = re.search(pattern, raw_line.strip(), re.IGNORECASE)
+        if match:
+            refs.append(match.group(1))
+    return _unique(refs)
+
+
+def _extract_first_match(text: str, pattern: str) -> str:
+    for raw_line in text.splitlines():
+        match = re.search(pattern, raw_line.strip(), re.IGNORECASE)
+        if match:
+            return match.group(1)
+    return ""
 
 
 def _is_ospf_process_line(line: str) -> bool:

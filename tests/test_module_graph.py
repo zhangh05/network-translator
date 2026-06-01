@@ -1133,3 +1133,85 @@ def test_cache_hit_preserves_module_translation_contract():
     assert second["module_graph"]["modules"]
     assert second["module_translations"]["results"]
     assert second["module_translation_coverage"]["all_modules_accounted"] is True
+
+
+def test_access_authentication_profile_is_split_as_manual_review_module():
+    config = """authentication-profile name dot1x_authen_profile
+ dot1x-access-profile dot1x_access
+ mac-access-profile mac_access
+ access-domain corp force
+"""
+    graph = build_module_graph(config, vendor="huawei")
+    module = graph.by_feature("access.auth_profile")[0]
+
+    assert module.status == "manual_review"
+    assert "auth-profile:dot1x_authen_profile" in module.provides
+    assert "domain:corp" in module.consumes
+    assert "dot1x" in module.tags
+    assert "mac-auth" in module.tags
+    assert "准入认证" in module.manual_review_reason
+
+
+def test_access_interface_binding_links_interface_to_auth_profile():
+    config = """authentication-profile name dot1x_authen_profile
+ dot1x-access-profile dot1x_access
+#
+interface GigabitEthernet0/0/1
+ port link-type access
+ port default vlan 10
+ authentication-profile dot1x_authen_profile
+ dot1x enable
+ mac-authentication enable
+"""
+    graph = build_module_graph(config, vendor="huawei")
+    binding = graph.by_feature("access.interface_binding")[0]
+
+    assert binding.status == "manual_review"
+    assert "interface:GigabitEthernet0/0/1" in binding.consumes
+    assert "auth-profile:dot1x_authen_profile" in binding.consumes
+    assert "dot1x" in binding.tags
+    assert "mac-auth" in binding.tags
+    assert binding.depends_on
+    assert any(c["relation"] == "access_binding_uses_auth_profile" for c in graph.to_dict()["couplings"])
+
+
+def test_cisco_access_session_and_mab_are_access_interface_binding_modules():
+    config = """interface GigabitEthernet1/0/10
+ switchport mode access
+ authentication port-control auto
+ authentication event fail action next-method
+ mab
+ dot1x pae authenticator
+ access-session host-mode multi-auth
+"""
+    graph = build_module_graph(config, vendor="cisco")
+    binding = graph.by_feature("access.interface_binding")[0]
+
+    assert binding.status == "manual_review"
+    assert "interface:GigabitEthernet1/0/10" in binding.consumes
+    assert {"dot1x", "mab", "fail-policy"}.issubset(set(binding.tags))
+    assert "authentication event fail" in "\n".join(binding.source_lines)
+
+
+def test_access_portal_and_radius_domain_modules_are_manual_review():
+    config = """portal server PORTAL ip 10.10.10.10 url http://portal.example.local
+#
+radius scheme RAD1
+ primary authentication 10.10.10.20
+ key authentication cipher RadiusKey
+#
+domain corp
+ authentication lan-access radius-scheme RAD1
+ authorization lan-access radius-scheme RAD1
+ accounting lan-access radius-scheme RAD1
+"""
+    graph = build_module_graph(config, vendor="h3c")
+    features = {module.feature for module in graph.modules}
+    radius_modules = graph.by_feature("access.radius_binding")
+    domain_binding = next(module for module in radius_modules if "domain:corp" in module.provides)
+
+    assert "access.portal" in features
+    assert "access.radius_binding" in features
+    assert all(module.status == "manual_review" for module in radius_modules)
+    assert "radius-scheme:RAD1" in domain_binding.consumes
+    assert "RadiusKey" not in "\n".join(line for module in radius_modules for line in module.source_lines)

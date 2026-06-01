@@ -131,6 +131,16 @@ PRODUCT_CAPABILITY_BASELINE: tuple[CapabilitySpec, ...] = (
         "DHCP snooping, ARP inspection, source guard, port security, and storm control are recognized but require review.",
     ),
     CapabilitySpec(
+        "switch.access_authentication",
+        "SWITCH",
+        "Access authentication / NAC",
+        ("access.auth_profile", "access.dot1x", "access.mac_auth", "access.portal", "access.radius_binding", "access.interface_binding"),
+        "manual_review",
+        SWITCH_PLATFORMS,
+        ("Cisco IOS XE 802.1X Configuration Guide", "Huawei NAC Configuration Guide", "H3C Access Authentication Configuration Guide", "Ruijie 802.1X/MAB Configuration Guide"),
+        "802.1X, MAC authentication, Portal, RADIUS domain binding, and interface authorization behavior are recognized as coupled manual-review modules.",
+    ),
+    CapabilitySpec(
         "switch.stack_virtualization",
         "SWITCH",
         "Stacking / chassis virtualization",
@@ -853,6 +863,32 @@ arp anti-attack check user-bind enable
 port-security enable
 #
 storm-control broadcast min-rate 1000 max-rate 2000
+""",
+    ),
+    "switch.access_authentication": (
+        "huawei",
+        """authentication-profile name dot1x_authen_profile
+ dot1x-access-profile dot1x_access
+ mac-access-profile mac_access
+ access-domain corp force
+#
+dot1x-access-profile name dot1x_access
+#
+mac-access-profile name mac_access
+#
+portal server PORTAL ip 10.10.10.10
+#
+radius scheme RAD1
+ primary authentication 10.10.10.20
+ key authentication cipher SECRET
+#
+domain corp
+ authentication lan-access radius-scheme RAD1
+#
+interface GigabitEthernet0/0/1
+ authentication-profile dot1x_authen_profile
+ dot1x enable
+ mac-authentication enable
 """,
     ),
     "switch.stack_virtualization": (

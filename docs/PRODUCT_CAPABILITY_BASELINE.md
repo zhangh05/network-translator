@@ -54,6 +54,7 @@ The machine-readable source of truth is
 | switch.lldp | SWITCH | manual_review | l2.lldp |
 | switch.mac_table | SWITCH | manual_review | l2.mac_table |
 | switch.access_security | SWITCH | manual_review | l2.dhcp_snooping, l2.source_guard, l2.arp_security, l2.port_security, l2.storm_control |
+| switch.access_authentication | SWITCH | manual_review | access.auth_profile, access.dot1x, access.mac_auth, access.portal, access.radius_binding, access.interface_binding |
 | switch.stack_virtualization | SWITCH | manual_review | platform.stack |
 | switch.vxlan_evpn | SWITCH | manual_review | overlay.vxlan, overlay.evpn |
 | switch.edge_services | SWITCH | manual_review | l2.poe, l2.loop_detection |
