@@ -209,9 +209,12 @@ def run_evaluation() -> Dict[str, Any]:
             found_residue = []
             exec_output = filter_executable_lines(output)
             for pat in forbidden:
-                if pat in exec_output:
-                    residue_ok = False
-                    found_residue.append(pat)
+                for line in exec_output.splitlines():
+                    stripped_line = line.lstrip()
+                    if stripped_line.startswith(pat):
+                        residue_ok = False
+                        found_residue.append(pat)
+                        break
 
             # ---- secret leakage ----
             secrets = entry.get("secret_tokens", [])

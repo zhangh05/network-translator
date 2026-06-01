@@ -168,7 +168,7 @@ Machine-readable summary: **[docs/beta_acceptance_2026_05_25.json](./beta_accept
 ```
 BETA_READY = YES (conditional)
 ```
-- ✅ CI gate pass: 2345 passed, 0 regressions
+- ✅ CI gate pass: 2376 passed, 0 regressions
 - ✅ Output redaction P0 resolved (all API paths)
 - ⚠️ **Primary blocking**: GitHub Actions runner not yet validated
 - ⚠️ 13 known tolerated failures not yet resolved

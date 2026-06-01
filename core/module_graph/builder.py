@@ -8,7 +8,7 @@ from core.module_graph.models import ConfigModule, ModuleCoupling, ModuleDepende
 from core.parser.block_splitter import ConfigBlock, split_config_by_feature
 
 
-_MANUAL_REVIEW_FEATURES = {"unknown", "aaa", "qos"}
+_MANUAL_REVIEW_FEATURES = {"unknown", "aaa", "qos", "zone"}
 
 
 _GENERIC_MANUAL_REVIEW_FEATURES = {
@@ -29,6 +29,7 @@ _GENERIC_MANUAL_REVIEW_FEATURES = {
     "firewall.load_balance",
     "multicast.msdp",
     "ipv6.static_route",
+    "ipv6.prefix_list",
     "dhcpv6.pool",
     "dhcpv6.relay",
     "ipv6.nd_snooping",
@@ -43,6 +44,9 @@ _GENERIC_MANUAL_REVIEW_FEATURES = {
     "l2.mvrp",
     "l2.device_tracking",
     "l2.errdisable",
+    "l2.bpduguard",
+    "l2.hybrid",
+    "ospfv3.interface",
     "oam.ethernet",
     "oam.cfm",
     "monitor.span",
@@ -339,6 +343,8 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         specs.extend(_lacp_tuning_specs_from_interface(block))
         specs.extend(_advanced_interface_specs_from_interface(block))
         specs.extend(_access_binding_specs_from_interface(block))
+        specs.extend(_l2_security_specs_from_interface(block))
+        specs.extend(_routing_interface_specs_from_interface(block))
 
     return specs
 
@@ -1354,6 +1360,8 @@ def _advanced_manual_review_reason(feature: str) -> str:
         "l2.mvrp": "MVRP 动态 VLAN 注册会影响 VLAN 分发边界，需要人工复核",
         "l2.device_tracking": "Device Tracking/终端探测会影响绑定表和安全联动，需要人工复核",
         "l2.errdisable": "Errdisable 恢复原因和定时器会影响端口故障恢复，需要人工复核",
+        "l2.bpduguard": "BPDU Guard 会影响端口阻断和拓扑保护行为，需要人工复核",
+        "l2.hybrid": "Hybrid/Voice-VLAN/QinQ 端口标签行为跨厂商差异较大，需要人工复核",
         "oam.ethernet": "Ethernet OAM 检测、告警和链路保护语义需要人工复核",
         "oam.cfm": "CFM/Y.1731 维护域、级别和 MEP/MIP 映射需要人工复核",
         "monitor.span": "SPAN/镜像会复制生产流量，方向和目标端口需人工复核",
@@ -1383,11 +1391,14 @@ def _advanced_manual_review_reason(feature: str) -> str:
         "segment_routing.binding": "路由协议中的 Segment Routing 绑定会影响控制平面，需要人工复核",
         "ripng.process": "RIPng 版本、接口启用和重分发语义需要人工复核",
         "ospf.te": "OSPF TE/opaque LSA 会影响 TE 数据库和隧道选路，需要人工复核",
+        "ospfv3.interface": "OSPFv3 接口绑定、认证和邻居发现需要人工复核",
         "bgp.confederation": "BGP confederation 会改变 AS_PATH 语义和邻居设计，需要人工复核",
         "bgp.route_reflector": "BGP route-reflector-client 影响反射拓扑和路由传播，需要人工复核",
         "bgp.max_prefix": "BGP maximum-prefix 会触发邻居保护动作，需要人工复核",
         "bgp.gtsm": "BGP GTSM/TTL security 会影响邻居建立条件，需要人工复核",
         "bgp.graceful_restart": "BGP graceful-restart 影响重启收敛和转发表保持，需要人工复核",
+        "bgp.peer_group": "BGP peer-group/template 的引用范围、策略继承和邻居关联需要人工复核",
+        "bgp.activation": "BGP neighbor/peer activate/enable 的地址族作用域和策略影响需要人工复核",
         "pbr.track": "PBR track 联动会改变下一跳可用性判断，需要人工复核",
         "pbr.verify": "PBR verify-availability 会改变策略路由生效条件，需要人工复核",
         "interface.tunnel6": "IPv6 tunnel/6in4 隧道源目和封装模式需要人工复核",
@@ -1414,6 +1425,7 @@ def _advanced_manual_review_reason(feature: str) -> str:
         "firewall.ha": "防火墙 HA/HRP 会影响主备、会话同步和接口角色，需要人工复核",
         "firewall.vsys": "虚拟系统/多租户会改变资源、路由和策略隔离边界，需要人工复核",
         "firewall.routing": "防火墙路由实例/动态路由与安全域策略耦合，需要人工复核",
+        "ipv6.prefix_list": "IPv6 prefix-list 语义和路由匹配边界需要人工复核",
     }.get(feature, "高级网络能力跨厂商语义复杂，需要人工复核")
 
 
@@ -1457,6 +1469,88 @@ def _advanced_interface_specs_from_interface(block: ConfigBlock) -> list[_Module
     ]
     if urpf:
         specs.append(_manual_spec("security.urpf", min(n for n, _ in urpf), max(n for n, _ in urpf), [line for _, line in urpf], {f"interface:{interface_name}"}, {"security", "urpf"}))
+    return specs
+
+
+def _l2_security_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
+    interface_name = _extract_interface_name(block.lines[0])
+    if not interface_name:
+        return []
+    specs: list[_ModuleSpec] = []
+
+    lldp_entries = [
+        (block.start_line + offset, raw_line)
+        for offset, raw_line in enumerate(block.lines[1:], 1)
+        if re.match(r"^\s*(?:lldp|cdp)\b", raw_line, re.IGNORECASE)
+    ]
+    if lldp_entries:
+        specs.append(_manual_spec("l2.lldp", min(n for n, _ in lldp_entries), max(n for n, _ in lldp_entries), [line for _, line in lldp_entries], {f"interface:{interface_name}"}, {"l2", "lldp"}))
+
+    storm_entries = [
+        (block.start_line + offset, raw_line)
+        for offset, raw_line in enumerate(block.lines[1:], 1)
+        if re.match(r"^\s*(?:storm-control|broadcast-suppression|multicast-suppression|unicast-suppression)\b", raw_line, re.IGNORECASE)
+    ]
+    if storm_entries:
+        specs.append(_manual_spec("l2.storm_control", min(n for n, _ in storm_entries), max(n for n, _ in storm_entries), [line for _, line in storm_entries], {f"interface:{interface_name}"}, {"l2", "storm"}))
+
+    portsec_entries = [
+        (block.start_line + offset, raw_line)
+        for offset, raw_line in enumerate(block.lines[1:], 1)
+        if re.match(r"^\s*(?:switchport\s+)?port-security\b", raw_line, re.IGNORECASE)
+    ]
+    if portsec_entries:
+        specs.append(_manual_spec("l2.port_security", min(n for n, _ in portsec_entries), max(n for n, _ in portsec_entries), [line for _, line in portsec_entries], {f"interface:{interface_name}"}, {"l2", "port-security"}))
+
+    bpduguard_entries = [
+        (block.start_line + offset, raw_line)
+        for offset, raw_line in enumerate(block.lines[1:], 1)
+        if re.search(r"\bbpduguard\b|\bbpdu\s+guard\b", raw_line, re.IGNORECASE)
+    ]
+    if bpduguard_entries:
+        specs.append(_manual_spec("l2.bpduguard", min(n for n, _ in bpduguard_entries), max(n for n, _ in bpduguard_entries), [line for _, line in bpduguard_entries], {f"interface:{interface_name}"}, {"l2", "bpduguard"}))
+
+    hybrid_entries = [
+        (block.start_line + offset, raw_line)
+        for offset, raw_line in enumerate(block.lines[1:], 1)
+        if re.search(r"\bhybrid\b|\bvoice-vlan\b|\bqinq\b|\bdot1q-tunnel\b|\bvlan-stacking\b", raw_line, re.IGNORECASE)
+    ]
+    if hybrid_entries:
+        specs.append(_manual_spec("l2.hybrid", min(n for n, _ in hybrid_entries), max(n for n, _ in hybrid_entries), [line for _, line in hybrid_entries], {f"interface:{interface_name}"}, {"l2", "hybrid"}))
+
+    dhcpsnoop_entries = [
+        (block.start_line + offset, raw_line)
+        for offset, raw_line in enumerate(block.lines[1:], 1)
+        if re.search(r"\bdhcp\s+snooping\b|\bip\s+source\s+guard\b", raw_line, re.IGNORECASE)
+    ]
+    if dhcpsnoop_entries:
+        specs.append(_manual_spec("l2.dhcp_snooping", min(n for n, _ in dhcpsnoop_entries), max(n for n, _ in dhcpsnoop_entries), [line for _, line in dhcpsnoop_entries], {f"interface:{interface_name}"}, {"l2", "dhcp-snooping"}))
+
+    return specs
+
+
+def _routing_interface_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
+    interface_name = _extract_interface_name(block.lines[0])
+    if not interface_name:
+        return []
+    specs: list[_ModuleSpec] = []
+
+    ospfv3_entries = [
+        (block.start_line + offset, raw_line)
+        for offset, raw_line in enumerate(block.lines[1:], 1)
+        if re.match(r"^\s*(?:ospfv3|ipv6\s+router\s+ospf)\b", raw_line, re.IGNORECASE)
+    ]
+    if ospfv3_entries:
+        specs.append(_manual_spec("ospfv3.interface", min(n for n, _ in ospfv3_entries), max(n for n, _ in ospfv3_entries), [line for _, line in ospfv3_entries], {f"interface:{interface_name}"}, {"routing", "ospfv3", "interface"}))
+
+    isis_entries = [
+        (block.start_line + offset, raw_line)
+        for offset, raw_line in enumerate(block.lines[1:], 1)
+        if re.match(r"^\s*isis\s+\b", raw_line, re.IGNORECASE) and not re.match(r"^\s*isis\s+\d+\b", raw_line, re.IGNORECASE)
+    ]
+    if isis_entries:
+        specs.append(_manual_spec("isis.interface_tuning", min(n for n, _ in isis_entries), max(n for n, _ in isis_entries), [line for _, line in isis_entries], {f"interface:{interface_name}"}, {"routing", "isis", "interface"}))
+
     return specs
 
 
@@ -1645,6 +1739,8 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return "ipv6.ra_guard"
     if re.match(r"^ipv6\s+(?:route-static|route)\b", first, re.IGNORECASE):
         return "ipv6.static_route"
+    if re.match(r"^ipv6\s+(?:ip-prefix|prefix-list)\b", first, re.IGNORECASE):
+        return "ipv6.prefix_list"
     if re.match(r"^ipv6\s+access-list\b|^acl\s+ipv6\b", first, re.IGNORECASE):
         return "ipv6.acl"
     if re.match(r"^(?:dhcp\s+relay|ip\s+helper-address|dhcp\s+select\s+relay)\b", first, re.IGNORECASE):
@@ -2227,6 +2323,10 @@ def _bgp_risky_feature(line: str) -> str:
         return "bgp.policy"
     if re.match(r"^(?:import-route|redistribute|default-route-advertise)\b", line, re.IGNORECASE):
         return "bgp.redistribute"
+    if re.search(r"\bpeer-group\b|\btemplate\s+(?:peer-policy|peer-session)\b", line, re.IGNORECASE):
+        return "bgp.peer_group"
+    if re.search(r"\bactivate\b|\benable\b", line, re.IGNORECASE) and re.match(r"^(?:peer|neighbor)\b", line, re.IGNORECASE):
+        return "bgp.activation"
     if re.search(r"\bcommunity\b|local-preference|med\b|next-hop|update-source|connect-interface", line, re.IGNORECASE):
         return "bgp.attribute"
     return ""
@@ -2246,6 +2346,8 @@ def _bgp_manual_review_reason(feature: str, line: str) -> str:
         "bgp.max_prefix": "BGP maximum-prefix 可能触发邻居保护动作，需要人工复核",
         "bgp.gtsm": "BGP GTSM/TTL security 会影响邻居建立，需要人工复核",
         "bgp.graceful_restart": "BGP graceful-restart 会影响重启收敛，需要人工复核",
+        "bgp.peer_group": "BGP peer-group/template 的引用范围和策略继承需要人工复核",
+        "bgp.activation": "BGP neighbor/peer activate/enable 的地址族作用域需要人工复核",
     }
     return f"{reasons.get(feature, 'BGP 子命令需要人工复核')}: {line}"
 

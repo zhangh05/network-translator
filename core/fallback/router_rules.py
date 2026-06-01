@@ -162,7 +162,7 @@ def translate_routing_to_h3c(stripped: str, lower: str, indent: str, state: dict
     m = re.match(r"router\s+ospf\s+(\S+)", lower)
     if m:
         state["in_bgp"] = False
-        return stripped
+        return f"ospf {m.group(1)}"
     m = re.match(r"ospf\s+(\S+)", lower)
     if m:
         state["in_bgp"] = False
@@ -182,7 +182,7 @@ def translate_routing_to_h3c(stripped: str, lower: str, indent: str, state: dict
     m = re.match(r"router\s+bgp\s+(\S+)", lower)
     if m:
         state["in_bgp"] = True
-        return stripped
+        return f"bgp {m.group(1)}"
     m = re.match(r"bgp\s+(\S+)", lower)
     if m:
         state["in_bgp"] = True

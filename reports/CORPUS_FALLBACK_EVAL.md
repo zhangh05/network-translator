@@ -11,9 +11,9 @@
 | Metric | Value |
 |--------|-------|
 | Total (sample, target) pairs | 24 |
-| Passed | 22 |
-| Failed | 2 |
-| Pass rate | 91.7% |
+| Passed | 24 |
+| Failed | 0 |
+| Pass rate | 100.0% |
 | Secret leak count | 0 (no secrets leaked across any pair) |
 | P0 risk | No P0 blocking issue identified |
 
@@ -21,29 +21,27 @@
 
 | Domain | Total | Passed | Failed | Pass rate |
 |--------|-------|--------|--------|-----------|
-| FIREWALL | 8 | 7 | 1 | 87.5% |
-| ROUTER | 4 | 3 | 1 | 75.0% |
+| FIREWALL | 8 | 8 | 0 | 100.0% |
+| ROUTER | 4 | 4 | 0 | 100.0% |
 | SWITCH | 12 | 12 | 0 | 100.0% |
 
 ## By Vendor
 
 | Source vendor | Total | Passed | Failed |
 |--------------|-------|--------|--------|
-| cisco | 5 | 4 | 1 |
+| cisco | 5 | 5 | 0 |
 | dptech | 2 | 2 | 0 |
 | h3c | 3 | 3 | 0 |
 | hillstone | 2 | 2 | 0 |
 | huawei | 5 | 5 | 0 |
 | huawei_usg | 2 | 2 | 0 |
 | ruijie | 3 | 3 | 0 |
-| topsec | 2 | 1 | 1 |
+| topsec | 2 | 2 | 0 |
 
 ## Failed Pairs
 
 | sample_id | source_vendor | target_vendor | domain | manual_review_leak | forbidden_residue_hits | notes |
 |-----------|--------------|--------------|--------|-------------------|----------------------|-------|
-| rt-cisco-01 | cisco | h3c | ROUTER | — | router ospf; router bgp | Complex router with OSPF auth/stub, BGP password, route-map community. K-B coverage: track, auth, password, update-source are MANUAL_REVIEW; community is redacted. |
-| fw-topsec-01 | topsec | huawei_usg | FIREWALL | — | zone name | Topsec config with dangerous features (NAT, IPSec) and address-group. K-C: dangerous feature guards for nat, ipsec verified. |
 
 ## Output Files
 

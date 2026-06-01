@@ -1,8 +1,8 @@
 {
   "summary": {
     "total": 24,
-    "passed": 22,
-    "failed": 2,
+    "passed": 24,
+    "failed": 0,
     "by_domain": {
       "SWITCH": {
         "total": 12,
@@ -11,20 +11,20 @@
       },
       "ROUTER": {
         "total": 4,
-        "passed": 3,
-        "failed": 1
+        "passed": 4,
+        "failed": 0
       },
       "FIREWALL": {
         "total": 8,
-        "passed": 7,
-        "failed": 1
+        "passed": 8,
+        "failed": 0
       }
     },
     "by_vendor": {
       "cisco": {
         "total": 5,
-        "passed": 4,
-        "failed": 1
+        "passed": 5,
+        "failed": 0
       },
       "huawei": {
         "total": 5,
@@ -53,8 +53,8 @@
       },
       "topsec": {
         "total": 2,
-        "passed": 1,
-        "failed": 1
+        "passed": 2,
+        "failed": 0
       },
       "dptech": {
         "total": 2,
@@ -62,7 +62,7 @@
         "failed": 0
       }
     },
-    "pass_rate": 91.7
+    "pass_rate": 100.0
   },
   "results": [
     {
@@ -299,14 +299,11 @@
       "source_vendor": "cisco",
       "target_vendor": "h3c",
       "source_domain": "ROUTER",
-      "passed": false,
+      "passed": true,
       "manual_review_ok": true,
       "missing_manual_review": [],
-      "residue_ok": false,
-      "found_residue": [
-        "router ospf",
-        "router bgp"
-      ],
+      "residue_ok": true,
+      "found_residue": [],
       "secret_ok": true,
       "leaked_secrets": [],
       "missing_translations": [
@@ -416,13 +413,11 @@
       "source_vendor": "topsec",
       "target_vendor": "huawei_usg",
       "source_domain": "FIREWALL",
-      "passed": false,
+      "passed": true,
       "manual_review_ok": true,
       "missing_manual_review": [],
-      "residue_ok": false,
-      "found_residue": [
-        "zone name"
-      ],
+      "residue_ok": true,
+      "found_residue": [],
       "secret_ok": true,
       "leaked_secrets": [],
       "missing_translations": []

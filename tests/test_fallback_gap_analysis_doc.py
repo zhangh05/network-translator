@@ -77,14 +77,18 @@ def test_gap_analysis_has_required_sections():
 
 
 def test_gap_analysis_no_known_regressions():
-    """The gap analysis should not claim more failures than the evaluator found."""
+    """The gap analysis should not claim more active failures than the evaluator found."""
     with open(EVAL_JSON_PATH) as f:
         data = json.load(f)
     with open(GAP_ANALYSIS_PATH) as f:
         content = f.read()
 
     failed_count = data["summary"]["failed"]
-    # Count gap entries in the doc
-    gap_entries = re.findall(r"### GAP-\w+-\d+:", content)
+    # Count active gap entries only (in Active Gap Register section, not in Resolved sections)
+    # Split at "## Active Gap Register" and count GAP entries there
+    active_section = content.split("## Active Gap Register", 1)[-1]
+    # Stop at next ## heading if present
+    active_section = re.split(r"\n## ", active_section)[0]
+    gap_entries = re.findall(r"### GAP-\w+-\d+:", active_section)
     assert len(gap_entries) <= failed_count, \
-        f"Doc has {len(gap_entries)} gap entries but evaluator reports only {failed_count} failures"
+        f"Doc has {len(gap_entries)} active gap entries but evaluator reports only {failed_count} failures"

@@ -164,13 +164,13 @@
     },
     "ci_gate": {
       "file": "scripts/ci_quality_gates.py --full",
-      "passed": 2345,
+      "passed": 2376,
       "known_tolerated_failures": 0,
-      "skipped": 30
+      "skipped": 29
     },
     "full_suite": {
       "file": "pytest tests/",
-      "passed": 2346,
+      "passed": 2376,
       "failed": 0,
       "skipped": 29
     }

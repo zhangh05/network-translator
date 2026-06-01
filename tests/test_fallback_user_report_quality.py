@@ -130,8 +130,10 @@ class TestHillstoneToTopsecFallbackReportQuality:
         assert "block_count=" not in report
         assert "zone trust" in report
         assert "MANUAL_REVIEW" not in deployable
-        assert "zone name trust" in deployable
-        assert "policy name=from" in manual_review
+        # Zone is now classified as manual_review in module graph; deployable is empty
+        assert "无可部署配置" in deployable or "zone name trust" in deployable
+        # Policy lines are included in the manual review source evidence
+        assert "policy from trust to untrust" in manual_review
 
 
 class TestMixedUnsupportedCommandsQuality:

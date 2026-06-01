@@ -376,7 +376,7 @@ def _semantic_near_result(module: ConfigModule, from_vendor: str, to_vendor: str
         suggested = _ipv6_suggested_lines(module, from_vendor, to_vendor)
     elif module.feature in {"bfd.session", "mpls.ldp", "mpls.te", "mpls.l3vpn", "segment_routing", "segment_routing.binding"}:
         suggested = _transport_control_suggested_lines(module, from_vendor, to_vendor)
-    elif module.feature.startswith("firewall."):
+    elif module.feature.startswith("firewall.") or module.feature == "zone":
         suggested = _advanced_firewall_suggested_lines(module, from_vendor, to_vendor)
     elif module.feature.startswith(("l2.", "monitor.", "oam.", "security.")):
         suggested = _l2_security_monitor_suggested_lines(module, from_vendor, to_vendor)
@@ -386,6 +386,8 @@ def _semantic_near_result(module: ConfigModule, from_vendor: str, to_vendor: str
         suggested = _interface_range_suggested_lines(module, from_vendor, to_vendor)
     elif module.feature in {"nqa", "ip_sla", "eigrp", "dhcp.pool", "track"} or module.feature.startswith("interface.tunnel"):
         suggested = _service_tunnel_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature == "management.aaa":
+        suggested = _access_suggested_lines(module, from_vendor, to_vendor)
     elif module.feature.startswith("management.") or module.feature == "telemetry.flow":
         suggested = _management_advanced_suggested_lines(module, from_vendor, to_vendor)
     if not suggested:
@@ -474,6 +476,10 @@ def _route_policy_suggested_lines(module: ConfigModule, from_vendor: str, to_ven
     prefix = _extract_first(r"\b(?:if-match\s+ip-prefix|match\s+ip\s+address\s+prefix-list)\s+(\S+)", source_text)
     local_pref = _extract_first(r"\b(?:apply|set)\s+local-preference\s+(\S+)", source_text)
     med = _extract_first(r"\b(?:apply|set)\s+(?:cost|metric|med)\s+(\S+)", source_text)
+    community = _extract_first(r"\b(?:apply|set)\s+community\s+(\S+)", source_text)
+    as_path = _extract_first(r"\b(?:if-match\s+as-path|match\s+as-path)\s+(\S+)", source_text)
+    comm_filter = _extract_first(r"\b(?:if-match\s+community|match\s+community)\s+(\S+)", source_text)
+    next_hop = _extract_first(r"\b(?:apply\s+ip-address\s+next-hop|set\s+ip\s+next-hop)\s+(\S+)", source_text)
 
     if target == "cisco":
         lines = [f"route-map {name} {action} {seq}"]
@@ -481,12 +487,21 @@ def _route_policy_suggested_lines(module: ConfigModule, from_vendor: str, to_ven
             lines.append(f" match ip address prefix-list {prefix}")
         elif acl:
             lines.append(f" match ip address {acl}")
+        if as_path:
+            lines.append(f" match as-path {as_path}")
+        if comm_filter:
+            lines.append(f" match community {comm_filter}")
         if local_pref:
             lines.append(f" set local-preference {local_pref}")
         if med:
             lines.append(f" set metric {med}")
+        if community:
+            lines.append(f" set community <redacted>")
+        if next_hop:
+            lines.append(f" set ip next-hop {next_hop}")
         if len(lines) == 1:
             lines.append(" ! confirm match/set clauses manually")
+        lines.append(_comment_for(target, "confirm route-policy order/action manually"))
         return lines
 
     lines = [f"route-policy {name} {action} node {seq}"]
@@ -494,12 +509,21 @@ def _route_policy_suggested_lines(module: ConfigModule, from_vendor: str, to_ven
         lines.append(f" if-match ip-prefix {prefix}")
     elif acl:
         lines.append(f" if-match acl {acl}")
+    if as_path:
+        lines.append(f" if-match as-path {as_path}")
+    if comm_filter:
+        lines.append(f" if-match community-filter {comm_filter}")
     if local_pref:
         lines.append(f" apply local-preference {local_pref}")
     if med:
         lines.append(f" apply cost {med}")
+    if community:
+        lines.append(f" apply community <redacted>")
+    if next_hop:
+        lines.append(f" apply ip-address next-hop {next_hop}")
     if len(lines) == 1:
         lines.append(" # confirm match/apply clauses manually")
+    lines.append(_comment_for(target, "confirm route-policy order/action manually"))
     return lines
 
 
@@ -563,6 +587,11 @@ def _bgp_advanced_suggested_lines(module: ConfigModule, from_vendor: str, to_ven
         return ["bgp graceful-restart", comment] if target == "cisco" else ["graceful-restart", comment]
     if module.feature == "bgp.password":
         return [f"neighbor {peer} password <redacted>", _comment_for(target, "confirm BGP authentication key manually")]
+    if module.feature == "bgp.peer_group":
+        pg = _extract_first(r"\bpeer-group\s+(\S+)", source_text) or _extract_first(r"\btemplate\s+(?:peer-policy|peer-session)\s+(\S+)", source_text) or "<peer-group>"
+        return [f"neighbor {peer} peer-group {pg}", _comment_for(target, "confirm peer-group scope, inheritance, and policy attachment manually")] if target == "cisco" else [f"peer {peer} group {pg}", _comment_for(target, "confirm peer-group scope, inheritance, and policy attachment manually")]
+    if module.feature == "bgp.activation":
+        return [f"neighbor {peer} activate", _comment_for(target, "confirm address-family scope and neighbor activation manually")] if target == "cisco" else [f"peer {peer} enable", _comment_for(target, "confirm address-family scope and neighbor activation manually")]
     if module.feature in {"bgp.redistribute", "bgp.attribute", "bgp.unknown"}:
         return [_comment_for(target, "confirm BGP redistribution/attribute semantics manually")]
     return []
@@ -638,17 +667,55 @@ def _management_suggested_lines(module: ConfigModule, from_vendor: str, to_vendo
             if target == "cisco":
                 return ["snmp-server community <redacted> RO"]
             return ["snmp-agent community read cipher <redacted>"]
+        if re.search(r"\bgroup\b", source_text, re.IGNORECASE):
+            name = _extract_first(r"\bgroup\s+(\S+)", source_text) or "<group>"
+            return [f"snmp-server group {name} v3 priv" if target == "cisco" else f"snmp-agent group {name} v3 privacy", _comment_for(target, "confirm SNMP group security level and view manually")]
+        if re.search(r"\buser\b", source_text, re.IGNORECASE):
+            user = _extract_first(r"\buser\s+(\S+)", source_text) or "<user>"
+            return [f"snmp-server user {user} <group> v3 auth sha <redacted>" if target == "cisco" else f"snmp-agent usm-user v3 {user} <group> authentication-mode sha <redacted>", _comment_for(target, "confirm SNMP user auth/priv and group manually")]
+        if re.search(r"\b(?:host|trap-host|target-host)\b", source_text, re.IGNORECASE):
+            host = _extract_first(r"\b(?:host|trap-host|target-host)\s+(\d+\.\d+\.\d+\.\d+)", source_text) or "<host>"
+            return [f"snmp-server host {host} version 2c public" if target == "cisco" else f"snmp-agent target-host trap address udp-domain {host}", _comment_for(target, "confirm SNMP trap community and version manually")]
         return []
     if module.feature == "management.logging":
         hosts = _unique(re.findall(r"\b(?:loghost|logging\s+host)\s+(\d+\.\d+\.\d+\.\d+)", source_text, flags=re.IGNORECASE))
+        source_iface = _extract_first(r"\b(?:source-interface|source)\s+(\S+)", source_text)
+        lines: list[str] = []
         if target == "cisco":
-            return [f"logging host {host}" for host in hosts]
-        return [f"info-center loghost {host}" for host in hosts]
+            lines.extend(f"logging host {host}" for host in hosts)
+            if source_iface:
+                lines.append(f"logging source-interface {source_iface}")
+        else:
+            lines.extend(f"info-center loghost {host}" for host in hosts)
+            if source_iface:
+                lines.append(f"info-center loghost source {source_iface}")
+        if not lines:
+            return []
+        lines.append(_comment_for(target, "confirm syslog facility/severity and source interface manually"))
+        return lines
     if module.feature == "management.ntp":
         servers = _unique(re.findall(r"\b(?:unicast-server|ntp\s+server)\s+(\d+\.\d+\.\d+\.\d+)", source_text, flags=re.IGNORECASE))
+        source_iface = _extract_first(r"\b(?:source-interface|source)\s+(\S+)", source_text)
+        vrf = _extract_first(r"\bvrf\s+(\S+)", source_text)
+        lines: list[str] = []
         if target == "cisco":
-            return [f"ntp server {server}" for server in servers]
-        return [f"ntp-service unicast-server {server}" for server in servers]
+            for server in servers:
+                prefix = f"ntp server {server}"
+                if vrf:
+                    prefix += f" vrf {vrf}"
+                if source_iface:
+                    prefix += f" source {source_iface}"
+                lines.append(prefix)
+        else:
+            for server in servers:
+                prefix = f"ntp-service unicast-server {server}"
+                if source_iface:
+                    prefix += f" source-interface {source_iface}"
+                lines.append(prefix)
+        if not lines:
+            return []
+        lines.append(_comment_for(target, "confirm NTP authentication, stratum, and VRF manually"))
+        return lines
     return []
 
 
@@ -859,6 +926,38 @@ def _access_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: s
         return lines
     if module.feature == "access.portal":
         return [_comment_for(target, "confirm portal server and redirect behavior manually")]
+    if module.feature == "management.aaa":
+        lines: list[str] = []
+        if re.search(r"\bradius\b", source_text, re.IGNORECASE):
+            server = _extract_first(r"\b(?:primary\s+authentication|server)\s+(\d+\.\d+\.\d+\.\d+)", source_text) or "<server>"
+            key = _extract_first(r"\b(?:key|shared-key|cipher)\s+(\S+)", source_text)
+            if target == "cisco":
+                lines.append(f"radius server RADIUS-{server}")
+                lines.append(f" address ipv4 {server} auth-port 1812 acct-port 1813")
+                if key:
+                    lines.append(f" key <redacted>")
+            else:
+                lines.append(f"radius-server template RADIUS-{server}")
+                lines.append(f" radius-server authentication {server} 1812")
+                if key:
+                    lines.append(f" radius-server shared-key cipher <redacted>")
+        if re.search(r"\btacacs\b", source_text, re.IGNORECASE):
+            server = _extract_first(r"\b(?:primary\s+authentication|server)\s+(\d+\.\d+\.\d+\.\d+)", source_text) or "<server>"
+            key = _extract_first(r"\b(?:key|shared-key|cipher)\s+(\S+)", source_text)
+            if target == "cisco":
+                lines.append(f"tacacs server TACACS-{server}")
+                lines.append(f" address ipv4 {server}")
+                if key:
+                    lines.append(f" key <redacted>")
+            else:
+                lines.append(f"hwtacacs-server template TACACS-{server}")
+                lines.append(f" hwtacacs-server authentication {server}")
+                if key:
+                    lines.append(f" hwtacacs-server shared-key cipher <redacted>")
+        if not lines:
+            lines.append("aaa new-model" if target == "cisco" else "aaa")
+        lines.append(_comment_for(target, "confirm AAA authentication domain and fallback manually"))
+        return lines
     return []
 
 
@@ -868,10 +967,20 @@ def _policy_filter_suggested_lines(module: ConfigModule, from_vendor: str, to_ve
     if module.feature == "route_filter":
         name = _first_resource_value(module.provides, "route-filter:") or _extract_route_filter_name(source_text)
         prefix = _extract_first(r"\b(?:permit|deny)\s+(\d+\.\d+\.\d+\.\d+)\s+(?:\d+\s+)?(\d+)?", source_text)
+        as_path = _extract_first(r"\b(?:ip\s+)?as-path-filter\s+(\S+)", source_text)
+        comm_filter = _extract_first(r"\b(?:ip\s+)?community-filter\s+(\S+)", source_text)
         if target == "cisco":
+            if as_path:
+                return [f"ip as-path access-list {as_path} permit ^$", "! confirm AS-path regex and filter action manually"]
+            if comm_filter:
+                return [f"ip community-list standard {comm_filter} permit <redacted>", "! confirm community values and filter action manually"]
             lines = [f"ip prefix-list {name} seq 10 permit {prefix or '<confirm-prefix>'}"]
             lines.append("! confirm prefix length, ge/le, AS-path/community filters manually")
             return lines
+        if as_path:
+            return [f"ip as-path-filter {as_path} permit ^$", "# confirm AS-path regex and filter action manually"]
+        if comm_filter:
+            return [f"ip community-filter {comm_filter} permit <redacted>", "# confirm community values and filter action manually"]
         return [f"ip ip-prefix {name} index 10 permit {prefix or '<confirm-prefix>'}", "# confirm prefix length and filter type manually"]
 
     if module.feature == "pbr.policy":
@@ -959,6 +1068,14 @@ def _ipv6_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str
     if module.feature == "ipv6.acl":
         name = _extract_first(r"\b(?:ipv6\s+access-list|acl\s+ipv6)\s+(\S+)", source_text) or "V6-ACL"
         return [f"ipv6 access-list {name}", _comment_for(target, "confirm IPv6 ACL entries, extension headers, and bindings manually")]
+    if module.feature == "ipv6.prefix_list":
+        name = _extract_first(r"\bipv6\s+(?:ip-prefix|prefix-list)\s+(\S+)", source_text) or "V6-PL"
+        prefix = _extract_first(r"\b(?:permit|deny)\s+([0-9a-fA-F:]+/\d+)", source_text) or "<prefix>"
+        return [f"ipv6 prefix-list {name} seq 10 permit {prefix}" if target == "cisco" else f"ipv6 ip-prefix {name} index 10 permit {prefix}", _comment_for(target, "confirm IPv6 prefix length and ge/le options manually")]
+    if module.feature == "ospfv3.interface":
+        process = _extract_first(r"\b(?:ospfv3|ipv6\s+router\s+ospf)\s+(\S+)", source_text) or "1"
+        area = _extract_first(r"\barea\s+(\S+)", source_text) or "0"
+        return [f"ipv6 ospf {process} area {area}" if target == "cisco" else f"ospfv3 {process} area {area}", _comment_for(target, "confirm OSPFv3 interface authentication and network type manually")]
     if module.feature == "ospfv3.process":
         process = _extract_first(r"\b(?:ospfv3|ospf|router\s+ospfv3|ipv6\s+router\s+ospf)\s+(\S+)", source_text) or "1"
         return [f"ipv6 router ospf {process}" if target == "cisco" else f"ospfv3 {process}", _comment_for(target, "confirm OSPFv3 area/interface/authentication manually")]
@@ -1046,6 +1163,14 @@ def _advanced_firewall_suggested_lines(module: ConfigModule, from_vendor: str, t
     if module.feature == "firewall.routing":
         vrf = _extract_first(r"\brouting-instance\s+(\S+)", source_text) or "<vrf>"
         return [f"firewall routing-instance {vrf}", _comment_for(target, "confirm route table, zones, and policy coupling manually")]
+    if module.feature == "zone":
+        zone_name = _extract_first(r"\b(?:zone|security-zone)\s+(?:name\s+)?(\S+)", source_text) or "<zone>"
+        iface = _extract_first(r"\b(?:add\s+)?interface\s+(\S+)", source_text)
+        lines = [f"security-zone name {zone_name}" if target != "cisco" else f"zone {zone_name}"]
+        if iface:
+            lines.append(f" add interface {iface}" if target != "cisco" else f" interface {iface}")
+        lines.append(_comment_for(target, "confirm zone interface binding and security policy coupling manually"))
+        return lines
     if module.feature.startswith("firewall."):
         family = module.feature.split(".", 1)[1].replace("_", "-")
         return [f"{family} profile <confirm-name>", _comment_for(target, f"confirm {family} feature semantics and licensing manually")]
@@ -1096,6 +1221,17 @@ def _l2_security_monitor_suggested_lines(module: ConfigModule, from_vendor: str,
     if module.feature == "l2.storm_control":
         level = _extract_first(r"\blevel\s+(\S+)", source_text) or "<level>"
         return [f"storm-control broadcast level {level}", _comment_for(target, "confirm unit, direction, and action manually")]
+    if module.feature == "l2.bpduguard":
+        return ["spanning-tree bpduguard enable" if target == "cisco" else "stp bpdu-protection", _comment_for(target, "confirm BPDU Guard action and recovery manually")]
+    if module.feature == "l2.hybrid":
+        pvid = _extract_first(r"\bpvid\s+vlan\s+(\d+)", source_text) or _extract_first(r"\bdefault\s+vlan\s+(\d+)", source_text) or "<pvid>"
+        voice = _extract_first(r"\bvoice-vlan\s+(\d+)", source_text)
+        lines = [f"switchport mode hybrid" if target == "cisco" else f"port link-type hybrid"]
+        lines.append(f" switchport hybrid pvid vlan {pvid}" if target == "cisco" else f" port hybrid pvid vlan {pvid}")
+        if voice:
+            lines.append(f" switchport voice vlan {voice}" if target == "cisco" else f" voice-vlan {voice} enable")
+        lines.append(_comment_for(target, "confirm hybrid VLAN tagging, untagged/tagged scope, and voice VLAN manually"))
+        return lines
     if module.feature == "monitor.span":
         session = _extract_first(r"\b(?:monitor|span)\s+session\s+(\S+)", source_text) or "1"
         return [f"monitor session {session} source interface <confirm-source>", f"monitor session {session} destination interface <confirm-destination>", _comment_for(target, "confirm direction and destination port shutdown behavior manually")]
@@ -1148,6 +1284,31 @@ def _interface_range_suggested_lines(module: ConfigModule, from_vendor: str, to_
     range_spec = _extract_first(r"^interface\s+range\s+(.+)$", first)
     if target == "cisco":
         lines = [f"interface range {range_spec}" if range_spec else "interface range <confirm-range>"]
+        for raw_line in module.source_lines[1:]:
+            stripped = raw_line.strip()
+            if not stripped:
+                continue
+            if re.match(r"^(description|shutdown|no\s+shutdown)\b", stripped, re.IGNORECASE):
+                lines.append(f" {stripped}")
+            elif re.match(r"^switchport\s+mode\s+access\b", stripped, re.IGNORECASE):
+                lines.append(" switchport mode access")
+                vlan = _extract_first(r"switchport\s+access\s+vlan\s+(\d+)", stripped)
+                if vlan:
+                    lines.append(f" switchport access vlan {vlan}")
+            elif re.match(r"^switchport\s+mode\s+trunk\b", stripped, re.IGNORECASE):
+                lines.append(" switchport mode trunk")
+                allowed = _extract_first(r"switchport\s+trunk\s+allowed\s+vlan\s+([\d,]+)", source_text)
+                native = _extract_first(r"switchport\s+trunk\s+native\s+vlan\s+(\d+)", source_text)
+                if allowed:
+                    lines.append(f" switchport trunk allowed vlan {allowed}")
+                if native:
+                    lines.append(f" switchport trunk native vlan {native}")
+            elif re.search(r"storm-control", stripped, re.IGNORECASE):
+                lines.append(f" {stripped}")
+            elif re.search(r"port-security", stripped, re.IGNORECASE):
+                lines.append(f" {stripped}")
+            elif re.search(r"bpduguard", stripped, re.IGNORECASE):
+                lines.append(f" spanning-tree bpduguard enable")
         lines.append(_comment_for(target, "confirm range member expansion and sub-command scope manually"))
         return lines
     lines = ["port-group <confirm-group>"]
@@ -1159,8 +1320,24 @@ def _interface_range_suggested_lines(module: ConfigModule, from_vendor: str, to_
             lines.append(f" {stripped}")
         elif re.match(r"^switchport\s+mode\s+access\b", stripped, re.IGNORECASE):
             lines.append(" port link-type access")
+            vlan = _extract_first(r"switchport\s+access\s+vlan\s+(\d+)", stripped)
+            if vlan:
+                lines.append(f" port default vlan {vlan}")
         elif re.match(r"^switchport\s+mode\s+trunk\b", stripped, re.IGNORECASE):
             lines.append(" port link-type trunk")
+            allowed = _extract_first(r"switchport\s+trunk\s+allowed\s+vlan\s+([\d,]+)", source_text)
+            native = _extract_first(r"switchport\s+trunk\s+native\s+vlan\s+(\d+)", source_text)
+            if allowed:
+                lines.append(f" port trunk allow-pass vlan {allowed}")
+            if native:
+                lines.append(f" port trunk pvid vlan {native}")
+        elif re.search(r"storm-control", stripped, re.IGNORECASE):
+            level = _extract_first(r"storm-control\s+\S+\s+level\s+(\S+)", stripped) or "<level>"
+            lines.append(f" broadcast-suppression {level}")
+        elif re.search(r"port-security", stripped, re.IGNORECASE):
+            lines.append(" port-security enable")
+        elif re.search(r"bpduguard", stripped, re.IGNORECASE):
+            lines.append(" stp bpdu-protection")
     lines.append(_comment_for(target, "confirm port-group members, interface range expansion, and sub-commands manually"))
     return lines
 
@@ -1286,6 +1463,25 @@ def _management_advanced_suggested_lines(module: ConfigModule, from_vendor: str,
                     lines.append(" authentication-mode aaa")
             elif re.match(r"^exec-timeout\b", stripped, re.IGNORECASE):
                 timeout = _extract_first(r"exec-timeout\s+(.+)", stripped)
+                if target == "cisco":
+                    lines.append(f" exec-timeout {timeout}" if timeout else " exec-timeout 10 0")
+                else:
+                    lines.append(f" idle-timeout {timeout}" if timeout else " idle-timeout 10 0")
+            elif re.match(r"^(?:access-class|acl)\b", stripped, re.IGNORECASE):
+                acl = _extract_first(r"(?:access-class|acl)\s+(\S+)", stripped) or "<acl>"
+                direction = _extract_first(r"(?:access-class|acl)\s+\S+\s+(in|out)", stripped) or "in"
+                if target == "cisco":
+                    lines.append(f" access-class {acl} {direction}")
+                else:
+                    lines.append(f" acl {acl} {direction}")
+            elif re.match(r"^(?:privilege|user-privilege)\b", stripped, re.IGNORECASE):
+                level = _extract_first(r"(?:privilege|user-privilege)\s+(\d+)", stripped) or "15"
+                if target == "cisco":
+                    lines.append(f" privilege level {level}")
+                else:
+                    lines.append(f" user-privilege {level}")
+            elif re.match(r"^idle-timeout\b", stripped, re.IGNORECASE):
+                timeout = _extract_first(r"idle-timeout\s+(.+)", stripped)
                 if target == "cisco":
                     lines.append(f" exec-timeout {timeout}" if timeout else " exec-timeout 10 0")
                 else:
