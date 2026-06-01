@@ -454,3 +454,21 @@ class TestProjectTranslationStatusUX:
         snippet = html[save_start:save_end]
         assert "translation_status" not in snippet, \
             "ordinary project saves must not clear backend-owned in-flight translation state"
+
+    def test_translation_polling_can_recover_completed_server_result(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "function startTranslationPoll" in html, \
+            "frontend needs polling to recover when the POST response is delayed or missed"
+        assert "syncActiveProjectFromServer" in html, \
+            "polling should reuse one server-sync helper"
+        assert "translation_status===\"translating\"" in html, \
+            "polling should continue while backend says the project is still translating"
+
+    def test_translation_timeout_message_points_to_saved_result_refresh(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "已超过 3 分钟" in html, \
+            "long-running LLM calls need an honest message after the normal window"
+        assert "正在尝试从服务端刷新结果" in html, \
+            "timeout message should tell users the saved project result is being checked"

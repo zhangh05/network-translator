@@ -8,7 +8,7 @@ from core.domain.detector import DomainDetector, DomainDetectionResult
 # DomainDetector from core.domain.detector instead.
 from core.domain_legacy import (
     ALL_DOMAINS, ALL_VENDORS, DOMAIN_VENDORS, VENDOR_PLATFORMS,
-    detect_domain, detect_platform,
+    detect_domain, detect_platform, get_all_features,
 )
 
 __all__ = [
@@ -18,4 +18,5 @@ __all__ = [
     # Legacy graph compatibility (do not use in new code)
     "detect_domain", "detect_platform",
     "ALL_DOMAINS", "ALL_VENDORS", "DOMAIN_VENDORS", "VENDOR_PLATFORMS",
+    "get_all_features",
 ]

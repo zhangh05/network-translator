@@ -494,6 +494,7 @@ E("td").addEventListener("change",rebuildPlatformSelects);
 var PROJS=[];
 var ACTIVE="";
 var R={result:null,tab:"translated",t0:0,request_id:"",version:"",model:""};
+var TRANSLATION_POLL_TIMER=null;
 
 async function api(method,url,body){
   var opt={method:method,headers:H()};
@@ -539,6 +540,65 @@ async function createProject(){
     try{localStorage.setItem("nt_active_v2",ACTIVE);localStorage.setItem("nt_projects_v2",JSON.stringify(PROJS))}catch(_){}
     renderSidebar();loadActive()
   }
+}
+
+async function syncActiveProjectFromServer(projectId,opts){
+  opts=opts||{};
+  if(!projectId)return null;
+  try{
+    var sr=await fetch("/api/projects/"+projectId,{headers:H()});
+    if(!sr.ok)return null;
+    var sp=await sr.json();
+    if(!sp.ok||!sp.project)return null;
+    var p=sp.project;
+    var local=PROJS.find(function(x){return x.id===projectId});
+    if(local){
+      local.result=p.result||null;
+      local.request_id=p.request_id||"";
+      local.version=p.version||"";
+      local.model=p.model||"";
+      local.config=p.config_text||local.config||"";
+      local.from=p.from_vendor||local.from||"auto";
+      local.to=p.to_vendor||local.to||"huawei";
+      local.sd=p.source_domain||local.sd||"";
+      local.sp=p.source_platform||local.sp||"";
+      local.td=p.target_domain||local.td||"";
+      local.tp=p.target_platform||local.tp||"";
+      local.translation_status=p.translation_status||"idle";
+      local.active_request_id=p.active_request_id||"";
+      local.active_translate_hash=p.active_translate_hash||"";
+      local.translation_started_at=p.translation_started_at||"";
+      if(projectId===ACTIVE&&(opts.render||local.result||local.translation_status!=="translating")){
+        loadActive();
+      }else{
+        renderSidebar();
+      }
+    }
+    return p
+  }catch(_){return null}
+}
+
+function stopTranslationPoll(){
+  if(TRANSLATION_POLL_TIMER){clearInterval(TRANSLATION_POLL_TIMER);TRANSLATION_POLL_TIMER=null}
+}
+
+function startTranslationPoll(projectId){
+  stopTranslationPoll();
+  TRANSLATION_POLL_TIMER=setInterval(async function(){
+    var p=await syncActiveProjectFromServer(projectId,{render:false});
+    if(!p)return;
+    if(p.result||p.translation_status!=="translating"){
+      stopTranslationPoll();
+      if(projectId===ACTIVE){
+        await syncActiveProjectFromServer(projectId,{render:true});
+        E("tbtn").disabled=false;E("tbtn").textContent="翻译";
+        E("bwarn").classList.add("h");E("pphase").textContent="";
+        E("bm").textContent="就绪";
+        bannerShow(p.result?"ok":"warn",p.result?"已从服务端刷新翻译结果":"翻译已结束，请查看项目状态");
+      }
+    }
+  },3000);
+  return stopTranslationPoll
 }
 
 async function deleteProject(id){
@@ -1245,16 +1305,19 @@ async function TL(){
   bannerClear();
   E("tbtn").disabled=true;E("tbtn").textContent="翻译中...";
   E("out").innerHTML="";E("cbtn").disabled=true;E("pphase").textContent="";E("bwarn").classList.add("h");
-  R.t0=Date.now();R._warned=false;
+  R.t0=Date.now();R._warned=false;R._longWarned=false;
+  var stopPoll=null;
   var phaseTimer=setInterval(function(){
     var sec=(Date.now()-R.t0)/1000;
     if(sec<2)setPhase(0);else if(sec<3)setPhase(1);else setPhase(2);
     if(sec>30&&!R._warned){R._warned=true;E("bwarn").classList.remove("h")}
+    if(sec>180&&!R._longWarned){R._longWarned=true;bannerShow("warn","已超过 3 分钟，正在尝试从服务端刷新结果；如果页面仍未变化，可以刷新页面查看已保存结果。")}
     E("bt").textContent=sec.toFixed(0)+"s"
   },200);
   try{
     var pid=PROJS.find(function(x){return x.id===ACTIVE});if(!pid)throw new Error("no active project");
     pid.translation_status="translating";pid.active_request_id="";pid.active_translate_hash="";pid.translation_started_at=new Date().toISOString();renderSidebar();
+    stopPoll=startTranslationPoll(pid.id);
     var body={config_text:c,from_vendor:E("fv").value,to_vendor:E("tv").value};
     var sd=E("sd").value,sp=E("sp").value,td=E("td").value,tp=E("tp").value;
     if(sd&&sd!="auto")body.source_domain=sd;if(sp&&sp!="auto")body.source_platform=sp;
@@ -1284,7 +1347,7 @@ async function TL(){
       bannerShow(R.result.success?"ok":"warn",R.result.fallback_used?"已使用规则兜底":"翻译成功");
     }
     // Reload project from server so all browsers see the same result
-    try{var sr=await fetch("/api/projects/"+pid.id,{headers:H()});if(sr.ok){var sp=await sr.json();if(sp.ok&&sp.project){var refreshed=PROJS.find(function(x){return x.id===ACTIVE});if(refreshed){refreshed.result=sp.project.result;refreshed.request_id=sp.project.request_id||R.request_id;refreshed.version=sp.project.version||R.version;refreshed.model=sp.project.model||R.model;refreshed.config=sp.project.config_text||c;refreshed.translation_status=sp.project.translation_status||"idle";refreshed.active_request_id=sp.project.active_request_id||"";refreshed.active_translate_hash=sp.project.active_translate_hash||"";refreshed.translation_started_at=sp.project.translation_started_at||"";refreshed.tab="translated"}}}}catch(_){}
+    await syncActiveProjectFromServer(pid.id,{render:false});
     renderSidebar()
   }catch(e){
     var ep=PROJS.find(function(x){return x.id===ACTIVE});if(ep){ep.translation_status="idle";ep.active_request_id="";ep.active_translate_hash="";ep.translation_started_at="";renderSidebar()}
@@ -1292,6 +1355,7 @@ async function TL(){
     bannerShow("fail","翻译失败")
   }finally{
     clearInterval(phaseTimer);
+    if(stopPoll)stopPoll();
     E("tbtn").disabled=false;E("tbtn").textContent="翻译";
     E("bwarn").classList.add("h");
     E("bt").textContent=R.t0?((Date.now()-R.t0)/1000).toFixed(1)+"s":"-";
