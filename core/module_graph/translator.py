@@ -344,6 +344,8 @@ def _semantic_near_result(module: ConfigModule, from_vendor: str, to_vendor: str
         suggested = _route_policy_suggested_lines(module, from_vendor, to_vendor)
     elif module.feature == "bgp.policy":
         suggested = _bgp_policy_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature.startswith("bgp."):
+        suggested = _bgp_advanced_suggested_lines(module, from_vendor, to_vendor)
     elif module.feature.startswith("fhrp."):
         suggested = _fhrp_suggested_lines(module, from_vendor, to_vendor)
     elif module.feature in ("dhcp.relay", "dhcp.relay.binding"):
@@ -378,6 +380,12 @@ def _semantic_near_result(module: ConfigModule, from_vendor: str, to_vendor: str
         suggested = _advanced_firewall_suggested_lines(module, from_vendor, to_vendor)
     elif module.feature.startswith(("l2.", "monitor.", "oam.", "security.")):
         suggested = _l2_security_monitor_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature.startswith(("platform.", "overlay.")):
+        suggested = _platform_overlay_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature in {"nqa", "ip_sla", "eigrp", "dhcp.pool"} or module.feature.startswith("interface.tunnel"):
+        suggested = _service_tunnel_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature.startswith("management.") or module.feature == "telemetry.flow":
+        suggested = _management_advanced_suggested_lines(module, from_vendor, to_vendor)
     if not suggested:
         return None
     reason = module.manual_review_reason or "该模块已生成语义相近建议，动作细节需人工确认"
@@ -516,6 +524,46 @@ def _bgp_policy_suggested_lines(module: ConfigModule, from_vendor: str, to_vendo
     if not lines:
         lines.append("# confirm BGP policy attachment manually" if target != "cisco" else "! confirm BGP policy attachment manually")
     return lines
+
+
+def _bgp_advanced_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    peer = _extract_first(r"\b(?:peer|neighbor)\s+(\S+)", source_text) or "<peer>"
+    value = _extract_first(r"\b(?:route-limit|maximum-prefix)\s+(\d+)", source_text)
+    ttl = _extract_first(r"\b(?:valid-ttl-hops|ttl-security\s+hops)\s+(\d+)", source_text)
+    confed = _extract_first(r"\b(?:confederation\s+(?:id|identifier))\s+(\S+)", source_text)
+    comment = _comment_for(target, "confirm BGP address-family, policy scope, and neighbor impact manually")
+
+    if module.feature == "bgp.vpnv4":
+        return ["address-family vpnv4", comment] if target == "cisco" else ["ipv4-family vpnv4", comment]
+    if module.feature == "bgp.evpn":
+        return ["address-family l2vpn evpn", comment] if target == "cisco" else ["l2vpn-family evpn", comment]
+    if module.feature == "bgp.flowspec":
+        return ["address-family ipv4 flowspec", comment] if target == "cisco" else ["ipv4-family flow", comment]
+    if module.feature == "bgp.confederation":
+        if target == "cisco":
+            return [f"bgp confederation identifier {confed or '<as>'}", comment]
+        return [f"confederation id {confed or '<as>'}", comment]
+    if module.feature == "bgp.route_reflector":
+        if target == "cisco":
+            return [f"neighbor {peer} route-reflector-client", comment]
+        return [f"peer {peer} reflect-client", comment]
+    if module.feature == "bgp.max_prefix":
+        if target == "cisco":
+            return [f"neighbor {peer} maximum-prefix {value or '<limit>'}", comment]
+        return [f"peer {peer} route-limit {value or '<limit>'}", comment]
+    if module.feature == "bgp.gtsm":
+        if target == "cisco":
+            return [f"neighbor {peer} ttl-security hops {ttl or '<hops>'}", comment]
+        return [f"peer {peer} valid-ttl-hops {ttl or '<hops>'}", comment]
+    if module.feature == "bgp.graceful_restart":
+        return ["bgp graceful-restart", comment] if target == "cisco" else ["graceful-restart", comment]
+    if module.feature == "bgp.password":
+        return [f"neighbor {peer} password <redacted>", _comment_for(target, "confirm BGP authentication key manually")]
+    if module.feature in {"bgp.redistribute", "bgp.attribute", "bgp.unknown"}:
+        return [_comment_for(target, "confirm BGP redistribution/attribute semantics manually")]
+    return []
 
 
 def _fhrp_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
@@ -981,6 +1029,115 @@ def _l2_security_monitor_suggested_lines(module: ConfigModule, from_vendor: str,
         return ["ip verify unicast source reachable-via rx", _comment_for(target, "confirm strict/loose mode and ACL exceptions manually")]
     if module.feature.startswith("l2."):
         return [f"{module.feature.replace('.', ' ')} <confirm-settings>", _comment_for(target, "confirm L2 feature semantics and failure action manually")]
+    return []
+
+
+def _platform_overlay_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    if module.feature == "platform.stack":
+        if target == "cisco":
+            return ["stackwise-virtual", "! confirm member ID, link ports, split-brain protection, and interface renumbering manually"]
+        return ["irf member <id> priority <priority>", "# confirm stack member IDs, ports, MAD, and interface renumbering manually"]
+    if module.feature == "overlay.vxlan":
+        vni = _extract_first(r"\b(?:vni|vxlan\s+vni)\s+(\d+)", source_text) or "<vni>"
+        source = _extract_first(r"\b(?:source|source-interface|nve\s+source-interface)\s+(\S+)", source_text)
+        lines = [f"vxlan vni {vni}" if target == "cisco" else f"vxlan vni {vni}"]
+        if source:
+            lines.append(f" source-interface {source}" if target == "cisco" else f" source {source}")
+        lines.append(_comment_for(target, "confirm VTEP source, flood list, gateway mode, and VLAN/VNI binding manually"))
+        return lines
+    if module.feature == "overlay.evpn":
+        rd = _extract_first(r"\b(?:route-distinguisher|rd)\s+(\S+)", source_text)
+        rt = _extract_first(r"\b(?:vpn-target|route-target)\s+(\S+)", source_text)
+        lines = ["l2vpn evpn" if target == "cisco" else "evpn"]
+        if rd:
+            lines.append(f" rd {rd}" if target == "cisco" else f" route-distinguisher {rd}")
+        if rt:
+            lines.append(f" route-target import/export {rt}" if target == "cisco" else f" vpn-target {rt} both")
+        lines.append(_comment_for(target, "confirm EVPN RT/RD direction, VNI mapping, and gateway semantics manually"))
+        return lines
+    return []
+
+
+def _service_tunnel_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    if module.feature == "nqa":
+        dest = _extract_first(r"\bdestination-address\s+(?:ipv4\s+)?(\d+\.\d+\.\d+\.\d+)", source_text) or "<target-ip>"
+        return ["ip sla 1", f" icmp-echo {dest}", _comment_for(target, "confirm frequency, timeout, threshold, and track binding manually")]
+    if module.feature == "ip_sla":
+        sla_id = _extract_first(r"\bip\s+sla\s+(\S+)", source_text) or "1"
+        dest = _extract_first(r"\bicmp-echo\s+(\d+\.\d+\.\d+\.\d+)", source_text) or "<target-ip>"
+        return [f"nqa test-instance admin sla{sla_id}", " test-type icmp", f" destination-address ipv4 {dest}", _comment_for(target, "confirm frequency, timeout, threshold, and track binding manually")]
+    if module.feature == "eigrp":
+        asn = _extract_first(r"\b(?:router\s+)?eigrp\s+(\S+)", source_text) or "<asn>"
+        network = _extract_first(r"\bnetwork\s+(\S+)", source_text)
+        lines = [f"router eigrp {asn}"]
+        if network:
+            lines.append(f" network {network}")
+        lines.append(_comment_for(target, "EIGRP is Cisco-specific; confirm migration to OSPF/IS-IS/BGP/static design manually"))
+        return lines
+    if module.feature == "dhcp.pool":
+        name = _first_resource_value(module.provides, "dhcp-pool:") or _extract_first(r"\b(?:ip\s+pool|ip\s+dhcp\s+pool)\s+(\S+)", source_text) or "POOL"
+        network = _extract_first(r"\bnetwork\s+(\d+\.\d+\.\d+\.\d+)(?:\s+(?:mask\s+)?(\d+\.\d+\.\d+\.\d+))?", source_text)
+        mask_match = re.search(r"\bnetwork\s+\d+\.\d+\.\d+\.\d+(?:\s+mask)?\s+(\d+\.\d+\.\d+\.\d+)", source_text, re.IGNORECASE)
+        gateway = _extract_first(r"\b(?:gateway-list|default-router)\s+(\d+\.\d+\.\d+\.\d+)", source_text)
+        dns = _extract_first(r"\b(?:dns-list|dns-server)\s+(\d+\.\d+\.\d+\.\d+)", source_text)
+        lines = [f"ip dhcp pool {name}" if target == "cisco" else f"ip pool {name}"]
+        if network:
+            mask = mask_match.group(1) if mask_match else "<mask>"
+            lines.append(f" network {network} {mask}" if target == "cisco" else f" network {network} mask {mask}")
+        if gateway:
+            lines.append(f" default-router {gateway}" if target == "cisco" else f" gateway-list {gateway}")
+        if dns:
+            lines.append(f" dns-server {dns}" if target == "cisco" else f" dns-list {dns}")
+        lines.append(_comment_for(target, "confirm lease, excluded addresses, option fields, and VRF manually"))
+        return lines
+    if module.feature.startswith("interface.tunnel"):
+        name = _first_resource_value(module.provides, "interface:") or _extract_first(r"\binterface\s+(\S+)", source_text) or "Tunnel0"
+        source = _extract_first(r"\b(?:source|tunnel\s+source)\s+(\S+)", source_text)
+        dest = _extract_first(r"\b(?:destination|tunnel\s+destination)\s+(\S+)", source_text)
+        mode = _extract_first(r"\b(?:tunnel-protocol|tunnel\s+mode)\s+(\S+)", source_text)
+        lines = [f"interface {name}"]
+        if source:
+            lines.append(f" tunnel source {source}")
+        if dest:
+            lines.append(f" tunnel destination {dest}")
+        if mode:
+            lines.append(f" tunnel mode {mode}")
+        lines.append(_comment_for(target, "confirm tunnel encapsulation, MTU, keepalive, VRF, and routing manually"))
+        return lines
+    return []
+
+
+def _management_advanced_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    if module.feature == "management.ssh":
+        if target == "cisco":
+            return ["ip ssh version 2", "! confirm users, AAA method list, VTY access-class, and ciphers manually"]
+        return ["stelnet server enable", "# confirm users, AAA scheme, access-class, and ciphers manually"]
+    if module.feature == "management.pki":
+        name = _extract_first(r"\b(?:pki\s+domain|crypto\s+pki\s+trustpoint)\s+(\S+)", source_text) or "PKI"
+        return [f"crypto pki trustpoint {name}" if target == "cisco" else f"pki domain {name}", _comment_for(target, "confirm CA enrollment, certificate chain, CRL/OCSP, and keypair manually")]
+    if module.feature == "management.aaa":
+        return ["aaa new-model" if target == "cisco" else "aaa", _comment_for(target, "confirm authentication/authorization/accounting methods and local users manually")]
+    if module.feature == "management.ntp_auth":
+        key_id = _extract_first(r"\b(?:authentication-key|authentication-keyid)\s+(\d+)", source_text) or "1"
+        return [f"ntp authentication-key {key_id} md5 <redacted>" if target == "cisco" else f"ntp authentication-key {key_id} md5 <redacted>", _comment_for(target, "confirm trusted key, source interface, and VRF manually")]
+    if module.feature == "management.netconf":
+        return ["netconf-yang" if target == "cisco" else "netconf ssh server enable", _comment_for(target, "confirm SSH, AAA, NACM/permissions, and TLS/port manually")]
+    if module.feature == "management.restconf":
+        return ["restconf", _comment_for(target, "confirm HTTPS certificate, AAA, RBAC, and API exposure manually")]
+    if module.feature == "management.telemetry":
+        return ["telemetry", _comment_for(target, "confirm subscription path, encoding, collector, source interface, and TLS manually")]
+    if module.feature == "telemetry.flow":
+        dest = _extract_first(r"\b(?:destination|collector)\s+(\d+\.\d+\.\d+\.\d+)", source_text) or "<collector-ip>"
+        port = _extract_first(r"\b(?:destination|collector)\s+\d+\.\d+\.\d+\.\d+\s+(\d+)", source_text) or "<port>"
+        if target == "cisco":
+            return ["flow exporter EXPORTER", f" destination {dest}", f" transport udp {port}", _comment_for(target, "confirm NetFlow/IPFIX version, sampling, and interface binding manually")]
+        return [f"ip netstream export host {dest} {port}", "# confirm NetStream/sFlow version, sampler, and interface binding manually"]
     return []
 
 

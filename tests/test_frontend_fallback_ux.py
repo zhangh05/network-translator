@@ -484,3 +484,41 @@ class TestProjectTranslationStatusUX:
             "long-running LLM calls need an honest message after the normal window"
         assert "正在尝试从服务端刷新结果" in html, \
             "timeout message should tell users the saved project result is being checked"
+
+class TestSemanticNearWorkbench:
+    def test_semantic_tab_has_workbench_controls(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        for token in (
+            "semantic-toolbar",
+            "semantic-search",
+            "data-semantic-filter",
+            "_setSemanticFilter",
+            "_semanticGroupForFeature",
+            "_semanticRiskForModule",
+        ):
+            assert token in html, f"semantic workbench token missing: {token}"
+
+    def test_semantic_tab_has_user_facing_filters(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        for label in ("全部", "需要确认", "已纳入可部署", "高风险", "路由", "安全", "二层", "IPv6"):
+            assert label in html, f"semantic filter label missing: {label}"
+
+    def test_semantic_tab_groups_by_module_family_and_risk(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        for label in ("模块族", "风险", "确认重点", "源行"):
+            assert label in html, f"semantic card should expose review metadata: {label}"
+
+    def test_semantic_tab_rendered_as_html_not_pre_wrapped(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert 'tab==="semantic"' in html, "RN() should special-case semantic tab rendering"
+        assert 'E("out").innerHTML=views.semantic' in html, "semantic tab should render HTML cards directly"
+
+    def test_semantic_export_still_contains_all_module_matches(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "semantic_near_matches:_semanticNearMatches(r,true)" in html, \
+            "export should include unfiltered semantic near matches"

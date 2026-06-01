@@ -269,6 +269,15 @@
   .semantic-col pre,.semantic-note pre{margin:0;padding:8px;border-radius:6px;background:var(--s2);font:11px/1.55 "JetBrains Mono","Cascadia Code",ui-monospace,monospace;white-space:pre-wrap;overflow:auto;max-height:180px}
   .semantic-note{grid-column:1 / -1;padding:8px;border-radius:6px;background:rgba(99,102,241,.05);font-size:12px;color:var(--t1)}
   .semantic-note pre{margin-top:4px;background:rgba(217,119,6,.07);color:var(--t1)}
+  .semantic-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:0 0 12px;padding:10px 12px;border:1px solid var(--br);border-radius:10px;background:var(--s1)}
+  .semantic-search{min-width:220px;flex:1;border:1px solid var(--br);border-radius:8px;background:var(--s2);padding:7px 10px;font-size:12px;color:var(--t1);outline:none}
+  .semantic-filter{border:1px solid var(--br);background:var(--s2);color:var(--t2);border-radius:999px;padding:6px 10px;font-size:12px;cursor:pointer}
+  .semantic-filter.on{border-color:var(--ac);background:rgba(99,102,241,.1);color:var(--ac);font-weight:800}
+  .semantic-meta{grid-column:1 / -1;display:flex;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--t2)}
+  .semantic-pill{border-radius:999px;padding:2px 8px;background:var(--s2);color:var(--t2)}
+  .semantic-pill--high{background:#fee2e2;color:var(--rd);font-weight:800}
+  .semantic-pill--medium{background:#fff7ed;color:var(--am);font-weight:800}
+  .semantic-pill--low{background:#ecfdf5;color:var(--gr);font-weight:800}
   @media(max-width:900px){.semantic-card{grid-template-columns:1fr}}
   .review-intro{margin:14px 0 12px;padding:12px;border-radius:8px;background:rgba(217,119,6,.08);border-left:3px solid var(--am);font-size:12px;color:var(--t2);line-height:1.6}
   .review-summary{margin:0 0 12px;padding:10px 12px;border:1px solid var(--br);border-radius:8px;background:var(--s1);font-size:12px;color:var(--t2);display:flex;gap:14px;flex-wrap:wrap}
@@ -789,27 +798,71 @@ function _semanticJudgment(m){
   if(m.status==="partial")return"语义相近：系统已生成可确定的目标配置，剩余子命令未自动合入，需要人工确认后再决定是否补充。";
   return"功能等价：系统认为该模块作用已按目标厂商语法表达，并已纳入翻译后配置。";
 }
-function _semanticNearMatches(r){
+function _semanticGroupForFeature(feature){
+  var f=(feature||"").toLowerCase();
+  if(f.indexOf("ipv6")!==-1||f.indexOf("ospfv3")!==-1||f.indexOf("ripng")!==-1||f.indexOf("dhcpv6")!==-1)return"IPv6";
+  if(f.indexOf("firewall")!==-1||f.indexOf("security")!==-1||f.indexOf("acl")!==-1||f.indexOf("object")!==-1||f.indexOf("ipsec")!==-1||f.indexOf("nat")!==-1)return"安全";
+  if(f.indexOf("route")!==-1||f.indexOf("bgp")!==-1||f.indexOf("ospf")!==-1||f.indexOf("isis")!==-1||f.indexOf("rip")!==-1||f.indexOf("pbr")!==-1||f.indexOf("mpls")!==-1||f.indexOf("segment")!==-1||f.indexOf("bfd")!==-1)return"路由";
+  if(f.indexOf("l2")!==-1||f.indexOf("vlan")!==-1||f.indexOf("lacp")!==-1||f.indexOf("stp")!==-1||f.indexOf("monitor")!==-1||f.indexOf("oam")!==-1)return"二层";
+  if(f.indexOf("access")!==-1||f.indexOf("management")!==-1||f.indexOf("aaa")!==-1)return"管理/准入";
+  if(f.indexOf("qos")!==-1)return"QoS";
+  return"其他";
+}
+function _semanticRiskForModule(m){
+  var f=(m.feature||"").toLowerCase();
+  if(f.indexOf("nat")!==-1||f.indexOf("ipsec")!==-1||f.indexOf("firewall")!==-1||f.indexOf("security")!==-1||f.indexOf("pbr")!==-1||f.indexOf("segment")!==-1||f.indexOf("mpls")!==-1||f.indexOf("urpf")!==-1)return"高";
+  if(f.indexOf("route")!==-1||f.indexOf("bgp")!==-1||f.indexOf("ospf")!==-1||f.indexOf("isis")!==-1||f.indexOf("ipv6")!==-1||f.indexOf("qos")!==-1||f.indexOf("access")!==-1||f.indexOf("fhrp")!==-1)return"中";
+  return"低";
+}
+function _semanticRiskClass(risk){return risk==="高"?"semantic-pill--high":(risk==="中"?"semantic-pill--medium":"semantic-pill--low")}
+function _semanticMatchesFilter(m,filter){
+  filter=filter||"all";
+  if(filter==="all")return true;
+  if(filter==="confirm")return m.status==="semantic_near"||m.status==="partial";
+  if(filter==="deployable")return m.status==="translated";
+  if(filter==="high")return _semanticRiskForModule(m)==="高";
+  return _semanticGroupForFeature(m.feature)===filter;
+}
+function _semanticSearchMatches(m,q){
+  q=(q||"").trim().toLowerCase();
+  if(!q)return true;
+  var targetLines=m.status==="semantic_near"?(m.suggested_lines||[]):(m.translated_lines||[]);
+  var hay=[m.feature,m.status,m.reason].concat(m.source_lines||[]).concat(targetLines).join("\n").toLowerCase();
+  return hay.indexOf(q)!==-1;
+}
+function _setSemanticFilter(filter){R.semanticFilter=filter||"all";RN();saveActive()}
+function _setSemanticSearch(value){R.semanticSearch=value||"";RN();saveActive()}
+function _semanticNearMatches(r,includeAll){
   var results=((r&&r.module_translations&&r.module_translations.results)||[]);
   var near=[],partial=[],translated=[];
   results.forEach(function(m){
     var targetLines=(m.status==="semantic_near"?(m.suggested_lines||[]):(m.translated_lines||[]));
     if(!(m.source_lines||[]).length||!targetLines.length)return;
     if(m.status==="manual_review"||m.status==="unsupported")return;
+    if(!includeAll){
+      if(!_semanticMatchesFilter(m,R.semanticFilter||"all"))return;
+      if(!_semanticSearchMatches(m,R.semanticSearch||""))return;
+    }
     if(m.status==="semantic_near")near.push(m);else if(m.status==="partial")partial.push(m);else translated.push(m)
   });
   return near.concat(partial).concat(translated).slice(0,80)
 }
 function _renderSemanticNearTab(r){
   var items=_semanticNearMatches(r);
-  var total=((r&&r.module_translations&&r.module_translations.results)||[]).filter(function(m){var targetLines=(m.status==="semantic_near"?(m.suggested_lines||[]):(m.translated_lines||[]));return (m.source_lines||[]).length&&targetLines.length&&m.status!=="manual_review"&&m.status!=="unsupported"}).length;
+  var allItems=_semanticNearMatches(r,true);
+  var total=allItems.length;
   if(!items.length)return'<div class="empty">暂无语义相近模块。完全无法确定的内容请查看“人工复核”。</div>';
+  var filter=R.semanticFilter||"all",query=R.semanticSearch||"";
+  var filters=[['all','全部'],['confirm','需要确认'],['deployable','已纳入可部署'],['high','高风险'],['路由','路由'],['安全','安全'],['二层','二层'],['IPv6','IPv6']];
+  var toolbar='<div class="semantic-toolbar"><input id="semantic-search" class="semantic-search" placeholder="搜索模块、命令、确认点" value="'+esc(query)+'" oninput="_setSemanticSearch(this.value)">'+filters.map(function(x){return'<button class="semantic-filter '+(filter===x[0]?'on':'')+'" data-semantic-filter="'+esc(x[0])+'" onclick="_setSemanticFilter(\''+esc(x[0])+'\')">'+esc(x[1])+'</button>'}).join('')+'</div>';
   var cards=items.map(function(m,i){
     var targetLines=m.status==="semantic_near"?(m.suggested_lines||[]):(m.translated_lines||[]);
     var status=m.status==="semantic_near"?"语义相近":(m.status==="partial"?"需要确认":"已纳入可部署配置");
     var cls=(m.status==="partial"||m.status==="semantic_near")?"diff--confirm":"diff--normal";
+    var group=_semanticGroupForFeature(m.feature),risk=_semanticRiskForModule(m);
     return'<div class="ds '+cls+'"><div class="ds__hd">模块 '+(i+1)+' · '+esc(_friendlyFeatureName(m.feature))+' <span class="ds__cnt">'+esc(status)+'</span></div>'+
       '<div class="semantic-card">'+
+      '<div class="semantic-meta"><span class="semantic-pill">模块族 '+esc(group)+'</span><span class="semantic-pill '+_semanticRiskClass(risk)+'">风险 '+esc(risk)+'</span><span class="semantic-pill">源行 '+esc(String(m.source_lines&&m.source_lines.length||0))+'</span><span class="semantic-pill">确认重点 '+esc(_semanticConfirmPoint(m).split("\n")[0]||"确认业务作用")+'</span></div>'+
       '<div class="semantic-col"><b>原配置模块</b><pre>'+esc((m.source_lines||[]).join("\n"))+'</pre></div>'+
       '<div class="semantic-col"><b>建议目标配置</b><pre>'+esc(targetLines.join("\n"))+'</pre></div>'+
       '<div class="semantic-note"><b>语义判断</b><br>'+esc(_semanticJudgment(m))+'</div>'+
@@ -818,7 +871,7 @@ function _renderSemanticNearTab(r){
   }).join("");
   return'<div class="diff-root semantic-root">'+
     '<div class="diff-intro"><div class="diff-intro__hd">配置语义相近模块</div><div class="diff-intro__bd">这里展示“原配置模块”和“建议目标配置”的模块级对应关系。翻译后配置只放系统认为可信的可部署配置；这里的“需要确认”模块可作为补充上线前复核依据。</div></div>'+
-    '<div class="review-summary"><span><b>已展示</b> '+items.length+' 项</span><span><b>语义相近总数</b> '+total+' 项</span><span><b>来源</b> module_translations</span></div>'+
+    '<div class="review-summary"><span><b>已展示</b> '+items.length+' 项</span><span><b>语义相近总数</b> '+total+' 项</span><span><b>当前筛选</b> '+esc(filter)+'</span><span><b>来源</b> module_translations</span></div>'+toolbar+
     cards+
     (total>items.length?'<div class="empty">还有 '+(total-items.length)+' 个低风险自动转换模块未展开显示，可在导出报告中查看完整 module_translations。</div>':"")+
     "</div>";
@@ -1311,6 +1364,10 @@ function RN(){
     E("out").innerHTML=html
   }else if(tab==="risk"){
     E("out").innerHTML=views.risk
+  }else if(tab==="semantic"){
+    E("out").innerHTML=views.semantic
+  }else if(tab==="review"||tab==="validation"){
+    E("out").innerHTML=views[tab]||""
   }else{
     E("out").innerHTML="<pre style='margin:0;font:inherit'>"+(views[tab]||"")+"</pre>"
   }
@@ -1412,7 +1469,7 @@ async function _copyReport(){_closeCopyMenu();var r=R.result;if(!r)return;var v=
 function _flashCopyBtn(msg){var b=E("cbtn");b.textContent=msg||"已复制";setTimeout(function(){b.textContent="复制"},1200)}
 
 // ── Export ──
-function _buildExportReport(){var r=R.result;if(!r)return null;var v=r.validation||{};return{request_id:R.request_id,version:R.version,model:R.model,source:{vendor:E("fv").value,domain:E("sd").value,platform:E("sp").value},target:{vendor:E("tv").value,domain:E("td").value,platform:E("tp").value},translated:stripFence(r.translated||""),deployable_config:stripFence(r.deployable_config||""),manual_review_config:r.manual_review_config||"",manual_review_checklist:_manualReviewChecklistLines(r),semantic_near_matches:_semanticNearMatches(r),module_summary:r.module_summary||{},module_graph:r.module_graph||{},module_translations:r.module_translations||{},validation:v,risk_signals:r.risk_signals||[],capability_gaps:r.capability_gaps||[],analyzer_results:r.analyzer_results||[],node_results:r.node_results||[],timing:{elapsed_ms:Date.now()-R.t0}}}
+function _buildExportReport(){var r=R.result;if(!r)return null;var v=r.validation||{};return{request_id:R.request_id,version:R.version,model:R.model,source:{vendor:E("fv").value,domain:E("sd").value,platform:E("sp").value},target:{vendor:E("tv").value,domain:E("td").value,platform:E("tp").value},translated:stripFence(r.translated||""),deployable_config:stripFence(r.deployable_config||""),manual_review_config:r.manual_review_config||"",manual_review_checklist:_manualReviewChecklistLines(r),semantic_near_matches:_semanticNearMatches(r,true),module_summary:r.module_summary||{},module_graph:r.module_graph||{},module_translations:r.module_translations||{},validation:v,risk_signals:r.risk_signals||[],capability_gaps:r.capability_gaps||[],analyzer_results:r.analyzer_results||[],node_results:r.node_results||[],timing:{elapsed_ms:Date.now()-R.t0}}}
 async function _exportReport(){var report=_buildExportReport();if(!report)return;var name="translation-report-"+R.request_id+".json";var blob=new Blob([JSON.stringify(report,null,2)],{type:"application/json"});var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
 
 document.querySelectorAll(".tabs button").forEach(function(t){t.addEventListener("click",function(){R.tab=this.dataset.tab;document.querySelectorAll(".tabs button").forEach(function(b){b.classList.toggle("on",b===t)});RN();saveActive()})});

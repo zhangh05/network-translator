@@ -148,7 +148,11 @@ Current semantic-near families:
 | Access authentication | 802.1X, MAB, portal, radius domain, interface binding | AAA and interface access-session skeleton | fail action, critical VLAN, server groups, and auth order need review |
 | Route filters / PBR | prefix-list, object/time ACL references, policy-based-route | prefix-list, route-map, and interface PBR skeleton | filter order, object model, next-hop fallback, and time conditions need review |
 | IPv6 routing/services | IPv6 static route, interface IPv6, ND/RA, IPv6 ACL, OSPFv3/RIPng, DHCPv6 | IPv6 route/interface/ACL/protocol/relay skeleton | link-local, RA flags, DHCPv6 mode, address-family, and VRF behavior differ |
+| Platform / Overlay | stack/IRF, VXLAN VNI, EVPN RT/RD | stackwise/IRF, VXLAN, and EVPN skeleton | member IDs, interface renumbering, VTEP, VNI, RT/RD direction, and gateway mode need review |
 | BFD / MPLS / Segment Routing | BFD sessions, MPLS LDP/TE/L3VPN, SR binding | BFD template, MPLS, VRF, and SR skeleton | timers, labels, RD/RT, RSVP/SR policy, and IGP binding need review |
+| SLA / Tunnel / DHCP / EIGRP | NQA/IP-SLA, GRE/IPv6 tunnel, DHCP pool, EIGRP | target-shaped probe, tunnel, DHCP, or source-preserving EIGRP redesign skeleton | probe track binding, tunnel encapsulation, DHCP options, and Cisco-specific EIGRP behavior need review |
+| Advanced management / telemetry | SSH, PKI, AAA, NTP auth, NETCONF/RESTCONF, telemetry, flow export | redacted management/API/telemetry skeleton | credentials, RBAC, certificates, collectors, and exposed management surfaces need review |
+| Advanced BGP families | VPNv4, EVPN, FlowSpec, confederation, RR, max-prefix, GTSM, graceful restart | address-family and neighbor-control skeleton | MP-BGP scope, route reflection topology, limits, TTL security, and restart behavior need review |
 | Advanced firewall services | NAT, IPsec, IPS/URL/AV/app profiles, HA, vsys | NAT/IPsec/profile/HA/vsys skeleton | no implicit any, engines/licensing, crypto, session sync, and policy binding need review |
 | L2 security / OAM / monitoring | PVLAN, VLAN mapping, DHCP snooping, source guard, ARP inspection, SPAN, OAM, uRPF | target feature skeleton with confirmation points | trust boundaries, failure actions, thresholds, and traffic-copy behavior differ |
 
@@ -369,6 +373,11 @@ separates:
 - `management.ntp`, `management.snmp`, `management.logging`,
   `management.aaa`: management-plane features are split so sensitive SNMP/AAA
   values can be redacted and reviewed without hiding safe NTP/loghost context.
+- `management.ssh`, `management.pki`, `management.ntp_auth`,
+  `management.netconf`, `management.restconf`, `management.telemetry`, and
+  `telemetry.flow`: higher-risk management/API/telemetry entry points are typed
+  and produce semantic-near skeletons only. Secrets are redacted and RBAC,
+  certificate, collector, and exposure semantics stay in review.
 - `bfd.session`: BFD endpoint/session modules. They are manual-review because
   timers, discriminators, interface binding, and routing-protocol linkage are
   not equivalent across vendors by syntax alone.
@@ -380,6 +389,15 @@ separates:
 - `interface.tunnel`: Tunnel/GRE-like interface modules. They record tunnel
   source/destination and protocol tags, but stay manual-review because routing,
   MTU, keepalive, and encapsulation semantics are coupled.
+- `platform.stack`, `overlay.vxlan`, `overlay.evpn`, `nqa`, `ip_sla`,
+  `eigrp`, and `interface.tunnel6`: broad platform/overlay/probe/tunnel modules
+  are typed and shown as semantic-near suggestions instead of generic
+  manual-review blobs. They remain outside `deployable_config`.
+- `bgp.vpnv4`, `bgp.evpn`, `bgp.flowspec`, `bgp.confederation`,
+  `bgp.route_reflector`, `bgp.max_prefix`, `bgp.gtsm`, and
+  `bgp.graceful_restart`: advanced BGP address-family and neighbor-control
+  lines now produce target-shaped review skeletons while preserving the rule
+  that they are not auto-deployable.
 - `rip.*` and `isis.*`: legacy/IGP routing protocols are typed instead of
   `unknown`, but remain manual-review until process, metric, authentication, and
   redistribution equivalence can be validated.
@@ -439,10 +457,9 @@ Anything that cannot be confidently translated must remain in `manual_review`.
 
 ## Next Steps
 
-1. Split BGP address-family and VRF-aware peer context into submodules.
-2. Normalize object-group member tags further for ASA/Hillstone/Topsec variants
+1. Normalize object-group member tags further for ASA/Hillstone/Topsec variants
    without overclaiming cross-vendor equivalence.
-3. Split remaining interface-level routing features such as NAT-on-interface and
+2. Split remaining interface-level routing features such as NAT-on-interface and
    advanced multicast/RP dependencies.
-4. Replace fallback's remaining flat line-by-line paths gradually, one feature
+3. Replace fallback's remaining flat line-by-line paths gradually, one feature
    family at a time.

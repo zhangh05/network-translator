@@ -158,3 +158,67 @@ def test_l2_security_monitoring_and_oam_modules_are_semantic_near(feature, confi
     assert result.status == "semantic_near"
     assert expected in "\n".join(result.suggested_lines)
     assert expected not in assembly.deployable_config
+
+@pytest.mark.parametrize(
+    "feature,config,expected,vendor,target",
+    [
+        ("platform.stack", "irf member 1 priority 32\n", "stackwise-virtual", "huawei", "cisco"),
+        ("overlay.vxlan", "vxlan vni 10010\n source 10.0.0.1\n", "vxlan vni 10010", "huawei", "cisco"),
+        ("overlay.evpn", "evpn\n route-distinguisher 65000:100\n vpn-target 65000:100 export-extcommunity\n", "l2vpn evpn", "huawei", "cisco"),
+        ("nqa", "nqa test-instance admin icmp1\n test-type icmp\n destination-address ipv4 10.0.0.1\n", "ip sla", "huawei", "cisco"),
+        ("ip_sla", "ip sla 10\n icmp-echo 10.0.0.1\n", "nqa test-instance", "cisco", "huawei"),
+        ("eigrp", "router eigrp 100\n network 10.0.0.0\n", "router eigrp 100", "cisco", "huawei"),
+        ("dhcp.pool", "ip pool USERS\n network 10.0.10.0 mask 255.255.255.0\n gateway-list 10.0.10.1\n dns-list 10.0.0.53\n", "ip dhcp pool USERS", "huawei", "cisco"),
+        ("interface.tunnel", "interface Tunnel10\n ip address 10.0.0.1 255.255.255.252\n tunnel-protocol gre\n source 10.0.1.1\n destination 10.0.1.2\n", "interface Tunnel10", "huawei", "cisco"),
+    ],
+)
+
+def test_platform_overlay_sla_eigrp_dhcp_and_tunnel_modules_are_semantic_near(feature, config, expected, vendor, target):
+    result, assembly = _result(config, feature, from_vendor=vendor, to_vendor=target)
+
+    assert result.status == "semantic_near"
+    assert expected in "\n".join(result.suggested_lines)
+    assert expected not in assembly.deployable_config
+
+
+@pytest.mark.parametrize(
+    "feature,config,expected",
+    [
+        ("management.ssh", "stelnet server enable\nssh user admin authentication-type password\n", "ip ssh version 2"),
+        ("management.pki", "pki domain CORP\n certificate request entity ENT\n", "crypto pki trustpoint CORP"),
+        ("management.aaa", "aaa\n local-user admin password cipher SECRET\n local-user admin privilege level 15\n", "aaa new-model"),
+        ("management.ntp_auth", "ntp authentication-key 1 md5 SECRET\nntp-service reliable authentication-keyid 1\n", "ntp authentication-key 1 md5 <redacted>"),
+        ("management.netconf", "netconf ssh server enable\n", "netconf-yang"),
+        ("management.restconf", "restconf\n", "restconf"),
+        ("management.telemetry", "telemetry\n sensor-group IF\n", "telemetry"),
+        ("telemetry.flow", "ip flow-export destination 10.0.0.10 2055\n", "flow exporter"),
+    ],
+)
+
+def test_management_and_telemetry_modules_are_semantic_near(feature, config, expected):
+    result, assembly = _result(config, feature, from_vendor="huawei", to_vendor="cisco")
+
+    assert result.status == "semantic_near"
+    assert expected in "\n".join(result.suggested_lines)
+    assert "SECRET" not in "\n".join(result.suggested_lines)
+    assert expected not in assembly.deployable_config
+
+@pytest.mark.parametrize(
+    "feature,config,expected",
+    [
+        ("bgp.vpnv4", "bgp 65000\n ipv4-family vpnv4\n  peer 10.0.0.2 enable\n", "address-family vpnv4"),
+        ("bgp.evpn", "bgp 65000\n l2vpn-family evpn\n  peer 10.0.0.2 enable\n", "address-family l2vpn evpn"),
+        ("bgp.flowspec", "bgp 65000\n ipv4-family flow\n  peer 10.0.0.2 enable\n", "address-family ipv4 flowspec"),
+        ("bgp.confederation", "bgp 65000\n confederation id 65001\n", "bgp confederation identifier 65001"),
+        ("bgp.route_reflector", "bgp 65000\n peer 10.0.0.2 reflect-client\n", "neighbor 10.0.0.2 route-reflector-client"),
+        ("bgp.max_prefix", "bgp 65000\n peer 10.0.0.2 route-limit 1000\n", "neighbor 10.0.0.2 maximum-prefix 1000"),
+        ("bgp.gtsm", "bgp 65000\n peer 10.0.0.2 valid-ttl-hops 1\n", "neighbor 10.0.0.2 ttl-security hops 1"),
+        ("bgp.graceful_restart", "bgp 65000\n graceful-restart\n", "bgp graceful-restart"),
+    ],
+)
+def test_bgp_advanced_modules_are_semantic_near(feature, config, expected):
+    result, assembly = _result(config, feature, from_vendor="huawei", to_vendor="cisco")
+
+    assert result.status == "semantic_near"
+    assert expected in "\n".join(result.suggested_lines)
+    assert expected not in assembly.deployable_config

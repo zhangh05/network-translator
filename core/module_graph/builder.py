@@ -2169,6 +2169,8 @@ def _extract_isis_process(text: str) -> str:
 
 
 def _is_bgp_process_line(line: str) -> bool:
+    if _bgp_risky_feature(line):
+        return False
     return bool(re.match(r"^(?:bgp\s+)?router-id\b|^ipv4-family\b", line, re.IGNORECASE))
 
 
@@ -2190,19 +2192,19 @@ def _extract_bgp_neighbor(line: str) -> str:
 def _bgp_risky_feature(line: str) -> str:
     if re.search(r"\bconfederation\b", line, re.IGNORECASE):
         return "bgp.confederation"
-    if re.search(r"\broute-reflector-client\b", line, re.IGNORECASE):
+    if re.search(r"\b(?:route-reflector-client|reflect-client)\b", line, re.IGNORECASE):
         return "bgp.route_reflector"
-    if re.search(r"\bmaximum-prefix\b", line, re.IGNORECASE):
+    if re.search(r"\b(?:maximum-prefix|route-limit)\b", line, re.IGNORECASE):
         return "bgp.max_prefix"
-    if re.search(r"\b(?:ttl-security|gtsm)\b", line, re.IGNORECASE):
+    if re.search(r"\b(?:ttl-security|gtsm|valid-ttl-hops)\b", line, re.IGNORECASE):
         return "bgp.gtsm"
     if re.search(r"\bgraceful-restart\b", line, re.IGNORECASE):
         return "bgp.graceful_restart"
-    if re.search(r"address-family\s+vpnv4", line, re.IGNORECASE):
+    if re.search(r"(?:address-family|ipv4-family)\s+vpnv4", line, re.IGNORECASE):
         return "bgp.vpnv4"
-    if re.search(r"address-family\s+(?:l2vpn\s+)?evpn", line, re.IGNORECASE):
+    if re.search(r"(?:address-family|l2vpn-family)\s+(?:l2vpn\s+)?evpn", line, re.IGNORECASE):
         return "bgp.evpn"
-    if re.search(r"address-family\s+\S*\s*flowspec", line, re.IGNORECASE):
+    if re.search(r"(?:address-family|ipv4-family)\s+\S*\s*(?:flowspec|flow)\b", line, re.IGNORECASE):
         return "bgp.flowspec"
     if re.search(r"\bpassword\b|authentication-key|keychain", line, re.IGNORECASE):
         return "bgp.password"
