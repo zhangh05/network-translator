@@ -785,6 +785,42 @@ function _moduleCouplingLabel(name){
     interface_uses_multicast:"接口启用组播能力"
   }[n]||name||"关联关系"
 }
+function _resourceLabel(resource){
+  var raw=String(resource||"");
+  if(!raw)return"";
+  var parts=raw.split(":");
+  var kind=(parts.shift()||"").toLowerCase();
+  var name=parts.join(":");
+  var labels={
+    "auth-profile":"认证模板",
+    "dot1x-profile":"802.1X 模板",
+    "mac-access-profile":"MAC 认证模板",
+    domain:"认证域",
+    "radius-scheme":"RADIUS 方案",
+    interface:"接口",
+    vlan:"VLAN",
+    acl:"ACL",
+    "route-policy":"路由策略",
+    "route-filter":"路由过滤器",
+    zone:"安全域",
+    addr:"地址对象",
+    svc:"服务对象",
+    policy:"安全策略",
+    "qos-policy":"QoS 策略",
+    "qos-classifier":"QoS 分类器",
+    "qos-behavior":"QoS 动作",
+    bgp:"BGP",
+    ospf:"OSPF",
+    vrf:"VRF",
+    "time-range":"时间段",
+    profile:"安全配置文件"
+  };
+  if(!labels[kind])return raw;
+  return labels[kind]+(name?": "+name:"")
+}
+function _resourceLabelList(resources){
+  return (resources||[]).map(_resourceLabel).filter(function(x){return x}).join(", ")
+}
 function _reviewPriorityForItem(it){
   var raw=((it&&it.priority)||(it&&it.severity)||(it&&it.risk_level)||(it&&it.status)||"").toLowerCase();
   var txt=[raw,(it&&it.reason)||"",((it&&it.feature)||"").toLowerCase()].join(" ");
@@ -822,8 +858,8 @@ function _moduleGraphReviewItems(r){
     if(!isManual)return;
     var meta=[];
     var relations=(m.couplings||[]).map(function(c){return _moduleCouplingLabel(c.relation||c.type||c.name)});
-    if((m.provides||[]).length)meta.push("定义资源: "+m.provides.join(", "));
-    if((m.consumes||[]).length)meta.push("引用资源: "+m.consumes.join(", "));
+    if((m.provides||[]).length)meta.push("定义资源: "+_resourceLabelList(m.provides));
+    if((m.consumes||[]).length)meta.push("引用资源: "+_resourceLabelList(m.consumes));
     if((m.depends_on||[]).length)meta.push("依赖模块: "+m.depends_on.join(", "));
     if(relations.length)meta.push("关联关系: "+relations.join(", "));
     if((m.tags||[]).length)meta.push("标签: "+m.tags.join(", "));

@@ -379,3 +379,27 @@ class TestAccessAuthenticationManualReviewUX:
             html = f.read()
         for label in ("接口绑定认证模板", "接口启用准入认证", "准入认证引用 RADIUS", "准入认证引用 Domain"):
             assert label in html, f"access-auth coupling should have user-facing label: {label}"
+
+
+class TestManualReviewResourceLabels:
+    def test_manual_review_translates_resource_keys_for_access_auth(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "function _resourceLabel" in html, \
+            "manual review should translate module resource keys before showing users"
+        for label in ("认证模板", "802.1X 模板", "MAC 认证模板", "认证域", "RADIUS 方案"):
+            assert label in html, f"module resource label should include {label}"
+
+    def test_module_review_items_use_resource_label_list(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "_resourceLabelList(m.provides)" in html, \
+            "provided resources should be user-facing in manual review evidence"
+        assert "_resourceLabelList(m.consumes)" in html, \
+            "consumed resources should be user-facing in manual review evidence"
+
+    def test_resource_labels_cover_routing_firewall_and_policy_resources(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        for label in ("VLAN", "接口", "ACL", "路由策略", "路由过滤器", "安全域", "地址对象", "服务对象"):
+            assert label in html, f"resource labels should cover common module resource type: {label}"
