@@ -352,3 +352,30 @@ class TestManualReviewTab:
             "exported checklist should remain based on all manual-review items"
         assert "_manualReviewChecklistLines" in html and "_setReviewGroupFilter" in html, \
             "filtering should be a view concern, separate from report export"
+
+
+class TestAccessAuthenticationManualReviewUX:
+    def test_access_authentication_has_user_facing_group(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "准入认证" in html, "access-auth modules should have a dedicated user-facing group"
+        assert "access-auth" in html, "access-auth tags should be recognized by the manual-review UI"
+
+    def test_access_authentication_feature_names_are_friendly(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        for label in ("认证模板", "802.1X", "MAC 认证", "Portal 认证", "RADIUS / Domain 绑定", "接口准入绑定"):
+            assert label in html, f"manual-review UI should expose friendly access-auth label: {label}"
+
+    def test_access_authentication_review_action_mentions_target_rebuild_and_live_check(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "按目标平台重新设计准入认证" in html, "access-auth action should not imply automatic translation"
+        assert "802.1X" in html and "MAC" in html and "Portal" in html and "RADIUS" in html, \
+            "access-auth action should name the main NAC mechanisms users must verify"
+
+    def test_access_authentication_coupling_labels_are_translated(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        for label in ("接口绑定认证模板", "接口启用准入认证", "准入认证引用 RADIUS", "准入认证引用 Domain"):
+            assert label in html, f"access-auth coupling should have user-facing label: {label}"

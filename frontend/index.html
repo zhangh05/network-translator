@@ -737,6 +737,7 @@ function _extractManualReviewCommands(r){
 function _reviewReasonForFeature(feature,fallback){
   var f=(feature||"").toLowerCase();
   if(fallback)return"该原配置没有确定的目标厂商等价写法，已从可部署配置中移出。";
+  if(f.indexOf("access.")!==-1||f.indexOf("access-auth")!==-1)return"准入认证涉及 802.1X、MAC 认证、Portal、RADIUS/Domain 和接口授权动作，跨厂商不能自动等价迁移。";
   if(f.indexOf("aaa")!==-1||f.indexOf("auth")!==-1)return"认证、授权或账号策略跨厂商语义差异较大，需要人工确认。";
   if(f.indexOf("qos")!==-1||f.indexOf("traffic")!==-1)return"QoS 分类、动作或绑定方向可能不等价，需要人工确认。";
   if(f.indexOf("acl")!==-1||f.indexOf("security")!==-1)return"访问控制或安全策略需要确认规则顺序、方向和对象引用。";
@@ -746,6 +747,7 @@ function _reviewReasonForFeature(feature,fallback){
 }
 function _reviewActionForFeature(feature){
   var f=(feature||"").toLowerCase();
+  if(f.indexOf("access.")!==-1||f.indexOf("access-auth")!==-1)return"按目标平台重新设计准入认证；逐项确认 802.1X、MAC 认证、Portal、RADIUS/Domain、失败动作和接口授权模式，并做终端接入实测。";
   if(f.indexOf("aaa")!==-1||f.indexOf("auth")!==-1)return"按目标设备认证体系重建配置，并验证登录、授权和审计策略。";
   if(f.indexOf("qos")!==-1||f.indexOf("traffic")!==-1)return"核对分类条件、动作、入/出方向和接口绑定后再上线。";
   if(f.indexOf("acl")!==-1||f.indexOf("security")!==-1)return"逐条核对 ACL/策略顺序、方向、对象和默认动作。";
@@ -754,6 +756,7 @@ function _reviewActionForFeature(feature){
 }
 function _reviewGroupForFeature(feature){
   var f=(feature||"").toLowerCase();
+  if(f.indexOf("access.")!==-1||f.indexOf("access-auth")!==-1||f.indexOf("dot1x")!==-1||f.indexOf("mab")!==-1)return"准入认证";
   if(f.indexOf("aaa")!==-1||f.indexOf("auth")!==-1||f.indexOf("snmp")!==-1||f.indexOf("ntp")!==-1||f.indexOf("management")!==-1)return"管理面";
   if(f.indexOf("qos")!==-1||f.indexOf("traffic")!==-1||f.indexOf("policy.binding")!==-1)return"QoS 与流量策略";
   if(f.indexOf("object_group")!==-1||f.indexOf("address_object")!==-1||f.indexOf("service_object")!==-1)return"防火墙对象";
@@ -765,6 +768,10 @@ function _reviewGroupForFeature(feature){
 function _moduleCouplingLabel(name){
   var n=(name||"").toLowerCase();
   return {
+    access_binding_uses_auth_profile:"接口绑定认证模板",
+    access_binding_uses_interface:"接口启用准入认证",
+    access_uses_radius_scheme:"准入认证引用 RADIUS",
+    access_uses_domain:"准入认证引用 Domain",
     object_group_has_member:"对象组成员",
     acl_uses_object_group:"ACL 引用对象组",
     acl_uses_time_range:"ACL 使用时间段",
@@ -934,7 +941,7 @@ function stripFence(t){
   return (t||"").replace(/^```[\w-]*\n/,'').replace(/\n```\s*$/,'').trim()
 }
 function _friendlyFeatureName(f){
-  return {vlan:"VLAN",interface:"接口",ospf:"OSPF",static_route:"静态路由",acl:"ACL",stp:"STP",vrrp:"VRRP",system:"系统配置",ntp:"NTP",snmp:"SNMP",port_channel:"链路聚合",object_group:"对象组","object_group.member":"对象组成员",time_range:"时间段","firewall.profile":"安全配置文件",route_filter:"路由过滤器","qos.binding":"QoS 绑定",pbr:"PBR",multicast:"组播",bfd:"BFD",dhcp:"DHCP"}[f]||f||"配置项"
+  return {vlan:"VLAN",interface:"接口",ospf:"OSPF",static_route:"静态路由",acl:"ACL",stp:"STP",vrrp:"VRRP",system:"系统配置",ntp:"NTP",snmp:"SNMP",port_channel:"链路聚合",object_group:"对象组","object_group.member":"对象组成员",time_range:"时间段","firewall.profile":"安全配置文件",route_filter:"路由过滤器","qos.binding":"QoS 绑定",pbr:"PBR",multicast:"组播",bfd:"BFD",dhcp:"DHCP","access.auth_profile":"认证模板","access.dot1x":"802.1X","access.mac_auth":"MAC 认证","access.portal":"Portal 认证","access.radius_binding":"RADIUS / Domain 绑定","access.interface_binding":"接口准入绑定"}[f]||f||"配置项"
 }
 function _isSupportedGap(g){
   var status=(g.status||"").toLowerCase();
