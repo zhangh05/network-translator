@@ -264,6 +264,12 @@
   .diff--normal .ds__hd{background:rgba(5,150,105,.1);color:var(--gr)}
   .diff--confirm .ds__hd{background:rgba(217,119,6,.1);color:var(--am)}
   .diff--risk .ds__hd{background:rgba(220,38,38,.1);color:var(--rd)}
+  .semantic-card{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding:10px;background:var(--s1)}
+  .semantic-col b,.semantic-note b{display:block;color:var(--t2);font-size:11px;margin-bottom:4px}
+  .semantic-col pre,.semantic-note pre{margin:0;padding:8px;border-radius:6px;background:var(--s2);font:11px/1.55 "JetBrains Mono","Cascadia Code",ui-monospace,monospace;white-space:pre-wrap;overflow:auto;max-height:180px}
+  .semantic-note{grid-column:1 / -1;padding:8px;border-radius:6px;background:rgba(99,102,241,.05);font-size:12px;color:var(--t1)}
+  .semantic-note pre{margin-top:4px;background:rgba(217,119,6,.07);color:var(--t1)}
+  @media(max-width:900px){.semantic-card{grid-template-columns:1fr}}
   .review-intro{margin:14px 0 12px;padding:12px;border-radius:8px;background:rgba(217,119,6,.08);border-left:3px solid var(--am);font-size:12px;color:var(--t2);line-height:1.6}
   .review-summary{margin:0 0 12px;padding:10px 12px;border:1px solid var(--br);border-radius:8px;background:var(--s1);font-size:12px;color:var(--t2);display:flex;gap:14px;flex-wrap:wrap}
   .review-summary b{color:var(--t1)}
@@ -404,7 +410,7 @@
         <button data-tab="review">人工复核</button>
         <button data-tab="risk">风险分析</button>
         <button data-tab="validation">校验结果</button>
-        <button data-tab="diff">差异对比</button>
+        <button data-tab="semantic">配置语义相近</button>
         <button data-tab="trace">执行耗时</button>
       </div>
       <div id="out"></div>
@@ -768,42 +774,50 @@ function _renderValidationTab(v,r){
   return html
 }
 
-function _renderDiffTab(diff){
-  if(!diff||!diff.trim())return'<div class="empty">未发现差异</div>';
-  var lines=diff.split("\n");
-  var normal=[],confirm=[],unsupported=[];
-  lines.forEach(function(l){
-    var lo=l.toLowerCase();
-    if(!l.trim())return;
-    if(lo.indexOf("manual_review")!==-1||lo.indexOf("unsupported")!==-1){unsupported.push(l);return}
-    if(lo.indexOf("port-channel")!==-1||lo.indexOf("vlan")!==-1||lo.indexOf("eth-trunk")!==-1||lo.indexOf("vlanif")!==-1||lo.indexOf("ethernet")!==-1){normal.push(l);return}
-    if(lo.indexOf("+vlan")!==-1||lo.indexOf("-vlan")!==-1||lo.indexOf("+acl")!==-1||lo.indexOf("-acl")!==-1||lo.indexOf("+ospf")!==-1||lo.indexOf("-ospf")!==-1){confirm.push(l);return}
-    if(lo.indexOf("duplicate")!==-1||lo.indexOf("conflict")!==-1||lo.indexOf("+ip route")!==-1||lo.indexOf("-ip route")!==-1){confirm.push(l);return}
-    if(l.trim())normal.push(l);
+function _semanticConfirmPoint(m){
+  var f=(m.feature||"").toLowerCase();
+  var review=(m.manual_review_lines||[]).filter(function(x){return x&&x.trim()});
+  if(review.length)return review.slice(0,4).map(function(x){return x.replace(/^[!#]\s*/,"").trim()}).join("\n");
+  if(f.indexOf("interface")!==-1||f.indexOf("lag")!==-1)return"确认目标设备接口编号、聚合组编号、access/trunk 模式和 shutdown 状态是否符合现场规划。";
+  if(f.indexOf("vlan")!==-1)return"确认 VLAN ID、名称、三层网关和接口绑定关系是否符合目标网络规划。";
+  if(f.indexOf("acl")!==-1||f.indexOf("security")!==-1)return"确认规则顺序、方向、对象引用和默认动作是否与原业务一致。";
+  if(f.indexOf("ospf")!==-1||f.indexOf("bgp")!==-1||f.indexOf("route")!==-1||f.indexOf("vrf")!==-1)return"确认邻居、区域、下一跳、VRF 和策略引用后再上线。";
+  return"确认目标厂商语法表达的业务作用与原模块一致。";
+}
+function _semanticJudgment(m){
+  if(m.status==="partial")return"语义相近：系统已生成可确定的目标配置，剩余子命令未自动合入，需要人工确认后再决定是否补充。";
+  return"功能等价：系统认为该模块作用已按目标厂商语法表达，并已纳入翻译后配置。";
+}
+function _semanticNearMatches(r){
+  var results=((r&&r.module_translations&&r.module_translations.results)||[]);
+  var partial=[],translated=[];
+  results.forEach(function(m){
+    if(!(m.source_lines||[]).length||!(m.translated_lines||[]).length)return;
+    if(m.status==="manual_review"||m.status==="unsupported")return;
+    if(m.status==="partial")partial.push(m);else translated.push(m)
   });
-  function _diffLineToUserText(l){
-    var raw=l.replace(/^[+\-]\s*/,"").trim();
-    var lo=raw.toLowerCase();
-    if(lo.indexOf("manual_review")!==-1||lo.indexOf("unsupported")!==-1)return"该命令没有确定的目标厂商等价写法，已进入人工复核。";
-    if(lo.indexOf("vlanif")!==-1||lo.indexOf("vlan-interface")!==-1||lo.indexOf("interface vlan")!==-1)return"三层 VLAN 接口已按目标厂商命名方式转换。";
-    if(lo.indexOf("eth-trunk")!==-1||lo.indexOf("bridge-aggregation")!==-1||lo.indexOf("port-channel")!==-1)return"链路聚合接口已按目标厂商命名方式转换。";
-    if(lo.indexOf("vlan")!==-1)return"VLAN 配置已按目标厂商格式转换。";
-    if(lo.indexOf("acl")!==-1||lo.indexOf("access-list")!==-1||lo.indexOf("traffic-filter")!==-1)return"ACL / 访问控制配置发生变化，需要确认规则顺序和绑定方向。";
-    if(lo.indexOf("ospf")!==-1||lo.indexOf("bgp")!==-1||lo.indexOf("ip route")!==-1)return"路由相关配置发生变化，需要确认邻居、区域、下一跳和策略。";
-    if(lo.indexOf("snmp")!==-1||lo.indexOf("aaa")!==-1||lo.indexOf("local-user")!==-1)return"管理面配置发生变化，需要按目标设备重新确认认证和审计策略。";
-    return"配置格式或命令位置发生变化，请结合原配置确认语义一致。";
-  }
-  function _sec(title,cls,items){
-    if(!items.length)return"";
-    return'<div class="ds '+cls+'"><div class="ds__hd">'+title+' <span class="ds__cnt">'+items.length+'</span></div><ul class="diff-list">'+
-      items.map(function(l){return"<li>"+esc(_diffLineToUserText(l))+"<span class='diff-raw'>"+esc(l)+"</span></li>"}).join("")+"</ul></div>";
-  }
-  return'<div class="diff-root">'+
-    '<div class="diff-intro"><div class="diff-intro__hd">变更说明</div><div class="diff-intro__bd">这里先解释迁移中发生了什么，再把原始 diff 收起来。用户只需要优先确认“需要确认”和“未迁移”两类。</div></div>'+
-    _sec("自动映射","diff--normal",normal)+
-    _sec("需要确认的变化","diff--confirm",confirm)+
-    _sec("未迁移 / 不支持","diff--risk",unsupported)+
-    '<details class="val-raw"><summary class="val-toggle">查看原始 diff</summary><pre>'+esc(diff)+"</pre></details>"+
+  return partial.concat(translated).slice(0,80)
+}
+function _renderSemanticNearTab(r){
+  var items=_semanticNearMatches(r);
+  var total=((r&&r.module_translations&&r.module_translations.results)||[]).filter(function(m){return (m.source_lines||[]).length&&(m.translated_lines||[]).length&&m.status!=="manual_review"&&m.status!=="unsupported"}).length;
+  if(!items.length)return'<div class="empty">暂无语义相近模块。完全无法确定的内容请查看“人工复核”。</div>';
+  var cards=items.map(function(m,i){
+    var status=m.status==="partial"?"需要确认":"已纳入可部署配置";
+    var cls=m.status==="partial"?"diff--confirm":"diff--normal";
+    return'<div class="ds '+cls+'"><div class="ds__hd">模块 '+(i+1)+' · '+esc(_friendlyFeatureName(m.feature))+' <span class="ds__cnt">'+esc(status)+'</span></div>'+
+      '<div class="semantic-card">'+
+      '<div class="semantic-col"><b>原配置模块</b><pre>'+esc((m.source_lines||[]).join("\n"))+'</pre></div>'+
+      '<div class="semantic-col"><b>建议目标配置</b><pre>'+esc((m.translated_lines||[]).join("\n"))+'</pre></div>'+
+      '<div class="semantic-note"><b>语义判断</b><br>'+esc(_semanticJudgment(m))+'</div>'+
+      '<div class="semantic-note"><b>确认点</b><pre>'+esc(_semanticConfirmPoint(m))+'</pre></div>'+
+      "</div></div>"
+  }).join("");
+  return'<div class="diff-root semantic-root">'+
+    '<div class="diff-intro"><div class="diff-intro__hd">配置语义相近模块</div><div class="diff-intro__bd">这里展示“原配置模块”和“建议目标配置”的模块级对应关系。翻译后配置只放系统认为可信的可部署配置；这里的“需要确认”模块可作为补充上线前复核依据。</div></div>'+
+    '<div class="review-summary"><span><b>已展示</b> '+items.length+' 项</span><span><b>语义相近总数</b> '+total+' 项</span><span><b>来源</b> module_translations</span></div>'+
+    cards+
+    (total>items.length?'<div class="empty">还有 '+(total-items.length)+' 个低风险自动转换模块未展开显示，可在导出报告中查看完整 module_translations。</div>':"")+
     "</div>";
 }
 function _extractManualReviewCommands(r){
@@ -1280,8 +1294,9 @@ function RN(){
     review:_renderManualReviewTab(r),
     risk:_renderRiskTabGrouped(r),
     validation:_renderValidationTab(r.validation||r.semantic_validation||{},r),
-    diff:_renderDiffTab(r.diff||""),
+    semantic:_renderSemanticNearTab(r),
   };
+  if(tab==="diff")tab="semantic";
   if(tab==="trace"){
     var nr=r.node_results||[];
     var html=nr.map(function(n){
@@ -1394,7 +1409,7 @@ async function _copyReport(){_closeCopyMenu();var r=R.result;if(!r)return;var v=
 function _flashCopyBtn(msg){var b=E("cbtn");b.textContent=msg||"已复制";setTimeout(function(){b.textContent="复制"},1200)}
 
 // ── Export ──
-function _buildExportReport(){var r=R.result;if(!r)return null;var v=r.validation||{};return{request_id:R.request_id,version:R.version,model:R.model,source:{vendor:E("fv").value,domain:E("sd").value,platform:E("sp").value},target:{vendor:E("tv").value,domain:E("td").value,platform:E("tp").value},translated:stripFence(r.translated||""),deployable_config:stripFence(r.deployable_config||""),manual_review_config:r.manual_review_config||"",manual_review_checklist:_manualReviewChecklistLines(r),module_summary:r.module_summary||{},module_graph:r.module_graph||{},module_translations:r.module_translations||{},validation:v,risk_signals:r.risk_signals||[],capability_gaps:r.capability_gaps||[],analyzer_results:r.analyzer_results||[],node_results:r.node_results||[],timing:{elapsed_ms:Date.now()-R.t0}}}
+function _buildExportReport(){var r=R.result;if(!r)return null;var v=r.validation||{};return{request_id:R.request_id,version:R.version,model:R.model,source:{vendor:E("fv").value,domain:E("sd").value,platform:E("sp").value},target:{vendor:E("tv").value,domain:E("td").value,platform:E("tp").value},translated:stripFence(r.translated||""),deployable_config:stripFence(r.deployable_config||""),manual_review_config:r.manual_review_config||"",manual_review_checklist:_manualReviewChecklistLines(r),semantic_near_matches:_semanticNearMatches(r),module_summary:r.module_summary||{},module_graph:r.module_graph||{},module_translations:r.module_translations||{},validation:v,risk_signals:r.risk_signals||[],capability_gaps:r.capability_gaps||[],analyzer_results:r.analyzer_results||[],node_results:r.node_results||[],timing:{elapsed_ms:Date.now()-R.t0}}}
 async function _exportReport(){var report=_buildExportReport();if(!report)return;var name="translation-report-"+R.request_id+".json";var blob=new Blob([JSON.stringify(report,null,2)],{type:"application/json"});var url=URL.createObjectURL(blob);var a=document.createElement("a");a.href=url;a.download=name;a.click();URL.revokeObjectURL(url)}
 
 document.querySelectorAll(".tabs button").forEach(function(t){t.addEventListener("click",function(){R.tab=this.dataset.tab;document.querySelectorAll(".tabs button").forEach(function(b){b.classList.toggle("on",b===t)});RN();saveActive()})});

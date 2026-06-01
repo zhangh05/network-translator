@@ -214,7 +214,7 @@ class TestFallbackModeTranslatedTab:
             "validation rendering must use manual_review_required field"
 
 
-class TestUserFriendlyRiskAndDiffTabs:
+class TestUserFriendlyRiskAndSemanticTabs:
     def test_risk_tab_is_launch_checklist_not_internal_categories(self):
         with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
             html = f.read()
@@ -227,16 +227,26 @@ class TestUserFriendlyRiskAndDiffTabs:
         assert "原始技术细节" in html, "risk tab should keep raw technical details in a collapsed section"
         assert "_renderRiskRawDetails" in html, "risk tab should have a dedicated raw details renderer"
 
-    def test_diff_tab_is_change_explanation_not_raw_diff_first(self):
+    def test_semantic_tab_replaces_raw_diff_with_module_pairs(self):
         with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
             html = f.read()
-        for label in ("变更说明", "自动映射", "需要确认的变化", "未迁移 / 不支持"):
-            assert label in html, f"diff tab should contain user-facing label: {label}"
+        assert 'data-tab="semantic"' in html, "semantic near-match tab should replace raw diff tab"
+        assert "配置语义相近" in html, "tab should use user-facing semantic label"
+        for label in ("原配置模块", "建议目标配置", "语义判断", "确认点"):
+            assert label in html, f"semantic tab should contain module-pair label: {label}"
 
-    def test_diff_tab_has_user_sentence_helper(self):
+    def test_semantic_tab_uses_module_translation_results(self):
         with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
             html = f.read()
-        assert "_diffLineToUserText" in html, "diff tab should translate raw diff lines into user sentences"
+        assert "function _renderSemanticNearTab" in html, "semantic tab needs a dedicated renderer"
+        assert "module_translations" in html and "translated_lines" in html and "source_lines" in html, \
+            "semantic tab should derive near matches from module translation evidence"
+
+    def test_raw_diff_is_not_primary_user_tab(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "差异对比" not in html, "raw diff should not be a primary user tab"
+        assert "_renderDiffTab" not in html, "old raw diff renderer should be removed from primary UI"
 
 
 class TestManualReviewTab:
