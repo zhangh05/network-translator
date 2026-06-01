@@ -429,3 +429,28 @@ class TestModuleTranslationCoverageView:
             "missing module ids should be explained as a blocking coverage issue"
         assert "所有模块都有处理结果" in html, \
             "accounted modules should show a reassuring user-facing message"
+
+
+class TestProjectTranslationStatusUX:
+    def test_project_list_maps_translation_status_from_backend(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "translation_status:p.translation_status||\"idle\"" in html, \
+            "project list should preserve backend translation_status for cross-browser visibility"
+        assert "active_request_id:p.active_request_id||\"\"" in html, \
+            "project list should preserve active_request_id while translation is running"
+
+    def test_sidebar_shows_translating_badge(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        assert "正在翻译" in html, "sidebar should show a user-facing translating badge"
+        assert "project-busy" in html, "sidebar translating badge should have a stable CSS class"
+
+    def test_save_project_does_not_overwrite_backend_inflight_status(self):
+        with open(FRONTEND_HTML_PATH, encoding="utf-8") as f:
+            html = f.read()
+        save_start = html.index("async function saveProject")
+        save_end = html.index("async function createProject", save_start)
+        snippet = html[save_start:save_end]
+        assert "translation_status" not in snippet, \
+            "ordinary project saves must not clear backend-owned in-flight translation state"

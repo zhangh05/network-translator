@@ -12,6 +12,7 @@ import re
 import threading
 import time
 import uuid
+from contextlib import contextmanager
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Dict, Any, List
@@ -19,6 +20,7 @@ from typing import Optional, Dict, Any, List
 logger = logging.getLogger("translator.project_store")
 
 PROJECT_DIR = Path(__file__).parent / "projects"
+RUN_DIR = Path(__file__).parent / ".run"
 
 # ── Sensitive output redaction ─────────────────────────────────────────────
 # Applied before any user-facing output leaves the service (API response,
@@ -60,6 +62,100 @@ def redact_sensitive_output(value):
     return value
 
 
+def _pid_alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+        return True
+    except OSError:
+        return False
+
+
+@contextmanager
+def project_translation_lock(project_dir: Path, project_id: str):
+    """Cross-worker lock for one project translation.
+
+    Holding this lock across the translation prevents two browsers from writing
+    competing results for the same project. Different projects use different
+    lock files and can still run concurrently.
+    """
+
+    if not re.match(r'^[a-zA-Z0-9_-]+$', project_id):
+        raise ValueError(f"Invalid project_id: {project_id!r}")
+    lock_dir = Path(project_dir) / ".translate_locks"
+    lock_dir.mkdir(parents=True, exist_ok=True)
+    lock_path = lock_dir / f"{project_id}.lock"
+    with open(lock_path, "a", encoding="utf-8") as lock:
+        fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
+
+
+class TranslationSlotLimiter:
+    """Small cross-process semaphore backed by token files.
+
+    Gunicorn workers are separate processes, so a normal threading.Semaphore
+    would not cap total LLM concurrency. This limiter uses a short critical
+    section protected by flock, then leaves one token file per active request.
+    """
+
+    def __init__(self, run_dir: Path = None, limit: int = None, wait_interval: float = 0.05):
+        self.run_dir = Path(run_dir) if run_dir is not None else RUN_DIR
+        self.limit = max(1, int(limit if limit is not None else os.environ.get("LLM_TRANSLATION_CONCURRENCY", "2")))
+        self.wait_interval = wait_interval
+        self.slot_dir = self.run_dir / "translation_slots"
+        self.slot_dir.mkdir(parents=True, exist_ok=True)
+        self.lock_path = self.slot_dir / "slots.lock"
+
+    @contextmanager
+    def acquire(self, request_id: str = "", project_id: str = ""):
+        token = self._acquire_token(request_id, project_id)
+        try:
+            yield
+        finally:
+            try:
+                token.unlink()
+            except FileNotFoundError:
+                pass
+
+    def _acquire_token(self, request_id: str, project_id: str) -> Path:
+        token_name = f"{os.getpid()}-{threading.get_ident()}-{uuid.uuid4().hex}.slot"
+        token_path = self.slot_dir / token_name
+        payload = {
+            "pid": os.getpid(),
+            "thread_id": threading.get_ident(),
+            "request_id": request_id,
+            "project_id": project_id,
+            "started_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+        }
+        while True:
+            with open(self.lock_path, "a", encoding="utf-8") as lock:
+                fcntl.flock(lock.fileno(), fcntl.LOCK_EX)
+                try:
+                    self._cleanup_stale_tokens()
+                    active = [p for p in self.slot_dir.glob("*.slot")]
+                    if len(active) < self.limit:
+                        token_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
+                        return token_path
+                finally:
+                    fcntl.flock(lock.fileno(), fcntl.LOCK_UN)
+            time.sleep(self.wait_interval)
+
+    def _cleanup_stale_tokens(self):
+        for token in self.slot_dir.glob("*.slot"):
+            try:
+                data = json.loads(token.read_text(encoding="utf-8") or "{}")
+                pid = int(data.get("pid") or 0)
+            except Exception:
+                pid = 0
+            if pid <= 0 or not _pid_alive(pid):
+                try:
+                    token.unlink()
+                except FileNotFoundError:
+                    pass
+
+
 class Project:
     """项目"""
 
@@ -81,6 +177,10 @@ class Project:
         self.model = ""
         self.history = []
         self.last_translate_hash = ""
+        self.translation_status = "idle"
+        self.active_request_id = ""
+        self.active_translate_hash = ""
+        self.translation_started_at = ""
 
     def to_dict(self) -> dict:
         return {
@@ -101,6 +201,10 @@ class Project:
             "model": self.model,
             "history_count": len(self.history),
             "last_translate_hash": self.last_translate_hash,
+            "translation_status": self.translation_status,
+            "active_request_id": self.active_request_id,
+            "active_translate_hash": self.active_translate_hash,
+            "translation_started_at": self.translation_started_at,
         }
 
     def to_full_dict(self) -> dict:
@@ -189,6 +293,10 @@ class ProjectStore:
         proj.model = data.get("model") or ""
         proj.history = data.get("history", [])
         proj.last_translate_hash = data.get("last_translate_hash") or ""
+        proj.translation_status = data.get("translation_status") or "idle"
+        proj.active_request_id = data.get("active_request_id") or ""
+        proj.active_translate_hash = data.get("active_translate_hash") or ""
+        proj.translation_started_at = data.get("translation_started_at") or ""
         return proj
 
     def _load_index(self):
@@ -334,6 +442,14 @@ class ProjectStore:
             project.model = updates["model"]
         if "last_translate_hash" in updates:
             project.last_translate_hash = updates["last_translate_hash"]
+        if "translation_status" in updates:
+            project.translation_status = updates["translation_status"] or "idle"
+        if "active_request_id" in updates:
+            project.active_request_id = updates["active_request_id"] or ""
+        if "active_translate_hash" in updates:
+            project.active_translate_hash = updates["active_translate_hash"] or ""
+        if "translation_started_at" in updates:
+            project.translation_started_at = updates["translation_started_at"] or ""
 
         project.updated_at = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
         self._save_project(project)
@@ -401,20 +517,23 @@ def run_translation(
     source_platform: str = "",
     target_domain: str = "",
     target_platform: str = "",
+    request_id: str = "direct",
+    project_id: str = "",
 ) -> Dict[str, Any]:
     """Run translation with a consistent result schema for all API routes."""
     agent = _get_translation_agent()
 
-    result = agent.run(
-        config_text=config_text,
-        from_vendor=from_vendor,
-        to_vendor=to_vendor,
-        user=user,
-        source_domain=source_domain,
-        source_platform=source_platform,
-        target_domain=target_domain,
-        target_platform=target_platform,
-    )
+    with TranslationSlotLimiter().acquire(request_id=request_id, project_id=project_id):
+        result = agent.run(
+            config_text=config_text,
+            from_vendor=from_vendor,
+            to_vendor=to_vendor,
+            user=user,
+            source_domain=source_domain,
+            source_platform=source_platform,
+            target_domain=target_domain,
+            target_platform=target_platform,
+        )
     return {
         "translated": result.get("translated", ""),
         "validation": result.get("validation", {}),
@@ -626,81 +745,111 @@ def register_project_routes(app):
                 "model": project.model or "",
             }, 200
 
-        # 更新项目配置（不含 last_translate_hash，等翻译成功时一起写入）
-        store.update_project(project_id, {
-            "config_text": config_text,
-            "from_vendor": from_vendor,
-            "to_vendor": to_vendor,
-            "source_domain": source_domain,
-            "source_platform": source_platform,
-            "target_domain": target_domain,
-            "target_platform": target_platform,
-        })
-
         import uuid
         request_id = str(uuid.uuid4())
 
         import time as _time
         t0 = _time.time()
 
-        # 执行翻译
-        try:
-            result_data = run_translation(
-                config_text=config_text,
-                from_vendor=from_vendor,
-                to_vendor=to_vendor,
-                source_domain=source_domain,
-                source_platform=source_platform,
-                target_domain=target_domain,
-                target_platform=target_platform,
-                user="web_user",
-            )
-        except Exception:
-            logger.exception("Project translation failed for project %s", project_id)
+        with project_translation_lock(store.project_dir, project_id):
+            project = store.get_project(project_id, reload=True)
+            if not project:
+                return {"ok": False, "error": "Project not found"}, 404
+            if project.result is not None and project.last_translate_hash == fingerprint:
+                return {
+                    "ok": True,
+                    "result": redact_sensitive_output(project.result),
+                    "reused": True,
+                    "elapsed_ms": int((_time.time() - t0) * 1000),
+                    "request_id": project.request_id or "",
+                    "version": project.version or "",
+                    "model": project.model or "",
+                }, 200
+
+            # 更新项目配置和 in-flight 状态（不含 last_translate_hash，等翻译成功时一起写入）
+            store.update_project(project_id, {
+                "config_text": config_text,
+                "from_vendor": from_vendor,
+                "to_vendor": to_vendor,
+                "source_domain": source_domain,
+                "source_platform": source_platform,
+                "target_domain": target_domain,
+                "target_platform": target_platform,
+                "translation_status": "translating",
+                "active_request_id": request_id,
+                "active_translate_hash": fingerprint,
+                "translation_started_at": datetime.now(timezone.utc).isoformat().replace("+00:00", "Z"),
+            })
+
+            # 执行翻译
+            try:
+                result_data = run_translation(
+                    config_text=config_text,
+                    from_vendor=from_vendor,
+                    to_vendor=to_vendor,
+                    source_domain=source_domain,
+                    source_platform=source_platform,
+                    target_domain=target_domain,
+                    target_platform=target_platform,
+                    user="web_user",
+                    request_id=request_id,
+                    project_id=project_id,
+                )
+            except Exception:
+                logger.exception("Project translation failed for project %s", project_id)
+                elapsed = _time.time() - t0
+                store.update_project(project_id, {
+                    "translation_status": "idle",
+                    "active_request_id": "",
+                    "active_translate_hash": "",
+                    "translation_started_at": "",
+                })
+                _write_translation_log(
+                    request_id, elapsed, config_text,
+                    from_vendor, to_vendor, source_domain, source_platform,
+                    target_domain, target_platform, result=None, error="Internal translation error",
+                )
+                return {"ok": False, "error": "Internal translation error", "request_id": request_id}, 500
+
+            # 敏感信息脱敏：递归 redact 所有字符串字段
+            result_data = redact_sensitive_output(result_data)
+
+            # 翻译成功后：同时写入 result 和 fingerprint，避免中途失败导致旧 result 绑定新 fingerprint
+            store.update_project(project_id, {
+                "result": result_data,
+                "request_id": request_id,
+                "version": _read_version(),
+                "model": _get_model_name(),
+                "last_translate_hash": fingerprint,
+                "translation_status": "idle",
+                "active_request_id": "",
+                "active_translate_hash": "",
+                "translation_started_at": "",
+            })
+
+            store.add_history(project_id, {
+                "config_text": config_text,
+                "from_vendor": from_vendor,
+                "to_vendor": to_vendor,
+                "source_domain": source_domain,
+                "source_platform": source_platform,
+                "target_domain": target_domain,
+                "target_platform": target_platform,
+                "success": result_data.get("success", False),
+                "translated": result_data.get("translated", ""),
+            })
+
             elapsed = _time.time() - t0
             _write_translation_log(
                 request_id, elapsed, config_text,
                 from_vendor, to_vendor, source_domain, source_platform,
-                target_domain, target_platform, result=None, error="Internal translation error",
+                target_domain, target_platform, result_data, error=None,
             )
-            return {"ok": False, "error": "Internal translation error", "request_id": request_id}, 500
 
-        # 敏感信息脱敏：递归 redact 所有字符串字段
-        result_data = redact_sensitive_output(result_data)
-
-        # 翻译成功后：同时写入 result 和 fingerprint，避免中途失败导致旧 result 绑定新 fingerprint
-        store.update_project(project_id, {
-            "result": result_data,
-            "request_id": request_id,
-            "version": _read_version(),
-            "model": _get_model_name(),
-            "last_translate_hash": fingerprint,
-        })
-
-        store.add_history(project_id, {
-            "config_text": config_text,
-            "from_vendor": from_vendor,
-            "to_vendor": to_vendor,
-            "source_domain": source_domain,
-            "source_platform": source_platform,
-            "target_domain": target_domain,
-            "target_platform": target_platform,
-            "success": result_data.get("success", False),
-            "translated": result_data.get("translated", ""),
-        })
-
-        import time as _time
-        elapsed = _time.time() - t0
-        _write_translation_log(
-            request_id, elapsed, config_text,
-            from_vendor, to_vendor, source_domain, source_platform,
-            target_domain, target_platform, result_data, error=None,
-        )
-
-        return {
-            "ok": True,
-            "request_id": request_id,
-            "version": _read_version(),
-            "model": _get_model_name(),
-            "result": result_data,
-        }
+            return {
+                "ok": True,
+                "request_id": request_id,
+                "version": _read_version(),
+                "model": _get_model_name(),
+                "result": result_data,
+            }

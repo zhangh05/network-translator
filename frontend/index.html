@@ -39,9 +39,12 @@
   }
   #sb .item:hover{background:var(--s2);color:var(--t1)}
   #sb .item.active{background:var(--s2);color:var(--t1);font-weight:600}
+  #sb .item.busy{background:rgba(217,119,6,.06)}
   #sb .item .dot{width:7px;height:7px;border-radius:50%;flex-shrink:0;background:var(--t3)}
   #sb .item .dot.has{background:var(--ac)}
+  #sb .item .dot.busy{background:var(--am);animation:pulse 1.5s ease infinite}
   #sb .item .name{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  #sb .item .project-busy{flex-shrink:0;font-size:10px;font-weight:600;color:var(--am);background:rgba(217,119,6,.1);border-radius:999px;padding:1px 6px}
   #sb .item .rename{opacity:0;background:transparent;border:0;color:var(--t3);font-size:12px;padding:0 2px;cursor:pointer;line-height:1;flex-shrink:0}
   #sb .item .del{opacity:0;background:transparent;border:0;color:var(--t3);font-size:14px;padding:0 2px;cursor:pointer;line-height:1;flex-shrink:0}
   #sb .item:hover .rename,#sb .item:hover .del{opacity:1}
@@ -503,7 +506,7 @@ async function api(method,url,body){
 async function loadProjects(){
   try{
     var d=await api("GET","/api/projects");
-    PROJS=(d.projects||[]).map(function(p){return{id:p.id,name:p.name||"窗口",config:p.config_text||"",from:p.from_vendor||"auto",to:p.to_vendor||"huawei",sd:p.source_domain||"",sp:p.source_platform||"",td:p.target_domain||"",tp:p.target_platform||"",result:p.result||null,request_id:p.request_id||"",version:p.version||"",model:p.model||"",tab:"translated"}});
+    PROJS=(d.projects||[]).map(function(p){return{id:p.id,name:p.name||"窗口",config:p.config_text||"",from:p.from_vendor||"auto",to:p.to_vendor||"huawei",sd:p.source_domain||"",sp:p.source_platform||"",td:p.target_domain||"",tp:p.target_platform||"",result:p.result||null,request_id:p.request_id||"",version:p.version||"",model:p.model||"",translation_status:p.translation_status||"idle",active_request_id:p.active_request_id||"",active_translate_hash:p.active_translate_hash||"",translation_started_at:p.translation_started_at||"",tab:"translated"}});
     return
   }catch(_){}
   // fallback: localStorage
@@ -526,13 +529,13 @@ async function createProject(){
   var n=PROJS.length+1;
   try{
     var d=await api("POST","/api/projects",{name:"窗口"+n});
-    var p={id:d.project.id,name:d.project.name,config:"",from:"auto",to:"huawei",sd:"",sp:"",td:"",tp:"",result:null,tab:"translated",request_id:"",version:"",model:""};
+    var p={id:d.project.id,name:d.project.name,config:"",from:"auto",to:"huawei",sd:"",sp:"",td:"",tp:"",result:null,tab:"translated",request_id:"",version:"",model:"",translation_status:"idle",active_request_id:"",active_translate_hash:"",translation_started_at:""};
     PROJS.push(p);ACTIVE=p.id;
     try{localStorage.setItem("nt_active_v2",ACTIVE)}catch(_){}
     renderSidebar();loadActive()
   }catch(_){
     // fallback: local only
-    var id="p"+Date.now();PROJS.push({id:id,name:"窗口"+n,config:"",from:"auto",to:"huawei",sd:"",sp:"",td:"",tp:"",result:null,tab:"translated"});ACTIVE=id;
+    var id="p"+Date.now();PROJS.push({id:id,name:"窗口"+n,config:"",from:"auto",to:"huawei",sd:"",sp:"",td:"",tp:"",result:null,tab:"translated",request_id:"",version:"",model:"",translation_status:"idle",active_request_id:"",active_translate_hash:"",translation_started_at:""});ACTIVE=id;
     try{localStorage.setItem("nt_active_v2",ACTIVE);localStorage.setItem("nt_projects_v2",JSON.stringify(PROJS))}catch(_){}
     renderSidebar();loadActive()
   }
@@ -553,10 +556,10 @@ async function initProjects(){
   if(!PROJS.length){
     try{
       var d=await api("POST","/api/projects",{name:"窗口1"});
-      PROJS.push({id:d.project.id,name:"窗口1",config:S,from:"auto",to:"huawei",sd:"",sp:"",td:"",tp:"",result:null,tab:"translated"});
+      PROJS.push({id:d.project.id,name:"窗口1",config:S,from:"auto",to:"huawei",sd:"",sp:"",td:"",tp:"",result:null,tab:"translated",request_id:"",version:"",model:"",translation_status:"idle",active_request_id:"",active_translate_hash:"",translation_started_at:""});
       ACTIVE=d.project.id;try{localStorage.setItem("nt_active_v2",ACTIVE)}catch(_){}
     }catch(_){
-      PROJS.push({id:"p1",name:"窗口1",config:S,from:"auto",to:"huawei",sd:"",sp:"",td:"",tp:"",result:null,tab:"translated"});ACTIVE="p1"
+      PROJS.push({id:"p1",name:"窗口1",config:S,from:"auto",to:"huawei",sd:"",sp:"",td:"",tp:"",result:null,tab:"translated",request_id:"",version:"",model:"",translation_status:"idle",active_request_id:"",active_translate_hash:"",translation_started_at:""});ACTIVE="p1"
     }
   }
   if(!PROJS.find(function(p){return p.id===ACTIVE})){ACTIVE=PROJS[0].id;try{localStorage.setItem("nt_active_v2",ACTIVE)}catch(_){}}
@@ -585,6 +588,10 @@ function loadActive(){
     E("cbtn").disabled=false;E("ebtn").disabled=false;
     if(R.request_id){E("rid").textContent=R.request_id;E("ridr").classList.remove("h");E("rvr").textContent=_versionLabel(R.version,R.model)}
   }else{E("rtag").textContent="待命";E("rtag").className="tag tag--dim";E("sptag").textContent="-";E("sptag").className="tag tag--dim";E("rm").textContent="";E("cbtn").disabled=true;E("ebtn").disabled=true;E("banner").className="bn"}
+  if(p.translation_status==="translating"){
+    bannerShow("warn","该窗口正在翻译中，可稍后刷新查看结果");
+    E("bm").textContent="正在翻译..."
+  }
   document.querySelectorAll(".tabs button").forEach(function(t){t.classList.toggle("on",t.dataset.tab===R.tab)});
   RN()
 }
@@ -597,14 +604,14 @@ function saveActive(){
 }
 function renderSidebar(){
   var list=E("plist");
-  list.innerHTML=PROJS.map(function(p){var name=esc(p.name||"窗口").replace(/"/g,"&quot;");return'<div class="item'+(p.id===ACTIVE?' active':'')+'" data-id="'+p.id+'"><span class="dot'+(p.result?' has':'')+'"></span><span class="name" data-rename="'+p.id+'" title="双击重命名">'+name+'</span><button class="rename" data-rename="'+p.id+'" title="重命名">✎</button><button class="del" data-del="'+p.id+'">&times;</button></div>'}).join("")
+  list.innerHTML=PROJS.map(function(p){var name=esc(p.name||"窗口").replace(/"/g,"&quot;");var busy=p.translation_status==="translating";var badge=busy?'<span class="project-busy" title="正在翻译">正在翻译</span>':"";return'<div class="item'+(p.id===ACTIVE?' active':'')+(busy?' busy':'')+'" data-id="'+p.id+'"><span class="dot'+(p.result?' has':'')+(busy?' busy':'')+'"></span><span class="name" data-rename="'+p.id+'" title="双击重命名">'+name+'</span>'+badge+'<button class="rename" data-rename="'+p.id+'" title="重命名">✎</button><button class="del" data-del="'+p.id+'">&times;</button></div>'}).join("")
 }
 
 function startRenameProject(id){
   var p=PROJS.find(function(x){return x.id===id});if(!p)return;
   var item=E("plist").querySelector('[data-id="'+id+'"]');if(!item)return;
   var current=p.name||"窗口";
-  item.innerHTML='<span class="dot'+(p.result?' has':'')+'"></span><input class="rename-input" data-renaming="'+id+'" value="'+esc(current).replace(/"/g,"&quot;")+'" maxlength="60"><button class="del" data-del="'+id+'">&times;</button>';
+  item.innerHTML='<span class="dot'+(p.result?' has':'')+(p.translation_status==="translating"?' busy':'')+'"></span><input class="rename-input" data-renaming="'+id+'" value="'+esc(current).replace(/"/g,"&quot;")+'" maxlength="60"><button class="del" data-del="'+id+'">&times;</button>';
   var input=item.querySelector(".rename-input");input.focus();input.select()
 }
 
@@ -1247,6 +1254,7 @@ async function TL(){
   },200);
   try{
     var pid=PROJS.find(function(x){return x.id===ACTIVE});if(!pid)throw new Error("no active project");
+    pid.translation_status="translating";pid.active_request_id="";pid.active_translate_hash="";pid.translation_started_at=new Date().toISOString();renderSidebar();
     var body={config_text:c,from_vendor:E("fv").value,to_vendor:E("tv").value};
     var sd=E("sd").value,sp=E("sp").value,td=E("td").value,tp=E("tp").value;
     if(sd&&sd!="auto")body.source_domain=sd;if(sp&&sp!="auto")body.source_platform=sp;
@@ -1276,9 +1284,10 @@ async function TL(){
       bannerShow(R.result.success?"ok":"warn",R.result.fallback_used?"已使用规则兜底":"翻译成功");
     }
     // Reload project from server so all browsers see the same result
-    try{var sr=await fetch("/api/projects/"+pid.id,{headers:H()});if(sr.ok){var sp=await sr.json();if(sp.ok&&sp.project){var refreshed=PROJS.find(function(x){return x.id===ACTIVE});if(refreshed){refreshed.result=sp.project.result;refreshed.request_id=sp.project.request_id||R.request_id;refreshed.version=sp.project.version||R.version;refreshed.model=sp.project.model||R.model;refreshed.config=sp.project.config_text||c;refreshed.tab="translated"}}}}catch(_){}
+    try{var sr=await fetch("/api/projects/"+pid.id,{headers:H()});if(sr.ok){var sp=await sr.json();if(sp.ok&&sp.project){var refreshed=PROJS.find(function(x){return x.id===ACTIVE});if(refreshed){refreshed.result=sp.project.result;refreshed.request_id=sp.project.request_id||R.request_id;refreshed.version=sp.project.version||R.version;refreshed.model=sp.project.model||R.model;refreshed.config=sp.project.config_text||c;refreshed.translation_status=sp.project.translation_status||"idle";refreshed.active_request_id=sp.project.active_request_id||"";refreshed.active_translate_hash=sp.project.active_translate_hash||"";refreshed.translation_started_at=sp.project.translation_started_at||"";refreshed.tab="translated"}}}}catch(_){}
     renderSidebar()
   }catch(e){
+    var ep=PROJS.find(function(x){return x.id===ACTIVE});if(ep){ep.translation_status="idle";ep.active_request_id="";ep.active_translate_hash="";ep.translation_started_at="";renderSidebar()}
     E("out").innerHTML="<div style='color:var(--rd)'>\u2716 "+e.message.replace(/&/g,"&amp;").replace(/</g,"&lt;")+"</div>";
     bannerShow("fail","翻译失败")
   }finally{
