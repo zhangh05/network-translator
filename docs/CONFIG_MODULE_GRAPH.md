@@ -142,6 +142,10 @@ Current semantic-near families:
 | LACP tuning | timeout, priority, preempt | LACP timer/priority skeleton | timer and preempt behavior affects convergence |
 | MSTP region | region name, revision, instance VLAN map | MST configuration skeleton | region consistency affects topology and outage risk |
 | Management SNMP/logging/NTP | community/loghost/server lines | redacted or host-only skeleton | secrets and management-plane policy need review |
+| OSPF advanced | authentication, redistribute, stub/NSSA, interface tuning | authentication/redistribute/tuning skeleton | keys, area type, redistribution policy, and convergence behavior differ |
+| RIP / IS-IS | process, network/NET, redistribute, metric style | process/network/redistribute skeleton | metric, level, auth, and redistribution behavior need review |
+| Multicast | RP and interface PIM/IGMP lines | RP, PIM, and IGMP skeleton | ASM/SSM, RP/BSR, interface mode, and querier behavior differ |
+| Access authentication | 802.1X, MAB, portal, radius domain, interface binding | AAA and interface access-session skeleton | fail action, critical VLAN, server groups, and auth order need review |
 
 ## Example
 

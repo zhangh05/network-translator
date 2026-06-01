@@ -1391,3 +1391,115 @@ def test_mstp_region_is_semantic_near_with_mst_configuration_suggestion():
     assert "name CORE" in suggested
     assert "instance 1 vlan 10 20" in suggested
     assert "stp region-configuration" not in assembly.deployable_config
+
+
+def test_ospf_redistribute_and_authentication_are_semantic_near_suggestions():
+    config = """ospf 1
+ area 0.0.0.0
+  authentication-mode md5 1 cipher SECRET_OSPF
+  network 10.0.10.0 0.0.0.255
+ import-route static
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+    auth = next(result for result in assembly.results if result.feature == "ospf.authentication")
+    redist = next(result for result in assembly.results if result.feature == "ospf.redistribute")
+
+    assert auth.status == "semantic_near"
+    assert redist.status == "semantic_near"
+    assert "area 0 authentication message-digest" in "\n".join(auth.suggested_lines)
+    assert "redistribute static" in "\n".join(redist.suggested_lines)
+    assert "SECRET_OSPF" not in "\n".join(auth.suggested_lines)
+    assert "authentication-mode md5" not in assembly.deployable_config
+    assert "import-route static" not in assembly.deployable_config
+
+
+def test_rip_process_network_and_redistribute_are_semantic_near():
+    config = """router rip
+ version 2
+ network 10.0.0.0
+ redistribute static
+"""
+    graph = build_module_graph(config, vendor="cisco")
+
+    assembly = translate_module_graph(graph, from_vendor="cisco", to_vendor="huawei")
+    by_feature = {result.feature: result for result in assembly.results}
+
+    assert by_feature["rip.process"].status == "semantic_near"
+    assert by_feature["rip.network"].status == "semantic_near"
+    assert by_feature["rip.redistribute"].status == "semantic_near"
+    assert "rip 1" in "\n".join(by_feature["rip.process"].suggested_lines)
+    assert "network 10.0.0.0" in "\n".join(by_feature["rip.network"].suggested_lines)
+    assert "import-route static" in "\n".join(by_feature["rip.redistribute"].suggested_lines)
+    assert "router rip" not in assembly.deployable_config
+
+
+def test_isis_process_net_and_redistribute_are_semantic_near():
+    config = """isis 1
+ network-entity 49.0001.0000.0000.0001.00
+ cost-style wide
+ import-route static
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+    by_feature = {result.feature: result for result in assembly.results}
+
+    assert by_feature["isis.process"].status == "semantic_near"
+    assert by_feature["isis.network_entity"].status == "semantic_near"
+    assert by_feature["isis.interface_tuning"].status == "semantic_near"
+    assert by_feature["isis.redistribute"].status == "semantic_near"
+    assert "router isis 1" in "\n".join(by_feature["isis.process"].suggested_lines)
+    assert "net 49.0001.0000.0000.0001.00" in "\n".join(by_feature["isis.network_entity"].suggested_lines)
+    assert "metric-style wide" in "\n".join(by_feature["isis.interface_tuning"].suggested_lines)
+    assert "redistribute static" in "\n".join(by_feature["isis.redistribute"].suggested_lines)
+    assert "network-entity" not in assembly.deployable_config
+
+
+def test_multicast_rp_and_interface_are_semantic_near_suggestions():
+    config = """pim rp-address 10.0.0.1
+#
+interface GigabitEthernet0/0/2
+ ip address 10.0.20.1 255.255.255.0
+ ip pim sparse-mode
+ ip igmp version 2
+"""
+    graph = build_module_graph(config, vendor="cisco")
+
+    assembly = translate_module_graph(graph, from_vendor="cisco", to_vendor="huawei")
+    rp = next(result for result in assembly.results if result.feature == "multicast.rp")
+    interface = next(result for result in assembly.results if result.feature == "multicast.interface")
+
+    assert rp.status == "semantic_near"
+    assert interface.status == "semantic_near"
+    assert "multicast routing-enable" in "\n".join(rp.suggested_lines)
+    assert "pim sm" in "\n".join(interface.suggested_lines)
+    assert "igmp enable" in "\n".join(interface.suggested_lines)
+    assert "ip pim sparse-mode" not in assembly.deployable_config
+
+
+def test_access_auth_profile_and_interface_binding_are_semantic_near_suggestions():
+    config = """authentication-profile name dot1x_authen_profile
+ dot1x-access-profile dot1x_access
+ mac-access-profile mac_access
+ access-domain corp force
+#
+interface GigabitEthernet0/0/1
+ port link-type access
+ authentication-profile dot1x_authen_profile
+ dot1x enable
+ mac-authentication enable
+"""
+    graph = build_module_graph(config, vendor="huawei")
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+    profile = next(result for result in assembly.results if result.feature == "access.auth_profile")
+    binding = next(result for result in assembly.results if result.feature == "access.interface_binding")
+
+    assert profile.status == "semantic_near"
+    assert binding.status == "semantic_near"
+    assert "aaa authentication dot1x" in "\n".join(profile.suggested_lines)
+    assert "interface GigabitEthernet0/0/1" in "\n".join(binding.suggested_lines)
+    assert "authentication port-control auto" in "\n".join(binding.suggested_lines)
+    assert "authentication-profile" not in assembly.deployable_config

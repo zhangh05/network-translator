@@ -356,6 +356,16 @@ def _semantic_near_result(module: ConfigModule, from_vendor: str, to_vendor: str
         suggested = _lacp_tuning_suggested_lines(module, from_vendor, to_vendor)
     elif module.feature == "stp.mstp":
         suggested = _mstp_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature.startswith("ospf."):
+        suggested = _ospf_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature.startswith("rip."):
+        suggested = _rip_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature.startswith("isis."):
+        suggested = _isis_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature.startswith("multicast"):
+        suggested = _multicast_suggested_lines(module, from_vendor, to_vendor)
+    elif module.feature.startswith("access."):
+        suggested = _access_suggested_lines(module, from_vendor, to_vendor)
     if not suggested:
         return None
     reason = module.manual_review_reason or "该模块已生成语义相近建议，动作细节需人工确认"
@@ -632,6 +642,143 @@ def _mstp_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str
     lines.extend(f" instance {instance} vlan {vlans.strip()}" for instance, vlans in instances)
     lines.append(" active region-configuration")
     return lines
+
+
+def _ospf_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    if module.feature == "ospf.authentication":
+        area = _extract_first(r":area:([^:]+)", " ".join(module.consumes + module.provides)) or "0"
+        area = "0" if area == "0.0.0.0" else area
+        if target == "cisco":
+            return [f"area {area} authentication message-digest", "! confirm OSPF key-chain/key-id manually"]
+        return [f"area {area}", " authentication-mode md5 <redacted>", "# confirm OSPF key-chain/key-id manually"]
+    if module.feature == "ospf.redistribute":
+        proto = _extract_first(r"\b(?:import-route|redistribute)\s+(\S+)", source_text) or "static"
+        return [f"redistribute {proto}" if target == "cisco" else f"import-route {proto}"]
+    if module.feature == "ospf.area_special":
+        if re.search(r"\bnssa\b", source_text, re.IGNORECASE):
+            return ["area 0 nssa" if target == "cisco" else "nssa", _comment_for(target, "confirm NSSA options manually")]
+        if re.search(r"\bstub\b", source_text, re.IGNORECASE):
+            return ["area 0 stub" if target == "cisco" else "stub", _comment_for(target, "confirm stub/no-summary options manually")]
+        if re.search(r"\bvirtual-link\b", source_text, re.IGNORECASE):
+            return [_comment_for(target, "confirm OSPF virtual-link manually")]
+    if module.feature == "ospf.interface_tuning":
+        lines: list[str] = []
+        cost = _extract_first(r"\bcost\s+(\d+)", source_text)
+        if cost:
+            lines.append(f"ip ospf cost {cost}" if target == "cisco" else f"ospf cost {cost}")
+        network_type = _extract_first(r"\bnetwork-type\s+(\S+)", source_text)
+        if network_type:
+            lines.append(f"ip ospf network {network_type}" if target == "cisco" else f"ospf network-type {network_type}")
+        return lines
+    return []
+
+
+def _rip_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    process = _first_resource_value(module.provides + module.consumes, "rip:") or "1"
+    process = "1" if process == "default" else process
+    if module.feature == "rip.process":
+        return ["router rip"] if target == "cisco" else [f"rip {process}"]
+    if module.feature == "rip.network":
+        network = _extract_first(r"\bnetwork\s+(\S+)", source_text)
+        return [f"network {network}"] if network else []
+    if module.feature == "rip.redistribute":
+        proto = _extract_first(r"\b(?:redistribute|import-route)\s+(\S+)", source_text) or "static"
+        return [f"redistribute {proto}" if target == "cisco" else f"import-route {proto}"]
+    return []
+
+
+def _isis_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    process = _first_resource_value(module.provides + module.consumes, "isis:") or "1"
+    process = "1" if process == "default" else process
+    if module.feature == "isis.process":
+        return [f"router isis {process}" if target == "cisco" else f"isis {process}"]
+    if module.feature == "isis.network_entity":
+        net = _extract_first(r"\b(?:network-entity|net)\s+(\S+)", source_text)
+        if not net:
+            return []
+        return [f"net {net}" if target == "cisco" else f"network-entity {net}"]
+    if module.feature == "isis.interface_tuning":
+        lines: list[str] = []
+        if re.search(r"\bcost-style\s+wide\b|\bmetric-style\s+wide\b", source_text, re.IGNORECASE):
+            lines.append("metric-style wide" if target == "cisco" else "cost-style wide")
+        metric = _extract_first(r"\bmetric\s+(\d+)", source_text)
+        if metric:
+            lines.append(f"isis metric {metric}" if target == "cisco" else f"isis cost {metric}")
+        if re.search(r"\bauthentication\b", source_text, re.IGNORECASE):
+            lines.append(_comment_for(target, "confirm IS-IS authentication manually"))
+        return lines
+    if module.feature == "isis.redistribute":
+        proto = _extract_first(r"\b(?:redistribute|import-route)\s+(\S+)", source_text) or "static"
+        return [f"redistribute {proto}" if target == "cisco" else f"import-route {proto}"]
+    return []
+
+
+def _multicast_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    if module.feature == "multicast.rp":
+        rp = _extract_first(r"\b(?:rp-address|static-rp)\s+(\d+\.\d+\.\d+\.\d+)", source_text)
+        if target == "cisco":
+            lines = ["ip multicast-routing"]
+            if rp:
+                lines.append(f"ip pim rp-address {rp}")
+            return lines
+        lines = ["multicast routing-enable"]
+        if rp:
+            lines.append(f"static-rp {rp}")
+        return lines
+    if module.feature in ("multicast", "multicast.interface", "multicast.igmp_tuning"):
+        lines: list[str] = []
+        if re.search(r"\bpim\b", source_text, re.IGNORECASE):
+            lines.append("ip pim sparse-mode" if target == "cisco" else "pim sm")
+        if re.search(r"\bigmp\b", source_text, re.IGNORECASE):
+            lines.append("ip igmp version 2" if target == "cisco" else "igmp enable")
+        if not lines and re.search(r"\bmulticast\b", source_text, re.IGNORECASE):
+            lines.append("ip multicast-routing" if target == "cisco" else "multicast routing-enable")
+        return lines
+    return []
+
+
+def _access_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    source_text = "\n".join(module.source_lines)
+    target = (to_vendor or "").lower()
+    if module.feature in ("access.auth_profile", "access.dot1x", "access.mac_auth", "access.radius_binding"):
+        if target == "cisco":
+            lines = ["aaa authentication dot1x default group radius"]
+            if re.search(r"\bauthorization\b|access-domain|domain\\b", source_text, re.IGNORECASE):
+                lines.append("aaa authorization network default group radius")
+            lines.append("! confirm RADIUS/TACACS server groups and fail actions manually")
+            return lines
+        return ["authentication-profile name <confirm-profile>", "# confirm dot1x/mac-auth/domain/radius scheme manually"]
+    if module.feature == "access.interface_binding":
+        interface = _first_resource_value(module.consumes, "interface:")
+        lines = [f"interface {interface}"] if interface else []
+        if target == "cisco":
+            if re.search(r"\bdot1x\b|authentication-profile|authentication\\s+port-control", source_text, re.IGNORECASE):
+                lines.append(" authentication port-control auto")
+                lines.append(" dot1x pae authenticator")
+            if re.search(r"\bmac-authentication\b|\\bmab\\b", source_text, re.IGNORECASE):
+                lines.append(" mab")
+            if re.search(r"\bhost-mode|multi-auth\b", source_text, re.IGNORECASE):
+                lines.append(" access-session host-mode multi-auth")
+            lines.append(" ! confirm access-session event/fail policy manually")
+            return lines
+        lines.append(" authentication-profile <confirm-profile>")
+        lines.append(" # confirm dot1x/mac-auth/access-domain manually")
+        return lines
+    if module.feature == "access.portal":
+        return [_comment_for(target, "confirm portal server and redirect behavior manually")]
+    return []
+
+
+def _comment_for(target: str, text: str) -> str:
+    return f"! {text}" if (target or "").lower() == "cisco" else f"# {text}"
 
 
 def _extract_route_policy_name(text: str) -> str:
