@@ -278,6 +278,41 @@ class TestCollectRiskSignals:
         fatal_sigs = [s for s in risk_info["signals"] if s["severity"] == "fatal"]
         assert len(fatal_sigs) == 0, f"Clean config should have no fatal signals: {fatal_sigs}"
 
+    def test_module_translation_coverage_requires_manual_review(self):
+        state = type("S", (), {"get": lambda s, k, d=None: {
+            "config_text": "hostname R1\n",
+            "from_vendor": "cisco",
+            "to_vendor": "huawei",
+            "features": ["system"],
+            "analyzer_results": [],
+            "capability_gaps": [],
+            "capability_gap_severity": "info",
+            "module_translation_coverage": {
+                "total_modules": 3,
+                "result_modules": 3,
+                "manual_review_modules": 1,
+                "partial_modules": 0,
+                "missing_module_ids": [],
+                "all_modules_accounted": True,
+            },
+        }.get(k, d)})()
+        result = type("R", (), {"valid": True, "errors": [], "warnings": []})()
+        risk_info = node._collect_risk_signals(
+            state, result,
+            config_content="sysname R1",
+            source_config="hostname R1",
+            to_vendor="huawei",
+            features=["system"],
+        )
+        module_signals = [
+            s for s in risk_info["signals"]
+            if s["source"] == "manual_review" and s["feature"] == "module_coverage"
+        ]
+
+        assert module_signals
+        assert risk_info["decision"].manual_review_required is True
+        assert risk_info["decision"].deployable is False
+
 
 # ═══════════════════════════════════════════════════════════════════
 # Verify HIGH_RISK_FEATURES set

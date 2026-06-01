@@ -253,3 +253,32 @@ def test_tokenize_word_boundaries():
     assert _tokenize("ip address 10.0.0.1 255.255.255.0") == {"ip", "address", "10", "0", "0", "1", "255"}
     assert _tokenize("interface GigabitEthernet0/1") == {"interface", "gigabitethernet0", "1"}
     assert _tokenize("") == set()
+
+
+def test_translate_node_llm_success_populates_module_shadow_assembly():
+    from core.graph import State
+    from core.graph.nodes import TranslateNode
+
+    class FakeLLM:
+        def __init__(self):
+            self.calls = 0
+
+        def chat(self, **kwargs):
+            self.calls += 1
+            return {
+                "content": '[{"type":"vlan","original_lines":["vlan 10"],"translated_lines":["vlan 10"],"notes":"","confidence":1.0},{"type":"interface","original_lines":["interface Vlanif10"," ip address 10.0.10.1 255.255.255.0"],"translated_lines":["interface Vlan10"," ip address 10.0.10.1 255.255.255.0"],"notes":"","confidence":1.0}]'
+            }
+
+    state = State()
+    state.set("config_text", "vlan 10\n#\ninterface Vlanif10\n ip address 10.0.10.1 255.255.255.0")
+    state.set("from_vendor", "huawei")
+    state.set("to_vendor", "cisco")
+
+    result = TranslateNode(llm=FakeLLM()).execute(state)
+
+    assert result.is_success()
+    assert "interface Vlan10" in state.get("translated_config")
+    assert state.get("module_graph", {}).get("modules")
+    assert state.get("module_translations", {}).get("results")
+    assert state.get("module_translation_coverage", {}).get("all_modules_accounted") is True
+    assert "vlan 10" in state.get("deployable_config", "")

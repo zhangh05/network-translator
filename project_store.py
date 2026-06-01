@@ -441,6 +441,7 @@ def run_translation(
         "deployable_config": result.get("deployable_config", ""),
         "manual_review_config": result.get("manual_review_config", ""),
         "module_translations": result.get("module_translations", {}),
+        "module_translation_coverage": result.get("module_translation_coverage", {}),
     }
 
 

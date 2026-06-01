@@ -30,12 +30,14 @@ class ModuleTranslationAssembly:
     results: list[ModuleTranslationResult]
     deployable_config: str
     manual_review_config: str
+    coverage: dict = field(default_factory=dict)
 
     def to_dict(self) -> dict:
         return {
             "results": [result.to_dict() for result in self.results],
             "deployable_config": self.deployable_config,
             "manual_review_config": self.manual_review_config,
+            "coverage": self.coverage,
         }
 
 
@@ -63,7 +65,28 @@ def translate_module_graph(graph: ModuleGraph, from_vendor: str, to_vendor: str)
         results=results,
         deployable_config="\n".join(_dedupe_adjacent_blank_lines(deployable_chunks)).strip(),
         manual_review_config="\n".join(_dedupe_adjacent_blank_lines(review_chunks)).strip(),
+        coverage=_translation_coverage(graph, results),
     )
+
+
+def _translation_coverage(graph: ModuleGraph, results: list[ModuleTranslationResult]) -> dict:
+    module_ids = [module.module_id for module in graph.modules]
+    result_ids = [result.module_id for result in results]
+    missing = [module_id for module_id in module_ids if module_id not in set(result_ids)]
+    status_counts: dict[str, int] = {}
+    for result in results:
+        status_counts[result.status] = status_counts.get(result.status, 0) + 1
+    return {
+        "total_modules": len(module_ids),
+        "result_modules": len(result_ids),
+        "translated_modules": status_counts.get("translated", 0),
+        "partial_modules": status_counts.get("partial", 0),
+        "manual_review_modules": status_counts.get("manual_review", 0),
+        "unsupported_modules": status_counts.get("unsupported", 0),
+        "missing_module_ids": missing,
+        "status_counts": dict(sorted(status_counts.items())),
+        "all_modules_accounted": not missing and len(result_ids) == len(module_ids),
+    }
 
 
 def _translate_module(

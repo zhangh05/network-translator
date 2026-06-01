@@ -1069,3 +1069,67 @@ def test_service_object_group_members_are_split_for_review():
     assert len(members) == 2
     assert all("service" in member.tags for member in members)
     assert all("object-group:WEB-SVC" in member.consumes for member in members)
+
+
+def test_module_translation_assembly_reports_complete_coverage():
+    graph = build_module_graph(SAMPLE_CONFIG, vendor="huawei")
+
+    assembly = translate_module_graph(graph, from_vendor="huawei", to_vendor="cisco")
+    payload = assembly.to_dict()
+    coverage = payload["coverage"]
+
+    assert coverage["total_modules"] == len(graph.modules)
+    assert coverage["result_modules"] == len(graph.modules)
+    assert coverage["missing_module_ids"] == []
+    assert coverage["translated_modules"] > 0
+    assert coverage["manual_review_modules"] > 0
+    assert coverage["all_modules_accounted"] is True
+
+
+def test_regular_fallback_uses_module_translation_contract():
+    state = State()
+    state.set("from_vendor", "huawei")
+    state.set("to_vendor", "cisco")
+    state.set("translate_error", "timeout")
+    state.set("config_text", SAMPLE_CONFIG)
+
+    FallbackNode().execute(state)
+
+    assert state.get("fallback_used") is True
+    assert state.get("module_graph", {}).get("modules")
+    assert state.get("module_translations", {}).get("results")
+    assert state.get("module_translation_coverage", {}).get("all_modules_accounted") is True
+    assert "voice-vlan" in state.get("manual_review_config", "")
+    assert "voice-vlan" not in state.get("deployable_config", "")
+
+
+def test_cache_hit_preserves_module_translation_contract():
+    class ValidLLM:
+        model = "test-model"
+
+        def chat(self, *args, **kwargs):
+            return {
+                "content": (
+                    '[{"type":"system","original_lines":["sysname HW-SW"],'
+                    '"translated_lines":["hostname HW-SW"],"notes":"","confidence":1.0},'
+                    '{"type":"vlan","original_lines":["vlan batch 10"],'
+                    '"translated_lines":["vlan 10"],"notes":"","confidence":1.0}]'
+                )
+            }
+
+    cache_dir = tempfile.mkdtemp()
+    agent = GraphAgent(
+        llm=ValidLLM(),
+        cache_dir=cache_dir,
+        memory_dir=tempfile.mkdtemp(),
+    )
+    config = "sysname HW-SW\nvlan batch 10\n"
+
+    first = agent.run(config, from_vendor="huawei", to_vendor="cisco")
+    second = agent.run(config, from_vendor="huawei", to_vendor="cisco")
+
+    assert first["cache_hit"] is False
+    assert second["cache_hit"] is True
+    assert second["module_graph"]["modules"]
+    assert second["module_translations"]["results"]
+    assert second["module_translation_coverage"]["all_modules_accounted"] is True

@@ -48,6 +48,47 @@ def _normalize_analyzer_results(state: State) -> dict:
     return {}
 
 
+def _attach_module_translation_state(
+    state: State,
+    config_text: str,
+    from_vendor: str,
+    to_vendor: str,
+    *,
+    prefer_deployable: bool = True,
+) -> dict:
+    """Attach module graph translation metadata to the graph state.
+
+    This makes module decomposition a contract shared by LLM success and
+    deterministic fallback paths, while keeping the original translated_config
+    untouched for user-facing comparison.
+    """
+    from core.module_graph import build_module_graph, translate_module_graph
+
+    module_graph = build_module_graph(config_text, vendor=from_vendor)
+    module_translation = translate_module_graph(module_graph, from_vendor, to_vendor)
+    module_summary: dict[str, int] = {}
+    for module in module_graph.modules:
+        module_summary[module.feature] = module_summary.get(module.feature, 0) + 1
+
+    module_payload = module_translation.to_dict()
+    state.set("module_graph", module_graph.to_dict())
+    state.set("module_summary", dict(sorted(module_summary.items())))
+    state.set("module_translations", module_payload)
+    state.set("module_translation_coverage", module_translation.coverage)
+    state.set("manual_review_config", module_translation.manual_review_config)
+    if prefer_deployable and module_translation.deployable_config:
+        state.set("deployable_config", module_translation.deployable_config)
+
+    return {
+        "module_summary": dict(sorted(module_summary.items())),
+        "module_graph": module_graph.to_dict(),
+        "module_translations": module_payload,
+        "module_translation_coverage": module_translation.coverage,
+        "manual_review_config": module_translation.manual_review_config,
+        "deployable_config": module_translation.deployable_config,
+    }
+
+
 class ParseNode(Node):
     def __init__(self, node_id: str = "parse"):
         super().__init__(node_id, "parse")
@@ -292,6 +333,16 @@ class CacheNode(Node):
                     cached = json.load(f)
                 state.set("translated_config", cached.get("translated_config", ""))
                 state.set("ir_translation", cached.get("ir_translation", []))
+                for field in (
+                    "deployable_config",
+                    "manual_review_config",
+                    "module_summary",
+                    "module_graph",
+                    "module_translations",
+                    "module_translation_coverage",
+                ):
+                    if field in cached:
+                        state.set(field, cached.get(field))
                 ir_source_raw = cached.get("ir_source", [])
                 ir_source_objs = []
                 for b in ir_source_raw:
@@ -303,6 +354,17 @@ class CacheNode(Node):
                         ir_source_objs.append(b)
                 state.set("ir_source", ir_source_objs)
                 state.set("ir_compare", cached.get("ir_compare", {}))
+                if not state.get("module_translations"):
+                    try:
+                        _attach_module_translation_state(
+                            state,
+                            config_text,
+                            from_vendor,
+                            to_vendor,
+                            prefer_deployable=not bool(state.get("deployable_config")),
+                        )
+                    except Exception:
+                        logger.debug("module translation cache assembly skipped", exc_info=True)
                 state.set("cache_hit", True)
                 logger.info("Cache HIT for key=%s", key[:12])
                 return NodeResult(
@@ -407,6 +469,16 @@ class TranslateNode(Node):
         if translated_config:
             translated_config = f"```{to_vendor}\n{translated_config}\n```"
         state.set("translated_config", translated_config)
+        try:
+            _attach_module_translation_state(
+                state,
+                config_text,
+                from_vendor,
+                to_vendor,
+                prefer_deployable=True,
+            )
+        except Exception:
+            logger.debug("module translation shadow assembly skipped", exc_info=True)
 
         ir_source = [
             IRBlock(
@@ -1126,6 +1198,33 @@ class ValidateNode(Node):
                 manual_review_impact=True,
             ))
 
+        # Module translation coverage signals
+        module_coverage = state.get("module_translation_coverage", {}) or {}
+        missing_module_ids = module_coverage.get("missing_module_ids") or []
+        manual_review_modules = int(module_coverage.get("manual_review_modules") or 0)
+        partial_modules = int(module_coverage.get("partial_modules") or 0)
+        if missing_module_ids:
+            signals.append(RiskSignal(
+                source=RiskSource.MANUAL_REVIEW,
+                feature="module_coverage",
+                severity=RiskSeverity.FATAL,
+                message=f"模块翻译覆盖缺失：{len(missing_module_ids)} 个源模块没有翻译结果",
+                deployability_impact=True,
+                manual_review_impact=True,
+            ))
+        elif manual_review_modules or partial_modules:
+            signals.append(RiskSignal(
+                source=RiskSource.MANUAL_REVIEW,
+                feature="module_coverage",
+                severity=RiskSeverity.WARNING,
+                message=(
+                    "模块翻译需要人工复核："
+                    f"manual_review={manual_review_modules}, partial={partial_modules}"
+                ),
+                deployability_impact=True,
+                manual_review_impact=True,
+            ))
+
         # MANUAL_REVIEW / MANUALLY_REVIEW marker in output
         if "MANUAL_REVIEW" in config_content.upper() or "MANUALLY_REVIEW" in config_content.upper():
             label = "MANUAL" if "MANUAL_REVIEW" in config_content.upper() else "MANUALLY"
@@ -1811,6 +1910,7 @@ class FallbackNode(Node):
             "module_summary": dict(sorted(module_summary.items())) if module_summary else {},
             "module_graph": module_graph.to_dict(),
             "module_translations": module_translation.to_dict(),
+            "module_translation_coverage": module_translation.coverage,
             "manual_review_config": module_translation.manual_review_config,
             "feature_blocks": [
                 {
@@ -1851,6 +1951,7 @@ class FallbackNode(Node):
             state.set("module_summary", fb_meta["module_summary"])
             state.set("module_graph", fb_meta["module_graph"])
             state.set("module_translations", fb_meta["module_translations"])
+            state.set("module_translation_coverage", fb_meta["module_translation_coverage"])
             state.set("manual_review_config", fb_meta["manual_review_config"])
             state.set("source_vendor", fb_meta["source_vendor"])
             state.set("target_vendor", fb_meta["target_vendor"])
@@ -1865,11 +1966,27 @@ class FallbackNode(Node):
                 metadata={"safe_fallback": True},
             )
 
-        translated = RuleBasedTranslator().translate(config_text, from_vendor, to_vendor)
+        translated = ""
+        try:
+            module_meta = _attach_module_translation_state(
+                state,
+                config_text,
+                from_vendor,
+                to_vendor,
+                prefer_deployable=True,
+            )
+            body = module_meta.get("deployable_config") or module_meta.get("manual_review_config") or ""
+            if body:
+                language = "cisco" if (to_vendor or "").lower() == "cisco" else (to_vendor or "text")
+                translated = f"```{language}\n{body}\n```"
+        except Exception:
+            logger.debug("module translation fallback assembly skipped", exc_info=True)
+            translated = RuleBasedTranslator().translate(config_text, from_vendor, to_vendor)
+            if translated and not state.get("deployable_config"):
+                deployable = extract_config_block(translated).strip()
+                state.set("deployable_config", deployable or translated)
         if translated:
             state.set("translated_config", translated)
-            deployable = extract_config_block(translated).strip()
-            state.set("deployable_config", deployable or translated)
             state.set("_route_outcome", "fallback_success")
         return NodeResult(
             self.node_id,
@@ -1931,6 +2048,12 @@ class CacheWriteNode(Node):
                     ir_source_serialized.append({"type": str(b)})
             data = {
                 "translated_config": translated,
+                "deployable_config": state.get("deployable_config", ""),
+                "manual_review_config": state.get("manual_review_config", ""),
+                "module_summary": state.get("module_summary", {}),
+                "module_graph": state.get("module_graph", {}),
+                "module_translations": state.get("module_translations", {}),
+                "module_translation_coverage": state.get("module_translation_coverage", {}),
                 "ir_translation": state.get("ir_translation", []),
                 "ir_source": ir_source_serialized,
                 "ir_compare": state.get("ir_compare", {}),

@@ -180,6 +180,7 @@ def execute_translation_flow(
         "module_summary": final_state.get("module_summary", {}),
         "module_graph": final_state.get("module_graph", {}),
         "module_translations": final_state.get("module_translations", {}),
+        "module_translation_coverage": final_state.get("module_translation_coverage", {}),
         "analyzer_results": final_state.get("analyzer_results", []),
         "validation": {
             "valid": validation.valid if validation else False,
