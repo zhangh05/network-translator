@@ -222,3 +222,66 @@ def test_bgp_advanced_modules_are_semantic_near(feature, config, expected):
     assert result.status == "semantic_near"
     assert expected in "\n".join(result.suggested_lines)
     assert expected not in assembly.deployable_config
+
+@pytest.mark.parametrize(
+    "feature,config,expected",
+    [
+        ("ipv6.nd_snooping", "ipv6 nd snooping enable\n", "ipv6 nd inspection"),
+        ("ipv6.source_guard", "ipv6 source guard\n", "ipv6 verify source"),
+        ("ipv6.ra_guard", "ipv6 ra guard policy RAGUARD\n", "ipv6 nd raguard policy RAGUARD"),
+        ("pbr.track", "pbr track TRACK1\n", "track TRACK1"),
+        ("pbr.verify", "pbr verify-availability enable\n", "verify-availability"),
+        ("ospf.te", "ospf 1\n mpls traffic-eng area 0\n", "mpls traffic-eng area 0"),
+        ("multicast.msdp", "msdp\n peer 10.0.0.2 connect-interface LoopBack0\n", "ip msdp peer 10.0.0.2"),
+        ("fhrp.track", "interface Vlanif10\n vrrp vrid 1 track interface GigabitEthernet0/0/1 reduced 30\n", "standby 1 track GigabitEthernet0/0/1 decrement 30"),
+    ],
+)
+def test_remaining_router_control_modules_are_semantic_near(feature, config, expected):
+    result, assembly = _result(config, feature, from_vendor="huawei", to_vendor="cisco")
+
+    assert result.status == "semantic_near"
+    assert expected in "\n".join(result.suggested_lines)
+    assert expected not in assembly.deployable_config
+
+
+@pytest.mark.parametrize(
+    "feature,config,expected",
+    [
+        ("l2.ring_protection", "erps ring 1\n control-vlan 4094\n", "ethernet ring-protection"),
+        ("l2.smart_link", "smart-link group 1\n protected-vlan reference-instance 1\n", "smart-link group 1"),
+        ("l2.mlag", "m-lag 1\n peer-link Eth-Trunk10\n", "mlag domain 1"),
+        ("l2.gvrp", "gvrp\n", "gvrp"),
+        ("l2.mvrp", "mvrp enable\n", "mvrp"),
+        ("l2.device_tracking", "ip device tracking\n", "device-tracking policy"),
+        ("l2.errdisable", "errdisable recovery cause bpduguard\n", "errdisable recovery cause bpduguard"),
+        ("monitor.rspan", "remote-probe vlan 999\n", "monitor session <id> source remote vlan 999"),
+        ("oam.cfm", "cfm md MD1 level 3\n", "ethernet cfm"),
+    ],
+)
+def test_remaining_switch_oam_resilience_modules_are_semantic_near(feature, config, expected):
+    result, assembly = _result(config, feature, from_vendor="huawei", to_vendor="cisco")
+
+    assert result.status == "semantic_near"
+    assert expected in "\n".join(result.suggested_lines)
+    assert expected not in assembly.deployable_config
+
+
+@pytest.mark.parametrize(
+    "feature,config,expected",
+    [
+        ("firewall.ssl_vpn", "ssl vpn gateway SSLVPN\n ip address 10.0.0.1 port 443\n", "ssl vpn gateway SSLVPN"),
+        ("firewall.dos", "dos-policy\n rule name anti-flood\n", "dos profile"),
+        ("firewall.dlp", "dlp profile DLP-PROFILE\n file-type block exe\n", "dlp profile DLP-PROFILE"),
+        ("firewall.waf", "waf profile WAF-PROFILE\n signature enable\n", "waf profile WAF-PROFILE"),
+        ("firewall.load_balance", "load-balance virtual-server VS-WEB\n real-server RS1 10.0.0.10\n", "load-balance virtual-server VS-WEB"),
+        ("firewall.proxy", "proxy-policy\n rule name web-proxy\n", "proxy policy"),
+        ("firewall.decryption", "decryption-policy\n rule name ssl-decrypt\n", "ssl decryption policy"),
+        ("firewall.routing", "firewall routing-instance VRF1\n", "firewall routing-instance VRF1"),
+    ],
+)
+def test_remaining_firewall_service_modules_are_semantic_near(feature, config, expected):
+    result, assembly = _result(config, feature, from_vendor="huawei_usg", to_vendor="cisco")
+
+    assert result.status == "semantic_near"
+    assert expected in "\n".join(result.suggested_lines)
+    assert expected not in assembly.deployable_config

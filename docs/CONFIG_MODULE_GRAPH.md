@@ -152,9 +152,11 @@ Current semantic-near families:
 | BFD / MPLS / Segment Routing | BFD sessions, MPLS LDP/TE/L3VPN, SR binding | BFD template, MPLS, VRF, and SR skeleton | timers, labels, RD/RT, RSVP/SR policy, and IGP binding need review |
 | SLA / Tunnel / DHCP / EIGRP | NQA/IP-SLA, GRE/IPv6 tunnel, DHCP pool, EIGRP | target-shaped probe, tunnel, DHCP, or source-preserving EIGRP redesign skeleton | probe track binding, tunnel encapsulation, DHCP options, and Cisco-specific EIGRP behavior need review |
 | Advanced management / telemetry | SSH, PKI, AAA, NTP auth, NETCONF/RESTCONF, telemetry, flow export | redacted management/API/telemetry skeleton | credentials, RBAC, certificates, collectors, and exposed management surfaces need review |
-| Advanced BGP families | VPNv4, EVPN, FlowSpec, confederation, RR, max-prefix, GTSM, graceful restart | address-family and neighbor-control skeleton | MP-BGP scope, route reflection topology, limits, TTL security, and restart behavior need review |
+| Advanced routing control | PBR track/verify, OSPF TE, MSDP, FHRP track, advanced BGP families | track, TE, MSDP, FHRP, address-family, and neighbor-control skeleton | liveness linkage, TE database, RP relation, failover, MP-BGP scope, and restart behavior need review |
+| IPv6 first-hop security | ND snooping, IPv6 source guard, RA guard | ND inspection/source-verify/RA-guard skeleton | trust ports, binding sources, and router role policies need review |
 | Advanced firewall services | NAT, IPsec, IPS/URL/AV/app profiles, HA, vsys | NAT/IPsec/profile/HA/vsys skeleton | no implicit any, engines/licensing, crypto, session sync, and policy binding need review |
-| L2 security / OAM / monitoring | PVLAN, VLAN mapping, DHCP snooping, source guard, ARP inspection, SPAN, OAM, uRPF | target feature skeleton with confirmation points | trust boundaries, failure actions, thresholds, and traffic-copy behavior differ |
+| Firewall application services | SSL VPN, DoS/DLP/WAF, load balancing, proxy, SSL decryption, firewall routing | target-shaped service skeleton | certificate, engine, health-check, exception, privacy, and route-policy coupling need review |
+| L2 security / resilience / OAM / monitoring | ERPS/RRPP, Smart Link, MLAG, PVLAN, VLAN mapping, DHCP snooping, source guard, ARP inspection, RSPAN, OAM, uRPF | target feature skeleton with confirmation points | trust boundaries, failure actions, thresholds, peer links, ring state, and traffic-copy behavior differ |
 
 ## Example
 
@@ -393,11 +395,23 @@ separates:
   `eigrp`, and `interface.tunnel6`: broad platform/overlay/probe/tunnel modules
   are typed and shown as semantic-near suggestions instead of generic
   manual-review blobs. They remain outside `deployable_config`.
+- `ipv6.nd_snooping`, `ipv6.source_guard`, `ipv6.ra_guard`, `pbr.track`,
+  `pbr.verify`, `ospf.te`, `multicast.msdp`, and `fhrp.track`: control-plane
+  linkage modules now have explicit target-shaped suggestions and confirmation
+  points instead of opaque review comments.
+- `l2.ring_protection`, `l2.smart_link`, `l2.mlag`, `l2.gvrp`, `l2.mvrp`,
+  `l2.device_tracking`, `l2.errdisable`, `monitor.rspan`, and `oam.cfm`:
+  advanced switching/resilience/OAM modules now produce reviewable target
+  skeletons with the original source module beside them in the UI.
 - `bgp.vpnv4`, `bgp.evpn`, `bgp.flowspec`, `bgp.confederation`,
   `bgp.route_reflector`, `bgp.max_prefix`, `bgp.gtsm`, and
   `bgp.graceful_restart`: advanced BGP address-family and neighbor-control
   lines now produce target-shaped review skeletons while preserving the rule
   that they are not auto-deployable.
+- `firewall.ssl_vpn`, `firewall.dos`, `firewall.dlp`, `firewall.waf`,
+  `firewall.load_balance`, `firewall.proxy`, `firewall.decryption`, and
+  `firewall.routing`: higher-level firewall service modules now expose
+  semantic-near skeletons for review while avoiding unsafe deployable output.
 - `rip.*` and `isis.*`: legacy/IGP routing protocols are typed instead of
   `unknown`, but remain manual-review until process, metric, authentication, and
   redistribution equivalence can be validated.

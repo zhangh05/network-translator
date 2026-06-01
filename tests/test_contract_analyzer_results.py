@@ -8,8 +8,21 @@ import pytest
 pytest.importorskip("flask")
 
 
-def test_run_translation_returns_analyzer_results():
+def test_run_translation_returns_analyzer_results(monkeypatch):
     """P0-1: run_translation() must return analyzer_results in its dict."""
+    import project_store
+
+    class StubAgent:
+        def run(self, **kwargs):
+            return {
+                "translated": "sysname SW1",
+                "success": True,
+                "analyzer_results": [],
+            }
+
+    monkeypatch.setattr(project_store, "_get_translation_agent", lambda: StubAgent())
+    monkeypatch.setattr(project_store.TranslationSlotLimiter, "acquire", lambda self, **kwargs: _noop_context())
+
     from project_store import run_translation
     result = run_translation(
         config_text="hostname SW1\ninterface GigabitEthernet0/1\n ip address 10.0.0.1 255.255.255.0\n no shutdown\n",
@@ -21,8 +34,10 @@ def test_run_translation_returns_analyzer_results():
     assert isinstance(ar, list), "analyzer_results must be a list"
 
 
-def test_api_returns_analyzer_results():
+def test_api_returns_analyzer_results(monkeypatch):
     """P0-1: /api/translate response must include analyzer_results."""
+    _stub_web_translate(monkeypatch, [{"feature": "interface", "risk_level": "info"}])
+
     from web_app import create_app
     app = create_app()
     client = app.test_client()
@@ -39,8 +54,10 @@ def test_api_returns_analyzer_results():
     assert isinstance(ar, list)
 
 
-def test_api_with_nat_input_has_nonempty_analyzer_results():
+def test_api_with_nat_input_has_nonempty_analyzer_results(monkeypatch):
     """NAT input should produce non-empty analyzer_results with risk info."""
+    _stub_web_translate(monkeypatch, [{"feature": "nat", "risk_level": "warning"}])
+
     from web_app import create_app
     app = create_app()
     client = app.test_client()
@@ -68,6 +85,28 @@ access-list 100 permit ip 192.168.1.0 0.0.0.255 any
     assert len(ar) > 0, "NAT config should produce analyzer results"
     features_found = {a.get("feature") for a in ar if isinstance(a, dict)}
     assert "nat" in features_found, "nat feature should appear in analyzer_results"
+
+
+class _noop_context:
+    def __enter__(self):
+        return None
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+
+def _stub_web_translate(monkeypatch, analyzer_results):
+    import web_app
+
+    def fake_run_translation(**kwargs):
+        return {
+            "translated": "sysname R1",
+            "validation": {},
+            "success": True,
+            "analyzer_results": analyzer_results,
+        }
+
+    monkeypatch.setattr(web_app.project_store, "run_translation", fake_run_translation)
 
 
 def test_analyzers_fatal_warning_detected():

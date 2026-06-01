@@ -368,7 +368,7 @@ def _semantic_near_result(module: ConfigModule, from_vendor: str, to_vendor: str
         suggested = _multicast_suggested_lines(module, from_vendor, to_vendor)
     elif module.feature.startswith("access."):
         suggested = _access_suggested_lines(module, from_vendor, to_vendor)
-    elif module.feature in {"route_filter", "pbr.policy", "pbr.binding"}:
+    elif module.feature in {"route_filter", "pbr.policy", "pbr.binding", "pbr.track", "pbr.verify"}:
         suggested = _policy_filter_suggested_lines(module, from_vendor, to_vendor)
     elif module.feature in {"object_group", "object_group.member", "acl.object_group", "acl.time_range", "time_range"}:
         suggested = _object_time_suggested_lines(module, from_vendor, to_vendor)
@@ -575,6 +575,18 @@ def _fhrp_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str
     vip = _extract_first(r"\b(?:virtual-ip|ip)\s+(\d+\.\d+\.\d+\.\d+)", source_text)
     priority = _extract_first(r"\bpriority\s+(\d+)", source_text)
     preempt = bool(re.search(r"\b(?:preempt|preempt-mode)\b", source_text, re.IGNORECASE))
+    if module.feature == "fhrp.track":
+        tracked = _extract_first(r"\btrack\s+interface\s+(\S+)", source_text) or _extract_first(r"\btrack\s+(\S+)", source_text) or "<tracked-object>"
+        decrement = _extract_first(r"\b(?:reduced|decrement)\s+(\d+)", source_text)
+        if target == "cisco":
+            line = f"standby {group} track {tracked}"
+            if decrement:
+                line += f" decrement {decrement}"
+            return [line, "! confirm FHRP track object and failover behavior manually"]
+        line = f"vrrp vrid {group} track interface {tracked}"
+        if decrement:
+            line += f" reduced {decrement}"
+        return [line, "# confirm FHRP track object and failover behavior manually"]
     if target == "cisco":
         if not vlan_id:
             return []
@@ -732,6 +744,9 @@ def _ospf_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str
         if network_type:
             lines.append(f"ip ospf network {network_type}" if target == "cisco" else f"ospf network-type {network_type}")
         return lines
+    if module.feature == "ospf.te":
+        area = _extract_first(r"\btraffic-eng\s+area\s+(\S+)", source_text) or "0"
+        return [f"mpls traffic-eng area {area}", _comment_for(target, "confirm OSPF opaque/TE LSA support and TE database behavior manually")]
     return []
 
 
@@ -792,6 +807,14 @@ def _multicast_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor
         lines = ["multicast routing-enable"]
         if rp:
             lines.append(f"static-rp {rp}")
+        return lines
+    if module.feature == "multicast.msdp":
+        peer = _extract_first(r"\bpeer\s+(\d+\.\d+\.\d+\.\d+)", source_text) or "<peer-ip>"
+        connect = _extract_first(r"\bconnect-interface\s+(\S+)", source_text)
+        lines = [f"ip msdp peer {peer}" if target == "cisco" else f"peer {peer}"]
+        if connect:
+            lines.append(f"ip msdp originator-id {connect}" if target == "cisco" else f"peer {peer} connect-interface {connect}")
+        lines.append(_comment_for(target, "confirm MSDP source-active filtering and RP relationship manually"))
         return lines
     if module.feature in ("multicast", "multicast.interface", "multicast.igmp_tuning"):
         lines: list[str] = []
@@ -875,6 +898,11 @@ def _policy_filter_suggested_lines(module: ConfigModule, from_vendor: str, to_ve
         if target == "cisco":
             return [f"ip policy route-map {policy}", "! confirm inbound interface PBR behavior manually"]
         return [f"ip policy-based-route {policy}", "# confirm inbound interface PBR behavior manually"]
+    if module.feature == "pbr.track":
+        name = _extract_first(r"\bpbr\s+track\s+(\S+)", source_text) or "<track>"
+        return [f"track {name}", _comment_for(target, "confirm PBR track probe object and failure action manually")]
+    if module.feature == "pbr.verify":
+        return ["verify-availability", _comment_for(target, "confirm verify-availability next-hop semantics manually")]
     return []
 
 
@@ -919,6 +947,13 @@ def _ipv6_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str
         if target == "cisco":
             return ["ipv6 nd ra suppress", "! confirm RA interval, flags, and lifetime manually"]
         return ["ipv6 nd ra halt", "# confirm RA interval, flags, and lifetime manually"]
+    if module.feature == "ipv6.nd_snooping":
+        return ["ipv6 nd inspection", _comment_for(target, "confirm trusted ports, binding source, and VLAN scope manually")]
+    if module.feature == "ipv6.source_guard":
+        return ["ipv6 verify source", _comment_for(target, "confirm DHCPv6/ND binding dependency and exceptions manually")]
+    if module.feature == "ipv6.ra_guard":
+        policy = _extract_first(r"\bra\s+guard\s+policy\s+(\S+)", source_text) or "<policy>"
+        return [f"ipv6 nd raguard policy {policy}", _comment_for(target, "confirm router role, prefixes, and host-facing interfaces manually")]
     if module.feature == "ipv6.acl":
         name = _extract_first(r"\b(?:ipv6\s+access-list|acl\s+ipv6)\s+(\S+)", source_text) or "V6-ACL"
         return [f"ipv6 access-list {name}", _comment_for(target, "confirm IPv6 ACL entries, extension headers, and bindings manually")]
@@ -989,6 +1024,26 @@ def _advanced_firewall_suggested_lines(module: ConfigModule, from_vendor: str, t
     if module.feature == "firewall.vsys":
         name = _extract_first(r"\b(?:virtual-system|vsys)\s+(\S+)", source_text) or "VSYS1"
         return [f"context {name}", _comment_for(target, "confirm virtual-system resource, route, policy, and interface allocation manually")]
+    if module.feature == "firewall.ssl_vpn":
+        name = _extract_first(r"\bssl\s+vpn\s+gateway\s+(\S+)", source_text) or "SSLVPN"
+        return [f"ssl vpn gateway {name}", _comment_for(target, "confirm portal, certificate, user authorization, and resource mapping manually")]
+    if module.feature == "firewall.dos":
+        name = _extract_first(r"\brule\s+name\s+(\S+)", source_text) or "DOS"
+        return [f"dos profile {name}", _comment_for(target, "confirm thresholds, detection engine, and action manually")]
+    if module.feature in {"firewall.dlp", "firewall.waf"}:
+        family = module.feature.split(".", 1)[1]
+        name = _extract_first(rf"\b{family}\s+profile\s+(\S+)", source_text) or "<confirm-name>"
+        return [f"{family} profile {name}", _comment_for(target, "confirm signature database, exceptions, and action manually")]
+    if module.feature == "firewall.load_balance":
+        name = _extract_first(r"\bvirtual-server\s+(\S+)", source_text) or "<virtual-server>"
+        return [f"load-balance virtual-server {name}", _comment_for(target, "confirm real-server pool, health check, NAT, and persistence manually")]
+    if module.feature == "firewall.proxy":
+        return ["proxy policy <confirm-policy>", _comment_for(target, "confirm proxy protocol, authentication, bypass, and logging manually")]
+    if module.feature == "firewall.decryption":
+        return ["ssl decryption policy <confirm-policy>", _comment_for(target, "confirm certificates, privacy exceptions, and protocol compatibility manually")]
+    if module.feature == "firewall.routing":
+        vrf = _extract_first(r"\brouting-instance\s+(\S+)", source_text) or "<vrf>"
+        return [f"firewall routing-instance {vrf}", _comment_for(target, "confirm route table, zones, and policy coupling manually")]
     if module.feature.startswith("firewall."):
         family = module.feature.split(".", 1)[1].replace("_", "-")
         return [f"{family} profile <confirm-name>", _comment_for(target, f"confirm {family} feature semantics and licensing manually")]
@@ -1005,6 +1060,24 @@ def _l2_security_monitor_suggested_lines(module: ConfigModule, from_vendor: str,
         src = _extract_first(r"\bvlan\s+mapping\s+(\d+)", source_text) or "<src-vlan>"
         dst = _extract_first(r"\bmap-vlan\s+(\d+)", source_text) or "<dst-vlan>"
         return [f"vlan mapping {src} {dst}", _comment_for(target, "confirm ingress/egress VLAN translation scope manually")]
+    if module.feature == "l2.ring_protection":
+        ring = _extract_first(r"\b(?:erps|rrpp|sep)\s+(?:ring\s+)?(\S+)", source_text) or "<ring-id>"
+        return [f"ethernet ring-protection {ring}", _comment_for(target, "confirm ring protocol, control VLAN, blocked port, and revertive behavior manually")]
+    if module.feature == "l2.smart_link":
+        group = _extract_first(r"\bsmart-link\s+group\s+(\S+)", source_text) or "<group>"
+        return [f"smart-link group {group}", _comment_for(target, "confirm master/backup uplinks, protected VLANs, and flush behavior manually")]
+    if module.feature == "l2.mlag":
+        domain = _extract_first(r"\bm-?lag\s+(\S+)", source_text) or "<domain>"
+        peer_link = _extract_first(r"\bpeer-link\s+(\S+)", source_text)
+        lines = [f"mlag domain {domain}"]
+        if peer_link:
+            lines.append(f" peer-link {peer_link}")
+        lines.append(_comment_for(target, "confirm peer keepalive, split-brain protection, and member interface mapping manually"))
+        return lines
+    if module.feature == "l2.gvrp":
+        return ["gvrp", _comment_for(target, "confirm dynamic VLAN registration boundary manually")]
+    if module.feature == "l2.mvrp":
+        return ["mvrp", _comment_for(target, "confirm dynamic VLAN registration boundary manually")]
     if module.feature == "l2.dhcp_snooping":
         return ["ip dhcp snooping", _comment_for(target, "confirm trusted interfaces, option-82, and binding database manually")]
     if module.feature == "l2.source_guard":
@@ -1013,6 +1086,11 @@ def _l2_security_monitor_suggested_lines(module: ConfigModule, from_vendor: str,
         return ["ip arp inspection vlan <confirm-vlan>", _comment_for(target, "confirm trusted interfaces and binding source manually")]
     if module.feature == "l2.port_security":
         return ["switchport port-security", _comment_for(target, "confirm max MAC, violation action, and aging manually")]
+    if module.feature == "l2.device_tracking":
+        return ["device-tracking policy <confirm-policy>", _comment_for(target, "confirm probe type, trusted ports, and binding consumers manually")]
+    if module.feature == "l2.errdisable":
+        cause = _extract_first(r"\berrdisable\s+recovery\s+cause\s+(\S+)", source_text) or "<cause>"
+        return [f"errdisable recovery cause {cause}", _comment_for(target, "confirm recovery interval and supported errdisable causes manually")]
     if module.feature == "l2.storm_control":
         level = _extract_first(r"\blevel\s+(\S+)", source_text) or "<level>"
         return [f"storm-control broadcast level {level}", _comment_for(target, "confirm unit, direction, and action manually")]
@@ -1020,7 +1098,8 @@ def _l2_security_monitor_suggested_lines(module: ConfigModule, from_vendor: str,
         session = _extract_first(r"\b(?:monitor|span)\s+session\s+(\S+)", source_text) or "1"
         return [f"monitor session {session} source interface <confirm-source>", f"monitor session {session} destination interface <confirm-destination>", _comment_for(target, "confirm direction and destination port shutdown behavior manually")]
     if module.feature == "monitor.rspan":
-        return ["monitor session <id> source remote vlan <confirm-vlan>", _comment_for(target, "confirm RSPAN VLAN and cross-device path manually")]
+        vlan = _extract_first(r"\b(?:remote-probe|rspan)\s+vlan\s+(\d+)", source_text) or "<confirm-vlan>"
+        return [f"monitor session <id> source remote vlan {vlan}", _comment_for(target, "confirm RSPAN VLAN and cross-device path manually")]
     if module.feature == "oam.ethernet":
         return ["ethernet oam", _comment_for(target, "confirm OAM mode, remote loopback, and link-fault action manually")]
     if module.feature == "oam.cfm":

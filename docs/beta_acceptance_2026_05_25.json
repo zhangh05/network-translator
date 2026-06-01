@@ -1,12 +1,13 @@
 {
   "date": "2026-05-25",
-  "batch": "J-A",
+  "batch": "J-A + Module Semantic-Near Expansion",
   "beta_ready": "YES_CONDITIONAL",
   "base_commit": "9ac480b",
   "latest_commits": [
     "9ac480b",
     "7f42106",
-    "40edc94"
+    "40edc94",
+    "5ddcd43"
   ],
   "domains": [
     "SWITCH",
@@ -158,19 +159,19 @@
         "test_frontend_fallback_ux.py",
         "test_fallback_user_report_quality.py"
       ],
-      "passed": 122
+      "passed": 124
     },
     "ci_gate": {
       "file": "scripts/ci_quality_gates.py --full",
-      "passed": 1322,
+      "passed": 2319,
       "known_tolerated_failures": 0,
-      "skipped": 3
+      "skipped": 30
     },
     "full_suite": {
       "file": "pytest tests/",
-      "passed": 1791,
+      "passed": 2320,
       "failed": 0,
-      "skipped": 26
+      "skipped": 29
     }
   },
   "known_failures": [],
@@ -178,8 +179,8 @@
     "GitHub Actions runner not yet validated",
     "OSPF deep semantics not fully auto-validated (NSSA/virtual-link/redistribute)",
     "NAT/IPsec/URL/AV/time-range not auto-translated",
-    "AAA/QoS/route-policy limited scope, complex semantics require manual review",
     "Fallback is not full semantic migration",
+    "Advanced modules now surface semantic-near target skeletons, but remain outside deployable_config until equivalence is validated",
     "LLM output may still have semantic inaccuracies — requires validator + report + manual review",
     "Unknown secret formats may need additional redaction patterns",
     "Production deployment requires real device or simulation verification",

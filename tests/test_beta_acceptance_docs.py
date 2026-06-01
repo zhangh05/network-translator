@@ -90,10 +90,10 @@ class TestNumbersMatchJson:
         assert json_data["tests"]["output_redaction"]["passed"] == 47
 
     def test_ci_gate_passed(self, json_data):
-        assert json_data["tests"]["ci_gate"]["passed"] == 1322
+        assert json_data["tests"]["ci_gate"]["passed"] == 2319
 
     def test_project_store_related_passed(self, json_data):
-        assert json_data["tests"]["project_store_related"]["passed"] == 122
+        assert json_data["tests"]["project_store_related"]["passed"] == 124
 
     def test_redaction_patterns(self, json_data):
         assert json_data["redaction"]["patterns"] == 14
