@@ -43,6 +43,14 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
         return "system"
     if _matches_any(first, (r"^vlan\s+batch\b", r"^vlan\s+\d+", r"^vlan\b")):
         return "vlan"
+    if _matches_any(first, (r"^(?:vlan\s+mapping|vlan-mapping|port\s+vlan-mapping)\b",)):
+        return "l2_vlan_mapping"
+    if _matches_any(first, (r"^(?:erps|rrpp|sep|gvrp)\b",)):
+        return "l2_ring_protection"
+    if _matches_any(first, (r"^(?:smart-link|smartlink)\b",)):
+        return "l2_smart_link"
+    if _matches_any(first, (r"^(?:m-lag|mlag|vpc\b|peer-link)\b",)):
+        return "l2_mlag"
     if _matches_any(first, (r"^poe\b", r"^power\s+inline\b")):
         return "l2_poe"
     if _matches_any(first, (r"^(?:loopback-detection|loop-detect|loopback\s+detect)\b",)):
@@ -75,6 +83,16 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
         return "object_group"
     if _matches_any(first, (r"^acl\s+(name|number)\b", r"^ip\s+access-list\b", r"^access-list\b")):
         return "acl"
+    if _matches_any(first, (r"^ipv6\s+dhcp\s+pool\b", r"^dhcpv6\s+pool\b")):
+        return "dhcpv6_pool"
+    if _matches_any(first, (r"^(?:dhcpv6\s+relay|ipv6\s+dhcp\s+relay)\b",)):
+        return "dhcpv6_relay"
+    if _matches_any(first, (r"^ipv6\s+nd\s+snooping\b",)):
+        return "ipv6_nd_snooping"
+    if _matches_any(first, (r"^ipv6\s+source\s+guard\b",)):
+        return "ipv6_source_guard"
+    if _matches_any(first, (r"^ipv6\s+ra\s+guard\b",)):
+        return "ipv6_ra_guard"
     if _matches_any(first, (r"^ipv6\s+(?:route-static|route)\b",)):
         return "ipv6_route"
     if _matches_any(first, (r"^ip\s+route-static\b", r"^ip\s+route\b")):
@@ -103,6 +121,8 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
         return "vrf"
     if _matches_any(first, (r"^(?:policy-based-route|ip\s+policy-based-route)\b",)):
         return "pbr"
+    if _matches_any(first, (r"^msdp\b",)):
+        return "multicast_msdp"
     if _matches_any(first, (r"^(?:multicast|pim|igmp|ip\s+multicast-routing)\b",)):
         return "multicast"
     if _matches_any(
@@ -132,6 +152,12 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
         return "snmp"
     if _matches_any(first, (r"^nqa\s+test-instance\b", r"^ip\s+sla\b")):
         return "nqa"
+    if _matches_any(first, (r"^segment-routing\b",)):
+        return "segment_routing"
+    if _matches_any(first, (r"^mpls\s+ldp\b",)):
+        return "mpls_ldp"
+    if _matches_any(first, (r"^(?:mpls\s+te|traffic-eng\s+tunnels)\b",)):
+        return "mpls_te"
     if _matches_any(first, (r"^mpls\b",)):
         return "mpls"
     if _matches_any(first, (r"^bfd\b",)):
@@ -142,6 +168,8 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
         return "stp"
     if _matches_any(first, (r"^(?:nat-policy|nat\b|source-nat\b|destination-nat\b|ip\s+nat\b)",)):
         return "firewall_nat"
+    if _matches_any(first, (r"^(?:ssl\s+vpn|sslvpn)\b",)):
+        return "firewall_ssl_vpn"
     if _matches_any(
         first,
         (
@@ -152,12 +180,25 @@ def classify_config_block(block_text: str, vendor: str = "unknown") -> str:
         return "firewall_ipsec"
     if _matches_any(first, (r"^time-range\b",)):
         return "time_range"
-    if _matches_any(
-        first,
-        (
-            r"^(?:url-filter|antivirus|av-profile|intrusion|ips|profile|application|user-profile)\b",
-        ),
-    ):
+    if _matches_any(first, (r"^(?:dos-policy|anti-ddos|attack-defense)\b",)):
+        return "firewall_dos"
+    if _matches_any(first, (r"^dlp\b",)):
+        return "firewall_dlp"
+    if _matches_any(first, (r"^waf\b",)):
+        return "firewall_waf"
+    if _matches_any(first, (r"^(?:load-balance|slb|virtual-server)\b",)):
+        return "firewall_load_balance"
+    if _matches_any(first, (r"^(?:intrusion|ips)\b",)):
+        return "firewall_ips"
+    if _matches_any(first, (r"^url-filter\b",)):
+        return "firewall_url_filter"
+    if _matches_any(first, (r"^(?:antivirus|av-profile)\b",)):
+        return "firewall_av"
+    if _matches_any(first, (r"^(?:application|application-group)\b",)):
+        return "firewall_application"
+    if _matches_any(first, (r"^(?:user-profile|user-group|user-policy)\b",)):
+        return "firewall_user_id"
+    if _matches_any(first, (r"^profile\b",)):
         return "firewall_profile"
     if _matches_any(first, (r"^session\b",)):
         return "firewall_session"

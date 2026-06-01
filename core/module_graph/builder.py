@@ -11,6 +11,99 @@ from core.parser.block_splitter import ConfigBlock, split_config_by_feature
 _MANUAL_REVIEW_FEATURES = {"unknown", "aaa", "qos"}
 
 
+_GENERIC_MANUAL_REVIEW_FEATURES = {
+    "mpls",
+    "nqa",
+    "ip_sla",
+    "firewall.session",
+    "firewall.logging",
+    "firewall.ips",
+    "firewall.url_filter",
+    "firewall.av",
+    "firewall.application",
+    "firewall.user_id",
+    "firewall.ssl_vpn",
+    "firewall.dos",
+    "firewall.dlp",
+    "firewall.waf",
+    "firewall.load_balance",
+    "multicast.msdp",
+    "ipv6.static_route",
+    "dhcpv6.pool",
+    "dhcpv6.relay",
+    "ipv6.nd_snooping",
+    "ipv6.source_guard",
+    "ipv6.ra_guard",
+    "l2.ring_protection",
+    "l2.smart_link",
+    "l2.mlag",
+    "l2.vlan_mapping",
+    "l2.private_vlan",
+    "l2.gvrp",
+    "l2.mvrp",
+    "l2.device_tracking",
+    "l2.errdisable",
+    "oam.ethernet",
+    "oam.cfm",
+    "monitor.span",
+    "monitor.rspan",
+    "mpls.ldp",
+    "mpls.te",
+    "segment_routing",
+    "ripng.process",
+    "pbr.track",
+    "pbr.verify",
+    "management.ntp_auth",
+    "management.netconf",
+    "management.restconf",
+    "management.telemetry",
+    "telemetry.flow",
+    "firewall.proxy",
+    "firewall.dns_security",
+    "firewall.mail_security",
+    "firewall.file_blocking",
+    "firewall.sandbox",
+    "firewall.decryption",
+    "firewall.ha",
+    "firewall.vsys",
+    "firewall.routing",
+    "ospfv3.process",
+    "ipv6.acl",
+    "dhcp.relay",
+    "eigrp",
+}
+
+
+_GENERIC_FEATURE_PATTERNS: tuple[tuple[str, str], ...] = (
+    ("l2.private_vlan", r"^(?:private-vlan|pvlan)\b"),
+    ("l2.gvrp", r"^gvrp\b"),
+    ("l2.mvrp", r"^mvrp\b"),
+    ("oam.ethernet", r"^(?:ethernet\s+oam|oam\s+ethernet)\b"),
+    ("oam.cfm", r"^(?:cfm|ethernet\s+cfm)\b"),
+    ("monitor.span", r"^(?:monitor\s+session|span\s+session)\b"),
+    ("monitor.rspan", r"^(?:remote-probe|rspan)\b"),
+    ("l2.device_tracking", r"^(?:ip\s+device\s+tracking|device-tracking)\b"),
+    ("l2.errdisable", r"^errdisable\b"),
+    ("ripng.process", r"^(?:ripng|router\s+ripng)\b"),
+    ("pbr.track", r"^pbr\s+track\b"),
+    ("pbr.verify", r"^pbr\s+verify|verify-availability\b"),
+    ("management.ntp_auth", r"^(?:ntp|ntp-service).*\bauthentication|^ntp\s+authentication-key\b"),
+    ("management.netconf", r"^netconf\b"),
+    ("management.restconf", r"^restconf\b"),
+    ("management.telemetry", r"^(?:telemetry|grpc|gnmi)\b"),
+    ("telemetry.flow", r"^(?:ip\s+flow-export|flow\s+export|netstream|sflow)\b"),
+    ("firewall.proxy", r"^(?:proxy-policy|proxy\s+policy)\b"),
+    ("firewall.dns_security", r"^(?:dns-filter|dns-security)\b"),
+    ("firewall.mail_security", r"^(?:mail-filter|mail-security|email-security)\b"),
+    ("firewall.file_blocking", r"^(?:file-blocking|file\s+blocking)\b"),
+    ("firewall.sandbox", r"^sandbox\b"),
+    ("firewall.decryption", r"^(?:decryption-policy|ssl-decryption|ssl\s+decryption)\b"),
+    ("firewall.ha", r"^(?:hrp|ha\s+enable|high-availability)\b"),
+    ("firewall.vsys", r"^(?:virtual-system|vsys)\b"),
+    ("firewall.routing", r"^firewall\s+routing|^routing-instance\b"),
+)
+
+
 @dataclass
 class _ModuleSpec:
     feature: str
@@ -98,7 +191,9 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
     if feature == "rip":
         return _rip_module_specs_from_block(block)
     if feature == "isis":
-        return _isis_module_specs_from_block(block)
+        specs = _isis_module_specs_from_block(block)
+        specs.extend(_segment_routing_specs_from_routing_block(block, "isis"))
+        return specs
     if feature == "route":
         return _static_route_module_specs_from_block(block)
     if feature == "route_filter":
@@ -125,23 +220,7 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         return _l2_manual_review_module_specs_from_block(block, feature)
     if feature == "stp.mstp":
         return _l2_manual_review_module_specs_from_block(block, feature)
-    if feature.startswith(("platform.", "overlay.")) or feature in {
-        "mpls",
-        "nqa",
-        "ip_sla",
-        "firewall.session",
-        "firewall.logging",
-        "firewall.ips",
-        "firewall.url_filter",
-        "firewall.av",
-        "firewall.application",
-        "firewall.user_id",
-        "ipv6.static_route",
-        "ospfv3.process",
-        "ipv6.acl",
-        "dhcp.relay",
-        "eigrp",
-    }:
+    if feature.startswith(("platform.", "overlay.")) or feature in _GENERIC_MANUAL_REVIEW_FEATURES:
         return _generic_manual_review_module_specs_from_block(block, feature)
     if feature == "bfd":
         return _bfd_module_specs_from_block(block)
@@ -229,6 +308,12 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         )
     ]
 
+    if feature == "vrf":
+        specs.extend(_mpls_l3vpn_specs_from_vrf(block))
+
+    if feature == "acl":
+        specs.extend(_acl_advanced_specs_from_acl(block))
+
     if feature.startswith("interface."):
         specs.extend(_acl_binding_specs_from_interface(block))
         specs.extend(_vrrp_specs_from_interface(block))
@@ -237,6 +322,9 @@ def _module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
         specs.extend(_multicast_specs_from_interface(block))
         specs.extend(_ipv6_interface_specs_from_interface(block))
         specs.extend(_dhcp_relay_binding_specs_from_interface(block))
+        specs.extend(_dhcpv6_relay_binding_specs_from_interface(block))
+        specs.extend(_lacp_tuning_specs_from_interface(block))
+        specs.extend(_advanced_interface_specs_from_interface(block))
 
     return specs
 
@@ -609,17 +697,23 @@ def _pbr_policy_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]
 
 
 def _multicast_module_specs_from_block(block: ConfigBlock) -> list[_ModuleSpec]:
+    text = "\n".join(block.lines)
     tags = {"routing", "multicast"}
-    tags.update(_extract_multicast_tags("\n".join(block.lines)))
+    tags.update(_extract_multicast_tags(text))
+    feature = "multicast"
+    if re.search(r"\b(?:static-rp|rp-address|bsr|bootstrap|anycast-rp)\b", text, re.IGNORECASE):
+        feature = "multicast.rp"
+    elif re.match(r"^\s*msdp\b", block.lines[0], re.IGNORECASE):
+        feature = "multicast.msdp"
     return [
         _ModuleSpec(
-            feature="multicast",
+            feature=feature,
             start_line=block.start_line,
             end_line=block.end_line,
             source_lines=block.lines,
             tags=tags,
             status="manual_review",
-            manual_review_reason="组播/PIM/IGMP 配置依赖 RP、接口、ASM/SSM 和平台模式，需要人工复核",
+            manual_review_reason=_advanced_manual_review_reason(feature) if feature != "multicast" else "组播/PIM/IGMP 配置依赖 RP、接口、ASM/SSM 和平台模式，需要人工复核",
         )
     ]
 
@@ -1069,7 +1163,7 @@ def _multicast_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
     source_lines = [line for _, line in entries]
     tags = {"routing", "multicast"}
     tags.update(_extract_multicast_tags("\n".join(source_lines)))
-    return [
+    specs = [
         _ModuleSpec(
             feature="multicast.interface",
             start_line=min(line_numbers),
@@ -1081,6 +1175,186 @@ def _multicast_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
             manual_review_reason="接口组播/PIM/IGMP 行为依赖组播域、RP 和接口模式，需要人工复核",
         )
     ]
+    tuning_lines = [line for _, line in entries if re.search(r"\bigmp\s+(?:version|static-group|join-group|limit|query|max-response)\b", line, re.IGNORECASE)]
+    if tuning_lines:
+        specs.append(_manual_spec("multicast.igmp_tuning", min(line_numbers), max(line_numbers), tuning_lines, {f"interface:{interface_name}"}, {"multicast", "igmp"}))
+    return specs
+
+
+def _lacp_tuning_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
+    interface_name = _extract_interface_name(block.lines[0])
+    if not interface_name:
+        return []
+    entries = [
+        (block.start_line + offset, raw_line)
+        for offset, raw_line in enumerate(block.lines[1:], 1)
+        if re.match(r"^\s*lacp\s+(?:timeout|preempt|priority|system-priority|mode)\b", raw_line, re.IGNORECASE)
+    ]
+    if not entries:
+        return []
+    return [_manual_spec("lacp.tuning", min(n for n, _ in entries), max(n for n, _ in entries), [line for _, line in entries], {f"interface:{interface_name}"}, {"lacp", "tuning"})]
+
+
+def _dhcpv6_relay_binding_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
+    interface_name = _extract_interface_name(block.lines[0])
+    if not interface_name:
+        return []
+    entries = [
+        (block.start_line + offset, raw_line)
+        for offset, raw_line in enumerate(block.lines[1:], 1)
+        if re.match(r"^\s*(?:ipv6\s+dhcp\s+relay|dhcpv6\s+relay)\b", raw_line, re.IGNORECASE)
+    ]
+    if not entries:
+        return []
+    return [_manual_spec("dhcpv6.relay.binding", min(n for n, _ in entries), max(n for n, _ in entries), [line for _, line in entries], {f"interface:{interface_name}"}, {"dhcpv6", "relay", "interface"})]
+
+
+def _mpls_l3vpn_specs_from_vrf(block: ConfigBlock) -> list[_ModuleSpec]:
+    text = "\n".join(block.lines)
+    if not re.search(r"\b(?:vpn-target|route-target|route-distinguisher|rd\s+)\b", text, re.IGNORECASE):
+        return []
+    return [_manual_spec("mpls.l3vpn", block.start_line, block.end_line, block.lines, set(), {"mpls", "l3vpn", "vrf"})]
+
+
+def _segment_routing_specs_from_routing_block(block: ConfigBlock, protocol: str) -> list[_ModuleSpec]:
+    entries = [
+        (block.start_line + offset, raw_line)
+        for offset, raw_line in enumerate(block.lines[1:], 1)
+        if re.search(r"\bsegment-routing\b", raw_line, re.IGNORECASE)
+    ]
+    if not entries:
+        return []
+    return [_manual_spec("segment_routing.binding", min(n for n, _ in entries), max(n for n, _ in entries), [line for _, line in entries], set(), {"segment-routing", protocol})]
+
+
+def _manual_spec(feature: str, start_line: int, end_line: int, source_lines: list[str], consumes: set[str] | None = None, tags: set[str] | None = None) -> _ModuleSpec:
+    return _ModuleSpec(
+        feature=feature,
+        start_line=start_line,
+        end_line=end_line,
+        source_lines=source_lines,
+        consumes=consumes or set(),
+        tags=tags or {feature.split(".", 1)[0]},
+        status="manual_review",
+        manual_review_reason=_advanced_manual_review_reason(feature),
+    )
+
+
+def _advanced_manual_review_reason(feature: str) -> str:
+    return {
+        "l2.ring_protection": "ERPS/RRPP/SEP 环网保护会影响收敛、阻断端口和控制 VLAN，需要人工复核",
+        "l2.smart_link": "Smart Link/双上行保护会影响主备链路和故障切换，需要人工复核",
+        "l2.mlag": "M-LAG/vPC/peer-link 涉及跨设备聚合、Keepalive 和接口编号，需要人工复核",
+        "l2.vlan_mapping": "VLAN mapping/translation 会改变二层标签映射，需要人工复核",
+        "l2.private_vlan": "Private VLAN/PVLAN 会改变隔离域、主/辅 VLAN 和上联关系，需要人工复核",
+        "l2.gvrp": "GVRP 动态 VLAN 注册会影响 VLAN 分发边界，需要人工复核",
+        "l2.mvrp": "MVRP 动态 VLAN 注册会影响 VLAN 分发边界，需要人工复核",
+        "l2.device_tracking": "Device Tracking/终端探测会影响绑定表和安全联动，需要人工复核",
+        "l2.errdisable": "Errdisable 恢复原因和定时器会影响端口故障恢复，需要人工复核",
+        "oam.ethernet": "Ethernet OAM 检测、告警和链路保护语义需要人工复核",
+        "oam.cfm": "CFM/Y.1731 维护域、级别和 MEP/MIP 映射需要人工复核",
+        "monitor.span": "SPAN/镜像会复制生产流量，方向和目标端口需人工复核",
+        "monitor.rspan": "RSPAN/远程镜像依赖镜像 VLAN 和跨设备路径，需要人工复核",
+        "lacp.tuning": "LACP 定时器、抢占和优先级会影响聚合收敛，需要人工复核",
+        "dhcpv6.pool": "DHCPv6 地址池、前缀委派、DNS 和租期语义需要人工复核",
+        "dhcpv6.relay": "DHCPv6 Relay 服务器和接口绑定跨厂商行为不同，需要人工复核",
+        "dhcpv6.relay.binding": "接口 DHCPv6 Relay 绑定影响客户端地址分配路径，需要人工复核",
+        "ipv6.nd_snooping": "IPv6 ND Snooping 影响邻居表和安全绑定，需要人工复核",
+        "ipv6.source_guard": "IPv6 Source Guard 依赖绑定表和信任边界，需要人工复核",
+        "ipv6.ra_guard": "RA Guard 影响主机默认网关和自动配置，需要人工复核",
+        "mpls.ldp": "MPLS LDP 标签分发和邻居发现需按目标平台确认",
+        "mpls.te": "MPLS TE/RSVP/隧道约束和保护机制需要人工复核",
+        "mpls.l3vpn": "MPLS L3VPN RD/RT/VRF 导入导出语义需要人工复核",
+        "bgp.vpnv4": "BGP VPNv4 地址族和 PE-CE/MP-BGP 语义需要人工复核",
+        "bgp.evpn": "BGP EVPN 地址族、RT/RD、VNI 和网关模式需要人工复核",
+        "bgp.flowspec": "BGP FlowSpec 会下发流量过滤动作，需要人工复核",
+        "bgp.confederation": "BGP confederation 会改变 AS_PATH 和联盟边界，需要人工复核",
+        "bgp.route_reflector": "BGP route-reflector-client 会改变反射拓扑，需要人工复核",
+        "bgp.max_prefix": "BGP maximum-prefix 可能触发邻居保护动作，需要人工复核",
+        "bgp.gtsm": "BGP GTSM/TTL security 会影响邻居建立，需要人工复核",
+        "bgp.graceful_restart": "BGP graceful-restart 会影响重启收敛，需要人工复核",
+        "multicast.rp": "组播 RP/BSR/Anycast RP 选择会影响组播树，需要人工复核",
+        "multicast.msdp": "MSDP peer 和源发现语义需要人工复核",
+        "multicast.igmp_tuning": "IGMP 版本、静态组和接口调优需要人工复核",
+        "segment_routing": "Segment Routing/SR-MPLS/SRv6 标签和路径策略需要人工复核",
+        "segment_routing.binding": "路由协议中的 Segment Routing 绑定会影响控制平面，需要人工复核",
+        "ripng.process": "RIPng 版本、接口启用和重分发语义需要人工复核",
+        "ospf.te": "OSPF TE/opaque LSA 会影响 TE 数据库和隧道选路，需要人工复核",
+        "bgp.confederation": "BGP confederation 会改变 AS_PATH 语义和邻居设计，需要人工复核",
+        "bgp.route_reflector": "BGP route-reflector-client 影响反射拓扑和路由传播，需要人工复核",
+        "bgp.max_prefix": "BGP maximum-prefix 会触发邻居保护动作，需要人工复核",
+        "bgp.gtsm": "BGP GTSM/TTL security 会影响邻居建立条件，需要人工复核",
+        "bgp.graceful_restart": "BGP graceful-restart 影响重启收敛和转发表保持，需要人工复核",
+        "pbr.track": "PBR track 联动会改变下一跳可用性判断，需要人工复核",
+        "pbr.verify": "PBR verify-availability 会改变策略路由生效条件，需要人工复核",
+        "interface.tunnel6": "IPv6 tunnel/6in4 隧道源目和封装模式需要人工复核",
+        "fhrp.track": "FHRP track 会改变优先级和主备切换，需要人工复核",
+        "acl.object_group": "ACL object-group 引用需要目标平台对象模型人工确认",
+        "acl.time_range": "ACL time-range 引用会影响生效时间，需要人工复核",
+        "management.ntp_auth": "NTP 认证密钥和可信 key 不能自动迁移，需脱敏复核",
+        "management.netconf": "NETCONF 管理入口和 AAA/证书绑定需要人工复核",
+        "management.restconf": "RESTCONF 管理入口和 HTTPS/AAA 绑定需要人工复核",
+        "management.telemetry": "Telemetry/gNMI/gRPC 订阅、编码和目标采集器需人工复核",
+        "telemetry.flow": "NetFlow/NetStream/sFlow 采样、版本和导出目标需人工复核",
+        "security.urpf": "uRPF/反向路径检查会影响源地址校验和丢包行为，需要人工复核",
+        "firewall.ssl_vpn": "SSL VPN 认证、门户、资源授权和证书依赖目标平台，需要人工复核",
+        "firewall.dos": "DoS/Anti-DDoS 阈值和动作依赖平台检测引擎，需要人工复核",
+        "firewall.dlp": "DLP 内容识别和文件类型动作依赖目标平台特征库，需要人工复核",
+        "firewall.waf": "WAF 签名、例外和反向代理语义需要人工复核",
+        "firewall.load_balance": "负载均衡虚服务、实服务和健康检查语义需要人工复核",
+        "firewall.proxy": "代理策略依赖协议代理、认证和绕行规则，需要人工复核",
+        "firewall.dns_security": "DNS 安全策略依赖分类库和响应动作，需要人工复核",
+        "firewall.mail_security": "邮件安全策略依赖反垃圾/反病毒引擎和协议代理，需要人工复核",
+        "firewall.file_blocking": "文件阻断依赖文件类型识别和例外策略，需要人工复核",
+        "firewall.sandbox": "沙箱联动依赖云端/本地分析服务和动作语义，需要人工复核",
+        "firewall.decryption": "SSL 解密涉及证书、例外、隐私和协议兼容，需要人工复核",
+        "firewall.ha": "防火墙 HA/HRP 会影响主备、会话同步和接口角色，需要人工复核",
+        "firewall.vsys": "虚拟系统/多租户会改变资源、路由和策略隔离边界，需要人工复核",
+        "firewall.routing": "防火墙路由实例/动态路由与安全域策略耦合，需要人工复核",
+    }.get(feature, "高级网络能力跨厂商语义复杂，需要人工复核")
+
+
+def _acl_advanced_specs_from_acl(block: ConfigBlock) -> list[_ModuleSpec]:
+    entries: dict[str, list[tuple[int, str]]] = {"acl.object_group": [], "acl.time_range": []}
+    for offset, raw_line in enumerate(block.lines, 0):
+        stripped = raw_line.strip()
+        line_no = block.start_line + offset
+        if re.search(r"\bobject-group\b", stripped, re.IGNORECASE):
+            entries["acl.object_group"].append((line_no, raw_line))
+        if re.search(r"\btime-range\b|\btime\s+\S+", stripped, re.IGNORECASE):
+            entries["acl.time_range"].append((line_no, raw_line))
+
+    specs: list[_ModuleSpec] = []
+    for feature, rows in entries.items():
+        if not rows:
+            continue
+        specs.append(_manual_spec(feature, min(n for n, _ in rows), max(n for n, _ in rows), [line for _, line in rows], set(), {"acl"}))
+    return specs
+
+
+def _advanced_interface_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
+    interface_name = _extract_interface_name(block.lines[0])
+    if not interface_name:
+        return []
+    text = "\n".join(block.lines)
+    specs: list[_ModuleSpec] = []
+    if re.match(r"^Tunnel", interface_name, re.IGNORECASE) and re.search(r"\bipv6\b|tunnel\s+mode\s+ipv6", text, re.IGNORECASE):
+        specs.append(_manual_spec("interface.tunnel6", block.start_line, block.end_line, block.lines, {f"interface:{interface_name}"}, {"tunnel", "ipv6"}))
+    fhrp_track = [
+        (block.start_line + offset, raw_line)
+        for offset, raw_line in enumerate(block.lines[1:], 1)
+        if re.match(r"^\s*(?:vrrp|standby)\b", raw_line, re.IGNORECASE) and re.search(r"\btrack\b", raw_line, re.IGNORECASE)
+    ]
+    if fhrp_track:
+        specs.append(_manual_spec("fhrp.track", min(n for n, _ in fhrp_track), max(n for n, _ in fhrp_track), [line for _, line in fhrp_track], {f"interface:{interface_name}"}, {"fhrp", "track"}))
+    urpf = [
+        (block.start_line + offset, raw_line)
+        for offset, raw_line in enumerate(block.lines[1:], 1)
+        if re.search(r"\b(?:ip\s+verify\s+unicast\s+reverse-path|urpf)\b", raw_line, re.IGNORECASE)
+    ]
+    if urpf:
+        specs.append(_manual_spec("security.urpf", min(n for n, _ in urpf), max(n for n, _ in urpf), [line for _, line in urpf], {f"interface:{interface_name}"}, {"security", "urpf"}))
+    return specs
 
 
 def _ipv6_interface_specs_from_interface(block: ConfigBlock) -> list[_ModuleSpec]:
@@ -1185,12 +1459,23 @@ def _attach_dependencies(graph: ModuleGraph) -> None:
 def _normalize_feature(block: ConfigBlock) -> str:
     text = "\n".join(line.strip() for line in block.lines if line.strip())
     first = block.lines[0].strip() if block.lines else ""
+    for mapped_feature, pattern in _GENERIC_FEATURE_PATTERNS:
+        if re.search(pattern, first, re.IGNORECASE):
+            return mapped_feature
     if re.match(r"^(sysname|hostname)\b", first, re.IGNORECASE):
         return "device_identity"
     if re.match(r"^interface\b", first, re.IGNORECASE):
         if re.search(r"\b(qinq|dot1q-tunnel|vlan-stacking)\b", text, re.IGNORECASE):
             return "l2.qinq"
         return _interface_feature(first)
+    if re.match(r"^(?:erps|rrpp|sep|gvrp)\b", first, re.IGNORECASE):
+        return "l2.ring_protection"
+    if re.match(r"^(?:smart-link|smartlink)\b", first, re.IGNORECASE):
+        return "l2.smart_link"
+    if re.match(r"^(?:m-lag|mlag|vpc\b|peer-link)\b", first, re.IGNORECASE):
+        return "l2.mlag"
+    if re.match(r"^(?:vlan\s+mapping|vlan-mapping|port\s+vlan-mapping)\b", first, re.IGNORECASE):
+        return "l2.vlan_mapping"
     if re.match(r"^(?:voice-vlan|voice\s+vlan)\b", first, re.IGNORECASE):
         return "l2.voice_vlan"
     if re.match(r"^(?:poe|power\s+inline)\b", first, re.IGNORECASE):
@@ -1231,12 +1516,28 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return "isis"
     if re.match(r"^bfd\b", first, re.IGNORECASE):
         return "bfd"
+    if re.match(r"^(?:ipv6\s+dhcp\s+pool|dhcpv6\s+pool)\b", first, re.IGNORECASE):
+        return "dhcpv6.pool"
+    if re.match(r"^(?:dhcpv6\s+relay|ipv6\s+dhcp\s+relay)\b", first, re.IGNORECASE):
+        return "dhcpv6.relay"
+    if re.match(r"^ipv6\s+nd\s+snooping\b", first, re.IGNORECASE):
+        return "ipv6.nd_snooping"
+    if re.match(r"^ipv6\s+source\s+guard\b", first, re.IGNORECASE):
+        return "ipv6.source_guard"
+    if re.match(r"^ipv6\s+ra\s+guard\b", first, re.IGNORECASE):
+        return "ipv6.ra_guard"
     if re.match(r"^ipv6\s+(?:route-static|route)\b", first, re.IGNORECASE):
         return "ipv6.static_route"
     if re.match(r"^ipv6\s+access-list\b|^acl\s+ipv6\b", first, re.IGNORECASE):
         return "ipv6.acl"
     if re.match(r"^(?:dhcp\s+relay|ip\s+helper-address|dhcp\s+select\s+relay)\b", first, re.IGNORECASE):
         return "dhcp.relay"
+    if re.match(r"^segment-routing\b", first, re.IGNORECASE):
+        return "segment_routing"
+    if re.match(r"^mpls\s+ldp\b", first, re.IGNORECASE):
+        return "mpls.ldp"
+    if re.match(r"^(?:mpls\s+te|traffic-eng\s+tunnels)\b", first, re.IGNORECASE):
+        return "mpls.te"
     if re.match(r"^mpls\b", first, re.IGNORECASE):
         return "mpls"
     if re.match(r"^nqa\s+test-instance\b", first, re.IGNORECASE):
@@ -1257,16 +1558,28 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return "object_group"
     if re.match(r"^(?:policy-based-route|ip\s+policy-based-route)\b", first, re.IGNORECASE):
         return "pbr"
+    if re.match(r"^msdp\b", first, re.IGNORECASE):
+        return "multicast.msdp"
     if re.match(r"^(?:multicast|pim|igmp|ip\s+multicast-routing)\b", first, re.IGNORECASE):
         return "multicast"
     if re.match(r"^(?:nat-policy|nat\b|source-nat\b|destination-nat\b|ip\s+nat\b)", first, re.IGNORECASE):
         return "firewall_nat"
     if re.match(r"^(?:pki\b|crypto\s+pki\b|certificate\b)", first, re.IGNORECASE):
         return "management.pki"
+    if re.match(r"^(?:ssl\s+vpn|sslvpn)\b", first, re.IGNORECASE):
+        return "firewall.ssl_vpn"
     if re.match(r"^(?:ike|ipsec|crypto|tunnel-group|vpn)\b", first, re.IGNORECASE):
         return "firewall_ipsec"
     if re.match(r"^time-range\b", first, re.IGNORECASE):
         return "time_range"
+    if re.match(r"^(?:dos-policy|anti-ddos|attack-defense)\b", first, re.IGNORECASE):
+        return "firewall.dos"
+    if re.match(r"^dlp\b", first, re.IGNORECASE):
+        return "firewall.dlp"
+    if re.match(r"^waf\b", first, re.IGNORECASE):
+        return "firewall.waf"
+    if re.match(r"^(?:load-balance|slb|virtual-server)\b", first, re.IGNORECASE):
+        return "firewall.load_balance"
     if re.match(r"^(?:intrusion|ips)\b", first, re.IGNORECASE):
         return "firewall.ips"
     if re.match(r"^url-filter\b", first, re.IGNORECASE):
@@ -1732,7 +2045,7 @@ def _extract_isis_process(text: str) -> str:
 
 
 def _is_bgp_process_line(line: str) -> bool:
-    return bool(re.match(r"^(?:bgp\s+)?router-id\b|^ipv4-family\b|^address-family\b", line, re.IGNORECASE))
+    return bool(re.match(r"^(?:bgp\s+)?router-id\b|^ipv4-family\b", line, re.IGNORECASE))
 
 
 def _is_bgp_neighbor_line(line: str) -> bool:
@@ -1751,6 +2064,22 @@ def _extract_bgp_neighbor(line: str) -> str:
 
 
 def _bgp_risky_feature(line: str) -> str:
+    if re.search(r"\bconfederation\b", line, re.IGNORECASE):
+        return "bgp.confederation"
+    if re.search(r"\broute-reflector-client\b", line, re.IGNORECASE):
+        return "bgp.route_reflector"
+    if re.search(r"\bmaximum-prefix\b", line, re.IGNORECASE):
+        return "bgp.max_prefix"
+    if re.search(r"\b(?:ttl-security|gtsm)\b", line, re.IGNORECASE):
+        return "bgp.gtsm"
+    if re.search(r"\bgraceful-restart\b", line, re.IGNORECASE):
+        return "bgp.graceful_restart"
+    if re.search(r"address-family\s+vpnv4", line, re.IGNORECASE):
+        return "bgp.vpnv4"
+    if re.search(r"address-family\s+(?:l2vpn\s+)?evpn", line, re.IGNORECASE):
+        return "bgp.evpn"
+    if re.search(r"address-family\s+\S*\s*flowspec", line, re.IGNORECASE):
+        return "bgp.flowspec"
     if re.search(r"\bpassword\b|authentication-key|keychain", line, re.IGNORECASE):
         return "bgp.password"
     if re.search(r"\b(route-policy|route-map|filter-policy|prefix-list|ip-prefix|as-path-filter|community-filter)\b", line, re.IGNORECASE):
@@ -1768,6 +2097,14 @@ def _bgp_manual_review_reason(feature: str, line: str) -> str:
         "bgp.policy": "BGP 路由策略/过滤器会影响路由传播，需要人工复核",
         "bgp.redistribute": "BGP 重分发策略会影响路由传播，需要人工复核",
         "bgp.attribute": "BGP 属性调优可能影响选路，需要人工复核",
+        "bgp.vpnv4": "BGP VPNv4 地址族和 MP-BGP 语义需要人工复核",
+        "bgp.evpn": "BGP EVPN 地址族、VNI/RT/RD 和网关模式需要人工复核",
+        "bgp.flowspec": "BGP FlowSpec 会下发流量过滤动作，需要人工复核",
+        "bgp.confederation": "BGP confederation 会改变 AS_PATH 和联盟边界，需要人工复核",
+        "bgp.route_reflector": "BGP route-reflector-client 会改变反射拓扑，需要人工复核",
+        "bgp.max_prefix": "BGP maximum-prefix 可能触发邻居保护动作，需要人工复核",
+        "bgp.gtsm": "BGP GTSM/TTL security 会影响邻居建立，需要人工复核",
+        "bgp.graceful_restart": "BGP graceful-restart 会影响重启收敛，需要人工复核",
     }
     return f"{reasons.get(feature, 'BGP 子命令需要人工复核')}: {line}"
 
@@ -2121,6 +2458,8 @@ def _is_ospf_risky_line(line: str) -> bool:
 
 
 def _ospf_risky_feature(line: str) -> str:
+    if re.search(r"\b(?:mpls\s+traffic-eng|traffic-eng|opaque-capability)\b", line, re.IGNORECASE):
+        return "ospf.te"
     if re.search(r"\bauthentication\b|authentication-mode", line, re.IGNORECASE):
         return "ospf.authentication"
     if re.match(r"^(?:import-route|redistribute|default-route-advertise)\b", line, re.IGNORECASE):
@@ -2138,6 +2477,7 @@ def _ospf_manual_review_reason(feature: str, line: str) -> str:
         "ospf.redistribute": "OSPF 重分发策略会影响路由传播，需要人工复核",
         "ospf.area_special": "OSPF stub/nssa/virtual-link 区域语义复杂，需要人工复核",
         "ospf.interface_tuning": "OSPF 接口调优参数可能影响收敛/选路，需要人工复核",
+        "ospf.te": "OSPF TE/opaque LSA 会影响 TE 数据库和路径计算，需要人工复核",
     }
     return f"{reasons.get(feature, 'OSPF 子命令需要人工复核')}: {line}"
 

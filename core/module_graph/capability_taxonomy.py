@@ -158,6 +158,24 @@ PRODUCT_CAPABILITY_BASELINE: tuple[CapabilitySpec, ...] = (
         ("Cisco PoE and UDLD/loop detection guides", "Huawei PoE and loop detection documentation", "H3C PoE and loopback detection guides", "Ruijie PoE and loop prevention documentation"),
     ),
     CapabilitySpec(
+        "switch.resilience_advanced",
+        "SWITCH",
+        "Advanced L2 resilience",
+        ("l2.ring_protection", "l2.smart_link", "l2.mlag", "lacp.tuning"),
+        "manual_review",
+        SWITCH_PLATFORMS,
+        ("Huawei ERPS/Smart Link/M-LAG documentation", "H3C RRPP/IRF/LACP documentation", "Cisco vPC/LACP documentation", "Ruijie ring protection documentation"),
+    ),
+    CapabilitySpec(
+        "switch.vlan_translation",
+        "SWITCH",
+        "VLAN translation / mapping",
+        ("l2.vlan_mapping",),
+        "manual_review",
+        SWITCH_PLATFORMS,
+        ("Huawei VLAN mapping documentation", "H3C VLAN mapping documentation", "Ruijie VLAN translation documentation", "Cisco VLAN translation documentation"),
+    ),
+    CapabilitySpec(
         "router.static_route",
         "ROUTER",
         "IP routing",
@@ -311,6 +329,24 @@ PRODUCT_CAPABILITY_BASELINE: tuple[CapabilitySpec, ...] = (
         ("Cisco DHCP Relay Configuration Guide", "Huawei DHCP Relay Configuration Guide", "H3C DHCP Relay Configuration Guide", "Ruijie DHCP Configuration"),
     ),
     CapabilitySpec(
+        "router.dhcpv6",
+        "ROUTER",
+        "DHCPv6 services",
+        ("dhcpv6.pool", "dhcpv6.relay", "dhcpv6.relay.binding"),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("Cisco DHCPv6 Configuration Guide", "Huawei DHCPv6 Configuration Guide", "H3C DHCPv6 Configuration Guide", "Ruijie IPv6 services documentation"),
+    ),
+    CapabilitySpec(
+        "router.ipv6_first_hop_security",
+        "ROUTER",
+        "IPv6 first-hop security",
+        ("ipv6.nd_snooping", "ipv6.source_guard", "ipv6.ra_guard"),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("Cisco IPv6 First Hop Security", "Huawei IPv6 security documentation", "H3C IPv6 ND/RA security documentation", "Ruijie IPv6 security documentation"),
+    ),
+    CapabilitySpec(
         "router.ipv6_interface_services",
         "ROUTER",
         "IPv6 interface services",
@@ -329,6 +365,42 @@ PRODUCT_CAPABILITY_BASELINE: tuple[CapabilitySpec, ...] = (
         ("cisco_ios_xe",),
         ("Cisco EIGRP Configuration Guide",),
         "Cisco-specific routing protocol; non-Cisco migration requires redesign or explicit review.",
+    ),
+    CapabilitySpec(
+        "router.mpls_vpn_advanced",
+        "ROUTER",
+        "Advanced MPLS / L3VPN",
+        ("mpls.ldp", "mpls.te", "mpls.l3vpn"),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("Cisco MPLS L3VPN/TE documentation", "Huawei MPLS VPN documentation", "H3C MPLS VPN documentation", "Ruijie MPLS documentation"),
+    ),
+    CapabilitySpec(
+        "router.bgp_advanced_families",
+        "ROUTER",
+        "BGP advanced address families",
+        ("bgp.vpnv4", "bgp.evpn", "bgp.flowspec"),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("Cisco BGP VPNv4/EVPN/FlowSpec documentation", "Huawei BGP VPNv4/EVPN documentation", "H3C BGP VPN documentation", "Ruijie BGP documentation"),
+    ),
+    CapabilitySpec(
+        "router.multicast_advanced",
+        "ROUTER",
+        "Advanced multicast",
+        ("multicast.rp", "multicast.msdp", "multicast.igmp_tuning"),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("Cisco Multicast Configuration Guide", "Huawei Multicast Configuration Guide", "H3C Multicast Configuration Guide", "Ruijie Multicast Configuration"),
+    ),
+    CapabilitySpec(
+        "router.segment_routing",
+        "ROUTER",
+        "Segment Routing",
+        ("segment_routing", "segment_routing.binding"),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("Cisco Segment Routing Configuration Guide", "Huawei Segment Routing documentation", "H3C Segment Routing documentation", "Ruijie SR documentation"),
     ),
     CapabilitySpec(
         "firewall.objects",
@@ -386,6 +458,33 @@ PRODUCT_CAPABILITY_BASELINE: tuple[CapabilitySpec, ...] = (
         "Threat profile semantics depend on signature databases, user identity sources, application libraries, and action defaults.",
     ),
     CapabilitySpec(
+        "firewall.remote_access_vpn",
+        "FIREWALL",
+        "Remote access VPN",
+        ("firewall.ssl_vpn",),
+        "manual_review",
+        FIREWALL_PLATFORMS,
+        ("Huawei USG SSL VPN documentation", "Hillstone SSL VPN documentation", "Topsec remote access VPN documentation", "DPtech VPN documentation"),
+    ),
+    CapabilitySpec(
+        "firewall.threat_advanced",
+        "FIREWALL",
+        "Advanced threat prevention",
+        ("firewall.dos", "firewall.dlp", "firewall.waf"),
+        "manual_review",
+        FIREWALL_PLATFORMS,
+        ("Huawei USG threat defense documentation", "Hillstone security profile documentation", "Topsec threat prevention documentation", "DPtech security profile documentation"),
+    ),
+    CapabilitySpec(
+        "firewall.application_delivery",
+        "FIREWALL",
+        "Application delivery / load balancing",
+        ("firewall.load_balance",),
+        "manual_review",
+        FIREWALL_PLATFORMS,
+        ("Huawei USG server load balancing documentation", "Hillstone StoneOS SLB documentation", "Topsec application delivery documentation", "DPtech load balancing documentation"),
+    ),
+    CapabilitySpec(
         "firewall.session_logging",
         "FIREWALL",
         "Session and audit logging",
@@ -393,6 +492,271 @@ PRODUCT_CAPABILITY_BASELINE: tuple[CapabilitySpec, ...] = (
         "manual_review",
         FIREWALL_PLATFORMS,
         ("Huawei USG logging/session guides", "Hillstone StoneOS logging/session documentation", "Topsec firewall audit documentation", "DPtech firewall logging documentation"),
+    ),
+    CapabilitySpec(
+        "switch.private_vlan",
+        "SWITCH",
+        "Private VLAN / isolated L2 domains",
+        ("l2.private_vlan",),
+        "manual_review",
+        SWITCH_PLATFORMS,
+        ("Cisco Private VLAN documentation", "Huawei PVLAN documentation", "H3C PVLAN documentation", "Ruijie PVLAN documentation"),
+        "PVLAN primary/secondary/promiscuous mapping must be reviewed per target platform.",
+    ),
+    CapabilitySpec(
+        "switch.registration_protocols",
+        "SWITCH",
+        "Dynamic VLAN registration",
+        ("l2.gvrp", "l2.mvrp"),
+        "manual_review",
+        SWITCH_PLATFORMS,
+        ("GVRP/MVRP product documentation",),
+        "Dynamic VLAN registration changes VLAN propagation boundaries and should not be silently converted.",
+    ),
+    CapabilitySpec(
+        "switch.ethernet_oam",
+        "SWITCH",
+        "Ethernet OAM / CFM",
+        ("oam.ethernet", "oam.cfm"),
+        "manual_review",
+        SWITCH_PLATFORMS,
+        ("Ethernet OAM and CFM configuration guides",),
+        "OAM/CFM maintenance domains, levels, and actions require review.",
+    ),
+    CapabilitySpec(
+        "switch.traffic_mirroring",
+        "SWITCH",
+        "SPAN / RSPAN traffic mirroring",
+        ("monitor.span", "monitor.rspan"),
+        "manual_review",
+        SWITCH_PLATFORMS,
+        ("SPAN/RSPAN/port mirroring configuration guides",),
+        "Mirror directions, remote VLANs, and destination ports are target-specific.",
+    ),
+    CapabilitySpec(
+        "switch.device_tracking",
+        "SWITCH",
+        "Endpoint device tracking",
+        ("l2.device_tracking",),
+        "manual_review",
+        SWITCH_PLATFORMS,
+        ("Device tracking / endpoint detection documentation",),
+    ),
+    CapabilitySpec(
+        "switch.errdisable",
+        "SWITCH",
+        "Errdisable recovery",
+        ("l2.errdisable",),
+        "manual_review",
+        SWITCH_PLATFORMS,
+        ("Errdisable and fault recovery documentation",),
+    ),
+    CapabilitySpec(
+        "router.ripng",
+        "ROUTER",
+        "RIPng IPv6 routing",
+        ("ripng.process",),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("IPv6 routing and RIPng configuration guides",),
+    ),
+    CapabilitySpec(
+        "router.ospf_traffic_engineering",
+        "ROUTER",
+        "OSPF traffic engineering",
+        ("ospf.te",),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("OSPF TE / opaque LSA documentation",),
+    ),
+    CapabilitySpec(
+        "router.bgp_confederation_rr",
+        "ROUTER",
+        "BGP confederation and route reflection",
+        ("bgp.confederation", "bgp.route_reflector"),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("BGP confederation and route reflector documentation",),
+    ),
+    CapabilitySpec(
+        "router.bgp_session_safety",
+        "ROUTER",
+        "BGP session protection",
+        ("bgp.max_prefix", "bgp.gtsm"),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("BGP maximum-prefix and TTL security documentation",),
+    ),
+    CapabilitySpec(
+        "router.bgp_graceful_restart",
+        "ROUTER",
+        "BGP graceful restart",
+        ("bgp.graceful_restart",),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("BGP graceful restart documentation",),
+    ),
+    CapabilitySpec(
+        "router.pbr_advanced",
+        "ROUTER",
+        "Advanced policy-based routing",
+        ("pbr.track", "pbr.verify"),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("Policy-based routing tracking and verify-availability documentation",),
+    ),
+    CapabilitySpec(
+        "router.ipv6_tunnel",
+        "ROUTER",
+        "IPv6 tunnel interfaces",
+        ("interface.tunnel6",),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("IPv6 tunnel / 6in4 / ISATAP documentation",),
+    ),
+    CapabilitySpec(
+        "router.fhrp_tracking",
+        "ROUTER",
+        "FHRP tracking",
+        ("fhrp.track",),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("VRRP/HSRP tracking documentation",),
+    ),
+    CapabilitySpec(
+        "router.acl_advanced_refs",
+        "ROUTER",
+        "Advanced ACL references",
+        ("acl.object_group", "acl.time_range"),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("ACL object-group and time-range documentation",),
+    ),
+    CapabilitySpec(
+        "system.ntp_authentication",
+        "ROUTER",
+        "NTP authentication",
+        ("management.ntp_auth",),
+        "manual_review",
+        SWITCH_PLATFORMS + ROUTER_PLATFORMS,
+        ("NTP authentication configuration guides",),
+    ),
+    CapabilitySpec(
+        "system.programmatic_management",
+        "ROUTER",
+        "Programmatic management APIs",
+        ("management.netconf", "management.restconf"),
+        "manual_review",
+        SWITCH_PLATFORMS + ROUTER_PLATFORMS + FIREWALL_PLATFORMS,
+        ("NETCONF/RESTCONF management documentation",),
+    ),
+    CapabilitySpec(
+        "system.streaming_telemetry",
+        "ROUTER",
+        "Streaming telemetry",
+        ("management.telemetry",),
+        "manual_review",
+        SWITCH_PLATFORMS + ROUTER_PLATFORMS + FIREWALL_PLATFORMS,
+        ("Telemetry/gNMI/gRPC configuration guides",),
+    ),
+    CapabilitySpec(
+        "system.flow_export",
+        "ROUTER",
+        "Flow export / traffic statistics",
+        ("telemetry.flow",),
+        "manual_review",
+        SWITCH_PLATFORMS + ROUTER_PLATFORMS + FIREWALL_PLATFORMS,
+        ("NetFlow/NetStream/sFlow documentation",),
+    ),
+    CapabilitySpec(
+        "router.urpf",
+        "ROUTER",
+        "uRPF source validation",
+        ("security.urpf",),
+        "manual_review",
+        ROUTER_PLATFORMS,
+        ("uRPF / reverse path forwarding check documentation",),
+    ),
+    CapabilitySpec(
+        "firewall.proxy_policy",
+        "FIREWALL",
+        "Proxy policy",
+        ("firewall.proxy",),
+        "manual_review",
+        FIREWALL_PLATFORMS,
+        ("Firewall proxy policy documentation",),
+    ),
+    CapabilitySpec(
+        "firewall.dns_security",
+        "FIREWALL",
+        "DNS security",
+        ("firewall.dns_security",),
+        "manual_review",
+        FIREWALL_PLATFORMS,
+        ("DNS security profile documentation",),
+    ),
+    CapabilitySpec(
+        "firewall.mail_security",
+        "FIREWALL",
+        "Mail security",
+        ("firewall.mail_security",),
+        "manual_review",
+        FIREWALL_PLATFORMS,
+        ("Mail security profile documentation",),
+    ),
+    CapabilitySpec(
+        "firewall.file_blocking",
+        "FIREWALL",
+        "File blocking",
+        ("firewall.file_blocking",),
+        "manual_review",
+        FIREWALL_PLATFORMS,
+        ("File blocking profile documentation",),
+    ),
+    CapabilitySpec(
+        "firewall.sandboxing",
+        "FIREWALL",
+        "Sandbox analysis",
+        ("firewall.sandbox",),
+        "manual_review",
+        FIREWALL_PLATFORMS,
+        ("Sandbox / malware analysis documentation",),
+    ),
+    CapabilitySpec(
+        "firewall.ssl_decryption",
+        "FIREWALL",
+        "SSL decryption",
+        ("firewall.decryption",),
+        "manual_review",
+        FIREWALL_PLATFORMS,
+        ("SSL decryption policy documentation",),
+    ),
+    CapabilitySpec(
+        "firewall.high_availability",
+        "FIREWALL",
+        "High availability",
+        ("firewall.ha",),
+        "manual_review",
+        FIREWALL_PLATFORMS,
+        ("Firewall HA/HRP documentation",),
+    ),
+    CapabilitySpec(
+        "firewall.virtual_systems",
+        "FIREWALL",
+        "Virtual systems / multi-tenancy",
+        ("firewall.vsys",),
+        "manual_review",
+        FIREWALL_PLATFORMS,
+        ("Firewall virtual system / VSYS documentation",),
+    ),
+    CapabilitySpec(
+        "firewall.dynamic_routing",
+        "FIREWALL",
+        "Firewall routing instances",
+        ("firewall.routing",),
+        "manual_review",
+        FIREWALL_PLATFORMS,
+        ("Firewall routing and virtual router documentation",),
     ),
     CapabilitySpec(
         "acl_qos",
@@ -511,6 +875,26 @@ evpn-overlay enable
 #
 loopback-detection enable
 """,
+    ),
+    "switch.resilience_advanced": (
+        "huawei",
+        """erps ring 1
+ control-vlan 4094
+#
+smart-link group 1
+ protected-vlan reference-instance 1
+#
+m-lag 1
+ peer-link Eth-Trunk10
+#
+interface Eth-Trunk10
+ lacp timeout fast
+ lacp preempt enable
+""",
+    ),
+    "switch.vlan_translation": (
+        "huawei",
+        "vlan mapping 100 map-vlan 200\n",
     ),
     "router.static_route": (
         "huawei",
@@ -657,6 +1041,26 @@ interface GigabitEthernet0/0/1
  ip helper-address 10.0.0.10
 """,
     ),
+    "router.dhcpv6": (
+        "huawei",
+        """ipv6 dhcp pool V6POOL
+ address prefix 2001:db8:10::/64
+#
+dhcpv6 relay destination 2001:db8::10
+#
+interface GigabitEthernet0/0/1
+ ipv6 dhcp relay destination 2001:db8::10
+""",
+    ),
+    "router.ipv6_first_hop_security": (
+        "huawei",
+        """ipv6 nd snooping enable
+#
+ipv6 source guard
+#
+ipv6 ra guard policy RAGUARD
+""",
+    ),
     "router.ipv6_interface_services": (
         "huawei",
         """interface GigabitEthernet0/0/1
@@ -670,6 +1074,48 @@ interface GigabitEthernet0/0/1
         """router eigrp 100
  network 10.0.0.0
  passive-interface default
+""",
+    ),
+    "router.mpls_vpn_advanced": (
+        "huawei",
+        """mpls ldp
+#
+mpls te
+#
+ip vpn-instance CUST-A
+ ipv4-family
+  route-distinguisher 65000:1
+  vpn-target 65000:1 export-extcommunity
+""",
+    ),
+    "router.bgp_advanced_families": (
+        "cisco",
+        """router bgp 65000
+ address-family vpnv4
+ address-family l2vpn evpn
+ address-family ipv4 flowspec
+""",
+    ),
+    "router.multicast_advanced": (
+        "huawei",
+        """pim
+ static-rp 10.0.0.1
+#
+msdp
+ peer 10.0.0.2 connect-interface LoopBack0
+#
+interface Vlanif10
+ igmp version 3
+ igmp static-group 239.1.1.1
+""",
+    ),
+    "router.segment_routing": (
+        "cisco",
+        """segment-routing
+ mpls
+#
+isis 1
+ segment-routing mpls
 """,
     ),
     "firewall.objects": (
@@ -751,6 +1197,30 @@ user-profile EMPLOYEE
  user-group staff
 """,
     ),
+    "firewall.remote_access_vpn": (
+        "huawei_usg",
+        """ssl vpn gateway SSLVPN
+ ip address 10.0.0.1 port 443
+""",
+    ),
+    "firewall.threat_advanced": (
+        "huawei_usg",
+        """dos-policy
+ rule name anti-flood
+#
+dlp profile DLP-PROFILE
+ file-type block exe
+#
+waf profile WAF-PROFILE
+ signature enable
+""",
+    ),
+    "firewall.application_delivery": (
+        "huawei_usg",
+        """load-balance virtual-server VS-WEB
+ real-server RS1 10.0.0.10
+""",
+    ),
     "firewall.session_logging": (
         "hillstone",
         """session timeout tcp 3600
@@ -760,6 +1230,118 @@ traffic log enable
 log setting security-policy enable
 """,
     ),
+    "switch.private_vlan": ("cisco", "private-vlan primary 100\n"),
+    "switch.registration_protocols": (
+        "huawei",
+        """gvrp
+#
+mvrp enable
+""",
+    ),
+    "switch.ethernet_oam": (
+        "huawei",
+        """ethernet oam enable
+#
+cfm md MD1 level 3
+""",
+    ),
+    "switch.traffic_mirroring": (
+        "cisco",
+        """monitor session 1 source interface GigabitEthernet0/1
+#
+remote-probe vlan 999
+""",
+    ),
+    "switch.device_tracking": ("cisco", "ip device tracking\n"),
+    "switch.errdisable": ("cisco", "errdisable recovery cause bpduguard\n"),
+    "router.ripng": ("huawei", "ripng 1\n"),
+    "router.ospf_traffic_engineering": (
+        "huawei",
+        """ospf 1
+ mpls traffic-eng area 0
+""",
+    ),
+    "router.bgp_confederation_rr": (
+        "cisco",
+        """router bgp 65000
+ bgp confederation identifier 65000
+ neighbor 10.0.0.2 route-reflector-client
+""",
+    ),
+    "router.bgp_session_safety": (
+        "cisco",
+        """router bgp 65000
+ neighbor 10.0.0.2 maximum-prefix 1000
+ neighbor 10.0.0.2 ttl-security hops 1
+""",
+    ),
+    "router.bgp_graceful_restart": (
+        "cisco",
+        """router bgp 65000
+ bgp graceful-restart
+""",
+    ),
+    "router.pbr_advanced": (
+        "huawei",
+        """pbr track TRACK1
+#
+pbr verify-availability enable
+""",
+    ),
+    "router.ipv6_tunnel": (
+        "cisco",
+        """interface Tunnel10
+ ipv6 address 2001:db8:1::1/64
+ tunnel mode ipv6ip
+""",
+    ),
+    "router.fhrp_tracking": (
+        "huawei",
+        """interface Vlanif10
+ vrrp vrid 1 track interface GigabitEthernet0/0/1 reduced 30
+""",
+    ),
+    "router.acl_advanced_refs": (
+        "huawei",
+        """acl number 3000
+ rule 5 permit ip source object-group SRC destination any time-range WORK
+""",
+    ),
+    "system.ntp_authentication": ("cisco", "ntp authentication-key 1 md5 SECRET\n"),
+    "system.programmatic_management": (
+        "huawei",
+        """netconf ssh server enable
+#
+restconf
+""",
+    ),
+    "system.streaming_telemetry": ("huawei", "telemetry\n"),
+    "system.flow_export": ("cisco", "ip flow-export destination 10.0.0.10 2055\n"),
+    "router.urpf": (
+        "cisco",
+        """interface GigabitEthernet0/0/1
+ ip verify unicast reverse-path
+""",
+    ),
+    "firewall.proxy_policy": (
+        "huawei_usg",
+        """proxy-policy
+ rule name web-proxy
+""",
+    ),
+    "firewall.dns_security": ("huawei_usg", "dns-filter profile DNS-PROTECT\n"),
+    "firewall.mail_security": ("huawei_usg", "mail-filter profile MAIL-PROTECT\n"),
+    "firewall.file_blocking": ("huawei_usg", "file-blocking profile FILE-BLOCK\n"),
+    "firewall.sandboxing": ("huawei_usg", "sandbox profile CLOUD-SANDBOX\n"),
+    "firewall.ssl_decryption": (
+        "huawei_usg",
+        """decryption-policy
+ rule name ssl-decrypt
+""",
+    ),
+    "firewall.high_availability": ("huawei_usg", "hrp enable\n"),
+    "firewall.virtual_systems": ("huawei_usg", "virtual-system vsys1\n"),
+    "firewall.dynamic_routing": ("huawei_usg", "firewall routing-instance VRF1\n"),
     "acl_qos": (
         "huawei",
         """acl number 3000

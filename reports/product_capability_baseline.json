@@ -1,13 +1,13 @@
 {
   "summary": {
-    "total": 41,
-    "covered": 41,
-    "full": 41,
+    "total": 81,
+    "covered": 81,
+    "full": 81,
     "partial": 0,
     "missing": 0,
     "by_action": {
       "auto_subset": 11,
-      "manual_review": 29,
+      "manual_review": 69,
       "identify_only": 1
     }
   },
@@ -497,6 +497,258 @@
         "coverage_status": "covered"
       },
       {
+        "capability_id": "switch.resilience_advanced",
+        "domain": "SWITCH",
+        "product_area": "Advanced L2 resilience",
+        "module_features": [
+          "l2.ring_protection",
+          "l2.smart_link",
+          "l2.mlag",
+          "lacp.tuning"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Huawei ERPS/Smart Link/M-LAG documentation",
+          "H3C RRPP/IRF/LACP documentation",
+          "Cisco vPC/LACP documentation",
+          "Ruijie ring protection documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "interface.lag",
+          "l2.mlag",
+          "l2.ring_protection",
+          "l2.smart_link",
+          "lacp.tuning"
+        ],
+        "matched_features": [
+          "l2.mlag",
+          "l2.ring_protection",
+          "l2.smart_link",
+          "lacp.tuning"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "switch.vlan_translation",
+        "domain": "SWITCH",
+        "product_area": "VLAN translation / mapping",
+        "module_features": [
+          "l2.vlan_mapping"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Huawei VLAN mapping documentation",
+          "H3C VLAN mapping documentation",
+          "Ruijie VLAN translation documentation",
+          "Cisco VLAN translation documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "l2.vlan_mapping"
+        ],
+        "matched_features": [
+          "l2.vlan_mapping"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "switch.private_vlan",
+        "domain": "SWITCH",
+        "product_area": "Private VLAN / isolated L2 domains",
+        "module_features": [
+          "l2.private_vlan"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco Private VLAN documentation",
+          "Huawei PVLAN documentation",
+          "H3C PVLAN documentation",
+          "Ruijie PVLAN documentation"
+        ],
+        "notes": "PVLAN primary/secondary/promiscuous mapping must be reviewed per target platform.",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "l2.private_vlan"
+        ],
+        "matched_features": [
+          "l2.private_vlan"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "switch.registration_protocols",
+        "domain": "SWITCH",
+        "product_area": "Dynamic VLAN registration",
+        "module_features": [
+          "l2.gvrp",
+          "l2.mvrp"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "GVRP/MVRP product documentation"
+        ],
+        "notes": "Dynamic VLAN registration changes VLAN propagation boundaries and should not be silently converted.",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "l2.gvrp",
+          "l2.mvrp"
+        ],
+        "matched_features": [
+          "l2.gvrp",
+          "l2.mvrp"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "switch.ethernet_oam",
+        "domain": "SWITCH",
+        "product_area": "Ethernet OAM / CFM",
+        "module_features": [
+          "oam.ethernet",
+          "oam.cfm"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Ethernet OAM and CFM configuration guides"
+        ],
+        "notes": "OAM/CFM maintenance domains, levels, and actions require review.",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "oam.cfm",
+          "oam.ethernet"
+        ],
+        "matched_features": [
+          "oam.cfm",
+          "oam.ethernet"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "switch.traffic_mirroring",
+        "domain": "SWITCH",
+        "product_area": "SPAN / RSPAN traffic mirroring",
+        "module_features": [
+          "monitor.span",
+          "monitor.rspan"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "SPAN/RSPAN/port mirroring configuration guides"
+        ],
+        "notes": "Mirror directions, remote VLANs, and destination ports are target-specific.",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "monitor.rspan",
+          "monitor.span"
+        ],
+        "matched_features": [
+          "monitor.rspan",
+          "monitor.span"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "switch.device_tracking",
+        "domain": "SWITCH",
+        "product_area": "Endpoint device tracking",
+        "module_features": [
+          "l2.device_tracking"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Device tracking / endpoint detection documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "l2.device_tracking"
+        ],
+        "matched_features": [
+          "l2.device_tracking"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "switch.errdisable",
+        "domain": "SWITCH",
+        "product_area": "Errdisable recovery",
+        "module_features": [
+          "l2.errdisable"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Errdisable and fault recovery documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "l2.errdisable"
+        ],
+        "matched_features": [
+          "l2.errdisable"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
         "capability_id": "acl_qos",
         "domain": "SWITCH",
         "product_area": "ACL and QoS",
@@ -777,6 +1029,7 @@
         "notes": "",
         "probe_vendor": "cisco",
         "observed_features": [
+          "mpls.l3vpn",
           "vrf"
         ],
         "matched_features": [
@@ -1146,6 +1399,83 @@
         "coverage_status": "covered"
       },
       {
+        "capability_id": "router.dhcpv6",
+        "domain": "ROUTER",
+        "product_area": "DHCPv6 services",
+        "module_features": [
+          "dhcpv6.pool",
+          "dhcpv6.relay",
+          "dhcpv6.relay.binding"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco DHCPv6 Configuration Guide",
+          "Huawei DHCPv6 Configuration Guide",
+          "H3C DHCPv6 Configuration Guide",
+          "Ruijie IPv6 services documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "dhcp.relay.binding",
+          "dhcpv6.pool",
+          "dhcpv6.relay",
+          "dhcpv6.relay.binding",
+          "interface.physical",
+          "ipv6.interface"
+        ],
+        "matched_features": [
+          "dhcpv6.pool",
+          "dhcpv6.relay",
+          "dhcpv6.relay.binding"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.ipv6_first_hop_security",
+        "domain": "ROUTER",
+        "product_area": "IPv6 first-hop security",
+        "module_features": [
+          "ipv6.nd_snooping",
+          "ipv6.source_guard",
+          "ipv6.ra_guard"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco IPv6 First Hop Security",
+          "Huawei IPv6 security documentation",
+          "H3C IPv6 ND/RA security documentation",
+          "Ruijie IPv6 security documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "ipv6.nd_snooping",
+          "ipv6.ra_guard",
+          "ipv6.source_guard"
+        ],
+        "matched_features": [
+          "ipv6.nd_snooping",
+          "ipv6.ra_guard",
+          "ipv6.source_guard"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
         "capability_id": "router.ipv6_interface_services",
         "domain": "ROUTER",
         "product_area": "IPv6 interface services",
@@ -1201,6 +1531,602 @@
         ],
         "matched_features": [
           "eigrp"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.mpls_vpn_advanced",
+        "domain": "ROUTER",
+        "product_area": "Advanced MPLS / L3VPN",
+        "module_features": [
+          "mpls.ldp",
+          "mpls.te",
+          "mpls.l3vpn"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco MPLS L3VPN/TE documentation",
+          "Huawei MPLS VPN documentation",
+          "H3C MPLS VPN documentation",
+          "Ruijie MPLS documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "mpls.l3vpn",
+          "mpls.ldp",
+          "mpls.te",
+          "vrf"
+        ],
+        "matched_features": [
+          "mpls.l3vpn",
+          "mpls.ldp",
+          "mpls.te"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.bgp_advanced_families",
+        "domain": "ROUTER",
+        "product_area": "BGP advanced address families",
+        "module_features": [
+          "bgp.vpnv4",
+          "bgp.evpn",
+          "bgp.flowspec"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco BGP VPNv4/EVPN/FlowSpec documentation",
+          "Huawei BGP VPNv4/EVPN documentation",
+          "H3C BGP VPN documentation",
+          "Ruijie BGP documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "bgp.evpn",
+          "bgp.flowspec",
+          "bgp.process",
+          "bgp.vpnv4"
+        ],
+        "matched_features": [
+          "bgp.evpn",
+          "bgp.flowspec",
+          "bgp.vpnv4"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.multicast_advanced",
+        "domain": "ROUTER",
+        "product_area": "Advanced multicast",
+        "module_features": [
+          "multicast.rp",
+          "multicast.msdp",
+          "multicast.igmp_tuning"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco Multicast Configuration Guide",
+          "Huawei Multicast Configuration Guide",
+          "H3C Multicast Configuration Guide",
+          "Ruijie Multicast Configuration"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "interface.svi",
+          "multicast.igmp_tuning",
+          "multicast.interface",
+          "multicast.msdp",
+          "multicast.rp"
+        ],
+        "matched_features": [
+          "multicast.igmp_tuning",
+          "multicast.msdp",
+          "multicast.rp"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.segment_routing",
+        "domain": "ROUTER",
+        "product_area": "Segment Routing",
+        "module_features": [
+          "segment_routing",
+          "segment_routing.binding"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Cisco Segment Routing Configuration Guide",
+          "Huawei Segment Routing documentation",
+          "H3C Segment Routing documentation",
+          "Ruijie SR documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "isis.process",
+          "isis.unknown",
+          "segment_routing",
+          "segment_routing.binding"
+        ],
+        "matched_features": [
+          "segment_routing",
+          "segment_routing.binding"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.ripng",
+        "domain": "ROUTER",
+        "product_area": "RIPng IPv6 routing",
+        "module_features": [
+          "ripng.process"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "IPv6 routing and RIPng configuration guides"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "ripng.process"
+        ],
+        "matched_features": [
+          "ripng.process"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.ospf_traffic_engineering",
+        "domain": "ROUTER",
+        "product_area": "OSPF traffic engineering",
+        "module_features": [
+          "ospf.te"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "OSPF TE / opaque LSA documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "ospf.process",
+          "ospf.te"
+        ],
+        "matched_features": [
+          "ospf.te"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.bgp_confederation_rr",
+        "domain": "ROUTER",
+        "product_area": "BGP confederation and route reflection",
+        "module_features": [
+          "bgp.confederation",
+          "bgp.route_reflector"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "BGP confederation and route reflector documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "bgp.confederation",
+          "bgp.process",
+          "bgp.route_reflector"
+        ],
+        "matched_features": [
+          "bgp.confederation",
+          "bgp.route_reflector"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.bgp_session_safety",
+        "domain": "ROUTER",
+        "product_area": "BGP session protection",
+        "module_features": [
+          "bgp.max_prefix",
+          "bgp.gtsm"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "BGP maximum-prefix and TTL security documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "bgp.gtsm",
+          "bgp.max_prefix",
+          "bgp.process"
+        ],
+        "matched_features": [
+          "bgp.gtsm",
+          "bgp.max_prefix"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.bgp_graceful_restart",
+        "domain": "ROUTER",
+        "product_area": "BGP graceful restart",
+        "module_features": [
+          "bgp.graceful_restart"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "BGP graceful restart documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "bgp.graceful_restart",
+          "bgp.process"
+        ],
+        "matched_features": [
+          "bgp.graceful_restart"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.pbr_advanced",
+        "domain": "ROUTER",
+        "product_area": "Advanced policy-based routing",
+        "module_features": [
+          "pbr.track",
+          "pbr.verify"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "Policy-based routing tracking and verify-availability documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "pbr.track",
+          "pbr.verify"
+        ],
+        "matched_features": [
+          "pbr.track",
+          "pbr.verify"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.ipv6_tunnel",
+        "domain": "ROUTER",
+        "product_area": "IPv6 tunnel interfaces",
+        "module_features": [
+          "interface.tunnel6"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "IPv6 tunnel / 6in4 / ISATAP documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "interface.tunnel",
+          "interface.tunnel6",
+          "ipv6.interface"
+        ],
+        "matched_features": [
+          "interface.tunnel6"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.fhrp_tracking",
+        "domain": "ROUTER",
+        "product_area": "FHRP tracking",
+        "module_features": [
+          "fhrp.track"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "VRRP/HSRP tracking documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "fhrp.track",
+          "fhrp.vrrp",
+          "interface.svi"
+        ],
+        "matched_features": [
+          "fhrp.track"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.acl_advanced_refs",
+        "domain": "ROUTER",
+        "product_area": "Advanced ACL references",
+        "module_features": [
+          "acl.object_group",
+          "acl.time_range"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "ACL object-group and time-range documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "acl",
+          "acl.object_group",
+          "acl.time_range"
+        ],
+        "matched_features": [
+          "acl.object_group",
+          "acl.time_range"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "system.ntp_authentication",
+        "domain": "ROUTER",
+        "product_area": "NTP authentication",
+        "module_features": [
+          "management.ntp_auth"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos",
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "NTP authentication configuration guides"
+        ],
+        "notes": "",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "management.ntp_auth"
+        ],
+        "matched_features": [
+          "management.ntp_auth"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "system.programmatic_management",
+        "domain": "ROUTER",
+        "product_area": "Programmatic management APIs",
+        "module_features": [
+          "management.netconf",
+          "management.restconf"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos",
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos",
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "NETCONF/RESTCONF management documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "management.netconf",
+          "management.restconf"
+        ],
+        "matched_features": [
+          "management.netconf",
+          "management.restconf"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "system.streaming_telemetry",
+        "domain": "ROUTER",
+        "product_area": "Streaming telemetry",
+        "module_features": [
+          "management.telemetry"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos",
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos",
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "Telemetry/gNMI/gRPC configuration guides"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei",
+        "observed_features": [
+          "management.telemetry"
+        ],
+        "matched_features": [
+          "management.telemetry"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "system.flow_export",
+        "domain": "ROUTER",
+        "product_area": "Flow export / traffic statistics",
+        "module_features": [
+          "telemetry.flow"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos",
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos",
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "NetFlow/NetStream/sFlow documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "telemetry.flow"
+        ],
+        "matched_features": [
+          "telemetry.flow"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "router.urpf",
+        "domain": "ROUTER",
+        "product_area": "uRPF source validation",
+        "module_features": [
+          "security.urpf"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "cisco_ios_xe",
+          "h3c_comware",
+          "huawei_vrp",
+          "ruijie_rgos"
+        ],
+        "evidence_refs": [
+          "uRPF / reverse path forwarding check documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "cisco",
+        "observed_features": [
+          "interface.physical",
+          "security.urpf"
+        ],
+        "matched_features": [
+          "security.urpf"
         ],
         "missing_module_features": [],
         "coverage_status": "covered"
@@ -1422,6 +2348,105 @@
         "coverage_status": "covered"
       },
       {
+        "capability_id": "firewall.remote_access_vpn",
+        "domain": "FIREWALL",
+        "product_area": "Remote access VPN",
+        "module_features": [
+          "firewall.ssl_vpn"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "Huawei USG SSL VPN documentation",
+          "Hillstone SSL VPN documentation",
+          "Topsec remote access VPN documentation",
+          "DPtech VPN documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei_usg",
+        "observed_features": [
+          "firewall.ssl_vpn"
+        ],
+        "matched_features": [
+          "firewall.ssl_vpn"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "firewall.threat_advanced",
+        "domain": "FIREWALL",
+        "product_area": "Advanced threat prevention",
+        "module_features": [
+          "firewall.dos",
+          "firewall.dlp",
+          "firewall.waf"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "Huawei USG threat defense documentation",
+          "Hillstone security profile documentation",
+          "Topsec threat prevention documentation",
+          "DPtech security profile documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei_usg",
+        "observed_features": [
+          "firewall.dlp",
+          "firewall.dos",
+          "firewall.waf"
+        ],
+        "matched_features": [
+          "firewall.dlp",
+          "firewall.dos",
+          "firewall.waf"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "firewall.application_delivery",
+        "domain": "FIREWALL",
+        "product_area": "Application delivery / load balancing",
+        "module_features": [
+          "firewall.load_balance"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "Huawei USG server load balancing documentation",
+          "Hillstone StoneOS SLB documentation",
+          "Topsec application delivery documentation",
+          "DPtech load balancing documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei_usg",
+        "observed_features": [
+          "firewall.load_balance"
+        ],
+        "matched_features": [
+          "firewall.load_balance"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
         "capability_id": "firewall.session_logging",
         "domain": "FIREWALL",
         "product_area": "Session and audit logging",
@@ -1451,6 +2476,258 @@
         "matched_features": [
           "firewall.logging",
           "firewall.session"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "firewall.proxy_policy",
+        "domain": "FIREWALL",
+        "product_area": "Proxy policy",
+        "module_features": [
+          "firewall.proxy"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "Firewall proxy policy documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei_usg",
+        "observed_features": [
+          "firewall.proxy"
+        ],
+        "matched_features": [
+          "firewall.proxy"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "firewall.dns_security",
+        "domain": "FIREWALL",
+        "product_area": "DNS security",
+        "module_features": [
+          "firewall.dns_security"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "DNS security profile documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei_usg",
+        "observed_features": [
+          "firewall.dns_security"
+        ],
+        "matched_features": [
+          "firewall.dns_security"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "firewall.mail_security",
+        "domain": "FIREWALL",
+        "product_area": "Mail security",
+        "module_features": [
+          "firewall.mail_security"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "Mail security profile documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei_usg",
+        "observed_features": [
+          "firewall.mail_security"
+        ],
+        "matched_features": [
+          "firewall.mail_security"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "firewall.file_blocking",
+        "domain": "FIREWALL",
+        "product_area": "File blocking",
+        "module_features": [
+          "firewall.file_blocking"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "File blocking profile documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei_usg",
+        "observed_features": [
+          "firewall.file_blocking"
+        ],
+        "matched_features": [
+          "firewall.file_blocking"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "firewall.sandboxing",
+        "domain": "FIREWALL",
+        "product_area": "Sandbox analysis",
+        "module_features": [
+          "firewall.sandbox"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "Sandbox / malware analysis documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei_usg",
+        "observed_features": [
+          "firewall.sandbox"
+        ],
+        "matched_features": [
+          "firewall.sandbox"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "firewall.ssl_decryption",
+        "domain": "FIREWALL",
+        "product_area": "SSL decryption",
+        "module_features": [
+          "firewall.decryption"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "SSL decryption policy documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei_usg",
+        "observed_features": [
+          "firewall.decryption"
+        ],
+        "matched_features": [
+          "firewall.decryption"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "firewall.high_availability",
+        "domain": "FIREWALL",
+        "product_area": "High availability",
+        "module_features": [
+          "firewall.ha"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "Firewall HA/HRP documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei_usg",
+        "observed_features": [
+          "firewall.ha"
+        ],
+        "matched_features": [
+          "firewall.ha"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "firewall.virtual_systems",
+        "domain": "FIREWALL",
+        "product_area": "Virtual systems / multi-tenancy",
+        "module_features": [
+          "firewall.vsys"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "Firewall virtual system / VSYS documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei_usg",
+        "observed_features": [
+          "firewall.vsys"
+        ],
+        "matched_features": [
+          "firewall.vsys"
+        ],
+        "missing_module_features": [],
+        "coverage_status": "covered"
+      },
+      {
+        "capability_id": "firewall.dynamic_routing",
+        "domain": "FIREWALL",
+        "product_area": "Firewall routing instances",
+        "module_features": [
+          "firewall.routing"
+        ],
+        "default_action": "manual_review",
+        "vendor_platforms": [
+          "huawei_usg",
+          "hillstone_stoneos",
+          "topsec_tos",
+          "dptech_fw"
+        ],
+        "evidence_refs": [
+          "Firewall routing and virtual router documentation"
+        ],
+        "notes": "",
+        "probe_vendor": "huawei_usg",
+        "observed_features": [
+          "firewall.routing"
+        ],
+        "matched_features": [
+          "firewall.routing"
         ],
         "missing_module_features": [],
         "coverage_status": "covered"
