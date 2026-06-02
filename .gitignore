@@ -39,3 +39,6 @@ reports/coverage_matrix.json
 .DS_Store
 Thumbs.db
 
+# Agent workspace (local memory, not committed)
+.workbuddy/
+
