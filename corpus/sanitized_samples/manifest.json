@@ -923,7 +923,7 @@
         "ike",
         "preshare-key"
       ],
-      "secret_tokens": [],
+      "secret_tokens": ["SecretIPSec"],
       "notes": "Hillstone firewall with IPSec, IKE, NAT, and policy."
     },
     {
