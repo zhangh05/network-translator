@@ -1,0 +1,27 @@
+hostname CORE-SW-04
+!
+vlan 10
+!
+vlan 20
+!
+interface GigabitEthernet 0/1
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+!
+interface GigabitEthernet 0/2
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+!
+interface Vlan 10
+ ip address 192.168.10.1 255.255.255.0
+!
+ip access-list extended 100
+ permit ip 192.168.10.0 0.0.0.255 any
+!
+interface GigabitEthernet 0/1
+ ip access-group 100 in
+!
+ip route 0.0.0.0 0.0.0.0 192.168.10.254
+!
+ntp server 10.0.0.1

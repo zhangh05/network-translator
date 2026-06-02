@@ -69,8 +69,8 @@ THEN this is a production blocker requiring manual review
 | Criterion | Status | Evidence |
 |-----------|--------|----------|
 | Validator core (Layer 1) | ✅ PASS | 524 passed, 0 failures |
-| Full test suite | ✅ PASS | 2376 passed, 0 known pre-existing failures, 0 regressions |
-| CI quality gates | ✅ PASS | CI gate --full: 2376 passed, 0 known tolerated, 0 regressions |
+| Full test suite | ✅ PASS | 2495 passed, 0 known pre-existing failures, 0 regressions |
+| CI quality gates | ✅ PASS | CI gate --full: 1970 passed, 0 known tolerated, 0 regressions |
 | LLM config security | ✅ PASS | `mask_api_key()` never logs full key; tests confirm |
 | Audit schema v1.0 | ✅ PASS | All batch/audit outputs include schema_version, run_id, commit_hash, generated_at |
 | 6-chain domain coverage | ✅ PASS | SWITCH/ROUTER/FIREWALL each represented; residue is known/expected |
@@ -173,9 +173,12 @@ PYTHONPATH=. python3 scripts/ci_quality_gates.py --full
 **Verdict**: `BETA_READY = YES (conditional)` for pilot deployment.
 
 CI gate criteria for Beta READY:
-- ✅ CI gate exit 0 — 2376 passed, 0 regressions
+- ✅ CI gate exit 0 — 1970 passed, 0 regressions
 - ✅ All 13 known tolerated failures resolved (Batch J-A: yaml/flask/requests deps installed, readyz checks added)
 - ✅ LLM output redaction implemented (unified `redact_sensitive_output()` in `project_store.py` covers both LLM and fallback paths, all API paths)
+- ✅ Batch O: Corpus expanded to 22 samples / 54 pairs, 100% pass rate
+- ✅ Batch O: Module graph semantic-near coverage expanded (management, RIP, ISIS, multicast, unknown fallback)
+- ✅ Batch O: Fallback rule guards expanded (address-family, ipsec/ike/crypto/vpn, peer, stp mode)
 - ⚠️ **GitHub Actions runner not yet validated (primary blocking)**
 - ⚠️ OSPF and advanced features (NAT/AAA/QoS) require human review
 - ✅ Known tolerated failures: 0 remaining

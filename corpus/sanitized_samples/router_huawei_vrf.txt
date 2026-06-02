@@ -1,0 +1,34 @@
+sysname RT-02
+#
+ip vpn-instance MGMT
+ route-distinguisher 100:1
+ vpn-target 100:1 export-extcommunity
+ vpn-target 100:1 import-extcommunity
+#
+interface GigabitEthernet0/0/0
+ ip binding vpn-instance MGMT
+ ip address 10.0.0.1 255.255.255.252
+#
+ospf 1
+ router-id 10.0.0.1
+ area 0
+  network 10.0.0.0 0.0.0.3
+#
+bgp 65000
+ router-id 10.0.0.1
+ peer 10.1.1.2 as-number 65001
+ peer 10.1.1.2 password cipher <redacted>
+ ipv4-family unicast
+  peer 10.1.1.2 enable
+ ipv4-family vpn-instance MGMT
+  import-route direct
+#
+ip route-static vpn-instance MGMT 192.168.0.0 255.255.0.0 10.0.0.2
+#
+ip ip-prefix PL-IN index 10 permit 10.0.0.0 8
+#
+route-policy RP-IN permit node 10
+ if-match ip-prefix PL-IN
+ apply local-preference 200
+#
+ntp-service unicast-server 10.0.0.1

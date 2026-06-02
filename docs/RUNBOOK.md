@@ -64,6 +64,8 @@ PYTHONPATH=. venv/bin/python3 -m pytest tests/test_validator*.py -v --tb=short
 PYTHONPATH=. venv/bin/python3 -m pytest tests/test_integration_phase6.py -v
 PYTHONPATH=. venv/bin/python3 -m pytest tests/test_integration_phase7.py -v
 PYTHONPATH=. venv/bin/python3 -m pytest tests/test_schema_contract.py -v
+PYTHONPATH=. venv/bin/python3 -m pytest tests/test_module_graph_batch_o_expansion.py -v
+PYTHONPATH=. venv/bin/python3 -m pytest tests/test_rule_translator_batch_o_breadth.py -v
 ```
 
 ### Performance baseline
@@ -74,6 +76,11 @@ PYTHONPATH=. python3 scripts/run_baseline.py
 ### Audit traceability drill
 ```bash
 PYTHONPATH=. bash scripts/audit_trace.sh
+```
+
+### Corpus fallback evaluation
+```bash
+PYTHONPATH=. python3 scripts/evaluate_corpus_fallback.py
 ```
 
 ## Environment Variables
@@ -168,10 +175,11 @@ Machine-readable summary: **[docs/beta_acceptance_2026_05_25.json](./beta_accept
 ```
 BETA_READY = YES (conditional)
 ```
-- ✅ CI gate pass: 2376 passed, 0 regressions
+- ✅ CI gate pass: 1970 passed, 0 regressions
 - ✅ Output redaction P0 resolved (all API paths)
+- ✅ Batch O: 2495 pytest passed, 0 failed; 54/54 corpus pairs pass
 - ⚠️ **Primary blocking**: GitHub Actions runner not yet validated
-- ⚠️ 13 known tolerated failures not yet resolved
+- ✅ 13 known tolerated failures resolved (Batch J-A)
 
 ## Pre-existing Failure Tolerances
 

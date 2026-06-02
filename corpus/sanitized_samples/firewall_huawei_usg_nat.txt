@@ -1,0 +1,31 @@
+security-zone name trust
+security-zone name untrust
+#
+ip address-set ADDR-TRUST type object
+ address 0 192.168.1.0 mask 24
+#
+ip service-set SVC-HTTP type object
+ service 0 protocol tcp destination-port 80
+#
+security-policy
+ rule name ALLOW-HTTP
+  source-zone trust
+  destination-zone untrust
+  source-address ADDR-TRUST
+  service SVC-HTTP
+  action permit
+#
+nat-policy
+ rule name SRC-NAT
+  source-zone trust
+  destination-zone untrust
+  source-address ADDR-TRUST
+  action source-nat easy-ip
+#
+ipsec proposal IPSEC-PROP
+ encapsulation-mode tunnel
+ transform esp
+ esp authentication-algorithm sha2-256
+ esp encryption-algorithm aes-256
+#
+ntp-service unicast-server 10.0.0.1

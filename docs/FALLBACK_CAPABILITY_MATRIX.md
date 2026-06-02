@@ -344,19 +344,21 @@ Required fields per direction:
 | `tests/test_fallback_capability_matrix.py` | Capability matrix — 13 tests |
 | `tests/test_rule_translator_realistic_batch_i_e.py` | Realistic medium-length configs (4 directions) — 21 tests |
 | `tests/test_rule_translator_realistic_batch_k.py` | Realistic multi-vendor configs (8 directions) — 45 tests |
-| `tests/test_corpus_samples.py` | Corpus manifest + sample file validation — 15 tests |
+| `tests/test_corpus_samples.py` | Corpus manifest + sample file validation — 21 tests |
 | `tests/test_corpus_fallback_evaluator.py` | Corpus fallback evaluator infrastructure — 5 tests |
 | `tests/test_fallback_gap_analysis_doc.py` | Gap analysis document consistency — 5 tests |
+| `tests/test_module_graph_batch_o_expansion.py` | Module graph Batch O expansion — 75 tests |
+| `tests/test_rule_translator_batch_o_breadth.py` | Fallback rule Batch O breadth — 44 tests |
 
 ### Corpus Evaluation
 
-The project maintains a multi-vendor sample corpus at `corpus/sanitized_samples/` with 10 sanitized configuration files covering all 8 vendor platforms and 3 domains. The corpus is evaluated by `scripts/evaluate_corpus_fallback.py`, which runs every (sample, target) pair through the fallback translator and checks for:
+The project maintains a multi-vendor sample corpus at `corpus/sanitized_samples/` with 22 sanitized configuration files covering all 8 vendor platforms and 3 domains. The corpus is evaluated by `scripts/evaluate_corpus_fallback.py`, which runs every (sample, target) pair through the fallback translator and checks for:
 
 - **Manual review compliance**: Features requiring manual review are properly marked
 - **Source residue**: No executable source-vendor commands remain in output (target-aware)
 - **Secret leakage**: No credential material leaks into output
 
-Known evaluation gaps are documented in `docs/FALLBACK_GAP_ANALYSIS.md` (8 gaps across 6 categories, all non-blocking for Beta).
+Known evaluation gaps are documented in `docs/FALLBACK_GAP_ANALYSIS.md`. As of Batch O, all 54 sample-target pairs pass (100%).
 
 ## Version History
 
@@ -380,3 +382,4 @@ Known evaluation gaps are documented in `docs/FALLBACK_GAP_ANALYSIS.md` (8 gaps 
 | 2026-05-25 Batch K-B | ROUTER: static route name/tag/preference/distance/track/bfd → MANUAL_REVIEW, OSPF area authentication → MANUAL_REVIEW, BGP update-source→connect-interface MANUAL_REVIEW, BGP ebgp-multihop → MANUAL_REVIEW, BGP password redaction (`peer` direction + `.+` eat-all regex), route-policy set community → redacted + MANUAL_REVIEW, VRF import/export policy → MANUAL_REVIEW. Bugfix: passive-interface/silent-interface preserve original interface name case. 30 new tests (1925/0/23 CI). |
 | 2026-05-25 Batch K-C | FIREWALL: Hillstone address range (two IP non-netmask) -> Huawei USG MANUAL_REVIEW (BUGFIX: was wrongly auto-translated as `mask 9`). Hillstone address `host` keyword -> Huawei USG MANUAL_REVIEW (was producing invalid `mask host`). Plus 12 regression tests for address-group/service-set/zone-bind/nat dangerous guards. 14 new tests (1939/0/23 CI). |
 | 2026-05-25 Batch K-D | Realistic end-to-end multi-vendor samples (8 chains: Cisco/Huawei/H3C/Ruijie switch + router + Huawei USG/Hillstone firewall). 45 new tests covering auto-translate verification, MANUAL_REVIEW guard verification, secret leak detection, source residue check, no-implicit-any policy. Updated test coverage summary. (1984/0/23 CI). |
+| 2026-06-02 Batch O | Module graph expansion: management.banner/dns/archive/clock, dhcp.pool, ipv6 ospf, unknown fallback semantic_near. Fallback rule expansion: address-family guard (huawei), ipsec/ike/crypto/vpn/tunnel-group guard (huawei), peer guard (ruijie), stp mode guard (cisco). Corpus expanded from 10 to 22 samples (54 pairs, 100% pass). Secret auto-redaction in `manual_review_comment`. New test files: 75 module-graph tests + 44 fallback-breadth tests. (2495/0/29 pytest; 1970/0/10 CI). |

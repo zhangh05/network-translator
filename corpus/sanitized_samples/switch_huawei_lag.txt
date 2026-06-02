@@ -1,0 +1,26 @@
+sysname CORE-SW-02
+#
+vlan batch 10 20 30
+#
+interface Vlanif10
+ ip address 192.168.10.1 255.255.255.0
+#
+interface Eth-Trunk1
+ port link-type trunk
+ port trunk allow-pass vlan 10 20 30
+ mode lacp-static
+#
+interface GigabitEthernet0/0/1
+ eth-trunk 1
+#
+interface GigabitEthernet0/0/2
+ eth-trunk 1
+#
+ip route-static 0.0.0.0 0.0.0.0 192.168.10.254
+#
+stp mode rstp
+stp priority 4096
+#
+ntp-service unicast-server 10.0.0.1
+#
+snmp-agent community read public

@@ -2,17 +2,17 @@
 
 > **Generated**: `scripts/evaluate_corpus_fallback.py` against `corpus/sanitized_samples/`
 > **Date**: 2026-06-02
-> **Pass rate**: 24/24 (100.0%) — 0 known active gaps
+> **Pass rate**: 54/54 (100.0%) — 0 known active gaps
 
 ## Summary
 
 | Metric | Value |
 |--------|-------|
-| Total (sample, target) pairs | 24 |
-| Passed (no manual_review leak, no residue, no secret leak) | 24 |
+| Total (sample, target) pairs | 54 |
+| Passed (no manual_review leak, no residue, no secret leak) | 54 |
 | Failed (real gaps) | 0 |
 | Pass rate (residue check) | 100.0% |
-| Secret leak rate | 0/24 |
+| Secret leak rate | 0/54 |
 
 ## Resolved in Batch M
 
@@ -62,7 +62,7 @@ The following gaps were closed in Batch M and do not block acceptance:
 
 ## Active Gap Register
 
-No active gaps. All 24 corpus sample-target pairs pass.
+No active gaps. All 54 corpus sample-target pairs pass.
 
 ## Priority Summary
 
@@ -72,7 +72,7 @@ No active gaps. All 24 corpus sample-target pairs pass.
 | MEDIUM | 0 | — |
 | LOW | 0 | — |
 
-No secrets leaked across any sample-target pair (0/24).
+No secrets leaked across any sample-target pair (0/54).
 
 ## Evaluator Data
 
@@ -83,14 +83,14 @@ Summary report (Markdown): `reports/CORPUS_FALLBACK_EVAL.md`
 // Key excerpt
 {
   "summary": {
-    "total": 24,
-    "passed": 24,
+    "total": 54,
+    "passed": 54,
     "failed": 0,
     "pass_rate": 100.0,
     "by_domain": {
-      "FIREWALL": { "total": 8, "passed": 8, "failed": 0 },
-      "ROUTER":   { "total": 4, "passed": 4, "failed": 0 },
-      "SWITCH":   { "total": 12, "passed": 12, "failed": 0 }
+      "FIREWALL": { "total": 16, "passed": 16, "failed": 0 },
+      "ROUTER":   { "total": 16, "passed": 16, "failed": 0 },
+      "SWITCH":   { "total": 22, "passed": 22, "failed": 0 }
     }
   }
 }
@@ -100,6 +100,7 @@ Summary report (Markdown): `reports/CORPUS_FALLBACK_EVAL.md`
 
 | Date | Change |
 |------|--------|
+| 2026-06-02 | Batch O expansion: expanded semantic_near coverage for management (banner, dns, archive, clock), RIP/ISIS/multicast, unknown fallback; expanded fallback guards (address-family, ipsec, peer, stp mode); added 12 new corpus samples; 75 module-graph tests + 44 fallback-breadth tests. Pass rate 54/54 (100%) |
 | 2026-06-02 | Batch N expansion: expanded semantic_near coverage for policy, access, firewall, IPv6, L2 security, and management modules; added interface sub-feature extraction; fixed GAP-RT-01 and GAP-FW-03. Pass rate 24/24 (100%) |
 | 2026-06-02 | Batch M expansion: added interface.range, track, management.line module types with semantic_near; rule_translator interface range guard; frontend filter split. Pass rate unchanged 22/24 (91.7%) |
 | 2026-05-25 | Batch M close: 22/24 pass rate (91.7%); 4 gaps resolved, 2 active (GAP-RT-01, GAP-FW-03) |

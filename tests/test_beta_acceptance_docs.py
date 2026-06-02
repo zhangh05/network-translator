@@ -40,7 +40,8 @@ class TestJsonParsable:
         assert json_data["beta_ready"] == "YES_CONDITIONAL"
 
     def test_date(self, json_data):
-        assert json_data["date"] == "2026-05-25"
+        # Date updated to Batch O completion date
+        assert json_data["date"] == "2026-06-02"
 
     def test_domains_contain_switch(self, json_data):
         assert "SWITCH" in json_data["domains"]
@@ -90,7 +91,8 @@ class TestNumbersMatchJson:
         assert json_data["tests"]["output_redaction"]["passed"] == 47
 
     def test_ci_gate_passed(self, json_data):
-        assert json_data["tests"]["ci_gate"]["passed"] == 2376
+        # CI gate counts the test subset run by ci_quality_gates.py --full
+        assert json_data["tests"]["ci_gate"]["passed"] == 1970
 
     def test_project_store_related_passed(self, json_data):
         assert json_data["tests"]["project_store_related"]["passed"] == 124

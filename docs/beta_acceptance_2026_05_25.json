@@ -1,6 +1,6 @@
 {
-  "date": "2026-05-25",
-  "batch": "J-A + Module Semantic-Near Expansion + Batch M Closure",
+  "date": "2026-06-02",
+  "batch": "J-A + Module Semantic-Near Expansion + Batch M-N-O Closure",
   "beta_ready": "YES_CONDITIONAL",
   "base_commit": "9ac480b",
   "latest_commits": [
@@ -164,15 +164,32 @@
     },
     "ci_gate": {
       "file": "scripts/ci_quality_gates.py --full",
-      "passed": 2376,
+      "passed": 1970,
       "known_tolerated_failures": 0,
-      "skipped": 29
+      "skipped": 10
     },
     "full_suite": {
       "file": "pytest tests/",
-      "passed": 2376,
+      "passed": 2495,
       "failed": 0,
       "skipped": 29
+    },
+    "batch_o_module_graph": {
+      "file": "tests/test_module_graph_batch_o_expansion.py",
+      "passed": 75,
+      "focus": "builder classification, semantic_near, security invariants, cross-vendor coverage"
+    },
+    "batch_o_fallback_breadth": {
+      "file": "tests/test_rule_translator_batch_o_breadth.py",
+      "passed": 44,
+      "focus": "management, switch, router, firewall fallback guards"
+    },
+    "corpus_evaluation": {
+      "file": "scripts/evaluate_corpus_fallback.py",
+      "samples": 22,
+      "pairs": 54,
+      "passed": 54,
+      "pass_rate": "100.0%"
     }
   },
   "known_failures": [],

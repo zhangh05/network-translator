@@ -1,0 +1,23 @@
+zone trust
+zone untrust
+#
+address ADDR-TRUST 192.168.1.0 255.255.255.0
+#
+service SVC-HTTP tcp dst-port 80
+#
+policy ALLOW-HTTP from trust to untrust source ADDR-TRUST service SVC-HTTP action permit
+#
+nat source src-zone trust dst-zone untrust src-addr ADDR-TRNAT dst-addr any service any snat
+#
+ipsec proposal IPSEC-PROP
+ protocol esp
+ encap tunnel
+ hash sha256
+ encryption aes-256
+#
+ike gateway IKE-GW
+ address 203.0.113.1
+ preshare-key SecretIPSec
+ proposal IPSEC-PROP
+#
+ntp server 10.0.0.1

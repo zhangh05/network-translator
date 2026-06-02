@@ -1,0 +1,33 @@
+sysname RT-03
+#
+isis 1
+ network-entity 49.0001.0000.0000.0001.00
+ cost-style wide
+#
+interface GigabitEthernet0/0
+ ip address 10.0.0.1 255.255.255.252
+ isis enable 1
+ isis cost 10
+#
+interface GigabitEthernet0/1
+ ip address 10.0.0.5 255.255.255.252
+ isis enable 1
+ isis cost 20
+#
+interface LoopBack0
+ ip address 10.0.0.1 255.255.255.255
+ isis enable 1
+#
+ip route-static 192.168.0.0 255.255.0.0 10.0.0.2
+#
+bgp 65000
+ router-id 10.0.0.1
+ peer 10.1.1.2 as-number 65001
+#
+ip ip-prefix PL-IN index 10 permit 10.0.0.0 8
+#
+route-policy RP-IN permit node 10
+ if-match ip-prefix PL-IN
+ apply local-preference 200
+#
+ntp-service unicast-server 10.0.0.1

@@ -7,7 +7,17 @@ from typing import List, Optional
 
 def manual_review_comment(stripped: str, to_vendor: str, indent: str = "") -> str:
     prefix = "!" if (to_vendor or "").lower() in ("cisco", "ruijie") else "#"
-    return indent + f"{prefix} MANUAL_REVIEW unsupported source command: {stripped}"
+    redacted = stripped
+    for pat, repl in (
+        (r"(password\s+)\S+", r"\1<redacted>"),
+        (r"(secret\s+)\S+", r"\1<redacted>"),
+        (r"(cipher\s+)\S+", r"\1<redacted>"),
+        (r"(shared-key\s+)\S+", r"\1<redacted>"),
+        (r"(community\s+)\S+", r"\1<redacted>"),
+        (r"(key\s+)\S+", r"\1<redacted>"),
+    ):
+        redacted = re.sub(pat, repl, redacted, flags=re.IGNORECASE)
+    return indent + f"{prefix} MANUAL_REVIEW unsupported source command: {redacted}"
 
 
 def parse_vlan_list(value: str) -> List:

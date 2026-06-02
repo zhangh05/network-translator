@@ -241,7 +241,7 @@ def translate_routing_to_ruijie(stripped: str, lower: str, indent: str, state: d
         return f" neighbor {m.group(1)} remote-as {m.group(2)}"
     m = re.match(r"peer\s+(\S+)\s+as-number\s+(\S+)", lower)
     if m:
-        return stripped
+        return indent + manual_review_comment(stripped, "ruijie", indent)
     if lower.startswith("ipv4-family unicast"):
         return None
 

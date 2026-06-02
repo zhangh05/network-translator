@@ -617,15 +617,15 @@ def test_tunnel_module_extracts_endpoints_and_stays_manual_review_for_gre():
     assert "gre" in tunnel.tags
 
 
-def test_device_identity_is_separate_from_generic_system_module():
+def test_device_identity_is_separate_from_management_clock_module():
     graph = build_module_graph("sysname CORE-SW\nclock timezone CST add 08:00:00\n", vendor="huawei")
 
     identity = graph.by_feature("device_identity")[0]
-    system = graph.by_feature("system")[0]
+    clock = graph.by_feature("management.clock")[0]
 
     assert "device:hostname" in identity.provides
     assert identity.source_lines == ["sysname CORE-SW"]
-    assert system.source_lines == ["clock timezone CST add 08:00:00"]
+    assert clock.source_lines == ["clock timezone CST add 08:00:00"]
 
 
 def test_firewall_policy_uses_zone_address_and_service_objects():

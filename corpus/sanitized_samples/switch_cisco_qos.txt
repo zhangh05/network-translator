@@ -1,0 +1,36 @@
+hostname CORE-SW-01
+!
+vlan 10
+ name USERS
+vlan 20
+ name SERVERS
+!
+interface GigabitEthernet0/1
+ switchport mode access
+ switchport access vlan 10
+ spanning-tree portfast
+!
+interface GigabitEthernet0/2
+ switchport mode trunk
+ switchport trunk allowed vlan 10,20
+ switchport trunk native vlan 1
+!
+interface Vlan10
+ ip address 192.168.10.1 255.255.255.0
+!
+ip route 0.0.0.0 0.0.0.0 192.168.10.254
+!
+class-map match-all VOICE
+ match dscp ef
+policy-map QOS-POLICY
+ class VOICE
+  set dscp ef
+!
+interface GigabitEthernet0/1
+ service-policy input QOS-POLICY
+!
+banner motd ^Authorized Access Only^
+!
+ntp server 10.0.0.1
+!
+snmp-server community public RO

@@ -1,0 +1,15 @@
+zone trust
+zone untrust
+#
+object address ADDR-TRUST 192.168.1.0 255.255.255.0
+#
+object service SVC-HTTP tcp 80 80
+#
+security-policy name ALLOW-HTTP source-zone trust destination-zone untrust source-address ADDR-TRUST destination-address any service SVC-HTTP action permit
+#
+ipsec proposal IPSEC-PROP
+ protocol esp
+ hash sha256
+ encryption aes-256
+#
+ntp server 10.0.0.1

@@ -1,0 +1,21 @@
+zone name trust
+zone name untrust
+zone name dmz
+#
+address name ADDR-TRUST ip 192.168.1.0 mask 255.255.255.0
+address name ADDR-DMZ ip 10.10.10.0 mask 255.255.255.0
+#
+service name SVC-HTTP protocol tcp destination-port 80
+service name SVC-HTTPS protocol tcp destination-port 443
+#
+policy name ALLOW-HTTP from trust to untrust source ADDR-TRUST destination any service SVC-HTTP action accept
+policy name ALLOW-HTTPS from trust to untrust source ADDR-TRUST destination any service SVC-HTTPS action accept
+policy name ALLOW-DMZ from dmz to trust source ADDR-DMZ destination ADDR-TRUST service SVC-HTTP action accept
+#
+nat source-zone trust destination-zone untrust address-group ADDR-TRNAT action source-nat
+#
+ntp server 10.0.0.1
+#
+syslog host 10.0.0.2
+#
+logging enable

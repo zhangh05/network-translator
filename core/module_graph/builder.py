@@ -61,6 +61,10 @@ _GENERIC_MANUAL_REVIEW_FEATURES = {
     "management.netconf",
     "management.restconf",
     "management.telemetry",
+    "management.banner",
+    "management.dns",
+    "management.archive",
+    "management.clock",
     "telemetry.flow",
     "firewall.proxy",
     "firewall.dns_security",
@@ -1538,7 +1542,7 @@ def _routing_interface_specs_from_interface(block: ConfigBlock) -> list[_ModuleS
     ospfv3_entries = [
         (block.start_line + offset, raw_line)
         for offset, raw_line in enumerate(block.lines[1:], 1)
-        if re.match(r"^\s*(?:ospfv3|ipv6\s+router\s+ospf)\b", raw_line, re.IGNORECASE)
+        if re.match(r"^\s*(?:ospfv3|ipv6\s+router\s+ospf|ipv6\s+ospf)\b", raw_line, re.IGNORECASE)
     ]
     if ospfv3_entries:
         specs.append(_manual_spec("ospfv3.interface", min(n for n, _ in ospfv3_entries), max(n for n, _ in ospfv3_entries), [line for _, line in ospfv3_entries], {f"interface:{interface_name}"}, {"routing", "ospfv3", "interface"}))
@@ -1757,7 +1761,7 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return "nqa"
     if re.match(r"^ip\s+sla\b", first, re.IGNORECASE):
         return "ip_sla"
-    if re.match(r"^(?:ip\s+pool|ip\s+dhcp\s+pool)\s+\S+", first, re.IGNORECASE):
+    if re.match(r"^(?:ip\s+local\s+pool|ip\s+pool|ip\s+dhcp\s+pool)\s+\S+", first, re.IGNORECASE):
         return "dhcp.pool"
     if re.match(r"^(?:route-policy|route-map)\b", first, re.IGNORECASE):
         return "route_policy"
@@ -1809,6 +1813,14 @@ def _normalize_feature(block: ConfigBlock) -> str:
         return "firewall.session"
     if re.match(r"^(?:traffic\s+log|log\s+setting|security-log|log\b)", first, re.IGNORECASE):
         return "firewall.logging"
+    if re.match(r"^(?:banner\s+motd|banner\s+login|banner\s+exec)\b", first, re.IGNORECASE):
+        return "management.banner"
+    if re.match(r"^(?:ip\s+domain-name|ip\s+domain\s+lookup|domain\s+name|dns\s+domain)\b", first, re.IGNORECASE):
+        return "management.dns"
+    if re.match(r"^archive\b", first, re.IGNORECASE):
+        return "management.archive"
+    if re.match(r"^(?:clock\s+timezone|clock\s+summer-time|time\s+zone)\b", first, re.IGNORECASE):
+        return "management.clock"
     if re.match(r"^(?:stelnet|ssh\b|ip\s+ssh\b)", first, re.IGNORECASE):
         return "management.ssh"
     if re.match(r"^(?:ntp-service|ntp\s+server)\b", first, re.IGNORECASE):
@@ -1957,6 +1969,14 @@ def _manual_review_reason(feature: str, first_line: str) -> str:
         return _access_manual_review_reason()
     if feature == "interface.tunnel":
         return "Tunnel/GRE/IPsec 等隧道接口涉及封装、源/目的、MTU 和路由联动，需要人工复核"
+    if feature == "management.banner":
+        return "Banner/MOTD 涉及登录提示和合规声明，跨厂商格式不同，需要人工复核"
+    if feature == "management.dns":
+        return "DNS 域名解析配置跨厂商命令和作用域不同，需要人工复核"
+    if feature == "management.archive":
+        return "配置归档/版本管理策略跨厂商实现差异较大，需要人工复核"
+    if feature == "management.clock":
+        return "时钟/时区配置涉及 NTP 偏移、夏令时规则和设备本地时间，需要人工复核"
     return "该模块需要人工复核"
 
 

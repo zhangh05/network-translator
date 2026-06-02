@@ -10,8 +10,8 @@
 
 | Metric | Value |
 |--------|-------|
-| Total (sample, target) pairs | 24 |
-| Passed | 24 |
+| Total (sample, target) pairs | 54 |
+| Passed | 54 |
 | Failed | 0 |
 | Pass rate | 100.0% |
 | Secret leak count | 0 (no secrets leaked across any pair) |
@@ -21,22 +21,22 @@
 
 | Domain | Total | Passed | Failed | Pass rate |
 |--------|-------|--------|--------|-----------|
-| FIREWALL | 8 | 8 | 0 | 100.0% |
-| ROUTER | 4 | 4 | 0 | 100.0% |
-| SWITCH | 12 | 12 | 0 | 100.0% |
+| FIREWALL | 16 | 16 | 0 | 100.0% |
+| ROUTER | 14 | 14 | 0 | 100.0% |
+| SWITCH | 24 | 24 | 0 | 100.0% |
 
 ## By Vendor
 
 | Source vendor | Total | Passed | Failed |
 |--------------|-------|--------|--------|
-| cisco | 5 | 5 | 0 |
-| dptech | 2 | 2 | 0 |
-| h3c | 3 | 3 | 0 |
-| hillstone | 2 | 2 | 0 |
-| huawei | 5 | 5 | 0 |
-| huawei_usg | 2 | 2 | 0 |
-| ruijie | 3 | 3 | 0 |
-| topsec | 2 | 2 | 0 |
+| cisco | 10 | 10 | 0 |
+| dptech | 4 | 4 | 0 |
+| h3c | 9 | 9 | 0 |
+| hillstone | 4 | 4 | 0 |
+| huawei | 10 | 10 | 0 |
+| huawei_usg | 4 | 4 | 0 |
+| ruijie | 9 | 9 | 0 |
+| topsec | 4 | 4 | 0 |
 
 ## Failed Pairs
 

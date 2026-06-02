@@ -391,7 +391,10 @@ def _semantic_near_result(module: ConfigModule, from_vendor: str, to_vendor: str
     elif module.feature.startswith("management.") or module.feature == "telemetry.flow":
         suggested = _management_advanced_suggested_lines(module, from_vendor, to_vendor)
     if not suggested:
-        return None
+        if module.feature == "unknown":
+            suggested = _unknown_fallback_suggested_lines(module, from_vendor, to_vendor)
+        if not suggested:
+            return None
     reason = module.manual_review_reason or "该模块已生成语义相近建议，动作细节需人工确认"
     return ModuleTranslationResult(
         module_id=module.module_id,
@@ -825,7 +828,15 @@ def _rip_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str)
     process = _first_resource_value(module.provides + module.consumes, "rip:") or "1"
     process = "1" if process == "default" else process
     if module.feature == "rip.process":
-        return ["router rip"] if target == "cisco" else [f"rip {process}"]
+        lines = ["router rip"] if target == "cisco" else [f"rip {process}"]
+        version = _extract_first(r"\bversion\s+(\d+)", source_text)
+        if version:
+            lines.append(f" version {version}")
+        network = _extract_first(r"\bnetwork\s+(\S+)", source_text)
+        if network:
+            lines.append(f" network {network}")
+        lines.append(_comment_for(target, "confirm RIP version, authentication, passive interfaces, and metric manually"))
+        return lines
     if module.feature == "rip.network":
         network = _extract_first(r"\bnetwork\s+(\S+)", source_text)
         return [f"network {network}"] if network else []
@@ -841,7 +852,14 @@ def _isis_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str
     process = _first_resource_value(module.provides + module.consumes, "isis:") or "1"
     process = "1" if process == "default" else process
     if module.feature == "isis.process":
-        return [f"router isis {process}" if target == "cisco" else f"isis {process}"]
+        lines = [f"router isis {process}" if target == "cisco" else f"isis {process}"]
+        net = _extract_first(r"\b(?:network-entity|net)\s+(\S+)", source_text)
+        if net:
+            lines.append(f" net {net}" if target == "cisco" else f" network-entity {net}")
+        if re.search(r"\b(cost-style|metric-style)\s+wide\b", source_text, re.IGNORECASE):
+            lines.append(" metric-style wide" if target == "cisco" else " cost-style wide")
+        lines.append(_comment_for(target, "confirm IS-IS area, level, authentication, and interface metric manually"))
+        return lines
     if module.feature == "isis.network_entity":
         net = _extract_first(r"\b(?:network-entity|net)\s+(\S+)", source_text)
         if not net:
@@ -887,12 +905,15 @@ def _multicast_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor
         return lines
     if module.feature in ("multicast", "multicast.interface", "multicast.igmp_tuning"):
         lines: list[str] = []
+        if re.search(r"\bmulticast\s+routing\b", source_text, re.IGNORECASE):
+            lines.append("ip multicast-routing" if target == "cisco" else "multicast routing-enable")
         if re.search(r"\bpim\b", source_text, re.IGNORECASE):
             lines.append("ip pim sparse-mode" if target == "cisco" else "pim sm")
         if re.search(r"\bigmp\b", source_text, re.IGNORECASE):
             lines.append("ip igmp version 2" if target == "cisco" else "igmp enable")
         if not lines and re.search(r"\bmulticast\b", source_text, re.IGNORECASE):
             lines.append("ip multicast-routing" if target == "cisco" else "multicast routing-enable")
+        lines.append(_comment_for(target, "confirm PIM mode, RP, IGMP version, and interface enablement manually"))
         return lines
     return []
 
@@ -1244,6 +1265,20 @@ def _l2_security_monitor_suggested_lines(module: ConfigModule, from_vendor: str,
         return ["ethernet cfm", _comment_for(target, "confirm maintenance domain, level, MEP/MIP, and CCM timers manually")]
     if module.feature == "security.urpf":
         return ["ip verify unicast source reachable-via rx", _comment_for(target, "confirm strict/loose mode and ACL exceptions manually")]
+    if module.feature == "l2.lldp":
+        lines: list[str] = []
+        if re.search(r"\blldp\s+(transmit|receive)\b", source_text, re.IGNORECASE):
+            lines.append("lldp run" if target == "cisco" else "lldp enable")
+            if re.search(r"\btransmit\b", source_text, re.IGNORECASE):
+                lines.append(" lldp transmit" if target == "cisco" else " lldp enable")
+            if re.search(r"\breceive\b", source_text, re.IGNORECASE):
+                lines.append(" lldp receive" if target == "cisco" else " lldp enable")
+        elif re.search(r"\b(cdp|lldp)\s+enable\b", source_text, re.IGNORECASE):
+            lines.append("lldp run" if target == "cisco" else "lldp enable")
+        else:
+            lines.append("lldp run" if target == "cisco" else "lldp enable")
+        lines.append(_comment_for(target, "confirm LLDP/CDP timer, TLV, and interface scope manually"))
+        return lines
     if module.feature.startswith("l2."):
         return [f"{module.feature.replace('.', ' ')} <confirm-settings>", _comment_for(target, "confirm L2 feature semantics and failure action manually")]
     return []
@@ -1431,6 +1466,18 @@ def _management_advanced_suggested_lines(module: ConfigModule, from_vendor: str,
         if target == "cisco":
             return ["flow exporter EXPORTER", f" destination {dest}", f" transport udp {port}", _comment_for(target, "confirm NetFlow/IPFIX version, sampling, and interface binding manually")]
         return [f"ip netstream export host {dest} {port}", "# confirm NetStream/sFlow version, sampler, and interface binding manually"]
+    if module.feature == "management.banner":
+        banner_text = _extract_first(r"banner\s+\S+\s+(.+)", source_text) or "<banner-text>"
+        return [f"banner motd ^{banner_text}^" if target == "cisco" else f"header login information \"{banner_text}\"", _comment_for(target, "confirm banner delimiter, login vs exec, and legal/compliance text manually")]
+    if module.feature == "management.dns":
+        domain = _extract_first(r"\b(?:ip\s+domain-name|domain\s+name)\s+(\S+)", source_text) or "<domain>"
+        return [f"ip domain-name {domain}" if target == "cisco" else f"dns domain {domain}", _comment_for(target, "confirm DNS lookup, domain list, and search order manually")]
+    if module.feature == "management.archive":
+        return ["archive" if target == "cisco" else "configuration archive", _comment_for(target, "confirm archive path, size, and rollback strategy manually")]
+    if module.feature == "management.clock":
+        tz = _extract_first(r"\b(?:timezone|time-zone)\s+(\S+)", source_text) or "<timezone>"
+        offset = _extract_first(r"\b(?:timezone|time-zone)\s+\S+\s+([\d+-]+)", source_text) or "<offset>"
+        return [f"clock timezone {tz} {offset}" if target == "cisco" else f"clock timezone {tz} add {offset}", _comment_for(target, "confirm DST/summer-time rules and NTP offset manually")]
     if module.feature == "management.line":
         first = module.source_lines[0].strip() if module.source_lines else ""
         line_type_match = re.search(r"\b(vty|con|aux|console)\b", first, re.IGNORECASE)
@@ -1552,3 +1599,26 @@ def _extract_config_block(text: str) -> str:
     if match:
         return match.group(1).strip()
     return text or ""
+
+
+def _unknown_fallback_suggested_lines(module: ConfigModule, from_vendor: str, to_vendor: str) -> list[str]:
+    """Generate conservative semantic_near skeleton for unrecognized commands.
+
+    The goal is to prevent silent drop: show the user what we saw, why we
+    cannot auto-translate it, and give a vendor-agnostic placeholder.
+    """
+    target = (to_vendor or "").lower()
+    lines: list[str] = []
+    for raw_line in module.source_lines:
+        stripped = raw_line.strip()
+        if not stripped:
+            continue
+        # Do not emit executable target commands for unknowns.
+        # Preserve the original line as a comment so the reviewer sees it.
+        prefix = "!" if target == "cisco" else "#"
+        redacted = stripped
+        if re.search(r"(password|secret|cipher|shared-key|community|key)\s+\S+", stripped, re.IGNORECASE):
+            redacted = re.sub(r"(password|secret|cipher|shared-key|community|key)\s+\S+", r"\1 <redacted>", stripped, flags=re.IGNORECASE)
+        lines.append(f"{prefix} SOURCE: {redacted}")
+    lines.append(_comment_for(target, "confirm command semantics and target-platform equivalent manually"))
+    return lines

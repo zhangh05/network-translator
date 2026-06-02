@@ -243,6 +243,15 @@ class RuleBasedTranslator:
         if lower.startswith("interface range "):
             return indent + manual_review_comment(stripped, "huawei", indent)
 
+        if re.search(r"\b(ipsec|ike|crypto|vpn|tunnel-group)\b", lower):
+            return indent + manual_review_comment(stripped, "huawei", indent)
+
+        if lower.startswith("address-family"):
+            return indent + manual_review_comment(stripped, "huawei", indent)
+
+        if from_vendor == "ruijie" and lower.startswith(("route-map ", "ip prefix-list ", "ip access-list ")):
+            return indent + manual_review_comment(stripped, "huawei", indent)
+
         return stripped if from_vendor in ("h3c", "huawei") else indent + stripped
 
     def _to_cisco(self, stripped: str, lower: str, indent: str, from_vendor: str, state: Dict):
@@ -341,6 +350,8 @@ class RuleBasedTranslator:
         if lower.startswith(("spanning-tree ", "stp ", "bpduguard", "loopguard", "rootguard")):
             if not (lower.startswith("stp edged-port") or lower == "spanning-tree portfast"):
                 return manual_review_comment(stripped, "cisco", indent)
+        if lower.startswith("stp mode "):
+            return manual_review_comment(stripped, "cisco", indent)
 
         if from_vendor in ("huawei", "h3c"):
             return manual_review_comment(stripped, "cisco", indent)
@@ -597,6 +608,8 @@ class RuleBasedTranslator:
         if lower.startswith("switchport "):
             return indent + stripped
         if lower.startswith(("route-map ", "route-policy ", "ip prefix-list ", "prefix-list ")):
+            return indent + manual_review_comment(stripped, "ruijie", indent)
+        if lower.startswith("peer "):
             return indent + manual_review_comment(stripped, "ruijie", indent)
         fv = (from_vendor or "").lower()
         if fv in ("cisco", "huawei", "h3c"):

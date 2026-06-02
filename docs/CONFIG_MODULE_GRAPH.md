@@ -241,7 +241,7 @@ traffic-filter inbound acl 3000
 | `isis.redistribute` | IS-IS redistribution | none | `isis:*` |
 | `bfd.session` | BFD session and endpoint binding | `bfd:SESSION1` | `peer:*`, `source:*`, optional `interface:*` |
 | `fhrp.vrrp` | VRRP/HSRP/FHRP virtual gateway behavior | `vrrp:Vlanif10:1` | `interface:Vlanif10` |
-| `dhcp.pool` | DHCP pool scope/options | `dhcp-pool:LAN`, `subnet:*` | `gateway:*` |
+| `dhcp.pool` | DHCP pool scope/options (including `ip local pool` / `ip pool`) | `dhcp-pool:LAN`, `subnet:*` | `gateway:*` |
 | `track` | Track/NQA/IP SLA probe object | none | none |
 | `pbr.policy` | Policy-based routing policy block | `pbr:PBR1` | ACL/nexthop dependencies later |
 | `pbr.binding` | Interface PBR binding | none | `interface:*`, `route-policy:*` |
@@ -258,6 +258,10 @@ traffic-filter inbound acl 3000
 | `management.logging` | Loghost/info-center settings | none | none |
 | `management.aaa` | AAA/radius/tacacs/local-user settings | none | none |
 | `management.line` | VTY/Console/AUX management entry point | none | none |
+| `management.banner` | MOTD/login banner | none | none |
+| `management.dns` | DNS domain/lookup settings | none | none |
+| `management.archive` | Configuration archive/scp/backup | none | none |
+| `management.clock` | Clock timezone/summer-time | none | none |
 | `access.auth_profile` | NAC/authentication profile | `auth-profile:*` | optional `dot1x-profile:*`, `mac-access-profile:*`, `domain:*` |
 | `access.dot1x` | 802.1X profile/global command | optional `dot1x-profile:*` | none |
 | `access.mac_auth` | MAC authentication/MAB profile/global command | optional `mac-access-profile:*` | none |
